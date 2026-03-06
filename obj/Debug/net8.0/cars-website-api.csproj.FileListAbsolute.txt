@@ -152,3 +152,12 @@ C:\Users\mszcz\Projects\CarsWebsite\cars-website-api\bin\Debug\net8.0\runtimes\w
 C:\Users\mszcz\Projects\CarsWebsite\cars-website-api\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Windows.Extensions.dll
 C:\Users\mszcz\Projects\CarsWebsite\cars-website-api\bin\Debug\net8.0\appsettings.Development.json
 C:\Users\mszcz\Projects\CarsWebsite\cars-website-api\bin\Debug\net8.0\appsettings.json
+C:\Users\mszcz\Projects\CarsWebsite\cars-website-api\bin\Debug\net8.0\BCrypt.Net-Next.dll
+C:\Users\mszcz\Projects\CarsWebsite\cars-website-api\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+C:\Users\mszcz\Projects\CarsWebsite\cars-website-api\bin\Debug\net8.0\Microsoft.IdentityModel.Abstractions.dll
+C:\Users\mszcz\Projects\CarsWebsite\cars-website-api\bin\Debug\net8.0\Microsoft.IdentityModel.JsonWebTokens.dll
+C:\Users\mszcz\Projects\CarsWebsite\cars-website-api\bin\Debug\net8.0\Microsoft.IdentityModel.Logging.dll
+C:\Users\mszcz\Projects\CarsWebsite\cars-website-api\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.dll
+C:\Users\mszcz\Projects\CarsWebsite\cars-website-api\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+C:\Users\mszcz\Projects\CarsWebsite\cars-website-api\bin\Debug\net8.0\Microsoft.IdentityModel.Tokens.dll
+C:\Users\mszcz\Projects\CarsWebsite\cars-website-api\bin\Debug\net8.0\System.IdentityModel.Tokens.Jwt.dll
