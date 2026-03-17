@@ -22,6 +22,53 @@ namespace cars_website_api.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
+            modelBuilder.Entity("CarsWebsite.Advert", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdvertType")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Images")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Adverts");
+                });
+
             modelBuilder.Entity("CarsWebsite.User", b =>
                 {
                     b.Property<int>("Id")
@@ -56,6 +103,94 @@ namespace cars_website_api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("CarsWebsite.Advert", b =>
+                {
+                    b.HasOne("CarsWebsite.User", "createdBy")
+                        .WithMany("Adverts")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.OwnsOne("CarsWebsite.PartDetails", "PartDetails", b1 =>
+                        {
+                            b1.Property<int>("AdvertId")
+                                .HasColumnType("int");
+
+                            b1.Property<string>("Category")
+                                .HasColumnType("longtext");
+
+                            b1.Property<string>("Condition")
+                                .HasColumnType("longtext");
+
+                            b1.Property<string>("PartNumber")
+                                .HasColumnType("longtext");
+
+                            b1.HasKey("AdvertId");
+
+                            b1.ToTable("Adverts");
+
+                            b1.WithOwner()
+                                .HasForeignKey("AdvertId");
+                        });
+
+                    b.OwnsOne("CarsWebsite.VehicleDetails", "VehicleDetails", b1 =>
+                        {
+                            b1.Property<int>("AdvertId")
+                                .HasColumnType("int");
+
+                            b1.Property<string>("Brand")
+                                .HasColumnType("longtext");
+
+                            b1.Property<string>("Color")
+                                .HasColumnType("longtext");
+
+                            b1.Property<string>("Condition")
+                                .HasColumnType("longtext");
+
+                            b1.Property<int?>("EngineSize")
+                                .HasColumnType("int");
+
+                            b1.Property<string>("FuelType")
+                                .HasColumnType("longtext");
+
+                            b1.Property<int?>("HorsePower")
+                                .HasColumnType("int");
+
+                            b1.Property<int?>("Mileage")
+                                .HasColumnType("int");
+
+                            b1.Property<string>("Model")
+                                .HasColumnType("longtext");
+
+                            b1.Property<string>("Transmission")
+                                .HasColumnType("longtext");
+
+                            b1.Property<string>("VehicleType")
+                                .HasColumnType("longtext");
+
+                            b1.Property<int?>("Year")
+                                .HasColumnType("int");
+
+                            b1.HasKey("AdvertId");
+
+                            b1.ToTable("Adverts");
+
+                            b1.WithOwner()
+                                .HasForeignKey("AdvertId");
+                        });
+
+                    b.Navigation("PartDetails");
+
+                    b.Navigation("VehicleDetails");
+
+                    b.Navigation("createdBy");
+                });
+
+            modelBuilder.Entity("CarsWebsite.User", b =>
+                {
+                    b.Navigation("Adverts");
                 });
 #pragma warning restore 612, 618
         }

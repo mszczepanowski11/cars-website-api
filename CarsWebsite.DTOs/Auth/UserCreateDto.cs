@@ -1,4 +1,6 @@
-﻿namespace cars_website_api.CarsWebsite.DTOs;
+﻿using System;
+
+namespace cars_website_api.CarsWebsite.DTOs;
 
 public class UserCreateDto
 {

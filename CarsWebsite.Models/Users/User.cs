@@ -12,5 +12,7 @@ namespace CarsWebsite
        public DateTime DateOfBirth { get; set; }
        public string PhoneNumber { get; set; }
        public string PasswordHash { get; set; }
+       
+       public List<Advert> Adverts { get; set; } = new();
     } 
 }

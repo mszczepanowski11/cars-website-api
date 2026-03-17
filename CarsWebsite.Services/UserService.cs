@@ -39,7 +39,7 @@ public class UserService
       var jwtToken = handler.ReadJwtToken(token);
 
       var userIdClaim = jwtToken.Claims
-         .FirstOrDefault(c => c.Type == "nameid" 
+         .FirstOrDefault(c => c.Type == "nameid"
                               || c.Type == ClaimTypes.NameIdentifier)?.Value;
 
       if (userIdClaim == null)

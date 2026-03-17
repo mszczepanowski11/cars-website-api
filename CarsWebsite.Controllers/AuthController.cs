@@ -19,10 +19,8 @@ public class AuthController : Controller
     public async Task<IActionResult> Register([FromBody] RegisterDto dto)
     {
         var token = await _authService.Register(dto);
-        if (token == null)
-            return BadRequest("Podany użytkownik nie istnieje");
-
-        return Ok(new { token });
+        
+        return Ok();
     }
 
     [HttpPost("login")]

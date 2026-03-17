@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
+using cars_website_api.CarsWebsite.Interfaces;
 using cars_website_api.CarsWebsite.Services;
 using CarsWebsite;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -20,11 +22,19 @@ internal class Program
         var builder = WebApplication.CreateBuilder(args);
         string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
        
-        builder.Services.AddControllers();   
+        builder.Services.AddControllers()
+            .AddJsonOptions(options => {
+                options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+            });
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddDbContext<AppDbContext>(options => options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+        
         builder.Services.AddScoped<UserService>();     
-        builder.Services.AddScoped<AuthService>();  
+        builder.Services.AddScoped<AuthService>();
+        builder.Services.AddScoped<IAdvertService,AdvertService>();
+        
         
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -42,6 +52,15 @@ internal class Program
                 };
                 
             });
+        
+        builder.Services.AddCors(options => {
+            options.AddPolicy("AllowNuxt", policy => {
+                policy.WithOrigins("http://localhost:3000")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
+            });
+        });
+        
         builder.Services.AddSwaggerGen(c =>
         {
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -82,6 +101,7 @@ internal class Program
         app.UseHttpsRedirection();
         app.UseAuthentication();   
         app.UseAuthorization();
+        app.UseCors("AllowNuxt");
         app.MapControllers();      
         app.Run();
     }
