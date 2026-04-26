@@ -65,15 +65,10 @@ public class AdvertController : Controller
         
         var advert = new Advert
         {
-            AdvertType = dto.AdvertType,
             Title = dto.Title,
             Price = dto.Price,
             Description = dto.Description,
-            Location = dto.Location,
-            Images = dto.Images ?? new List<string>(),
             UserId = user.Id,
-            VehicleDetails = dto.VehicleDetails,
-            PartDetails = dto.PartDetails
         };
         
         var created = await _advertService.AddAdvert(advert);

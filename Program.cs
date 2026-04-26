@@ -34,6 +34,7 @@ internal class Program
         builder.Services.AddScoped<UserService>();     
         builder.Services.AddScoped<AuthService>();
         builder.Services.AddScoped<IAdvertService,AdvertService>();
+        builder.Services.AddScoped<ITaxonomyService, TaxonomyService>();
         
         
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

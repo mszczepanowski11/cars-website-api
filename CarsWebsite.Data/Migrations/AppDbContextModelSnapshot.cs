@@ -30,34 +30,34 @@ namespace cars_website_api.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AdvertType")
+                    b.Property<string>("City")
                         .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Images")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<string>("Location")
                         .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(65,30)");
 
+                    b.Property<string>("Region")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -66,7 +66,49 @@ namespace cars_website_api.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Adverts");
+                    b.ToTable("Adverts", (string)null);
+
+                    b.UseTptMappingStrategy();
+                });
+
+            modelBuilder.Entity("CarsWebsite.AdvertFeature", b =>
+                {
+                    b.Property<int>("AdvertId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FeatureId")
+                        .HasColumnType("int");
+
+                    b.HasKey("AdvertId", "FeatureId");
+
+                    b.HasIndex("FeatureId");
+
+                    b.ToTable("AdvertFeatures", (string)null);
+                });
+
+            modelBuilder.Entity("CarsWebsite.AdvertImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AdvertId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdvertId");
+
+                    b.ToTable("AdvertImages", (string)null);
                 });
 
             modelBuilder.Entity("CarsWebsite.User", b =>
@@ -105,6 +147,268 @@ namespace cars_website_api.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.BodyType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BodyTypes");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Brand", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Brands");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.EngineVersion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("Displacement")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EngineName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("FuelTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GenerationId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PowerHP")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PowerKW")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FuelTypeId");
+
+                    b.HasIndex("GenerationId");
+
+                    b.ToTable("EngineVersions");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Feature", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.ToTable("Features");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.FeatureCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("FeatureCategories");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.FuelType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("FuelTypes");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Gearbox", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Gearboxes");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Generation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ModelId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("YearFrom")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("YearTo")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ModelId");
+
+                    b.ToTable("Generations");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Model", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BrandId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BrandId");
+
+                    b.ToTable("Models");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.CarAdvert", b =>
+                {
+                    b.HasBaseType("CarsWebsite.Advert");
+
+                    b.Property<int>("BodyTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BrandId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EngineSize")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("EngineVersionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FuelTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GearboxId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("GenerationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Mileage")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ModelId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PowerHP")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PowerKW")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasIndex("BodyTypeId");
+
+                    b.HasIndex("BrandId");
+
+                    b.HasIndex("EngineVersionId");
+
+                    b.HasIndex("FuelTypeId");
+
+                    b.HasIndex("GearboxId");
+
+                    b.HasIndex("GenerationId");
+
+                    b.HasIndex("ModelId");
+
+                    b.ToTable("CarAdverts", (string)null);
+                });
+
             modelBuilder.Entity("CarsWebsite.Advert", b =>
                 {
                     b.HasOne("CarsWebsite.User", "createdBy")
@@ -113,84 +417,190 @@ namespace cars_website_api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.OwnsOne("CarsWebsite.PartDetails", "PartDetails", b1 =>
-                        {
-                            b1.Property<int>("AdvertId")
-                                .HasColumnType("int");
-
-                            b1.Property<string>("Category")
-                                .HasColumnType("longtext");
-
-                            b1.Property<string>("Condition")
-                                .HasColumnType("longtext");
-
-                            b1.Property<string>("PartNumber")
-                                .HasColumnType("longtext");
-
-                            b1.HasKey("AdvertId");
-
-                            b1.ToTable("Adverts");
-
-                            b1.WithOwner()
-                                .HasForeignKey("AdvertId");
-                        });
-
-                    b.OwnsOne("CarsWebsite.VehicleDetails", "VehicleDetails", b1 =>
-                        {
-                            b1.Property<int>("AdvertId")
-                                .HasColumnType("int");
-
-                            b1.Property<string>("Brand")
-                                .HasColumnType("longtext");
-
-                            b1.Property<string>("Color")
-                                .HasColumnType("longtext");
-
-                            b1.Property<string>("Condition")
-                                .HasColumnType("longtext");
-
-                            b1.Property<int?>("EngineSize")
-                                .HasColumnType("int");
-
-                            b1.Property<string>("FuelType")
-                                .HasColumnType("longtext");
-
-                            b1.Property<int?>("HorsePower")
-                                .HasColumnType("int");
-
-                            b1.Property<int?>("Mileage")
-                                .HasColumnType("int");
-
-                            b1.Property<string>("Model")
-                                .HasColumnType("longtext");
-
-                            b1.Property<string>("Transmission")
-                                .HasColumnType("longtext");
-
-                            b1.Property<string>("VehicleType")
-                                .HasColumnType("longtext");
-
-                            b1.Property<int?>("Year")
-                                .HasColumnType("int");
-
-                            b1.HasKey("AdvertId");
-
-                            b1.ToTable("Adverts");
-
-                            b1.WithOwner()
-                                .HasForeignKey("AdvertId");
-                        });
-
-                    b.Navigation("PartDetails");
-
-                    b.Navigation("VehicleDetails");
-
                     b.Navigation("createdBy");
+                });
+
+            modelBuilder.Entity("CarsWebsite.AdvertFeature", b =>
+                {
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.CarAdvert", "Advert")
+                        .WithMany("AdvertFeatures")
+                        .HasForeignKey("AdvertId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.Feature", "Feature")
+                        .WithMany("AdvertFeatures")
+                        .HasForeignKey("FeatureId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Advert");
+
+                    b.Navigation("Feature");
+                });
+
+            modelBuilder.Entity("CarsWebsite.AdvertImage", b =>
+                {
+                    b.HasOne("CarsWebsite.Advert", "Advert")
+                        .WithMany("Images")
+                        .HasForeignKey("AdvertId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Advert");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.EngineVersion", b =>
+                {
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.FuelType", "FuelType")
+                        .WithMany()
+                        .HasForeignKey("FuelTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.Generation", "Generation")
+                        .WithMany("EngineVersions")
+                        .HasForeignKey("GenerationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FuelType");
+
+                    b.Navigation("Generation");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Feature", b =>
+                {
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.FeatureCategory", "Category")
+                        .WithMany("Features")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Generation", b =>
+                {
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.Model", "Model")
+                        .WithMany("Generations")
+                        .HasForeignKey("ModelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Model");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Model", b =>
+                {
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.Brand", "Brand")
+                        .WithMany("Models")
+                        .HasForeignKey("BrandId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Brand");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.CarAdvert", b =>
+                {
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.BodyType", "BodyType")
+                        .WithMany()
+                        .HasForeignKey("BodyTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.Brand", "Brand")
+                        .WithMany()
+                        .HasForeignKey("BrandId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.EngineVersion", "EngineVersion")
+                        .WithMany()
+                        .HasForeignKey("EngineVersionId");
+
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.FuelType", "FuelType")
+                        .WithMany()
+                        .HasForeignKey("FuelTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.Gearbox", "Gearbox")
+                        .WithMany()
+                        .HasForeignKey("GearboxId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.Generation", "Generation")
+                        .WithMany()
+                        .HasForeignKey("GenerationId");
+
+                    b.HasOne("CarsWebsite.Advert", null)
+                        .WithOne()
+                        .HasForeignKey("cars_website_api.CarsWebsite.Domain.Entities.CarAdvert", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.Model", "Model")
+                        .WithMany()
+                        .HasForeignKey("ModelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BodyType");
+
+                    b.Navigation("Brand");
+
+                    b.Navigation("EngineVersion");
+
+                    b.Navigation("FuelType");
+
+                    b.Navigation("Gearbox");
+
+                    b.Navigation("Generation");
+
+                    b.Navigation("Model");
+                });
+
+            modelBuilder.Entity("CarsWebsite.Advert", b =>
+                {
+                    b.Navigation("Images");
                 });
 
             modelBuilder.Entity("CarsWebsite.User", b =>
                 {
                     b.Navigation("Adverts");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Brand", b =>
+                {
+                    b.Navigation("Models");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Feature", b =>
+                {
+                    b.Navigation("AdvertFeatures");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.FeatureCategory", b =>
+                {
+                    b.Navigation("Features");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Generation", b =>
+                {
+                    b.Navigation("EngineVersions");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Model", b =>
+                {
+                    b.Navigation("Generations");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.CarAdvert", b =>
+                {
+                    b.Navigation("AdvertFeatures");
                 });
 #pragma warning restore 612, 618
         }

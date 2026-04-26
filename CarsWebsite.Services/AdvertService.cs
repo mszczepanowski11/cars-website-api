@@ -27,15 +27,13 @@ public class AdvertService: IAdvertService
             .Include(a => a.createdBy)
             .FirstOrDefaultAsync(a => a.Id == id);
     }
-
-
+    
     public async Task<List<Advert>> GetAll()
     {
         return await _context.Adverts
             .Include(a => a.createdBy)
             .ToListAsync();
     }
-
 
     public async Task<List<Advert>> GetByUserId(int userId)
     {
