@@ -1,12 +1,16 @@
-﻿using CarsWebsite;
-
-namespace cars_website_api.CarsWebsite.Interfaces;
+﻿using cars_website_api.CarsWebsite.DTOs.Advert;
 
 public interface IAdvertService
 {
-    Task<Advert> AddAdvert(Advert model);
-    Task<Advert?> GetById(int id);
-    Task<List<Advert>> GetAll();
-    Task<List<Advert>> GetByUserId(int userId);
-    Task DeleteAdvert(int id);  
+    Task<int> CreateCarAdvertAsync(CreateCarAdvertDto dto);
+    Task UpdateCarAdvertAsync(int id, UpdateCarAdvertDto dto);
+    Task DeleteCarAdvertAsync(int id);
+    Task<CarAdvertResponseDto> GetCarAdvertByIdAsync(int id);
+    Task<PagedResult<CarAdvertResponseDto>> SearchCarAdvertsAsync(SearchCarAdvertDto dto);
+}
+
+public class PagedResult<T>
+{
+    public List<T> Items { get; set; }
+    public int TotalCount { get; set; }
 }

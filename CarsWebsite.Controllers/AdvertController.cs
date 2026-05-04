@@ -1,106 +1,82 @@
 ﻿using cars_website_api.CarsWebsite.DTOs.Advert;
 using cars_website_api.CarsWebsite.Interfaces;
-using cars_website_api.CarsWebsite.Services;
-using CarsWebsite;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace cars_website_api.CarsWebsite.Controllers;
-
-[Route("api/[controller]")]
 [ApiController]
-public class AdvertController : Controller
+[Route("api/[controller]")]
+public class AdvertController : ControllerBase
 {
     private readonly IAdvertService _advertService;
-    private readonly UserService _userService;
-    
-    public AdvertController(IAdvertService advertService, UserService userService)
+    private readonly IAdvertImageService _imageService;
+
+    public AdvertController(IAdvertService advertService, IAdvertImageService imageService)
     {
         _advertService = advertService;
-        _userService = userService;
-    }
-    
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
-    {
-        var adverts = await _advertService.GetAll();
-        return Ok(adverts);
-    }
-    
-    [Authorize]
-    [HttpGet("user")]
-    public async Task<IActionResult> GetByUser()
-    {
-        var user = await GetCurrentUser();
-        if (user == null) return Unauthorized();
- 
-        var adverts = await _advertService.GetByUserId(user.Id);
-        return Ok(adverts);
-    }
-    
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
-    {
-        var advert = await _advertService.GetById(id);
- 
-        if (advert == null)
-            return NotFound("Advert not found.");
- 
-        return Ok(advert);
+        _imageService = imageService;
     }
 
     
     [HttpPost]
-    public async Task<IActionResult> AddAdvert([FromBody] CreateAdvertDto dto)
+    public async Task<IActionResult> Create([FromBody] CreateCarAdvertDto dto)
     {
-        
-        var token = Request.Headers["Authorization"]
-            .ToString()
-            .Replace("Bearer ", "");
- 
-        var user = await _userService.GetByToken(token);
- 
-        if (user == null)
-            return Unauthorized();
-        
-        var advert = new Advert
-        {
-            Title = dto.Title,
-            Price = dto.Price,
-            Description = dto.Description,
-            UserId = user.Id,
-        };
-        
-        var created = await _advertService.AddAdvert(advert);
-        
-        return Ok(created);
+        var id = await _advertService.CreateCarAdvertAsync(dto);
+        return CreatedAtAction(nameof(GetById), new { id }, new { id });
     }
+
     
-    private async Task<User?> GetCurrentUser()
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateCarAdvertDto dto)
     {
-        var token = Request.Headers["Authorization"]
-            .ToString()
-            .Replace("Bearer ", "");
- 
-        return await _userService.GetByToken(token);
-    }
-    
-    [Authorize]
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteAdvert(int id)
-    {
-        var user = await GetCurrentUser();
-        if (user == null) return Unauthorized();
- 
-        var advert = await _advertService.GetById(id);
- 
-        if (advert == null)
-            return NotFound("Advert not found.");
- 
-        if (advert.UserId != user.Id)
-            return Forbid();
- 
-        await _advertService.DeleteAdvert(id);
+        await _advertService.UpdateCarAdvertAsync(id, dto);
         return NoContent();
     }
+
+    
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        await _advertService.DeleteCarAdvertAsync(id);
+        return NoContent();
+    }
+
+    
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        var advert = await _advertService.GetCarAdvertByIdAsync(id);
+        return Ok(advert);
+    }
+
+    
+    [HttpPost("search")]
+    public async Task<IActionResult> Search([FromBody] SearchCarAdvertDto dto)
+    {
+        var result = await _advertService.SearchCarAdvertsAsync(dto);
+        return Ok(result);
+    }
+    
+    [HttpPost("{advertId}/images")]
+    public async Task<IActionResult> UploadImage(int advertId, IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest("File is empty");
+
+        var url = await _imageService.UploadAdvertImageAsync(advertId, file);
+        return Ok(new { url });
+    }
+
+    [HttpPut("{advertId}/images/{imageId}/set-main")]
+    public async Task<IActionResult> SetMainImage(int advertId, int imageId)
+    {
+        await _imageService.SetMainImageAsync(advertId, imageId);
+        return NoContent();
+    }
+
+    [HttpDelete("{advertId}/images/{imageId}")]
+    public async Task<IActionResult> DeleteImage(int advertId, int imageId)
+    {
+        await _imageService.DeleteImageAsync(advertId, imageId);
+        return NoContent();
+    }
+    
 }

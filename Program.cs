@@ -1,19 +1,13 @@
-using System;
-using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
 using cars_website_api.CarsWebsite.Interfaces;
 using cars_website_api.CarsWebsite.Services;
 using CarsWebsite;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Pomelo.EntityFrameworkCore.MySql;
+
 
 internal class Program
 {
@@ -36,6 +30,8 @@ internal class Program
         builder.Services.AddScoped<IAdvertService,AdvertService>();
         builder.Services.AddScoped<ITaxonomyService, TaxonomyService>();
         
+        builder.Services.AddAutoMapper(typeof(AdvertMappingProfile));
+
         
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
