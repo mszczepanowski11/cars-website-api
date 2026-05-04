@@ -36,6 +36,7 @@ public class AdvertImageService : IAdvertImageService
         {
             AdvertId = advertId,
             Url = relativeUrl,
+            IsMain = false
         };
 
         _context.AdvertImages.Add(image);
@@ -56,7 +57,11 @@ public class AdvertImageService : IAdvertImageService
         var image = advert.Images.FirstOrDefault(i => i.Id == imageId);
         if (image == null)
             throw new KeyNotFoundException("Image not found");
-        
+
+        foreach (var img in advert.Images)
+            img.IsMain = false;
+
+        image.IsMain = true;
 
         await _context.SaveChangesAsync();
     }

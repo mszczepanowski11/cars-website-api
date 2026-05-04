@@ -26,8 +26,7 @@ public class UserController : ControllerBase
    {
       var token = Request.Headers["Authorization"]
          .ToString()
-         .Replace("Bearer ", "");;
-      Console.WriteLine(token);
+         .Replace("Bearer ", "");
       
       if (string.IsNullOrEmpty(token))
          return Unauthorized();

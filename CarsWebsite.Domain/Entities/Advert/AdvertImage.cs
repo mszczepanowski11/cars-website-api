@@ -7,5 +7,7 @@ public class AdvertImage
     public Advert Advert { get; set; }
 
     public string Url { get; set; }
-    public int Order { get; set; } // 1
+    public int Order { get; set; } 
+    public bool IsMain { get; set; }
+
 }
