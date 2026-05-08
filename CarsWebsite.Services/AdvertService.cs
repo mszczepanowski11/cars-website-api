@@ -16,11 +16,12 @@ public class AdvertService : IAdvertService
     }
 
     
-    public async Task<int> CreateCarAdvertAsync(CreateCarAdvertDto dto)
+    public async Task<int> CreateCarAdvertAsync(CreateCarAdvertDto dto,int userId)
     {
         var advert = _mapper.Map<CarAdvert>(dto);
         advert.CreatedAt = DateTime.UtcNow;
-
+        advert.UserId = userId;
+        
         
         _context.CarAdverts.Add(advert);
         await _context.SaveChangesAsync();
@@ -40,6 +41,8 @@ public class AdvertService : IAdvertService
 
         return advert.Id;
     }
+    
+    
     
     public async Task UpdateCarAdvertAsync(int id, UpdateCarAdvertDto dto)
     {
@@ -188,6 +191,28 @@ public class AdvertService : IAdvertService
         return new PagedResult<CarAdvertResponseDto>
         {
             Items = mapped,
+            TotalCount = totalCount
+        };
+    }
+
+    public async Task<PagedResult<CarAdvertResponseDto>> GetUserAdvertsAsync(int userId, int page = 1, int pageSize = 20)
+    {
+        var query = _context.CarAdverts
+            .Include(a => a.Brand).Include(a => a.Model)
+            .Include(a => a.Generation).Include(a => a.EngineVersion)
+            .Include(a => a.FuelType).Include(a => a.Gearbox)
+            .Include(a => a.BodyType).Include(a => a.Images)
+            .Include(a => a.AdvertFeatures).ThenInclude(af => af.Feature)
+            .Where(a => a.UserId == userId)
+            .OrderByDescending(a => a.CreatedAt);
+        
+       
+        var totalCount= await query.CountAsync();
+        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        
+        return new PagedResult<CarAdvertResponseDto>
+        {
+            Items = _mapper.Map<List<CarAdvertResponseDto>>(items),
             TotalCount = totalCount
         };
     }

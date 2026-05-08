@@ -31,7 +31,6 @@ namespace cars_website_api.Migrations
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("City")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<DateTime>("CreatedAt")
@@ -49,7 +48,6 @@ namespace cars_website_api.Migrations
                         .HasColumnType("decimal(65,30)");
 
                     b.Property<string>("Region")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<string>("Title")
@@ -96,6 +94,9 @@ namespace cars_website_api.Migrations
 
                     b.Property<int>("AdvertId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsMain")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<int>("Order")
                         .HasColumnType("int");

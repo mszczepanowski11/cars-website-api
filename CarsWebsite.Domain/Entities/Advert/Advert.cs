@@ -12,8 +12,8 @@ public class Advert
     public decimal Price { get; set; }
     public string Currency { get; set; } = "PLN";
 
-    public string City { get; set; }
-    public string Region { get; set; }
+    public string? City { get; set; }
+    public string? Region { get; set; }
 
     public int UserId { get; set; }
     public User createdBy { get; set; }
