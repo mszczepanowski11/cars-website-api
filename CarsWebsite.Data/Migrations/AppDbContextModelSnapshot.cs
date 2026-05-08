@@ -112,6 +112,24 @@ namespace cars_website_api.Migrations
                     b.ToTable("AdvertImages", (string)null);
                 });
 
+            modelBuilder.Entity("CarsWebsite.FavoriteAdvert", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AdvertId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("UserId", "AdvertId");
+
+                    b.HasIndex("AdvertId");
+
+                    b.ToTable("FavoriteAdverts", (string)null);
+                });
+
             modelBuilder.Entity("CarsWebsite.User", b =>
                 {
                     b.Property<int>("Id")
@@ -353,6 +371,130 @@ namespace cars_website_api.Migrations
                     b.ToTable("Models");
                 });
 
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.VehicleCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("IconName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("VehicleCategories", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Description = "Sedany, coupe, SUV-y i więcej",
+                            IconName = "mdi-car",
+                            Name = "Auta osobowe",
+                            Slug = "auta-osobowe",
+                            SortOrder = 1
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Description = "Busy, vany, samochody dostawcze",
+                            IconName = "mdi-truck-delivery",
+                            Name = "Dostawcze",
+                            Slug = "dostawcze",
+                            SortOrder = 2
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Description = "Ciężarówki, TIR-y, naczepy i więcej",
+                            IconName = "mdi-truck",
+                            Name = "Ciężarowe",
+                            Slug = "ciezarowe",
+                            SortOrder = 3
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Description = "Maszyny budowlane, rolnicze i przemysłowe",
+                            IconName = "mdi-excavator",
+                            Name = "Maszyny",
+                            Slug = "maszyny",
+                            SortOrder = 4
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Description = "Części samochodowe, akcesoria i tuning",
+                            IconName = "mdi-cog",
+                            Name = "Części",
+                            Slug = "czesci",
+                            SortOrder = 5
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Description = "Motocykle, skutery, quady i więcej",
+                            IconName = "mdi-motorbike",
+                            Name = "Motocykle",
+                            Slug = "motocykle",
+                            SortOrder = 6
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Description = "Przyczepy, lawety, naczepy i więcej",
+                            IconName = "mdi-rv-truck",
+                            Name = "Przyczepy",
+                            Slug = "przyczepy",
+                            SortOrder = 7
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Description = "Maszyny i pojazdy rolnicze",
+                            IconName = "mdi-tractor",
+                            Name = "Rolnicze",
+                            Slug = "rolnicze",
+                            SortOrder = 8
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Description = "Sprzęt budowlany i narzędzia",
+                            IconName = "mdi-hard-hat",
+                            Name = "Budowlane",
+                            Slug = "budowlane",
+                            SortOrder = 9
+                        },
+                        new
+                        {
+                            Id = 10,
+                            Description = "Pozostałe pojazdy i przedmioty",
+                            IconName = "mdi-dots-horizontal-circle",
+                            Name = "Inne",
+                            Slug = "inne",
+                            SortOrder = 10
+                        });
+                });
+
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.CarAdvert", b =>
                 {
                     b.HasBaseType("CarsWebsite.Advert");
@@ -390,6 +532,9 @@ namespace cars_website_api.Migrations
                     b.Property<int>("PowerKW")
                         .HasColumnType("int");
 
+                    b.Property<int?>("VehicleCategoryId")
+                        .HasColumnType("int");
+
                     b.Property<int>("Year")
                         .HasColumnType("int");
 
@@ -406,6 +551,8 @@ namespace cars_website_api.Migrations
                     b.HasIndex("GenerationId");
 
                     b.HasIndex("ModelId");
+
+                    b.HasIndex("VehicleCategoryId");
 
                     b.ToTable("CarAdverts", (string)null);
                 });
@@ -449,6 +596,25 @@ namespace cars_website_api.Migrations
                         .IsRequired();
 
                     b.Navigation("Advert");
+                });
+
+            modelBuilder.Entity("CarsWebsite.FavoriteAdvert", b =>
+                {
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.CarAdvert", "Advert")
+                        .WithMany()
+                        .HasForeignKey("AdvertId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CarsWebsite.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Advert");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.EngineVersion", b =>
@@ -549,6 +715,10 @@ namespace cars_website_api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.VehicleCategory", "VehicleCategory")
+                        .WithMany()
+                        .HasForeignKey("VehicleCategoryId");
+
                     b.Navigation("BodyType");
 
                     b.Navigation("Brand");
@@ -562,6 +732,8 @@ namespace cars_website_api.Migrations
                     b.Navigation("Generation");
 
                     b.Navigation("Model");
+
+                    b.Navigation("VehicleCategory");
                 });
 
             modelBuilder.Entity("CarsWebsite.Advert", b =>

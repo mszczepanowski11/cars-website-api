@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using cars_website_api.CarsWebsite.DTOs;
 using CarsWebsite;
 using Microsoft.EntityFrameworkCore;
 
@@ -46,6 +47,20 @@ public class UserService
          return null;
 
       return await _context.Users.FindAsync(int.Parse(userIdClaim));
+   }
+   
+   public async Task<UserStatsDto> GetUserStatsAsync(int userId)
+   {
+      var advertCount = await _context.CarAdverts.CountAsync(a => a.UserId == userId);
+      var favCount = await _context.FavoriteAdverts.CountAsync(f => f.UserId == userId);
+      return new UserStatsDto
+      {
+         TotalAdverts = advertCount,
+         ActiveAdverts = advertCount,
+         TotalViews = 0,
+         FavoritesCount = favCount,
+         UnreadMessages = 0
+      };
    }
   
 }

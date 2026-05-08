@@ -1,23 +1,19 @@
 ﻿using System;
-using System.Text.Json;
 using cars_website_api.CarsWebsite.Domain.Entities;
+using CarsWebsite;
 using Microsoft.EntityFrameworkCore;
 
 namespace CarsWebsite
 {
     public class AppDbContext : DbContext
-        
     {
         public DbSet<User> Users { get; set; }
-        
         public DbSet<Advert> Adverts { get; set; }
         public DbSet<CarAdvert> CarAdverts { get; set; }
-        
-        
         public DbSet<AdvertImage> AdvertImages { get; set; }
         public DbSet<AdvertFeature> AdvertFeatures { get; set; }
-        
-        
+        public DbSet<VehicleCategory> VehicleCategories { get; set; }
+        public DbSet<FavoriteAdvert> FavoriteAdverts { get; set; }
         public DbSet<Brand> Brands { get; set; }
         public DbSet<Model> Models { get; set; }
         public DbSet<Generation> Generations { get; set; }
@@ -27,48 +23,24 @@ namespace CarsWebsite
         public DbSet<BodyType> BodyTypes { get; set; }
         public DbSet<Feature> Features { get; set; }
         public DbSet<FeatureCategory> FeatureCategories { get; set; }
-        
-        
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
-        {
-        }
-        
+
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
-            {
-                optionsBuilder.UseMySql("DefaultConnection",
-                    new MySqlServerVersion(new Version(8, 0, 21)));
-            } 
+                optionsBuilder.UseMySql("DefaultConnection", new MySqlServerVersion(new Version(8, 0, 21)));
         }
-        
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            
-            modelBuilder.Entity<Brand>()
-                .HasMany(b => b.Models)
-                .WithOne(m => m.Brand)
-                .HasForeignKey(m => m.BrandId);
+            modelBuilder.Entity<Brand>().HasMany(b => b.Models).WithOne(m => m.Brand).HasForeignKey(m => m.BrandId);
+            modelBuilder.Entity<Model>().HasMany(m => m.Generations).WithOne(g => g.Model).HasForeignKey(g => g.ModelId);
+            modelBuilder.Entity<Generation>().HasMany(g => g.EngineVersions).WithOne(e => e.Generation).HasForeignKey(e => e.GenerationId);
 
-            modelBuilder.Entity<Model>()
-                .HasMany(m => m.Generations)
-                .WithOne(g => g.Model)
-                .HasForeignKey(g => g.ModelId);
-
-            modelBuilder.Entity<Generation>()
-                .HasMany(g => g.EngineVersions)
-                .WithOne(e => e.Generation)
-                .HasForeignKey(e => e.GenerationId);
-            
-            modelBuilder.Entity<User>()
-                .HasKey(user => user.Id);
-            
-            modelBuilder.Entity<Advert>()
-                .ToTable("Adverts")
-                .HasKey(a => a.Id);
-
-            modelBuilder.Entity<CarAdvert>()
-                .ToTable("CarAdverts");
+            modelBuilder.Entity<User>().HasKey(u => u.Id);
+            modelBuilder.Entity<Advert>().ToTable("Adverts").HasKey(a => a.Id);
+            modelBuilder.Entity<CarAdvert>().ToTable("CarAdverts");
 
             modelBuilder.Entity<Advert>(entity =>
             {
@@ -77,76 +49,46 @@ namespace CarsWebsite
                     .HasForeignKey(a => a.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
-            
-            
-            
-            /////////////////////////////////////////CAR
+
+            modelBuilder.Entity<CarAdvert>().HasOne(a => a.Brand).WithMany().HasForeignKey(a => a.BrandId);
+            modelBuilder.Entity<CarAdvert>().HasOne(a => a.Model).WithMany().HasForeignKey(a => a.ModelId);
+            modelBuilder.Entity<CarAdvert>().HasOne(a => a.Generation).WithMany().HasForeignKey(a => a.GenerationId);
+            modelBuilder.Entity<CarAdvert>().HasOne(a => a.EngineVersion).WithMany().HasForeignKey(a => a.EngineVersionId);
+            modelBuilder.Entity<CarAdvert>().HasOne(a => a.FuelType).WithMany().HasForeignKey(a => a.FuelTypeId);
+            modelBuilder.Entity<CarAdvert>().HasOne(a => a.Gearbox).WithMany().HasForeignKey(a => a.GearboxId);
+            modelBuilder.Entity<CarAdvert>().HasOne(a => a.BodyType).WithMany().HasForeignKey(a => a.BodyTypeId);
             modelBuilder.Entity<CarAdvert>()
-                .HasOne(a => a.Brand)
-                .WithMany()
-                .HasForeignKey(a => a.BrandId);
+                .HasOne(a => a.VehicleCategory).WithMany().HasForeignKey(a => a.VehicleCategoryId).IsRequired(false);
 
-            modelBuilder.Entity<CarAdvert>()
-                .HasOne(a => a.Model)
-                .WithMany()
-                .HasForeignKey(a => a.ModelId);
+            modelBuilder.Entity<AdvertImage>().ToTable("AdvertImages").HasKey(i => i.Id);
+            modelBuilder.Entity<Advert>().HasMany(a => a.Images).WithOne(i => i.Advert)
+                .HasForeignKey(i => i.AdvertId).OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<CarAdvert>()
-                .HasOne(a => a.Generation)
-                .WithMany()
-                .HasForeignKey(a => a.GenerationId);
+            modelBuilder.Entity<AdvertFeature>().ToTable("AdvertFeatures").HasKey(af => new { af.AdvertId, af.FeatureId });
+            modelBuilder.Entity<AdvertFeature>().HasOne(af => af.Advert).WithMany(a => a.AdvertFeatures)
+                .HasForeignKey(af => af.AdvertId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<AdvertFeature>().HasOne(af => af.Feature).WithMany(f => f.AdvertFeatures)
+                .HasForeignKey(af => af.FeatureId).OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<CarAdvert>()
-                .HasOne(a => a.EngineVersion)
-                .WithMany()
-                .HasForeignKey(a => a.EngineVersionId);
+            modelBuilder.Entity<FavoriteAdvert>().ToTable("FavoriteAdverts").HasKey(f => new { f.UserId, f.AdvertId });
+            modelBuilder.Entity<FavoriteAdvert>().HasOne(f => f.User).WithMany()
+                .HasForeignKey(f => f.UserId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<FavoriteAdvert>().HasOne(f => f.Advert).WithMany()
+                .HasForeignKey(f => f.AdvertId).OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<CarAdvert>()
-                .HasOne(a => a.FuelType)
-                .WithMany()
-                .HasForeignKey(a => a.FuelTypeId);
-
-            modelBuilder.Entity<CarAdvert>()
-                .HasOne(a => a.Gearbox)
-                .WithMany()
-                .HasForeignKey(a => a.GearboxId);
-
-            modelBuilder.Entity<CarAdvert>()
-                .HasOne(a => a.BodyType)
-                .WithMany()
-                .HasForeignKey(a => a.BodyTypeId);
-            
-            
-            ///////////////////////////////////IMAGES
-            modelBuilder.Entity<AdvertImage>()
-                .ToTable("AdvertImages")
-                .HasKey(i => i.Id);
-
-            modelBuilder.Entity<Advert>()
-                .HasMany(a => a.Images)
-                .WithOne(i => i.Advert)
-                .HasForeignKey(i => i.AdvertId)
-                .OnDelete(DeleteBehavior.Cascade);
-            
-            
-            //////////////////////////////////FEATURES
-            modelBuilder.Entity<AdvertFeature>()
-                .ToTable("AdvertFeatures")
-                .HasKey(af => new { af.AdvertId, af.FeatureId });
-
-            modelBuilder.Entity<AdvertFeature>()
-                .HasOne(af => af.Advert)
-                .WithMany(a => a.AdvertFeatures)
-                .HasForeignKey(af => af.AdvertId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<AdvertFeature>()
-                .HasOne(af => af.Feature)
-                .WithMany(f => f.AdvertFeatures)
-                .HasForeignKey(af => af.FeatureId)
-                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<VehicleCategory>().ToTable("VehicleCategories").HasKey(c => c.Id);
+            modelBuilder.Entity<VehicleCategory>().HasData(
+                new VehicleCategory { Id = 1, Slug = "auta-osobowe", Name = "Auta osobowe", Description = "Sedany, coupe, SUV-y i więcej", IconName = "mdi-car", SortOrder = 1 },
+                new VehicleCategory { Id = 2, Slug = "dostawcze", Name = "Dostawcze", Description = "Busy, vany, samochody dostawcze", IconName = "mdi-truck-delivery", SortOrder = 2 },
+                new VehicleCategory { Id = 3, Slug = "ciezarowe", Name = "Ciężarowe", Description = "Ciężarówki, TIR-y, naczepy i więcej", IconName = "mdi-truck", SortOrder = 3 },
+                new VehicleCategory { Id = 4, Slug = "maszyny", Name = "Maszyny", Description = "Maszyny budowlane, rolnicze i przemysłowe", IconName = "mdi-excavator", SortOrder = 4 },
+                new VehicleCategory { Id = 5, Slug = "czesci", Name = "Części", Description = "Części samochodowe, akcesoria i tuning", IconName = "mdi-cog", SortOrder = 5 },
+                new VehicleCategory { Id = 6, Slug = "motocykle", Name = "Motocykle", Description = "Motocykle, skutery, quady i więcej", IconName = "mdi-motorbike", SortOrder = 6 },
+                new VehicleCategory { Id = 7, Slug = "przyczepy", Name = "Przyczepy", Description = "Przyczepy, lawety, naczepy i więcej", IconName = "mdi-rv-truck", SortOrder = 7 },
+                new VehicleCategory { Id = 8, Slug = "rolnicze", Name = "Rolnicze", Description = "Maszyny i pojazdy rolnicze", IconName = "mdi-tractor", SortOrder = 8 },
+                new VehicleCategory { Id = 9, Slug = "budowlane", Name = "Budowlane", Description = "Sprzęt budowlany i narzędzia", IconName = "mdi-hard-hat", SortOrder = 9 },
+                new VehicleCategory { Id = 10, Slug = "inne", Name = "Inne", Description = "Pozostałe pojazdy i przedmioty", IconName = "mdi-dots-horizontal-circle", SortOrder = 10 }
+            );
         }
     }
 }
-
-    

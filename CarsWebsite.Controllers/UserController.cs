@@ -36,6 +36,18 @@ public class UserController : ControllerBase
       if (user == null)
          return NotFound("User not found or token is invalid.");
 
-      return Ok(user);
+      return Ok(new { user.Id, user.Name, user.Surname, user.Email, user.PhoneNumber });
+
+   }
+   
+   [Authorize]
+   [HttpGet("stats")]
+   public async Task<IActionResult> GetStats()
+   {
+      var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+      if (!int.TryParse(userIdStr, out var userId))
+         return Unauthorized();
+      var stats = await _userService.GetUserStatsAsync(userId);
+      return Ok(stats);
    }
 }

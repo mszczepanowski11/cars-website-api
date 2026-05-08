@@ -169,6 +169,13 @@ public class AdvertService : IAdvertService
                 dto.FeatureIds.All(fid =>
                     a.AdvertFeatures.Any(af => af.FeatureId == fid)));
         }
+        
+        if (dto.CategoryId.HasValue)
+            query = query.Where(a => a.VehicleCategoryId == dto.CategoryId);
+
+        if (!string.IsNullOrWhiteSpace(dto.TextSearch))
+            query = query.Where(a =>
+                a.Title.Contains(dto.TextSearch) || a.Description.Contains(dto.TextSearch));
 
         query = dto.SortBy switch
         {

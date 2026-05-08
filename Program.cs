@@ -30,6 +30,8 @@ internal class Program
         builder.Services.AddScoped<IAdvertService,AdvertService>();
         builder.Services.AddScoped<IAdvertImageService, AdvertImageService>();
         builder.Services.AddScoped<ITaxonomyService, TaxonomyService>();
+        builder.Services.AddScoped<ICategoryService, CategoryService>();
+        builder.Services.AddScoped<IFavoriteService, FavoriteService>();
         
         builder.Services.AddAutoMapper(typeof(AdvertMappingProfile));
 
