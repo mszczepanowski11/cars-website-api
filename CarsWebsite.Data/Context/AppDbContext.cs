@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using cars_website_api.CarsWebsite.Domain.Entities;
 using CarsWebsite;
 using Microsoft.EntityFrameworkCore;
@@ -77,18 +77,6 @@ namespace CarsWebsite
                 .HasForeignKey(f => f.AdvertId).OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<VehicleCategory>().ToTable("VehicleCategories").HasKey(c => c.Id);
-            modelBuilder.Entity<VehicleCategory>().HasData(
-                new VehicleCategory { Id = 1, Slug = "auta-osobowe", Name = "Auta osobowe", Description = "Sedany, coupe, SUV-y i więcej", IconName = "mdi-car", SortOrder = 1 },
-                new VehicleCategory { Id = 2, Slug = "dostawcze", Name = "Dostawcze", Description = "Busy, vany, samochody dostawcze", IconName = "mdi-truck-delivery", SortOrder = 2 },
-                new VehicleCategory { Id = 3, Slug = "ciezarowe", Name = "Ciężarowe", Description = "Ciężarówki, TIR-y, naczepy i więcej", IconName = "mdi-truck", SortOrder = 3 },
-                new VehicleCategory { Id = 4, Slug = "maszyny", Name = "Maszyny", Description = "Maszyny budowlane, rolnicze i przemysłowe", IconName = "mdi-excavator", SortOrder = 4 },
-                new VehicleCategory { Id = 5, Slug = "czesci", Name = "Części", Description = "Części samochodowe, akcesoria i tuning", IconName = "mdi-cog", SortOrder = 5 },
-                new VehicleCategory { Id = 6, Slug = "motocykle", Name = "Motocykle", Description = "Motocykle, skutery, quady i więcej", IconName = "mdi-motorbike", SortOrder = 6 },
-                new VehicleCategory { Id = 7, Slug = "przyczepy", Name = "Przyczepy", Description = "Przyczepy, lawety, naczepy i więcej", IconName = "mdi-rv-truck", SortOrder = 7 },
-                new VehicleCategory { Id = 8, Slug = "rolnicze", Name = "Rolnicze", Description = "Maszyny i pojazdy rolnicze", IconName = "mdi-tractor", SortOrder = 8 },
-                new VehicleCategory { Id = 9, Slug = "budowlane", Name = "Budowlane", Description = "Sprzęt budowlany i narzędzia", IconName = "mdi-hard-hat", SortOrder = 9 },
-                new VehicleCategory { Id = 10, Slug = "inne", Name = "Inne", Description = "Pozostałe pojazdy i przedmioty", IconName = "mdi-dots-horizontal-circle", SortOrder = 10 }
-            );
         }
     }
 }

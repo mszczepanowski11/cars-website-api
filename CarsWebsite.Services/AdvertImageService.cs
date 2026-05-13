@@ -13,16 +13,33 @@ public class AdvertImageService : IAdvertImageService
         _env = env;
     }
 
+    private static readonly string[] AllowedMimeTypes = ["image/jpeg", "image/png", "image/webp"];
+    private static readonly string[] AllowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+    private const long MaxFileSizeBytes = 10 * 1024 * 1024; // 10 MB
+
     public async Task<string> UploadAdvertImageAsync(int advertId, IFormFile file)
     {
+        if (!AllowedMimeTypes.Contains(file.ContentType.ToLowerInvariant()))
+            throw new BadHttpRequestException("Invalid file type. Only JPEG, PNG, and WebP images are allowed.");
+
+        if (file.Length > MaxFileSizeBytes)
+            throw new BadHttpRequestException("File size exceeds the 10 MB limit.");
+
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!AllowedExtensions.Contains(extension))
+            throw new BadHttpRequestException("Invalid file extension.");
+
         var advert = await _context.CarAdverts.FindAsync(advertId);
         if (advert == null)
             throw new KeyNotFoundException("Advert not found");
 
+        if (string.IsNullOrEmpty(_env.WebRootPath))
+            throw new InvalidOperationException("WebRootPath is not configured.");
+
         var folderPath = Path.Combine(_env.WebRootPath, "uploads", "adverts", advertId.ToString());
         Directory.CreateDirectory(folderPath);
 
-        var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+        var fileName = $"{Guid.NewGuid()}{extension}";
         var filePath = Path.Combine(folderPath, fileName);
 
         using (var stream = new FileStream(filePath, FileMode.Create))
@@ -66,15 +83,23 @@ public class AdvertImageService : IAdvertImageService
         await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteImageAsync(int advertId, int imageId)
+    public async Task DeleteImageAsync(int advertId, int imageId, int userId)
     {
         var image = await _context.AdvertImages
+            .Include(i => i.Advert)
             .FirstOrDefaultAsync(i => i.Id == imageId && i.AdvertId == advertId);
 
         if (image == null)
             throw new KeyNotFoundException("Image not found");
 
-        var filePath = Path.Combine(_env.WebRootPath, image.Url.TrimStart('/'));
+        if (image.Advert.UserId != userId)
+            throw new UnauthorizedAccessException("You do not own this advert.");
+
+        var uploadsRoot = Path.GetFullPath(Path.Combine(_env.WebRootPath, "uploads"));
+        var filePath = Path.GetFullPath(Path.Combine(_env.WebRootPath, image.Url.TrimStart('/', '\\')));
+
+        if (!filePath.StartsWith(uploadsRoot + Path.DirectorySeparatorChar))
+            throw new InvalidOperationException("Invalid image path.");
 
         if (File.Exists(filePath))
             File.Delete(filePath);

@@ -19,8 +19,10 @@ public class AuthController : Controller
     public async Task<IActionResult> Register([FromBody] RegisterDto dto)
     {
         var token = await _authService.Register(dto);
-        
-        return Ok();
+        if (token == null)
+            return Conflict("An account with this email already exists.");
+
+        return Ok(new { token });
     }
 
     [HttpPost("login")]

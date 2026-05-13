@@ -48,17 +48,27 @@ public class AdvertController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id }, new { id });
     }
 
+    [Authorize]
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateCarAdvertDto dto)
     {
-        await _advertService.UpdateCarAdvertAsync(id, dto);
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+
+        await _advertService.UpdateCarAdvertAsync(id, dto, userId);
         return NoContent();
     }
 
+    [Authorize]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        await _advertService.DeleteCarAdvertAsync(id);
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+
+        await _advertService.DeleteCarAdvertAsync(id, userId);
         return NoContent();
     }
 
@@ -76,6 +86,7 @@ public class AdvertController : ControllerBase
         return Ok(result);
     }
 
+    [Authorize]
     [HttpPost("{advertId}/images")]
     public async Task<IActionResult> UploadImage(int advertId, IFormFile file)
     {
@@ -85,6 +96,7 @@ public class AdvertController : ControllerBase
         return Ok(new { url });
     }
 
+    [Authorize]
     [HttpPut("{advertId}/images/{imageId}/set-main")]
     public async Task<IActionResult> SetMainImage(int advertId, int imageId)
     {
@@ -92,10 +104,15 @@ public class AdvertController : ControllerBase
         return NoContent();
     }
 
+    [Authorize]
     [HttpDelete("{advertId}/images/{imageId}")]
     public async Task<IActionResult> DeleteImage(int advertId, int imageId)
     {
-        await _imageService.DeleteImageAsync(advertId, imageId);
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+
+        await _imageService.DeleteImageAsync(advertId, imageId, userId);
         return NoContent();
     }
 }

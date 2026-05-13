@@ -44,7 +44,7 @@ public class AdvertService : IAdvertService
     
     
     
-    public async Task UpdateCarAdvertAsync(int id, UpdateCarAdvertDto dto)
+    public async Task UpdateCarAdvertAsync(int id, UpdateCarAdvertDto dto, int userId)
     {
         var advert = await _context.CarAdverts
             .Include(a => a.AdvertFeatures)
@@ -52,6 +52,9 @@ public class AdvertService : IAdvertService
 
         if (advert == null)
             throw new KeyNotFoundException("Advert not found");
+
+        if (advert.UserId != userId)    
+            throw new UnauthorizedAccessException("You do not own this advert");
 
         _mapper.Map(dto, advert);
 
@@ -75,11 +78,14 @@ public class AdvertService : IAdvertService
 
 
    
-    public async Task DeleteCarAdvertAsync(int id)
+    public async Task DeleteCarAdvertAsync(int id, int userId)
     {
         var advert = await _context.CarAdverts.FindAsync(id);
         if (advert == null)
             return;
+
+        if (advert.UserId != userId)
+            throw new UnauthorizedAccessException("You do not own this advert");
 
         _context.CarAdverts.Remove(advert);
         await _context.SaveChangesAsync();
