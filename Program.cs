@@ -15,6 +15,10 @@ internal class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        var webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+        Directory.CreateDirectory(webRootPath);
+        builder.WebHost.UseWebRoot(webRootPath);
+
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
         if (string.IsNullOrEmpty(connectionString))
             throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
@@ -112,10 +116,11 @@ internal class Program
             app.UseSwaggerUI();
         }
         
+        app.UseStaticFiles(); 
         app.UseHttpsRedirection();
-        app.UseAuthentication();   
-        app.UseAuthorization();
         app.UseCors("AllowNuxt");
+        app.UseAuthentication();
+        app.UseAuthorization();
         app.MapControllers();      
         app.Run();
     }

@@ -17,7 +17,7 @@ public class AdvertImageService : IAdvertImageService
     private static readonly string[] AllowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
     private const long MaxFileSizeBytes = 10 * 1024 * 1024; // 10 MB
 
-    public async Task<string> UploadAdvertImageAsync(int advertId, IFormFile file)
+    public async Task<string> UploadAdvertImageAsync(int advertId, IFormFile file, int userId)
     {
         if (!AllowedMimeTypes.Contains(file.ContentType.ToLowerInvariant()))
             throw new BadHttpRequestException("Invalid file type. Only JPEG, PNG, and WebP images are allowed.");
@@ -29,14 +29,23 @@ public class AdvertImageService : IAdvertImageService
         if (!AllowedExtensions.Contains(extension))
             throw new BadHttpRequestException("Invalid file extension.");
 
-        var advert = await _context.CarAdverts.FindAsync(advertId);
+        var advert = await _context.CarAdverts
+            .Include(a => a.Images)
+            .FirstOrDefaultAsync(a => a.Id == advertId);
         if (advert == null)
             throw new KeyNotFoundException("Advert not found");
 
-        if (string.IsNullOrEmpty(_env.WebRootPath))
-            throw new InvalidOperationException("WebRootPath is not configured.");
+        if (advert.UserId != userId)
+            throw new UnauthorizedAccessException("You do not own this advert.");
 
-        var folderPath = Path.Combine(_env.WebRootPath, "uploads", "adverts", advertId.ToString());
+        if (advert.Images.Count >= 20)
+            throw new BadHttpRequestException("Maximum of 20 images per advert.");
+
+        var basePath = string.IsNullOrEmpty(_env.WebRootPath)
+            ? Path.Combine(_env.ContentRootPath, "wwwroot")
+            : _env.WebRootPath;
+
+        var folderPath = Path.Combine(basePath, "uploads", "adverts", advertId.ToString());
         Directory.CreateDirectory(folderPath);
 
         var fileName = $"{Guid.NewGuid()}{extension}";
@@ -48,21 +57,20 @@ public class AdvertImageService : IAdvertImageService
         }
 
         var relativeUrl = $"/uploads/adverts/{advertId}/{fileName}";
+        var isMain = advert.Images.Count == 0;
 
-        var image = new AdvertImage
+        _context.AdvertImages.Add(new AdvertImage
         {
             AdvertId = advertId,
             Url = relativeUrl,
-            IsMain = false
-        };
-
-        _context.AdvertImages.Add(image);
+            IsMain = isMain
+        });
         await _context.SaveChangesAsync();
 
         return relativeUrl;
     }
 
-    public async Task SetMainImageAsync(int advertId, int imageId)
+    public async Task SetMainImageAsync(int advertId, int imageId, int userId)
     {
         var advert = await _context.CarAdverts
             .Include(a => a.Images)
@@ -72,8 +80,12 @@ public class AdvertImageService : IAdvertImageService
             throw new KeyNotFoundException("Advert not found");
 
         var image = advert.Images.FirstOrDefault(i => i.Id == imageId);
+        
         if (image == null)
             throw new KeyNotFoundException("Image not found");
+        
+        if (advert.UserId != userId)
+            throw new UnauthorizedAccessException("You do not own this advert.");
 
         foreach (var img in advert.Images)
             img.IsMain = false;
@@ -95,8 +107,12 @@ public class AdvertImageService : IAdvertImageService
         if (image.Advert.UserId != userId)
             throw new UnauthorizedAccessException("You do not own this advert.");
 
-        var uploadsRoot = Path.GetFullPath(Path.Combine(_env.WebRootPath, "uploads"));
-        var filePath = Path.GetFullPath(Path.Combine(_env.WebRootPath, image.Url.TrimStart('/', '\\')));
+        var basePath = string.IsNullOrEmpty(_env.WebRootPath)
+            ? Path.Combine(_env.ContentRootPath, "wwwroot")
+            : _env.WebRootPath;
+
+        var uploadsRoot = Path.GetFullPath(Path.Combine(basePath, "uploads"));
+        var filePath = Path.GetFullPath(Path.Combine(basePath, image.Url.TrimStart('/', '\\')));
 
         if (!filePath.StartsWith(uploadsRoot + Path.DirectorySeparatorChar))
             throw new InvalidOperationException("Invalid image path.");

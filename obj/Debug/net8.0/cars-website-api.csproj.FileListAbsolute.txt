@@ -163,3 +163,4 @@ C:\Users\mszcz\Projects\CarsWebsite\cars-website-api\obj\Debug\net8.0\refint\car
 C:\Users\mszcz\Projects\CarsWebsite\cars-website-api\obj\Debug\net8.0\cars-website-api.pdb
 C:\Users\mszcz\Projects\CarsWebsite\cars-website-api\obj\Debug\net8.0\cars-website-api.genruntimeconfig.cache
 C:\Users\mszcz\Projects\CarsWebsite\cars-website-api\obj\Debug\net8.0\ref\cars-website-api.dll
+C:\Users\mszcz\Projects\CarsWebsite\cars-website-api\bin\Debug\net8.0\cars-website-api.staticwebassets.runtime.json

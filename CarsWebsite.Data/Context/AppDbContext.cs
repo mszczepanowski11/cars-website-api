@@ -39,6 +39,7 @@ namespace CarsWebsite
             modelBuilder.Entity<Generation>().HasMany(g => g.EngineVersions).WithOne(e => e.Generation).HasForeignKey(e => e.GenerationId);
 
             modelBuilder.Entity<User>().HasKey(u => u.Id);
+            modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
             modelBuilder.Entity<Advert>().ToTable("Adverts").HasKey(a => a.Id);
             modelBuilder.Entity<CarAdvert>().ToTable("CarAdverts");
 

@@ -2,7 +2,7 @@
 
 public interface IAdvertImageService
 {
-    Task<string> UploadAdvertImageAsync(int advertId, IFormFile file);
-    Task SetMainImageAsync(int advertId, int imageId);
+    Task<string> UploadAdvertImageAsync(int advertId, IFormFile file, int userId);
+    Task SetMainImageAsync(int advertId, int imageId, int userId);
     Task DeleteImageAsync(int advertId, int imageId, int userId);
 }

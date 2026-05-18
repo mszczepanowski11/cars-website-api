@@ -92,7 +92,12 @@ public class AdvertController : ControllerBase
     {
         if (file == null || file.Length == 0)
             return BadRequest("File is empty");
-        var url = await _imageService.UploadAdvertImageAsync(advertId, file);
+
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+
+        var url = await _imageService.UploadAdvertImageAsync(advertId, file, userId);
         return Ok(new { url });
     }
 
@@ -100,7 +105,11 @@ public class AdvertController : ControllerBase
     [HttpPut("{advertId}/images/{imageId}/set-main")]
     public async Task<IActionResult> SetMainImage(int advertId, int imageId)
     {
-        await _imageService.SetMainImageAsync(advertId, imageId);
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+
+        await _imageService.SetMainImageAsync(advertId, imageId, userId);
         return NoContent();
     }
 

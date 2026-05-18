@@ -26,7 +26,7 @@ public class AuthService
 
     public async Task<string?> Register(RegisterDto dto)
     {
-        if (_context.Users.Any(u => u.Email == dto.Email))
+        if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
             return null;
 
         var user = new User
