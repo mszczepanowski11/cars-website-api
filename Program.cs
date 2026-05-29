@@ -50,6 +50,8 @@ internal class Program
         builder.Services.AddScoped<ITaxonomyService, TaxonomyService>();
         builder.Services.AddScoped<ICategoryService, CategoryService>();
         builder.Services.AddScoped<IFavoriteService, FavoriteService>();
+        builder.Services.AddScoped<IMessageService, MessageService>();
+
         
         builder.Services.AddAutoMapper(typeof(AdvertMappingProfile));
 

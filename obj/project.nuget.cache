@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "uInBI+2q62Kkq3XhDyIls7xbLlAaSJpl/DZbNonybFPO5R1tuFoDxNHpawy1TJAM+73uKHo/jwYWvPIEvFLhWw==",
+  "dgSpecHash": "dBU8WepBqgI=",
   "success": true,
   "projectFilePath": "C:\\Users\\mszcz\\Projects\\CarsWebsite\\cars-website-api\\cars-website-api.csproj",
   "expectedPackageFiles": [
@@ -84,8 +84,10 @@
     {
       "code": "NU1903",
       "level": "Warning",
-      "warningLevel": 1,
       "message": "Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x",
+      "projectPath": "C:\\Users\\mszcz\\Projects\\CarsWebsite\\cars-website-api\\cars-website-api.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\mszcz\\Projects\\CarsWebsite\\cars-website-api\\cars-website-api.csproj",
       "libraryId": "AutoMapper",
       "targetGraphs": [
         "net8.0"

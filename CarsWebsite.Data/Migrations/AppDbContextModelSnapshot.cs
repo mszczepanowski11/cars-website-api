@@ -112,6 +112,41 @@ namespace cars_website_api.Migrations
                     b.ToTable("AdvertImages", (string)null);
                 });
 
+            modelBuilder.Entity("CarsWebsite.Conversation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AdvertId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BuyerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("LastMessageAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("SellerId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdvertId");
+
+                    b.HasIndex("SellerId");
+
+                    b.HasIndex("BuyerId", "AdvertId")
+                        .IsUnique();
+
+                    b.ToTable("Conversations", (string)null);
+                });
+
             modelBuilder.Entity("CarsWebsite.FavoriteAdvert", b =>
                 {
                     b.Property<int>("UserId")
@@ -128,6 +163,39 @@ namespace cars_website_api.Migrations
                     b.HasIndex("AdvertId");
 
                     b.ToTable("FavoriteAdverts", (string)null);
+                });
+
+            modelBuilder.Entity("CarsWebsite.Message", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("ConversationId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("SenderId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConversationId");
+
+                    b.HasIndex("SenderId");
+
+                    b.ToTable("Messages", (string)null);
                 });
 
             modelBuilder.Entity("CarsWebsite.User", b =>
@@ -509,6 +577,33 @@ namespace cars_website_api.Migrations
                     b.Navigation("Advert");
                 });
 
+            modelBuilder.Entity("CarsWebsite.Conversation", b =>
+                {
+                    b.HasOne("CarsWebsite.Advert", "Advert")
+                        .WithMany()
+                        .HasForeignKey("AdvertId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CarsWebsite.User", "Buyer")
+                        .WithMany()
+                        .HasForeignKey("BuyerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CarsWebsite.User", "Seller")
+                        .WithMany()
+                        .HasForeignKey("SellerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Advert");
+
+                    b.Navigation("Buyer");
+
+                    b.Navigation("Seller");
+                });
+
             modelBuilder.Entity("CarsWebsite.FavoriteAdvert", b =>
                 {
                     b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.CarAdvert", "Advert")
@@ -526,6 +621,25 @@ namespace cars_website_api.Migrations
                     b.Navigation("Advert");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CarsWebsite.Message", b =>
+                {
+                    b.HasOne("CarsWebsite.Conversation", "Conversation")
+                        .WithMany("Messages")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CarsWebsite.User", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
+
+                    b.Navigation("Sender");
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.EngineVersion", b =>
@@ -650,6 +764,11 @@ namespace cars_website_api.Migrations
             modelBuilder.Entity("CarsWebsite.Advert", b =>
                 {
                     b.Navigation("Images");
+                });
+
+            modelBuilder.Entity("CarsWebsite.Conversation", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("CarsWebsite.User", b =>

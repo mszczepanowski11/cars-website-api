@@ -23,6 +23,9 @@ namespace CarsWebsite
         public DbSet<BodyType> BodyTypes { get; set; }
         public DbSet<Feature> Features { get; set; }
         public DbSet<FeatureCategory> FeatureCategories { get; set; }
+        
+        public DbSet<Conversation> Conversations { get; set; }
+        public DbSet<Message> Messages { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -78,6 +81,27 @@ namespace CarsWebsite
                 .HasForeignKey(f => f.AdvertId).OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<VehicleCategory>().ToTable("VehicleCategories").HasKey(c => c.Id);
+            
+            modelBuilder.Entity<Conversation>().ToTable("Conversations").HasKey(c => c.Id);
+            modelBuilder.Entity<Conversation>()
+                .HasOne(c => c.Buyer).WithMany()
+                .HasForeignKey(c => c.BuyerId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Conversation>()
+                .HasOne(c => c.Seller).WithMany()
+                .HasForeignKey(c => c.SellerId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Conversation>()
+                .HasOne(c => c.Advert).WithMany()
+                .HasForeignKey(c => c.AdvertId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Conversation>()
+                .HasIndex(c => new { c.BuyerId, c.AdvertId }).IsUnique();
+
+            modelBuilder.Entity<Message>().ToTable("Messages").HasKey(m => m.Id);
+            modelBuilder.Entity<Message>()
+                .HasOne(m => m.Conversation).WithMany(c => c.Messages)
+                .HasForeignKey(m => m.ConversationId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Message>()
+                .HasOne(m => m.Sender).WithMany()
+                .HasForeignKey(m => m.SenderId).OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
