@@ -36,9 +36,6 @@ public class AuthService
             Email = dto.Email,
             PhoneNumber = dto.PhoneNumber,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-            AccountType = dto.AccountType,
-            CompanyName = dto.AccountType == AccountType.Business ? dto.CompanyName : null,
-            Nip = dto.AccountType == AccountType.Business ? dto.Nip : null,
         };
         
         _context.Users.Add(user);
@@ -54,7 +51,7 @@ public class AuthService
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
             return null;
-        
+
         if (user.IsBlocked)
             return null;
 

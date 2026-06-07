@@ -26,9 +26,11 @@ namespace CarsWebsite
         
         public DbSet<Conversation> Conversations { get; set; }
         public DbSet<Message> Messages { get; set; }
-        
         public DbSet<Report> Reports { get; set; }
         public DbSet<AdminActionLog> AdminActionLogs { get; set; }
+        public DbSet<Event> Events { get; set; }
+        public DbSet<EventImage> EventImages { get; set; }
+        public DbSet<EventReport> EventReports { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -105,8 +107,7 @@ namespace CarsWebsite
             modelBuilder.Entity<Message>()
                 .HasOne(m => m.Sender).WithMany()
                 .HasForeignKey(m => m.SenderId).OnDelete(DeleteBehavior.Restrict);
-            
-            
+
             modelBuilder.Entity<Report>().ToTable("Reports").HasKey(r => r.Id);
             modelBuilder.Entity<Report>()
                 .HasOne(r => r.ReportedBy).WithMany()
@@ -124,6 +125,28 @@ namespace CarsWebsite
             modelBuilder.Entity<AdminActionLog>()
                 .HasOne(l => l.Admin).WithMany()
                 .HasForeignKey(l => l.AdminUserId).OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Event>().ToTable("Events").HasKey(e => e.Id);
+            modelBuilder.Entity<Event>()
+                .HasOne(e => e.CreatedBy).WithMany()
+                .HasForeignKey(e => e.CreatedByUserId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Event>()
+                .Property(e => e.Status).HasConversion<string>();
+
+            modelBuilder.Entity<EventImage>().ToTable("EventImages").HasKey(i => i.Id);
+            modelBuilder.Entity<EventImage>()
+                .HasOne(i => i.Event).WithMany(e => e.Images)
+                .HasForeignKey(i => i.EventId).OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<EventReport>().ToTable("EventReports").HasKey(r => r.Id);
+            modelBuilder.Entity<EventReport>()
+                .HasOne(r => r.Event).WithMany(e => e.Reports)
+                .HasForeignKey(r => r.EventId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<EventReport>()
+                .HasOne(r => r.ReportedBy).WithMany()
+                .HasForeignKey(r => r.ReportedByUserId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<EventReport>()
+                .Property(r => r.Reason).HasConversion<string>();
         }
     }
 }

@@ -35,7 +35,6 @@ internal class Program
 
         builder.Services.AddControllers()
             .AddJsonOptions(options => {
-                
                 options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                 options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
@@ -45,7 +44,7 @@ internal class Program
         
         builder.Services.AddScoped<UserService>();     
         builder.Services.AddScoped<AuthService>();
-        builder.Services.AddScoped<IAdvertService,AdvertService>();
+        builder.Services.AddScoped<IAdvertService, AdvertService>();
         builder.Services.AddScoped<IAdvertImageService, AdvertImageService>();
         builder.Services.AddScoped<ITaxonomyService, TaxonomyService>();
         builder.Services.AddScoped<ICategoryService, CategoryService>();
@@ -53,11 +52,10 @@ internal class Program
         builder.Services.AddScoped<IMessageService, MessageService>();
         builder.Services.AddScoped<IReportService, ReportService>();
         builder.Services.AddScoped<IAdminService, AdminService>();
+        builder.Services.AddScoped<IEventService, EventService>();
 
-        
         builder.Services.AddAutoMapper(typeof(AdvertMappingProfile));
 
-        
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
@@ -72,12 +70,11 @@ internal class Program
                     IssuerSigningKey = new SymmetricSecurityKey(
                         Encoding.UTF8.GetBytes(jwtKey))
                 };
-                
             });
         
         builder.Services.AddCors(options => {
             options.AddPolicy("AllowNuxt", policy => {
-                policy.WithOrigins("http://localhost:3000", "http://localhost:3002", "http://localhost:3001")
+                policy.WithOrigins("http://localhost:3000")
                     .AllowAnyHeader()
                     .AllowAnyMethod();
             });
@@ -106,12 +103,11 @@ internal class Program
                             Id = "Bearer"
                         }
                     },
-                    Array.Empty<string>()
+                    System.Array.Empty<string>()
                 }
             });
         });
 
-        
         var app = builder.Build();
 
         if (app.Environment.IsDevelopment())
@@ -129,4 +125,3 @@ internal class Program
         app.Run();
     }
 }
-
