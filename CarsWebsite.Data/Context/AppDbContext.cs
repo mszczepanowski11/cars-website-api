@@ -26,6 +26,9 @@ namespace CarsWebsite
         
         public DbSet<Conversation> Conversations { get; set; }
         public DbSet<Message> Messages { get; set; }
+        
+        public DbSet<Report> Reports { get; set; }
+        public DbSet<AdminActionLog> AdminActionLogs { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -102,6 +105,25 @@ namespace CarsWebsite
             modelBuilder.Entity<Message>()
                 .HasOne(m => m.Sender).WithMany()
                 .HasForeignKey(m => m.SenderId).OnDelete(DeleteBehavior.Restrict);
+            
+            
+            modelBuilder.Entity<Report>().ToTable("Reports").HasKey(r => r.Id);
+            modelBuilder.Entity<Report>()
+                .HasOne(r => r.ReportedBy).WithMany()
+                .HasForeignKey(r => r.ReportedByUserId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Report>()
+                .HasOne(r => r.TargetAdvert).WithMany()
+                .HasForeignKey(r => r.TargetAdvertId).OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+            modelBuilder.Entity<Report>()
+                .HasOne(r => r.TargetUser).WithMany()
+                .HasForeignKey(r => r.TargetUserId).OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
+            modelBuilder.Entity<AdminActionLog>().ToTable("AdminActionLogs").HasKey(l => l.Id);
+            modelBuilder.Entity<AdminActionLog>()
+                .HasOne(l => l.Admin).WithMany()
+                .HasForeignKey(l => l.AdminUserId).OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

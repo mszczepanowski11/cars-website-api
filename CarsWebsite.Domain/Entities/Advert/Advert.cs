@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.StaticFiles.Infrastructure;
-
-namespace CarsWebsite;
+﻿namespace CarsWebsite;
 
 public class Advert
 {
@@ -21,6 +19,8 @@ public class Advert
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 
+    public bool IsHidden { get; set; } = false;
+    public bool IsActive { get; set; } = true;
+
     public ICollection<AdvertImage> Images { get; set; }
-    
 }

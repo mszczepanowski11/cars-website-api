@@ -36,7 +36,7 @@ public class UserController : ControllerBase
       if (user == null)
          return NotFound("User not found or token is invalid.");
 
-      return Ok(new { user.Id, user.Name, user.Surname, user.Email, user.PhoneNumber });
+      return Ok(new { user.Id, user.Name, user.Surname, user.Email, user.PhoneNumber, user.IsAdmin, user.IsBlocked });
 
    }
    

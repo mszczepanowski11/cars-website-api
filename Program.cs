@@ -51,6 +51,8 @@ internal class Program
         builder.Services.AddScoped<ICategoryService, CategoryService>();
         builder.Services.AddScoped<IFavoriteService, FavoriteService>();
         builder.Services.AddScoped<IMessageService, MessageService>();
+        builder.Services.AddScoped<IReportService, ReportService>();
+        builder.Services.AddScoped<IAdminService, AdminService>();
 
         
         builder.Services.AddAutoMapper(typeof(AdvertMappingProfile));
@@ -75,7 +77,7 @@ internal class Program
         
         builder.Services.AddCors(options => {
             options.AddPolicy("AllowNuxt", policy => {
-                policy.WithOrigins("http://localhost:3000")
+                policy.WithOrigins("http://localhost:3000", "http://localhost:3002", "http://localhost:3001")
                     .AllowAnyHeader()
                     .AllowAnyMethod();
             });
