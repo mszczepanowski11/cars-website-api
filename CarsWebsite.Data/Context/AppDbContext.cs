@@ -31,6 +31,8 @@ namespace CarsWebsite
         public DbSet<Event> Events { get; set; }
         public DbSet<EventImage> EventImages { get; set; }
         public DbSet<EventReport> EventReports { get; set; }
+        public DbSet<Payment> Payments { get; set; }
+        public DbSet<Invoice> Invoices { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -147,6 +149,40 @@ namespace CarsWebsite
                 .HasForeignKey(r => r.ReportedByUserId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<EventReport>()
                 .Property(r => r.Reason).HasConversion<string>();
+            // Payment & Invoice
+            modelBuilder.Entity<Payment>().ToTable("Payments").HasKey(p => p.Id);
+            modelBuilder.Entity<Payment>()
+                .HasOne(p => p.User).WithMany()
+                .HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Payment>()
+                .HasOne(p => p.Advert).WithMany()
+                .HasForeignKey(p => p.AdvertId).OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+            modelBuilder.Entity<Payment>()
+                .Property(p => p.ServiceType).HasConversion<string>();
+            modelBuilder.Entity<Payment>()
+                .Property(p => p.Status).HasConversion<string>();
+            modelBuilder.Entity<Payment>()
+                .Property(p => p.Amount).HasPrecision(10, 2);
+
+            modelBuilder.Entity<Invoice>().ToTable("Invoices").HasKey(i => i.Id);
+            modelBuilder.Entity<Invoice>()
+                .HasOne(i => i.User).WithMany()
+                .HasForeignKey(i => i.UserId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Invoice>()
+                .HasMany(i => i.Payments).WithOne(p => p.Invoice)
+                .HasForeignKey(p => p.InvoiceId).OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+            modelBuilder.Entity<Invoice>()
+                .Property(i => i.Status).HasConversion<string>();
+            modelBuilder.Entity<Invoice>()
+                .Property(i => i.TotalAmount).HasPrecision(10, 2);
+            modelBuilder.Entity<Invoice>()
+                .Property(i => i.NetAmount).HasPrecision(10, 2);
+            modelBuilder.Entity<Invoice>()
+                .Property(i => i.VatAmount).HasPrecision(10, 2);
+            modelBuilder.Entity<Invoice>()
+                .Property(i => i.VatRate).HasPrecision(5, 4);
         }
     }
 }

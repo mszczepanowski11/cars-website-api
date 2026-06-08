@@ -53,6 +53,10 @@ internal class Program
         builder.Services.AddScoped<IReportService, ReportService>();
         builder.Services.AddScoped<IAdminService, AdminService>();
         builder.Services.AddScoped<IEventService, EventService>();
+        builder.Services.AddHttpClient();
+        builder.Services.AddScoped<IPaymentService, PaymentService>();
+        builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+        builder.Services.AddHostedService<MonthlyInvoiceJob>();
 
         builder.Services.AddAutoMapper(typeof(AdvertMappingProfile));
 
