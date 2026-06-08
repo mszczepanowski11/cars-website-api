@@ -36,6 +36,10 @@ namespace CarsWebsite
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Invoice> Invoices { get; set; }
 
+        // Notifications
+        public DbSet<AppNotification> AppNotifications { get; set; }
+        public DbSet<UserNotificationSetting> UserNotificationSettings { get; set; }
+
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -186,6 +190,21 @@ namespace CarsWebsite
                 .Property(i => i.VatAmount).HasPrecision(10, 2);
             modelBuilder.Entity<Invoice>()
                 .Property(i => i.VatRate).HasPrecision(5, 4);
+
+            // ── Notifications ─────────────────────────────────────────────────────
+            modelBuilder.Entity<AppNotification>().ToTable("AppNotifications").HasKey(n => n.Id);
+            modelBuilder.Entity<AppNotification>()
+                .HasOne(n => n.User).WithMany()
+                .HasForeignKey(n => n.UserId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<AppNotification>()
+                .Property(n => n.Type).HasConversion<string>();
+
+            modelBuilder.Entity<UserNotificationSetting>().ToTable("UserNotificationSettings").HasKey(s => s.Id);
+            modelBuilder.Entity<UserNotificationSetting>()
+                .HasOne(s => s.User).WithMany()
+                .HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<UserNotificationSetting>()
+                .HasIndex(s => new { s.UserId, s.Category }).IsUnique();
         }
     }
 }
