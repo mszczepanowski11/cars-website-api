@@ -1,5 +1,9 @@
-﻿using cars_website_api.CarsWebsite.Interfaces;
+using cars_website_api.CarsWebsite.Interfaces;
 
+/// <summary>
+/// BackgroundService uruchamiający generowanie faktur zbiorczych
+/// 1-go dnia każdego miesiąca o 02:00 UTC za miesiąc poprzedni.
+/// </summary>
 public class MonthlyInvoiceJob : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;

@@ -1,4 +1,4 @@
-﻿namespace CarsWebsite;
+namespace CarsWebsite;
 
 public enum ServiceType
 {
