@@ -1,0 +1,104 @@
+using cars_website_api.CarsWebsite.DTOs.Payment;
+using cars_website_api.CarsWebsite.Interfaces;
+using CarsWebsite;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
+
+[ApiController]
+[Route("api/[controller]")]
+public class PaymentController : ControllerBase
+{
+    private readonly IPaymentService _paymentService;
+    private readonly AppDbContext _context;
+
+    public PaymentController(IPaymentService paymentService, AppDbContext context)
+    {
+        _paymentService = paymentService;
+        _context = context;
+    }
+
+    private async Task<bool> IsAdminAsync()
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out var uid)) return false;
+        var user = await _context.Users.FindAsync(uid);
+        return user?.IsAdmin == true;
+    }
+
+    /// <summary>Pobierz cenę dla wybranej usługi i czasu trwania.</summary>
+    [HttpGet("price")]
+    public async Task<IActionResult> GetPrice(
+        [FromQuery] ServiceType serviceType,
+        [FromQuery] int durationDays)
+    {
+        try { return Ok(await _paymentService.GetServicePriceAsync(serviceType, durationDays)); }
+        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    /// <summary>Inicjuje transakcję w bramce imoje i zwraca URL płatności.</summary>
+    [Authorize]
+    [HttpPost("initiate")]
+    public async Task<IActionResult> Initiate([FromBody] InitiatePaymentDto dto)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out var userId)) return Unauthorized();
+
+        try { return Ok(await _paymentService.InitiatePaymentAsync(dto, userId)); }
+        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+    }
+
+    /// <summary>Lista płatności zalogowanego użytkownika.</summary>
+    [Authorize]
+    [HttpGet("my")]
+    public async Task<IActionResult> GetMine(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out var userId)) return Unauthorized();
+        return Ok(await _paymentService.GetUserPaymentsAsync(userId, page, pageSize));
+    }
+
+    /// <summary>
+    /// Webhook imoje – wywoływany automatycznie po zaksięgowaniu lub odrzuceniu płatności.
+    /// </summary>
+    [HttpPost("webhook")]
+    public async Task<IActionResult> Webhook()
+    {
+        using var reader = new StreamReader(Request.Body, Encoding.UTF8);
+        var rawBody = await reader.ReadToEndAsync();
+        var signature = Request.Headers["X-Imoje-Signature"].FirstOrDefault() ?? string.Empty;
+
+        ImojeWebhookDto? dto;
+        try
+        {
+            dto = JsonSerializer.Deserialize<ImojeWebhookDto>(rawBody,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        catch { return BadRequest("Nieprawidłowy payload."); }
+
+        if (dto == null) return BadRequest("Pusty payload.");
+
+        try
+        {
+            await _paymentService.HandleWebhookAsync(dto, rawBody, signature);
+            return Ok();
+        }
+        catch (UnauthorizedAccessException) { return Unauthorized(); }
+    }
+
+    /// <summary>Admin: wszystkie płatności w systemie.</summary>
+    [Authorize]
+    [HttpGet("admin/all")]
+    public async Task<IActionResult> AdminGetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50)
+    {
+        if (!await IsAdminAsync()) return Forbid();
+        return Ok(await _paymentService.GetAllPaymentsAsync(page, pageSize));
+    }
+}

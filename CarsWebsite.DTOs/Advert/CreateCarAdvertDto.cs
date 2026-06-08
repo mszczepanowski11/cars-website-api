@@ -20,4 +20,6 @@ public class CreateCarAdvertDto
     public string? Vin { get; set; }
 
     public List<int>? FeatureIds { get; set; }
+    public string? City { get; set; }
+    public string? Region { get; set; }
 }
