@@ -1,5 +1,6 @@
 ﻿{
+  "$schema": "https://schema.railpack.com",
   "build": {
-    "cmd": "dotnet publish cars-website-api.csproj -c Release -o out"
+    "buildCommand": "dotnet publish cars-website-api.csproj -c Release -o out"
   }
 }
