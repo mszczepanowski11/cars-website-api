@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -26,17 +26,20 @@ public class PaymentService : IPaymentService
     private readonly AppDbContext _context;
     private readonly IConfiguration _config;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly INotificationService _notifications;
     private readonly ILogger<PaymentService> _logger;
 
     public PaymentService(
         AppDbContext context,
         IConfiguration config,
         IHttpClientFactory httpClientFactory,
+        INotificationService notifications,
         ILogger<PaymentService> logger)
     {
         _context = context;
         _config = config;
         _httpClientFactory = httpClientFactory;
+        _notifications = notifications;
         _logger = logger;
     }
 
@@ -119,12 +122,23 @@ public class PaymentService : IPaymentService
             payment.PaidAt = DateTime.UtcNow;
             payment.ImojeTransactionId = dto.TransactionId;
             await _context.SaveChangesAsync();
+
+            _ = _notifications.NotifyAsync(payment.UserId, EmailNotificationType.PaymentConfirmed,
+                "Płatność potwierdzona",
+                $"Twoja płatność za usługę \"{payment.ServiceDescription}\" w kwocie {payment.Amount:0.00} PLN została pomyślnie zrealizowana.",
+                advertId: payment.AdvertId, paymentId: payment.Id);
+
             await ActivateServiceAsync(payment);
         }
         else if (dto.Status is "rejected" or "cancelled" or "error")
         {
             payment.Status = PaymentStatus.Failed;
             await _context.SaveChangesAsync();
+
+            _ = _notifications.NotifyAsync(payment.UserId, EmailNotificationType.PaymentFailed,
+                "Płatność nieudana",
+                $"Niestety Twoja płatność za usługę \"{payment.ServiceDescription}\" nie została zrealizowana. Możesz spróbować ponownie.",
+                advertId: payment.AdvertId, paymentId: payment.Id);
         }
     }
 
@@ -220,11 +234,32 @@ public class PaymentService : IPaymentService
     {
         if (payment.AdvertId == null) return;
 
-        // TODO: Wywołać PromotionService gdy zostanie zaimplementowany,
-        // przekazując payment.ServiceType i payment.DurationDays.
         _logger.LogInformation(
             "Aktywacja usługi {ServiceType} dla ogłoszenia {AdvertId}, {Days} dni, płatność #{PaymentId}",
             payment.ServiceType, payment.AdvertId, payment.DurationDays, payment.Id);
+
+        var notifType = payment.ServiceType switch
+        {
+            ServiceType.Top     => EmailNotificationType.TopStarted,
+            ServiceType.Premium => EmailNotificationType.PremiumStarted,
+            ServiceType.Featured => EmailNotificationType.FeaturedStarted,
+            ServiceType.Refresh => EmailNotificationType.RefreshStarted,
+            _                   => EmailNotificationType.PromotionActivated
+        };
+
+        var typeName = payment.ServiceType switch
+        {
+            ServiceType.Top     => "Wyróżnienie TOP",
+            ServiceType.Premium => "Oferta Premium",
+            ServiceType.Featured => "Wyróżnienie",
+            ServiceType.Refresh => "Odświeżenie",
+            _                   => "Promocja"
+        };
+
+        _ = _notifications.NotifyAsync(payment.UserId, notifType,
+            $"{typeName} aktywowane",
+            $"Usługa \"{payment.ServiceDescription}\" została aktywowana na {payment.DurationDays} dni.",
+            advertId: payment.AdvertId, paymentId: payment.Id);
 
         await Task.CompletedTask;
     }

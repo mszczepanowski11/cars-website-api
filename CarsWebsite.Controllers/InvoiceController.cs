@@ -1,4 +1,4 @@
-﻿using cars_website_api.CarsWebsite.Interfaces;
+using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,7 +18,6 @@ public class InvoiceController : ControllerBase
         _context = context;
     }
 
-    // Before — hit the DB every time:
     private async Task<bool> IsAdminAsync()
     {
         var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -26,9 +25,6 @@ public class InvoiceController : ControllerBase
         var user = await _context.Users.FindAsync(uid);
         return user?.IsAdmin == true;
     }
-
-// After — reads from the JWT claim already in memory:
-    private bool IsAdmin() => User.FindFirstValue("isAdmin") == "true";
 
     private int GetUserId()
     {
@@ -86,6 +82,15 @@ public class InvoiceController : ControllerBase
         return Ok(new { message = $"Faktury za {month:D2}/{year} zostały wygenerowane." });
     }
 
-  
-    
+    [HttpPost("admin/{id:int}/send")]
+    public async Task<IActionResult> AdminSend(int id)
+    {
+        if (!await IsAdminAsync()) return Forbid();
+        try
+        {
+            await _invoiceService.SendInvoiceByEmailAsync(id);
+            return Ok(new { message = "Faktura została wysłana." });
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+    }
 }

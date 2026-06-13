@@ -1,4 +1,4 @@
-﻿using cars_website_api.CarsWebsite.DTOs.Payment;
+using cars_website_api.CarsWebsite.DTOs.Payment;
 using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
 using Microsoft.AspNetCore.Authorization;
@@ -28,6 +28,7 @@ public class PaymentController : ControllerBase
         return user?.IsAdmin == true;
     }
 
+    /// <summary>Pobierz cenę dla wybranej usługi i czasu trwania.</summary>
     [HttpGet("price")]
     public async Task<IActionResult> GetPrice(
         [FromQuery] ServiceType serviceType,
@@ -37,6 +38,7 @@ public class PaymentController : ControllerBase
         catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
     }
 
+    /// <summary>Inicjuje transakcję w bramce imoje i zwraca URL płatności.</summary>
     [Authorize]
     [HttpPost("initiate")]
     public async Task<IActionResult> Initiate([FromBody] InitiatePaymentDto dto)
@@ -49,6 +51,7 @@ public class PaymentController : ControllerBase
         catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
     }
 
+    /// <summary>Lista płatności zalogowanego użytkownika.</summary>
     [Authorize]
     [HttpGet("my")]
     public async Task<IActionResult> GetMine(
@@ -60,6 +63,9 @@ public class PaymentController : ControllerBase
         return Ok(await _paymentService.GetUserPaymentsAsync(userId, page, pageSize));
     }
 
+    /// <summary>
+    /// Webhook imoje – wywoływany automatycznie po zaksięgowaniu lub odrzuceniu płatności.
+    /// </summary>
     [HttpPost("webhook")]
     public async Task<IActionResult> Webhook()
     {
@@ -85,6 +91,7 @@ public class PaymentController : ControllerBase
         catch (UnauthorizedAccessException) { return Unauthorized(); }
     }
 
+    /// <summary>Admin: wszystkie płatności w systemie.</summary>
     [Authorize]
     [HttpGet("admin/all")]
     public async Task<IActionResult> AdminGetAll(

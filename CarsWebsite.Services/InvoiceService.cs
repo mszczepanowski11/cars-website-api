@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Mail;
 using System.Text;
 using CarsWebsite;
@@ -11,12 +11,14 @@ public class InvoiceService : IInvoiceService
 {
     private readonly AppDbContext _context;
     private readonly IConfiguration _config;
+    private readonly INotificationService _notifications;
     private readonly ILogger<InvoiceService> _logger;
 
-    public InvoiceService(AppDbContext context, IConfiguration config, ILogger<InvoiceService> logger)
+    public InvoiceService(AppDbContext context, IConfiguration config, INotificationService notifications, ILogger<InvoiceService> logger)
     {
         _context = context;
         _config = config;
+        _notifications = notifications;
         _logger = logger;
     }
 
@@ -24,6 +26,7 @@ public class InvoiceService : IInvoiceService
     {
         var start = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
         var end = start.AddMonths(1);
+        var monthName = new System.Globalization.CultureInfo("pl-PL").DateTimeFormat.GetMonthName(month);
 
         var payments = await _context.Payments
             .Include(p => p.User)
@@ -78,6 +81,12 @@ public class InvoiceService : IInvoiceService
             invoice.Payments = groupPayments;
 
             await SendInvoiceEmailAsync(invoice, user);
+
+            _ = _notifications.NotifyAsync(group.Key, EmailNotificationType.InvoiceGenerated,
+                "Faktura wygenerowana",
+                $"Twoja faktura zbiorcza {invoice.InvoiceNumber} za {monthName} {year} została wygenerowana. Łączna kwota: {invoice.TotalAmount:0.00} PLN.",
+                invoiceId: invoice.Id);
+
             seq++;
         }
 
@@ -192,6 +201,11 @@ public class InvoiceService : IInvoiceService
             invoice.Status = InvoiceStatus.Sent;
             invoice.SentAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
+
+            _ = _notifications.NotifyAsync(invoice.UserId, EmailNotificationType.InvoiceSent,
+                "Faktura wysłana",
+                $"Faktura {invoice.InvoiceNumber} została wysłana na adres {user.Email}.",
+                invoiceId: invoice.Id);
         }
         catch (Exception ex)
         {

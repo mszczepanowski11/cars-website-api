@@ -2,7 +2,6 @@ using System;
 using cars_website_api.CarsWebsite.Domain.Entities;
 using CarsWebsite;
 using Microsoft.EntityFrameworkCore;
-using DriveType = cars_website_api.CarsWebsite.Domain.Entities.DriveType;
 
 namespace CarsWebsite
 {
@@ -22,11 +21,9 @@ namespace CarsWebsite
         public DbSet<FuelType> FuelTypes { get; set; }
         public DbSet<Gearbox> Gearboxes { get; set; }
         public DbSet<BodyType> BodyTypes { get; set; }
-        public DbSet<DriveType> DriveTypes { get; set; }
-        public DbSet<CarColor> CarColors { get; set; }
         public DbSet<Feature> Features { get; set; }
         public DbSet<FeatureCategory> FeatureCategories { get; set; }
-
+        
         public DbSet<Conversation> Conversations { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<Report> Reports { get; set; }
@@ -36,19 +33,6 @@ namespace CarsWebsite
         public DbSet<EventReport> EventReports { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Invoice> Invoices { get; set; }
-        public DbSet<AdvertView> AdvertViews { get; set; }
-        public DbSet<RefreshToken> RefreshTokens { get; set; }
-        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
-
-        // New DbSets
-        public DbSet<Notification> Notifications { get; set; }
-        public DbSet<UserFollow> UserFollows { get; set; }
-        public DbSet<Review> Reviews { get; set; }
-        public DbSet<SavedSearch> SavedSearches { get; set; }
-        public DbSet<NewsletterSubscriber> NewsletterSubscribers { get; set; }
-        public DbSet<EventAttendee> EventAttendees { get; set; }
-        public DbSet<EventFavourite> EventFavourites { get; set; }
-        public DbSet<Transaction> Transactions { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -82,15 +66,10 @@ namespace CarsWebsite
             modelBuilder.Entity<CarAdvert>().HasOne(a => a.Generation).WithMany().HasForeignKey(a => a.GenerationId);
             modelBuilder.Entity<CarAdvert>().HasOne(a => a.EngineVersion).WithMany().HasForeignKey(a => a.EngineVersionId);
             modelBuilder.Entity<CarAdvert>().HasOne(a => a.FuelType).WithMany().HasForeignKey(a => a.FuelTypeId);
-            modelBuilder.Entity<CarAdvert>().HasOne(a => a.Gearbox).WithMany().HasForeignKey(a => a.GearboxId).IsRequired(false);
-            modelBuilder.Entity<CarAdvert>().HasOne(a => a.BodyType).WithMany().HasForeignKey(a => a.BodyTypeId).IsRequired(false);
-            modelBuilder.Entity<CarAdvert>().HasOne(a => a.DriveType).WithMany(d => d.CarAdverts).HasForeignKey(a => a.DriveTypeId).IsRequired(false);
-            modelBuilder.Entity<CarAdvert>().HasOne(a => a.CarColor).WithMany(c => c.CarAdverts).HasForeignKey(a => a.ColorId).IsRequired(false);
+            modelBuilder.Entity<CarAdvert>().HasOne(a => a.Gearbox).WithMany().HasForeignKey(a => a.GearboxId);
+            modelBuilder.Entity<CarAdvert>().HasOne(a => a.BodyType).WithMany().HasForeignKey(a => a.BodyTypeId);
             modelBuilder.Entity<CarAdvert>()
                 .HasOne(a => a.VehicleCategory).WithMany().HasForeignKey(a => a.VehicleCategoryId).IsRequired(false);
-
-            modelBuilder.Entity<DriveType>().ToTable("DriveTypes").HasKey(d => d.Id);
-            modelBuilder.Entity<CarColor>().ToTable("CarColors").HasKey(c => c.Id);
 
             modelBuilder.Entity<AdvertImage>().ToTable("AdvertImages").HasKey(i => i.Id);
             modelBuilder.Entity<Advert>().HasMany(a => a.Images).WithOne(i => i.Advert)
@@ -109,12 +88,7 @@ namespace CarsWebsite
                 .HasForeignKey(f => f.AdvertId).OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<VehicleCategory>().ToTable("VehicleCategories").HasKey(c => c.Id);
-
-            modelBuilder.Entity<Brand>()
-                .HasMany(b => b.Categories)
-                .WithMany(c => c.Brands)
-                .UsingEntity("BrandVehicleCategories");
-
+            
             modelBuilder.Entity<Conversation>().ToTable("Conversations").HasKey(c => c.Id);
             modelBuilder.Entity<Conversation>()
                 .HasOne(c => c.Buyer).WithMany()
@@ -175,7 +149,7 @@ namespace CarsWebsite
                 .HasForeignKey(r => r.ReportedByUserId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<EventReport>()
                 .Property(r => r.Reason).HasConversion<string>();
-
+            // Payment & Invoice
             modelBuilder.Entity<Payment>().ToTable("Payments").HasKey(p => p.Id);
             modelBuilder.Entity<Payment>()
                 .HasOne(p => p.User).WithMany()
@@ -209,104 +183,6 @@ namespace CarsWebsite
                 .Property(i => i.VatAmount).HasPrecision(10, 2);
             modelBuilder.Entity<Invoice>()
                 .Property(i => i.VatRate).HasPrecision(5, 4);
-
-            modelBuilder.Entity<AdvertView>().ToTable("AdvertViews").HasKey(v => v.Id);
-            modelBuilder.Entity<AdvertView>()
-                .HasOne(v => v.Advert).WithMany()
-                .HasForeignKey(v => v.AdvertId).OnDelete(DeleteBehavior.Cascade);
-            modelBuilder.Entity<AdvertView>()
-                .HasOne(v => v.User).WithMany()
-                .HasForeignKey(v => v.UserId).OnDelete(DeleteBehavior.SetNull)
-                .IsRequired(false);
-
-            modelBuilder.Entity<RefreshToken>().ToTable("RefreshTokens").HasKey(r => r.Id);
-            modelBuilder.Entity<RefreshToken>()
-                .HasOne(r => r.User).WithMany()
-                .HasForeignKey(r => r.UserId).OnDelete(DeleteBehavior.Cascade);
-            modelBuilder.Entity<RefreshToken>()
-                .HasIndex(r => r.Token).IsUnique();
-
-            modelBuilder.Entity<PasswordResetToken>().ToTable("PasswordResetTokens").HasKey(p => p.Id);
-            modelBuilder.Entity<PasswordResetToken>()
-                .HasOne(p => p.User).WithMany()
-                .HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
-            modelBuilder.Entity<PasswordResetToken>()
-                .HasIndex(p => p.Token).IsUnique();
-
-            // Notifications
-            modelBuilder.Entity<Notification>().ToTable("Notifications").HasKey(n => n.Id);
-            modelBuilder.Entity<Notification>()
-                .HasOne(n => n.User).WithMany()
-                .HasForeignKey(n => n.UserId).OnDelete(DeleteBehavior.Cascade);
-
-            // UserFollows
-            modelBuilder.Entity<UserFollow>().ToTable("UserFollows").HasKey(f => f.Id);
-            modelBuilder.Entity<UserFollow>()
-                .HasOne(f => f.Follower).WithMany()
-                .HasForeignKey(f => f.FollowerId).OnDelete(DeleteBehavior.Restrict);
-            modelBuilder.Entity<UserFollow>()
-                .HasOne(f => f.Followed).WithMany()
-                .HasForeignKey(f => f.FollowedId).OnDelete(DeleteBehavior.Restrict);
-            modelBuilder.Entity<UserFollow>()
-                .HasIndex(f => new { f.FollowerId, f.FollowedId }).IsUnique();
-
-            // Reviews
-            modelBuilder.Entity<Review>().ToTable("Reviews").HasKey(r => r.Id);
-            modelBuilder.Entity<Review>()
-                .HasOne(r => r.Seller).WithMany()
-                .HasForeignKey(r => r.SellerId).OnDelete(DeleteBehavior.Restrict);
-            modelBuilder.Entity<Review>()
-                .HasOne(r => r.Buyer).WithMany()
-                .HasForeignKey(r => r.BuyerId).OnDelete(DeleteBehavior.Restrict);
-
-            // SavedSearches
-            modelBuilder.Entity<SavedSearch>().ToTable("SavedSearches").HasKey(s => s.Id);
-            modelBuilder.Entity<SavedSearch>()
-                .HasOne(s => s.User).WithMany()
-                .HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
-
-            // NewsletterSubscribers
-            modelBuilder.Entity<NewsletterSubscriber>().ToTable("NewsletterSubscribers").HasKey(n => n.Id);
-            modelBuilder.Entity<NewsletterSubscriber>()
-                .HasIndex(n => n.Email).IsUnique();
-
-            // EventAttendees
-            modelBuilder.Entity<EventAttendee>().ToTable("EventAttendees").HasKey(a => a.Id);
-            modelBuilder.Entity<EventAttendee>()
-                .HasOne(a => a.Event).WithMany()
-                .HasForeignKey(a => a.EventId).OnDelete(DeleteBehavior.Cascade);
-            modelBuilder.Entity<EventAttendee>()
-                .HasOne(a => a.User).WithMany()
-                .HasForeignKey(a => a.UserId).OnDelete(DeleteBehavior.Restrict);
-            modelBuilder.Entity<EventAttendee>()
-                .HasIndex(a => new { a.EventId, a.UserId }).IsUnique();
-
-            // EventFavourites
-            modelBuilder.Entity<EventFavourite>().ToTable("EventFavourites").HasKey(f => f.Id);
-            modelBuilder.Entity<EventFavourite>()
-                .HasOne(f => f.Event).WithMany()
-                .HasForeignKey(f => f.EventId).OnDelete(DeleteBehavior.Cascade);
-            modelBuilder.Entity<EventFavourite>()
-                .HasOne(f => f.User).WithMany()
-                .HasForeignKey(f => f.UserId).OnDelete(DeleteBehavior.Restrict);
-            modelBuilder.Entity<EventFavourite>()
-                .HasIndex(f => new { f.EventId, f.UserId }).IsUnique();
-
-            // Transactions
-            modelBuilder.Entity<Transaction>().ToTable("Transactions").HasKey(t => t.Id);
-            modelBuilder.Entity<Transaction>()
-                .HasOne(t => t.Advert).WithMany()
-                .HasForeignKey(t => t.AdvertId).OnDelete(DeleteBehavior.Restrict);
-            modelBuilder.Entity<Transaction>()
-                .HasOne(t => t.Buyer).WithMany()
-                .HasForeignKey(t => t.BuyerId).OnDelete(DeleteBehavior.Restrict);
-            modelBuilder.Entity<Transaction>()
-                .HasOne(t => t.Seller).WithMany()
-                .HasForeignKey(t => t.SellerId).OnDelete(DeleteBehavior.Restrict);
-            modelBuilder.Entity<Transaction>()
-                .Property(t => t.Type).HasConversion<string>();
-            modelBuilder.Entity<Transaction>()
-                .Property(t => t.Status).HasConversion<string>();
         }
     }
 }
