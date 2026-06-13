@@ -7,7 +7,7 @@
   "deploy": {
     "runtime": "V2",
     "numReplicas": 1,
-    "startCommand": "./out/cars-website-api",
+    "startCommand": "./out/cars-website-api --urls http://+:${PORT:-5000}",
     "sleepApplication": false,
     "useLegacyStacker": false,
     "ipv6EgressEnabled": false,
