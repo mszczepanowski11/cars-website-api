@@ -86,10 +86,20 @@ internal class Program
                         Encoding.UTF8.GetBytes(jwtKey))
                 };
             });
-        
+
+        builder.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy("AdminOnly", policy =>
+                policy.RequireClaim("isAdmin", "true"));
+        });
+
+        var allowedOrigins = builder.Configuration
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>() ?? [];
+
         builder.Services.AddCors(options => {
             options.AddPolicy("AllowNuxt", policy => {
-                policy.WithOrigins("http://localhost:3000")
+                policy.WithOrigins(allowedOrigins)
                     .AllowAnyHeader()
                     .AllowAnyMethod();
             });

@@ -1,6 +1,5 @@
 ﻿using cars_website_api.CarsWebsite.DTOs.Event;
 using cars_website_api.CarsWebsite.Interfaces;
-using CarsWebsite;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -10,26 +9,16 @@ using System.Security.Claims;
 public class EventController : ControllerBase
 {
     private readonly IEventService _eventService;
-    private readonly AppDbContext _context;
 
-    public EventController(IEventService eventService, AppDbContext context)
+    public EventController(IEventService eventService)
     {
         _eventService = eventService;
-        _context = context;
     }
 
     private int? GetUserId()
     {
         var s = User.FindFirstValue(ClaimTypes.NameIdentifier);
         return int.TryParse(s, out var id) ? id : null;
-    }
-
-    private async Task<bool> IsAdminAsync()
-    {
-        var id = GetUserId();
-        if (id == null) return false;
-        var user = await _context.Users.FindAsync(id);
-        return user?.IsAdmin == true;
     }
 
     [HttpGet]
@@ -83,64 +72,55 @@ public class EventController : ControllerBase
     // ── Admin endpoints ────────────────────────────────────────────────────────
 
     [HttpGet("admin/all")]
-    [Authorize]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> AdminGetEvents([FromQuery] AdminEventFilterDto filter)
-    {
-        if (!await IsAdminAsync()) return Forbid();
-        return Ok(await _eventService.GetAdminEventsAsync(filter));
-    }
+        => Ok(await _eventService.GetAdminEventsAsync(filter));
 
     [HttpGet("admin/{id}")]
-    [Authorize]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> AdminGetEvent(int id)
     {
-        if (!await IsAdminAsync()) return Forbid();
         var ev = await _eventService.GetAdminEventByIdAsync(id);
         if (ev == null) return NotFound();
         return Ok(ev);
     }
 
     [HttpPost("admin/{id}/publish")]
-    [Authorize]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> PublishEvent(int id)
     {
-        if (!await IsAdminAsync()) return Forbid();
         await _eventService.PublishEventAsync(id, GetUserId()!.Value);
         return NoContent();
     }
 
     [HttpPost("admin/{id}/reject")]
-    [Authorize]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> RejectEvent(int id, [FromBody] AdminEventActionDto dto)
     {
-        if (!await IsAdminAsync()) return Forbid();
         await _eventService.RejectEventAsync(id, GetUserId()!.Value, dto.Note);
         return NoContent();
     }
 
     [HttpPost("admin/{id}/archive")]
-    [Authorize]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> ArchiveEvent(int id)
     {
-        if (!await IsAdminAsync()) return Forbid();
         await _eventService.ArchiveEventAsync(id, GetUserId()!.Value);
         return NoContent();
     }
 
     [HttpDelete("admin/{id}")]
-    [Authorize]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> DeleteEvent(int id)
     {
-        if (!await IsAdminAsync()) return Forbid();
         await _eventService.DeleteEventAsync(id, GetUserId()!.Value);
         return NoContent();
     }
 
     [HttpPut("admin/{id}")]
-    [Authorize]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> UpdateEvent(int id, [FromBody] CreateEventDto dto)
     {
-        if (!await IsAdminAsync()) return Forbid();
         var result = await _eventService.UpdateEventAsync(id, dto, GetUserId()!.Value);
         return Ok(result);
     }

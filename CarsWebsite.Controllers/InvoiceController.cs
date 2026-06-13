@@ -1,5 +1,4 @@
 using cars_website_api.CarsWebsite.Interfaces;
-using CarsWebsite;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -10,21 +9,13 @@ using System.Security.Claims;
 public class InvoiceController : ControllerBase
 {
     private readonly IInvoiceService _invoiceService;
-    private readonly AppDbContext _context;
 
-    public InvoiceController(IInvoiceService invoiceService, AppDbContext context)
+    public InvoiceController(IInvoiceService invoiceService)
     {
         _invoiceService = invoiceService;
-        _context = context;
     }
 
-    private async Task<bool> IsAdminAsync()
-    {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdStr, out var uid)) return false;
-        var user = await _context.Users.FindAsync(uid);
-        return user?.IsAdmin == true;
-    }
+    private bool IsAdmin() => User.FindFirstValue("isAdmin") == "true";
 
     private int GetUserId()
     {
@@ -45,53 +36,42 @@ public class InvoiceController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
-        try
-        {
-            var isAdmin = await IsAdminAsync();
-            return Ok(await _invoiceService.GetInvoiceAsync(id, isAdmin ? 0 : GetUserId()));
-        }
+        try { return Ok(await _invoiceService.GetInvoiceAsync(id, IsAdmin() ? 0 : GetUserId())); }
         catch (KeyNotFoundException) { return NotFound(); }
     }
 
-    /// <summary>Pobierz fakturę jako plik HTML (do wydruku / zapisu PDF).</summary>
     [HttpGet("{id:int}/html")]
     public async Task<IActionResult> DownloadHtml(int id)
     {
         try
         {
-            var isAdmin = await IsAdminAsync();
-            var bytes = await _invoiceService.GenerateInvoiceHtmlAsync(id, isAdmin ? 0 : GetUserId());
+            var bytes = await _invoiceService.GenerateInvoiceHtmlAsync(id, IsAdmin() ? 0 : GetUserId());
             return File(bytes, "text/html; charset=utf-8", $"faktura-CARIZO-{id}.html");
         }
         catch (KeyNotFoundException) { return NotFound(); }
     }
 
-    /// <summary>Admin: wszystkie faktury w systemie.</summary>
     [HttpGet("admin/all")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> AdminGetAll(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50)
-    {
-        if (!await IsAdminAsync()) return Forbid();
-        return Ok(await _invoiceService.GetAllInvoicesAsync(page, pageSize));
-    }
+        => Ok(await _invoiceService.GetAllInvoicesAsync(page, pageSize));
 
-    /// <summary>Admin: ręczne wygenerowanie faktur za wskazany miesiąc/rok.</summary>
     [HttpPost("admin/generate")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> AdminGenerate(
         [FromQuery] int month,
         [FromQuery] int year)
     {
-        if (!await IsAdminAsync()) return Forbid();
         await _invoiceService.GenerateMonthlyInvoicesAsync(month, year);
         return Ok(new { message = $"Faktury za {month:D2}/{year} zostały wygenerowane." });
     }
 
-    /// <summary>Admin: wyślij fakturę ponownie e-mailem.</summary>
     [HttpPost("admin/{id:int}/send")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> AdminSend(int id)
     {
-        if (!await IsAdminAsync()) return Forbid();
         try
         {
             await _invoiceService.SendInvoiceByEmailAsync(id);

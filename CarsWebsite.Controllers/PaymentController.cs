@@ -1,6 +1,5 @@
 using cars_website_api.CarsWebsite.DTOs.Payment;
 using cars_website_api.CarsWebsite.Interfaces;
-using CarsWebsite;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -12,20 +11,10 @@ using System.Text.Json;
 public class PaymentController : ControllerBase
 {
     private readonly IPaymentService _paymentService;
-    private readonly AppDbContext _context;
 
-    public PaymentController(IPaymentService paymentService, AppDbContext context)
+    public PaymentController(IPaymentService paymentService)
     {
         _paymentService = paymentService;
-        _context = context;
-    }
-
-    private async Task<bool> IsAdminAsync()
-    {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdStr, out var uid)) return false;
-        var user = await _context.Users.FindAsync(uid);
-        return user?.IsAdmin == true;
     }
 
     /// <summary>Pobierz cenę dla wybranej usługi i czasu trwania.</summary>
@@ -91,14 +80,10 @@ public class PaymentController : ControllerBase
         catch (UnauthorizedAccessException) { return Unauthorized(); }
     }
 
-    /// <summary>Admin: wszystkie płatności w systemie.</summary>
-    [Authorize]
+    [Authorize(Policy = "AdminOnly")]
     [HttpGet("admin/all")]
     public async Task<IActionResult> AdminGetAll(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50)
-    {
-        if (!await IsAdminAsync()) return Forbid();
-        return Ok(await _paymentService.GetAllPaymentsAsync(page, pageSize));
-    }
+        => Ok(await _paymentService.GetAllPaymentsAsync(page, pageSize));
 }
