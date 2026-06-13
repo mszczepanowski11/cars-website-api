@@ -1,0 +1,5 @@
+﻿{
+  "build": {
+    "cmd": "dotnet publish cars-website-api.csproj -c Release -o out"
+  }
+}
