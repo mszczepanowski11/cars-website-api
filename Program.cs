@@ -58,17 +58,6 @@ internal class Program
         builder.Services.AddScoped<IInvoiceService, InvoiceService>();
         builder.Services.AddHostedService<MonthlyInvoiceJob>();
 
-        // Payment & Invoice
-        builder.Services.AddHttpClient();
-        builder.Services.AddScoped<IPaymentService, PaymentService>();
-        builder.Services.AddScoped<IInvoiceService, InvoiceService>();
-        builder.Services.AddHostedService<MonthlyInvoiceJob>();
-
-        // Notifications
-        builder.Services.AddScoped<IEmailService, EmailService>();
-        builder.Services.AddScoped<INotificationService, NotificationService>();
-        builder.Services.AddHostedService<ExpiryReminderJob>();
-
         builder.Services.AddAutoMapper(typeof(AdvertMappingProfile));
 
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

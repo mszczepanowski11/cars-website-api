@@ -1,7 +1,6 @@
-﻿using AutoMapper;
+using AutoMapper;
 using cars_website_api.CarsWebsite.Domain.Entities;
 using cars_website_api.CarsWebsite.DTOs.Advert;
-using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,25 +8,25 @@ public class AdvertService : IAdvertService
 {
     private readonly AppDbContext _context;
     private readonly IMapper _mapper;
-    private readonly INotificationService _notifications;
 
-    public AdvertService(AppDbContext context, IMapper mapper, INotificationService notifications)
+    public AdvertService(AppDbContext context, IMapper mapper)
     {
         _context = context;
         _mapper = mapper;
-        _notifications = notifications;
     }
 
-    public async Task<int> CreateCarAdvertAsync(CreateCarAdvertDto dto, int userId)
+    
+    public async Task<int> CreateCarAdvertAsync(CreateCarAdvertDto dto,int userId)
     {
         var advert = _mapper.Map<CarAdvert>(dto);
         advert.CreatedAt = DateTime.UtcNow;
         advert.UserId = userId;
-        advert.ExpiresAt = DateTime.UtcNow.AddDays(30);
-
+        
+        
         _context.CarAdverts.Add(advert);
         await _context.SaveChangesAsync();
 
+        
         if (dto.FeatureIds != null && dto.FeatureIds.Any())
         {
             var features = dto.FeatureIds.Select(fid => new AdvertFeature
@@ -35,14 +34,10 @@ public class AdvertService : IAdvertService
                 AdvertId = advert.Id,
                 FeatureId = fid
             });
+
             _context.AdvertFeatures.AddRange(features);
             await _context.SaveChangesAsync();
         }
-
-        _ = _notifications.NotifyAsync(userId, EmailNotificationType.AdvertAdded,
-            "Ogłoszenie dodane",
-            $"Twoje ogłoszenie \"{advert.Title}\" zostało dodane i oczekuje na weryfikację.",
-            advertId: advert.Id);
 
         return advert.Id;
     }
@@ -92,13 +87,8 @@ public class AdvertService : IAdvertService
         if (advert.UserId != userId)
             throw new UnauthorizedAccessException("You do not own this advert");
 
-        var title = advert.Title;
         _context.CarAdverts.Remove(advert);
         await _context.SaveChangesAsync();
-
-        _ = _notifications.NotifyAsync(userId, EmailNotificationType.AdvertDeleted,
-            "Ogłoszenie usunięte",
-            $"Twoje ogłoszenie \"{title}\" zostało usunięte.");
     }
 
     

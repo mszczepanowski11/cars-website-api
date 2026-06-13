@@ -32,7 +32,6 @@ public class InvoiceController : ControllerBase
         return uid;
     }
 
-    /// <summary>Lista faktur zalogowanego użytkownika.</summary>
     [HttpGet("my")]
     public async Task<IActionResult> GetMine(
         [FromQuery] int page = 1,
@@ -41,7 +40,6 @@ public class InvoiceController : ControllerBase
         return Ok(await _invoiceService.GetUserInvoicesAsync(GetUserId(), page, pageSize));
     }
 
-    /// <summary>Szczegóły faktury (właściciel lub admin).</summary>
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -53,7 +51,6 @@ public class InvoiceController : ControllerBase
         catch (KeyNotFoundException) { return NotFound(); }
     }
 
-    /// <summary>Pobierz fakturę jako plik HTML (do wydruku / zapisu PDF).</summary>
     [HttpGet("{id:int}/html")]
     public async Task<IActionResult> DownloadHtml(int id)
     {
@@ -66,7 +63,6 @@ public class InvoiceController : ControllerBase
         catch (KeyNotFoundException) { return NotFound(); }
     }
 
-    /// <summary>Admin: wszystkie faktury w systemie.</summary>
     [HttpGet("admin/all")]
     public async Task<IActionResult> AdminGetAll(
         [FromQuery] int page = 1,
@@ -76,7 +72,6 @@ public class InvoiceController : ControllerBase
         return Ok(await _invoiceService.GetAllInvoicesAsync(page, pageSize));
     }
 
-    /// <summary>Admin: ręczne wygenerowanie faktur za wskazany miesiąc/rok.</summary>
     [HttpPost("admin/generate")]
     public async Task<IActionResult> AdminGenerate(
         [FromQuery] int month,
@@ -87,7 +82,6 @@ public class InvoiceController : ControllerBase
         return Ok(new { message = $"Faktury za {month:D2}/{year} zostały wygenerowane." });
     }
 
-    /// <summary>Admin: wyślij fakturę ponownie e-mailem.</summary>
     [HttpPost("admin/{id:int}/send")]
     public async Task<IActionResult> AdminSend(int id)
     {

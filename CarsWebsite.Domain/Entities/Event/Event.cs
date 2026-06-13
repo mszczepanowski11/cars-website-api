@@ -1,4 +1,4 @@
-﻿namespace CarsWebsite;
+namespace CarsWebsite;
 
 public enum EventStatus
 {
@@ -23,6 +23,7 @@ public class Event
     public string? OrganizerEmail { get; set; }
     public string? OrganizerPhone { get; set; }
     public EventStatus Status { get; set; } = EventStatus.Pending;
+    public bool IsFeatured { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
     public int CreatedByUserId { get; set; }

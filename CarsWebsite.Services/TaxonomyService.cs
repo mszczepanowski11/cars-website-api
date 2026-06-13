@@ -1,7 +1,8 @@
-﻿using cars_website_api.CarsWebsite.Domain.Entities;
+using cars_website_api.CarsWebsite.Domain.Entities;
 using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
 using Microsoft.EntityFrameworkCore;
+using DriveType = cars_website_api.CarsWebsite.Domain.Entities.DriveType;
 
 namespace cars_website_api.CarsWebsite.Services;
 
@@ -23,14 +24,26 @@ public class TaxonomyService : ITaxonomyService
             .OrderBy(b => b.Name)
             .ToListAsync();
     }
-    
+
     public async Task<IEnumerable<Brand>> GetBrandsAsync()
     {
         return await _context.Brands
             .OrderBy(b => b.Name)
             .ToListAsync();
     }
-    
+
+    public async Task<IEnumerable<Brand>> GetBrandsByCategoryAsync(int categoryId)
+    {
+        return await _context.Brands
+            .FromSqlRaw(@"
+                SELECT b.* FROM Brands b
+                INNER JOIN BrandVehicleCategories bvc ON bvc.BrandsId = b.Id
+                WHERE bvc.CategoriesId = {0}
+                ORDER BY b.Name", categoryId)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
     public async Task<IEnumerable<Model>> GetModelsByBrandAsync(int brandId)
     {
         return await _context.Models
@@ -54,32 +67,61 @@ public class TaxonomyService : ITaxonomyService
             .OrderBy(e => e.EngineName)
             .ToListAsync();
     }
-    
+
     public async Task<IEnumerable<FuelType>> GetFuelTypesAsync()
     {
         return await _context.FuelTypes
             .OrderBy(f => f.Name)
             .ToListAsync();
     }
-    
+
     public async Task<IEnumerable<Gearbox>> GetGearboxesAsync()
     {
         return await _context.Gearboxes
             .OrderBy(g => g.Name)
             .ToListAsync();
     }
-    
+
     public async Task<IEnumerable<BodyType>> GetBodyTypesAsync()
     {
         return await _context.BodyTypes
             .OrderBy(b => b.Name)
             .ToListAsync();
     }
-    
+
+    public async Task<IEnumerable<DriveType>> GetDriveTypesAsync()
+    {
+        return await _context.DriveTypes
+            .OrderBy(d => d.Id)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<CarColor>> GetColorsAsync()
+    {
+        return await _context.CarColors
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+    }
+
     public async Task<IEnumerable<Feature>> GetFeaturesAsync()
     {
         return await _context.Features
             .OrderBy(f => f.Name)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<VehicleCategory>> GetVehicleCategoriesAsync()
+    {
+        return await _context.VehicleCategories
+            .OrderBy(c => c.SortOrder)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<FeatureCategory>> GetFeatureCategoriesAsync()
+    {
+        return await _context.FeatureCategories
+            .Include(fc => fc.Features)
+            .OrderBy(fc => fc.Name)
             .ToListAsync();
     }
 }

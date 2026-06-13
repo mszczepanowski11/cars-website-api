@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using cars_website_api.CarsWebsite.DTOs.Car;
 using cars_website_api.CarsWebsite.Interfaces;
 
 namespace cars_website_api.CarsWebsite.Controllers
@@ -8,74 +10,71 @@ namespace cars_website_api.CarsWebsite.Controllers
     public class TaxonomyController : ControllerBase
     {
         private readonly ITaxonomyService _taxonomyService;
+        private readonly IMapper _mapper;
 
-        public TaxonomyController(ITaxonomyService taxonomyService)
+        public TaxonomyController(ITaxonomyService taxonomyService, IMapper mapper)
         {
             _taxonomyService = taxonomyService;
+            _mapper = mapper;
         }
-        
-        
+
         [HttpGet("full")]
         public async Task<IActionResult> GetFullTaxonomy()
-        {
-            var result = await _taxonomyService.GetFullTaxonomyAsync();
-            return Ok(result);
-        }
+            => Ok(await _taxonomyService.GetFullTaxonomyAsync());
 
         [HttpGet("brands")]
         public async Task<IActionResult> GetBrands()
-        {
-            var result = await _taxonomyService.GetBrandsAsync();
-            return Ok(result);
-        }
+            => Ok(await _taxonomyService.GetBrandsAsync());
+
+        [HttpGet("brands/category/{categoryId}")]
+        public async Task<IActionResult> GetBrandsByCategory(int categoryId)
+            => Ok(await _taxonomyService.GetBrandsByCategoryAsync(categoryId));
 
         [HttpGet("brands/{brandId}/models")]
         public async Task<IActionResult> GetModelsByBrand(int brandId)
-        {
-            var result = await _taxonomyService.GetModelsByBrandAsync(brandId);
-            return Ok(result);
-        }
+            => Ok(await _taxonomyService.GetModelsByBrandAsync(brandId));
 
         [HttpGet("models/{modelId}/generations")]
         public async Task<IActionResult> GetGenerationsByModel(int modelId)
-        {
-            var result = await _taxonomyService.GetGenerationsByModelAsync(modelId);
-            return Ok(result);
-        }
+            => Ok(await _taxonomyService.GetGenerationsByModelAsync(modelId));
 
         [HttpGet("generations/{generationId}/engines")]
         public async Task<IActionResult> GetEnginesByGeneration(int generationId)
         {
-            var result = await _taxonomyService.GetEnginesByGenerationAsync(generationId);
-            return Ok(result);
+            var engines = await _taxonomyService.GetEnginesByGenerationAsync(generationId);
+            return Ok(_mapper.Map<IEnumerable<EngineVersionDto>>(engines));
         }
 
         [HttpGet("fueltypes")]
         public async Task<IActionResult> GetFuelTypes()
-        {
-            var result = await _taxonomyService.GetFuelTypesAsync();
-            return Ok(result);
-        }
+            => Ok(await _taxonomyService.GetFuelTypesAsync());
 
         [HttpGet("gearboxes")]
         public async Task<IActionResult> GetGearboxes()
-        {
-            var result = await _taxonomyService.GetGearboxesAsync();
-            return Ok(result);
-        }
+            => Ok(await _taxonomyService.GetGearboxesAsync());
 
         [HttpGet("bodytypes")]
         public async Task<IActionResult> GetBodyTypes()
-        {
-            var result = await _taxonomyService.GetBodyTypesAsync();
-            return Ok(result);
-        }
+            => Ok(await _taxonomyService.GetBodyTypesAsync());
+
+        [HttpGet("drive-types")]
+        public async Task<IActionResult> GetDriveTypes()
+            => Ok(await _taxonomyService.GetDriveTypesAsync());
+
+        [HttpGet("colors")]
+        public async Task<IActionResult> GetColors()
+            => Ok(await _taxonomyService.GetColorsAsync());
 
         [HttpGet("features")]
         public async Task<IActionResult> GetFeatures()
-        {
-            var result = await _taxonomyService.GetFeaturesAsync();
-            return Ok(result);
-        }
+            => Ok(await _taxonomyService.GetFeaturesAsync());
+
+        [HttpGet("categories")]
+        public async Task<IActionResult> GetVehicleCategories()
+            => Ok(await _taxonomyService.GetVehicleCategoriesAsync());
+
+        [HttpGet("feature-categories")]
+        public async Task<IActionResult> GetFeatureCategories()
+            => Ok(await _taxonomyService.GetFeatureCategoriesAsync());
     }
 }

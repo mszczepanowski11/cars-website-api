@@ -1,11 +1,10 @@
-﻿using System;
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using cars_website_api.CarsWebsite.DTOs;
-using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,13 +17,11 @@ public class AuthService
 {
     private readonly AppDbContext _context;
     private readonly IConfiguration _configuration;
-    private readonly INotificationService _notifications;
-
-    public AuthService(AppDbContext context, IConfiguration configuration, INotificationService notifications)
+    
+    public AuthService(AppDbContext context, IConfiguration configuration)
     {
         _context = context;
         _configuration = configuration;
-        _notifications = notifications;
     }
 
     public async Task<string?> Register(RegisterDto dto)
@@ -40,13 +37,9 @@ public class AuthService
             PhoneNumber = dto.PhoneNumber,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
         };
-
+        
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
-
-        _ = _notifications.NotifyAsync(user.Id, EmailNotificationType.AccountCreated,
-            "Witamy w CARIZO!",
-            $"Cześć {user.Name}! Twoje konto zostało pomyślnie utworzone. Możesz teraz dodawać ogłoszenia i korzystać z pełni możliwości serwisu.");
 
         return GenerateToken(user);
     }

@@ -22,6 +22,21 @@ namespace cars_website_api.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
+            modelBuilder.Entity("BrandVehicleCategories", b =>
+                {
+                    b.Property<int>("BrandsId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CategoriesId")
+                        .HasColumnType("int");
+
+                    b.HasKey("BrandsId", "CategoriesId");
+
+                    b.HasIndex("CategoriesId");
+
+                    b.ToTable("BrandVehicleCategories");
+                });
+
             modelBuilder.Entity("CarsWebsite.AdminActionLog", b =>
                 {
                     b.Property<int>("Id")
@@ -80,6 +95,9 @@ namespace cars_website_api.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)");
 
@@ -90,6 +108,9 @@ namespace cars_website_api.Migrations
                         .HasColumnType("decimal(65,30)");
 
                     b.Property<string>("Region")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Slug")
                         .HasColumnType("longtext");
 
                     b.Property<string>("Title")
@@ -152,6 +173,35 @@ namespace cars_website_api.Migrations
                     b.HasIndex("AdvertId");
 
                     b.ToTable("AdvertImages", (string)null);
+                });
+
+            modelBuilder.Entity("CarsWebsite.AdvertView", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AdvertId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("IpHash")
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ViewedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdvertId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AdvertViews", (string)null);
                 });
 
             modelBuilder.Entity("CarsWebsite.Conversation", b =>
@@ -218,6 +268,9 @@ namespace cars_website_api.Migrations
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<bool>("IsFeatured")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -252,6 +305,60 @@ namespace cars_website_api.Migrations
                     b.HasIndex("CreatedByUserId");
 
                     b.ToTable("Events", (string)null);
+                });
+
+            modelBuilder.Entity("CarsWebsite.EventAttendee", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("EventId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("EventId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("EventAttendees", (string)null);
+                });
+
+            modelBuilder.Entity("CarsWebsite.EventFavourite", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("EventId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("EventId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("EventFavourites", (string)null);
                 });
 
             modelBuilder.Entity("CarsWebsite.EventImage", b =>
@@ -333,6 +440,60 @@ namespace cars_website_api.Migrations
                     b.ToTable("FavoriteAdverts", (string)null);
                 });
 
+            modelBuilder.Entity("CarsWebsite.Invoice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("GeneratedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("InvoiceNumber")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("NetAmount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("VatAmount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal>("VatRate")
+                        .HasPrecision(5, 4)
+                        .HasColumnType("decimal(5,4)");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Invoices", (string)null);
+                });
+
             modelBuilder.Entity("CarsWebsite.Message", b =>
                 {
                     b.Property<int>("Id")
@@ -364,6 +525,212 @@ namespace cars_website_api.Migrations
                     b.HasIndex("SenderId");
 
                     b.ToTable("Messages", (string)null);
+                });
+
+            modelBuilder.Entity("CarsWebsite.NewsletterSubscriber", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime>("SubscribedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("UnsubscribedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("NewsletterSubscribers", (string)null);
+                });
+
+            modelBuilder.Entity("CarsWebsite.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AdvertId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("InvoiceId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int?>("PaymentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Notifications", (string)null);
+                });
+
+            modelBuilder.Entity("CarsWebsite.Payment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AdvertId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("DurationDays")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ImojeOrderId")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ImojeTransactionId")
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("InvoiceId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("ServiceDescription")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ServiceType")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdvertId");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Payments", (string)null);
+                });
+
+            modelBuilder.Entity("CarsWebsite.PasswordResetToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsUsed")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PasswordResetTokens", (string)null);
+                });
+
+            modelBuilder.Entity("CarsWebsite.RefreshToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RefreshTokens", (string)null);
                 });
 
             modelBuilder.Entity("CarsWebsite.Report", b =>
@@ -418,6 +785,128 @@ namespace cars_website_api.Migrations
                     b.ToTable("Reports", (string)null);
                 });
 
+            modelBuilder.Entity("CarsWebsite.Review", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AdvertId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BuyerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsVerifiedPurchase")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SellerId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BuyerId");
+
+                    b.HasIndex("SellerId");
+
+                    b.ToTable("Reviews", (string)null);
+                });
+
+            modelBuilder.Entity("CarsWebsite.SavedSearch", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CriteriaJson")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("NewResultsCount")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("NotifyOnNew")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("SavedSearches", (string)null);
+                });
+
+            modelBuilder.Entity("CarsWebsite.Transaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AdvertId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BuyerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("ScheduledAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("SellerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdvertId");
+
+                    b.HasIndex("BuyerId");
+
+                    b.HasIndex("SellerId");
+
+                    b.ToTable("Transactions", (string)null);
+                });
+
             modelBuilder.Entity("CarsWebsite.User", b =>
                 {
                     b.Property<int>("Id")
@@ -426,8 +915,14 @@ namespace cars_website_api.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("About")
+                        .HasColumnType("longtext");
+
                     b.Property<int>("AccountType")
                         .HasColumnType("int");
+
+                    b.Property<string>("AvatarUrl")
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime?>("BlockedAt")
                         .HasColumnType("datetime(6)");
@@ -435,8 +930,17 @@ namespace cars_website_api.Migrations
                     b.Property<string>("BlockedReason")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("City")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("CompanyName")
                         .HasColumnType("longtext");
+
+                    b.Property<string>("Country")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime>("DateOfBirth")
                         .HasColumnType("datetime(6)");
@@ -445,15 +949,30 @@ namespace cars_website_api.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
+                    b.Property<bool>("EmailNotifications")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("EmailVerified")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<bool>("IsAdmin")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("IsBlocked")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<DateTime?>("LastLoginAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<bool>("NewMessageAlerts")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("NewsletterSubscribed")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Nip")
                         .HasColumnType("longtext");
@@ -466,6 +985,18 @@ namespace cars_website_api.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<string>("PostalCode")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("PriceChangeAlerts")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Region")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Street")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Surname")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -476,6 +1007,33 @@ namespace cars_website_api.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("CarsWebsite.UserFollow", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("FollowedId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FollowerId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FollowedId");
+
+                    b.HasIndex("FollowerId", "FollowedId")
+                        .IsUnique();
+
+                    b.ToTable("UserFollows", (string)null);
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.BodyType", b =>
@@ -514,6 +1072,48 @@ namespace cars_website_api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Brands");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.CarColor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("HexCode")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CarColors", (string)null);
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.DriveType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DriveTypes", (string)null);
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.EngineVersion", b =>
@@ -719,26 +1319,95 @@ namespace cars_website_api.Migrations
                 {
                     b.HasBaseType("CarsWebsite.Advert");
 
-                    b.Property<int>("BodyTypeId")
+                    b.Property<decimal?>("Acceleration")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<string>("Badge")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("BadgeExpiresAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("BodyTypeId")
                         .HasColumnType("int");
 
                     b.Property<int>("BrandId")
                         .HasColumnType("int");
 
-                    b.Property<int>("EngineSize")
+                    b.Property<int?>("Co2Emission")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ColorId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Condition")
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("CurbWeight")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DamageDescription")
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("DoorCount")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DriveTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("EngineSize")
                         .HasColumnType("int");
 
                     b.Property<int?>("EngineVersionId")
                         .HasColumnType("int");
 
+                    b.Property<string>("EuroNorm")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("FirstRegistrationDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<decimal?>("FuelConsumptionCity")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<decimal?>("FuelConsumptionCombined")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<decimal?>("FuelConsumptionHighway")
+                        .HasColumnType("decimal(65,30)");
+
                     b.Property<int>("FuelTypeId")
                         .HasColumnType("int");
 
-                    b.Property<int>("GearboxId")
+                    b.Property<int?>("GearboxId")
                         .HasColumnType("int");
 
                     b.Property<int?>("GenerationId")
                         .HasColumnType("int");
+
+                    b.Property<int?>("GrossWeight")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("HasDamage")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("HasFullServiceHistory")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("HasServiceBook")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("HasWarranty")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("ImportCountry")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("IsImported")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsNegotiable")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<int>("Mileage")
                         .HasColumnType("int");
@@ -746,14 +1415,38 @@ namespace cars_website_api.Migrations
                     b.Property<int>("ModelId")
                         .HasColumnType("int");
 
-                    b.Property<int>("PowerHP")
+                    b.Property<DateTime?>("NextInspection")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("OwnersCount")
                         .HasColumnType("int");
 
-                    b.Property<int>("PowerKW")
+                    b.Property<int?>("PowerHP")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PowerKW")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RegistrationCountry")
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("SeatsCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SellerType")
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("Torque")
                         .HasColumnType("int");
 
                     b.Property<int?>("VehicleCategoryId")
                         .HasColumnType("int");
+
+                    b.Property<string>("Vin")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("WarrantyUntil")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<int>("Year")
                         .HasColumnType("int");
@@ -761,6 +1454,10 @@ namespace cars_website_api.Migrations
                     b.HasIndex("BodyTypeId");
 
                     b.HasIndex("BrandId");
+
+                    b.HasIndex("ColorId");
+
+                    b.HasIndex("DriveTypeId");
 
                     b.HasIndex("EngineVersionId");
 
@@ -775,6 +1472,21 @@ namespace cars_website_api.Migrations
                     b.HasIndex("VehicleCategoryId");
 
                     b.ToTable("CarAdverts", (string)null);
+                });
+
+            modelBuilder.Entity("BrandVehicleCategories", b =>
+                {
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.Brand", null)
+                        .WithMany()
+                        .HasForeignKey("BrandsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.VehicleCategory", null)
+                        .WithMany()
+                        .HasForeignKey("CategoriesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("CarsWebsite.AdminActionLog", b =>
@@ -829,6 +1541,24 @@ namespace cars_website_api.Migrations
                     b.Navigation("Advert");
                 });
 
+            modelBuilder.Entity("CarsWebsite.AdvertView", b =>
+                {
+                    b.HasOne("CarsWebsite.Advert", "Advert")
+                        .WithMany()
+                        .HasForeignKey("AdvertId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CarsWebsite.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Advert");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("CarsWebsite.Conversation", b =>
                 {
                     b.HasOne("CarsWebsite.Advert", "Advert")
@@ -865,6 +1595,44 @@ namespace cars_website_api.Migrations
                         .IsRequired();
 
                     b.Navigation("CreatedBy");
+                });
+
+            modelBuilder.Entity("CarsWebsite.EventAttendee", b =>
+                {
+                    b.HasOne("CarsWebsite.Event", "Event")
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CarsWebsite.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CarsWebsite.EventFavourite", b =>
+                {
+                    b.HasOne("CarsWebsite.Event", "Event")
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CarsWebsite.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("CarsWebsite.EventImage", b =>
@@ -916,6 +1684,17 @@ namespace cars_website_api.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("CarsWebsite.Invoice", b =>
+                {
+                    b.HasOne("CarsWebsite.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("CarsWebsite.Message", b =>
                 {
                     b.HasOne("CarsWebsite.Conversation", "Conversation")
@@ -933,6 +1712,64 @@ namespace cars_website_api.Migrations
                     b.Navigation("Conversation");
 
                     b.Navigation("Sender");
+                });
+
+            modelBuilder.Entity("CarsWebsite.Notification", b =>
+                {
+                    b.HasOne("CarsWebsite.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CarsWebsite.Payment", b =>
+                {
+                    b.HasOne("CarsWebsite.Advert", "Advert")
+                        .WithMany()
+                        .HasForeignKey("AdvertId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("CarsWebsite.Invoice", "Invoice")
+                        .WithMany("Payments")
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("CarsWebsite.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Advert");
+
+                    b.Navigation("Invoice");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CarsWebsite.PasswordResetToken", b =>
+                {
+                    b.HasOne("CarsWebsite.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CarsWebsite.RefreshToken", b =>
+                {
+                    b.HasOne("CarsWebsite.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("CarsWebsite.Report", b =>
@@ -958,6 +1795,82 @@ namespace cars_website_api.Migrations
                     b.Navigation("TargetAdvert");
 
                     b.Navigation("TargetUser");
+                });
+
+            modelBuilder.Entity("CarsWebsite.Review", b =>
+                {
+                    b.HasOne("CarsWebsite.User", "Buyer")
+                        .WithMany()
+                        .HasForeignKey("BuyerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CarsWebsite.User", "Seller")
+                        .WithMany()
+                        .HasForeignKey("SellerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Buyer");
+
+                    b.Navigation("Seller");
+                });
+
+            modelBuilder.Entity("CarsWebsite.SavedSearch", b =>
+                {
+                    b.HasOne("CarsWebsite.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CarsWebsite.Transaction", b =>
+                {
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.CarAdvert", "Advert")
+                        .WithMany()
+                        .HasForeignKey("AdvertId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CarsWebsite.User", "Buyer")
+                        .WithMany()
+                        .HasForeignKey("BuyerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CarsWebsite.User", "Seller")
+                        .WithMany()
+                        .HasForeignKey("SellerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Advert");
+
+                    b.Navigation("Buyer");
+
+                    b.Navigation("Seller");
+                });
+
+            modelBuilder.Entity("CarsWebsite.UserFollow", b =>
+                {
+                    b.HasOne("CarsWebsite.User", "Followed")
+                        .WithMany()
+                        .HasForeignKey("FollowedId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CarsWebsite.User", "Follower")
+                        .WithMany()
+                        .HasForeignKey("FollowerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Followed");
+
+                    b.Navigation("Follower");
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.EngineVersion", b =>
@@ -1016,15 +1929,21 @@ namespace cars_website_api.Migrations
                 {
                     b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.BodyType", "BodyType")
                         .WithMany()
-                        .HasForeignKey("BodyTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("BodyTypeId");
 
                     b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.Brand", "Brand")
                         .WithMany()
                         .HasForeignKey("BrandId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.CarColor", "CarColor")
+                        .WithMany("CarAdverts")
+                        .HasForeignKey("ColorId");
+
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.DriveType", "DriveType")
+                        .WithMany("CarAdverts")
+                        .HasForeignKey("DriveTypeId");
 
                     b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.EngineVersion", "EngineVersion")
                         .WithMany()
@@ -1038,9 +1957,7 @@ namespace cars_website_api.Migrations
 
                     b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.Gearbox", "Gearbox")
                         .WithMany()
-                        .HasForeignKey("GearboxId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("GearboxId");
 
                     b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.Generation", "Generation")
                         .WithMany()
@@ -1065,6 +1982,10 @@ namespace cars_website_api.Migrations
                     b.Navigation("BodyType");
 
                     b.Navigation("Brand");
+
+                    b.Navigation("CarColor");
+
+                    b.Navigation("DriveType");
 
                     b.Navigation("EngineVersion");
 
@@ -1096,6 +2017,11 @@ namespace cars_website_api.Migrations
                     b.Navigation("Reports");
                 });
 
+            modelBuilder.Entity("CarsWebsite.Invoice", b =>
+                {
+                    b.Navigation("Payments");
+                });
+
             modelBuilder.Entity("CarsWebsite.User", b =>
                 {
                     b.Navigation("Adverts");
@@ -1104,6 +2030,16 @@ namespace cars_website_api.Migrations
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Brand", b =>
                 {
                     b.Navigation("Models");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.CarColor", b =>
+                {
+                    b.Navigation("CarAdverts");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.DriveType", b =>
+                {
+                    b.Navigation("CarAdverts");
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Feature", b =>

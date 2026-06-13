@@ -4,7 +4,9 @@ public class EngineVersionDto
 {
     public int Id { get; set; }
     public string EngineName { get; set; }
-    public int PowerHP { get; set; }
-    public int PowerKW { get; set; }
-    public int EngineSize { get; set; }
+    public string Name { get; set; }
+    public int? PowerHP { get; set; }
+    public int? Horsepower { get; set; }
+    public int? PowerKW { get; set; }
+    public int? Displacement { get; set; }
 }
