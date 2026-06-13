@@ -1,0 +1,50 @@
+## Build outputs
+[Bb]in/
+[Oo]bj/
+
+## User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+## Visual Studio / Rider
+.vs/
+.idea/
+
+## NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+!**/packages/repositories.config
+*.lock.json
+!packages.lock.json
+nuget.config
+
+## ASP.NET
+launchSettings.json
+
+## Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]uild/
+[Bb]uilds/
+[Pp]ublish/
+
+## Logs and caches
+*.log
+.sass-cache/
+
+## OS
+.DS_Store
+Thumbs.db
