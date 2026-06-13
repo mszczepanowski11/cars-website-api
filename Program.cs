@@ -13,11 +13,13 @@ internal class Program
 {
     public static void Main(string[] args)
     {
-        var builder = WebApplication.CreateBuilder(args);
-
         var webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
         Directory.CreateDirectory(webRootPath);
-        builder.WebHost.UseWebRoot(webRootPath);
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+        {
+            Args = args,
+            WebRootPath = webRootPath
+        });
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
         if (string.IsNullOrEmpty(connectionString))
