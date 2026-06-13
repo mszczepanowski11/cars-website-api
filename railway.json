@@ -7,7 +7,7 @@
   "deploy": {
     "runtime": "V2",
     "numReplicas": 1,
-    "startCommand": "dotnet out/cars-website-api.dll",
+    "startCommand": "./out/cars-website-api",
     "sleepApplication": false,
     "useLegacyStacker": false,
     "ipv6EgressEnabled": false,

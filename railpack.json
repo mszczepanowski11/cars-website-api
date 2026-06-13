@@ -1,5 +1,5 @@
 {
   "build": {
-    "cmd": "dotnet publish cars-website-api.csproj -c Release -o out"
+    "cmd": "dotnet publish cars-website-api.csproj -c Release -o out --self-contained true -r linux-x64"
   }
 }
