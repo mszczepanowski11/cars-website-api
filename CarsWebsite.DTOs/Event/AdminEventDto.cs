@@ -1,4 +1,4 @@
-﻿namespace cars_website_api.CarsWebsite.DTOs.Event;
+namespace cars_website_api.CarsWebsite.DTOs.Event;
 
 public class AdminEventDto
 {
@@ -13,6 +13,8 @@ public class AdminEventDto
     public string? CreatedByName { get; set; }
     public int ReportCount { get; set; }
     public string? MainImageUrl { get; set; }
+    public bool IsFeatured { get; set; }
+    public int? InterestedCount { get; set; }
 }
 
 public class AdminEventFilterDto

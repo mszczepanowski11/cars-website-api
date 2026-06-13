@@ -1,4 +1,4 @@
-﻿using cars_website_api.CarsWebsite.DTOs.Advert;
+using cars_website_api.CarsWebsite.DTOs.Advert;
 using cars_website_api.CarsWebsite.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +17,12 @@ public class AdvertController : ControllerBase
         _imageService = imageService;
     }
 
+    private int GetUserId()
+    {
+        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var uid);
+        return uid;
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
@@ -28,22 +34,36 @@ public class AdvertController : ControllerBase
     [HttpGet("user")]
     public async Task<IActionResult> GetUserAdverts([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdStr, out var userId))
-            return Unauthorized();
-
-        var result = await _advertService.GetUserAdvertsAsync(userId, page, pageSize);
-        return Ok(result);
+        var userId = GetUserId();
+        if (userId == 0) return Unauthorized();
+        return Ok(await _advertService.GetUserAdvertsAsync(userId, page, pageSize));
     }
+
+    [HttpGet("vin/{vin}")]
+    public async Task<IActionResult> GetByVin(string vin)
+    {
+        var advert = await _advertService.GetByVinAsync(vin);
+        if (advert == null) return NotFound();
+        return Ok(advert);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        try { return Ok(await _advertService.GetCarAdvertByIdAsync(id)); }
+        catch (KeyNotFoundException) { return NotFound(); }
+    }
+
+    [HttpPost("search")]
+    public async Task<IActionResult> Search([FromBody] SearchCarAdvertDto dto)
+        => Ok(await _advertService.SearchCarAdvertsAsync(dto));
 
     [Authorize]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateCarAdvertDto dto)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdStr, out var userId))
-            return Unauthorized();
-
+        var userId = GetUserId();
+        if (userId == 0) return Unauthorized();
         var id = await _advertService.CreateCarAdvertAsync(dto, userId);
         return CreatedAtAction(nameof(GetById), new { id }, new { id });
     }
@@ -52,38 +72,44 @@ public class AdvertController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateCarAdvertDto dto)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdStr, out var userId))
-            return Unauthorized();
-
-        await _advertService.UpdateCarAdvertAsync(id, dto, userId);
-        return NoContent();
+        var userId = GetUserId();
+        if (userId == 0) return Unauthorized();
+        try
+        {
+            await _advertService.UpdateCarAdvertAsync(id, dto, userId);
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (KeyNotFoundException) { return NotFound(); }
     }
 
     [Authorize]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdStr, out var userId))
-            return Unauthorized();
-
-        await _advertService.DeleteCarAdvertAsync(id, userId);
-        return NoContent();
+        var userId = GetUserId();
+        if (userId == 0) return Unauthorized();
+        try
+        {
+            await _advertService.DeleteCarAdvertAsync(id, userId);
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException) { return Forbid(); }
     }
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    [Authorize]
+    [HttpPost("{id}/promote")]
+    public async Task<IActionResult> Promote(int id, [FromBody] PromoteAdvertDto dto)
     {
-        var advert = await _advertService.GetCarAdvertByIdAsync(id);
-        return Ok(advert);
-    }
-
-    [HttpPost("search")]
-    public async Task<IActionResult> Search([FromBody] SearchCarAdvertDto dto)
-    {
-        var result = await _advertService.SearchCarAdvertsAsync(dto);
-        return Ok(result);
+        var userId = GetUserId();
+        if (userId == 0) return Unauthorized();
+        try
+        {
+            await _advertService.PromoteAdvertAsync(id, userId, dto.Type, dto.DurationDays);
+            return NoContent();
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
     }
 
     [Authorize]
@@ -93,9 +119,8 @@ public class AdvertController : ControllerBase
         if (file == null || file.Length == 0)
             return BadRequest("File is empty");
 
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdStr, out var userId))
-            return Unauthorized();
+        var userId = GetUserId();
+        if (userId == 0) return Unauthorized();
 
         var url = await _imageService.UploadAdvertImageAsync(advertId, file, userId);
         return Ok(new { url });
@@ -105,10 +130,8 @@ public class AdvertController : ControllerBase
     [HttpPut("{advertId}/images/{imageId}/set-main")]
     public async Task<IActionResult> SetMainImage(int advertId, int imageId)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdStr, out var userId))
-            return Unauthorized();
-
+        var userId = GetUserId();
+        if (userId == 0) return Unauthorized();
         await _imageService.SetMainImageAsync(advertId, imageId, userId);
         return NoContent();
     }
@@ -117,10 +140,8 @@ public class AdvertController : ControllerBase
     [HttpDelete("{advertId}/images/{imageId}")]
     public async Task<IActionResult> DeleteImage(int advertId, int imageId)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdStr, out var userId))
-            return Unauthorized();
-
+        var userId = GetUserId();
+        if (userId == 0) return Unauthorized();
         await _imageService.DeleteImageAsync(advertId, imageId, userId);
         return NoContent();
     }

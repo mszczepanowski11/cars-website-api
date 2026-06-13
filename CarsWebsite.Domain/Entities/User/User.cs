@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace CarsWebsite
 {
@@ -18,6 +18,25 @@ namespace CarsWebsite
         public bool IsBlocked { get; set; } = false;
         public DateTime? BlockedAt { get; set; }
         public string? BlockedReason { get; set; }
+        public string? AvatarUrl { get; set; }
+        public bool EmailVerified { get; set; } = false;
+        public DateTime? LastLoginAt { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // Profile
+        public string? City { get; set; }
+        public string? Region { get; set; }
+        public string? Street { get; set; }
+        public string? PostalCode { get; set; }
+        public string? Country { get; set; }
+        public string? About { get; set; }
+
+        // Notification settings
+        public bool EmailNotifications { get; set; } = true;
+        public bool PriceChangeAlerts { get; set; } = true;
+        public bool NewMessageAlerts { get; set; } = true;
+        public bool NewsletterSubscribed { get; set; } = false;
+
         public List<Advert> Adverts { get; set; } = new();
     }
 }

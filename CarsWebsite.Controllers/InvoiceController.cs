@@ -23,7 +23,6 @@ public class InvoiceController : ControllerBase
         return uid;
     }
 
-    /// <summary>Lista faktur zalogowanego użytkownika.</summary>
     [HttpGet("my")]
     public async Task<IActionResult> GetMine(
         [FromQuery] int page = 1,
@@ -32,7 +31,6 @@ public class InvoiceController : ControllerBase
         return Ok(await _invoiceService.GetUserInvoicesAsync(GetUserId(), page, pageSize));
     }
 
-    /// <summary>Szczegóły faktury (właściciel lub admin).</summary>
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {

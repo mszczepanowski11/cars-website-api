@@ -1,4 +1,4 @@
-﻿namespace cars_website_api.CarsWebsite.DTOs.Advert;
+namespace cars_website_api.CarsWebsite.DTOs.Advert;
 
 public class CreateCarAdvertDto
 {
@@ -20,6 +20,4 @@ public class CreateCarAdvertDto
     public string? Vin { get; set; }
 
     public List<int>? FeatureIds { get; set; }
-    public string? City { get; set; }
-    public string? Region { get; set; }
 }

@@ -31,14 +31,17 @@ namespace CarsWebsite
         public DbSet<Event> Events { get; set; }
         public DbSet<EventImage> EventImages { get; set; }
         public DbSet<EventReport> EventReports { get; set; }
-
-        // Payment & Invoice
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Invoice> Invoices { get; set; }
 
-        // Notifications
-        public DbSet<AppNotification> AppNotifications { get; set; }
-        public DbSet<UserNotificationSetting> UserNotificationSettings { get; set; }
+        // Taxonomy extensions
+        public DbSet<DriveType> DriveTypes { get; set; }
+        public DbSet<CarColor> CarColors { get; set; }
+
+        // Social / stats
+        public DbSet<AdvertView> AdvertViews { get; set; }
+        public DbSet<UserFollow> UserFollows { get; set; }
+        public DbSet<Review> Reviews { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -155,8 +158,7 @@ namespace CarsWebsite
                 .HasForeignKey(r => r.ReportedByUserId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<EventReport>()
                 .Property(r => r.Reason).HasConversion<string>();
-
-            // ── Payment & Invoice ─────────────────────────────────────────────────────
+            // Payment & Invoice
             modelBuilder.Entity<Payment>().ToTable("Payments").HasKey(p => p.Id);
             modelBuilder.Entity<Payment>()
                 .HasOne(p => p.User).WithMany()
@@ -191,20 +193,17 @@ namespace CarsWebsite
             modelBuilder.Entity<Invoice>()
                 .Property(i => i.VatRate).HasPrecision(5, 4);
 
-            // ── Notifications ─────────────────────────────────────────────────────
-            modelBuilder.Entity<AppNotification>().ToTable("AppNotifications").HasKey(n => n.Id);
-            modelBuilder.Entity<AppNotification>()
-                .HasOne(n => n.User).WithMany()
-                .HasForeignKey(n => n.UserId).OnDelete(DeleteBehavior.Cascade);
-            modelBuilder.Entity<AppNotification>()
-                .Property(n => n.Type).HasConversion<string>();
+            // Taxonomy extensions
+            modelBuilder.Entity<DriveType>().ToTable("DriveTypes").HasKey(d => d.Id);
+            modelBuilder.Entity<CarColor>().ToTable("CarColors").HasKey(c => c.Id);
+            modelBuilder.Entity<CarAdvert>().HasOne(a => a.DriveType).WithMany().HasForeignKey(a => a.DriveTypeId).IsRequired(false);
+            modelBuilder.Entity<CarAdvert>().HasOne(a => a.CarColor).WithMany().HasForeignKey(a => a.ColorId).IsRequired(false);
 
-            modelBuilder.Entity<UserNotificationSetting>().ToTable("UserNotificationSettings").HasKey(s => s.Id);
-            modelBuilder.Entity<UserNotificationSetting>()
-                .HasOne(s => s.User).WithMany()
-                .HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
-            modelBuilder.Entity<UserNotificationSetting>()
-                .HasIndex(s => new { s.UserId, s.Category }).IsUnique();
+            // Social / stats
+            modelBuilder.Entity<AdvertView>().ToTable("AdvertViews").HasKey(v => v.Id);
+            modelBuilder.Entity<UserFollow>().ToTable("UserFollows").HasKey(f => f.Id);
+            modelBuilder.Entity<UserFollow>().HasIndex(f => new { f.FollowerId, f.FollowedId }).IsUnique();
+            modelBuilder.Entity<Review>().ToTable("Reviews").HasKey(r => r.Id);
         }
     }
 }

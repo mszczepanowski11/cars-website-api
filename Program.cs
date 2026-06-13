@@ -42,8 +42,12 @@ internal class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddDbContext<AppDbContext>(options => options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
         
-        builder.Services.AddScoped<UserService>();     
+        builder.Services.AddScoped<UserService>();
+        builder.Services.AddScoped<IUserService, UserService>();
         builder.Services.AddScoped<AuthService>();
+        builder.Services.AddScoped<IAuthService, AuthService>();
+        builder.Services.AddScoped<IFollowService, FollowService>();
+        builder.Services.AddScoped<IReviewService, ReviewService>();
         builder.Services.AddScoped<IAdvertService, AdvertService>();
         builder.Services.AddScoped<IAdvertImageService, AdvertImageService>();
         builder.Services.AddScoped<ITaxonomyService, TaxonomyService>();
@@ -57,17 +61,6 @@ internal class Program
         builder.Services.AddScoped<IPaymentService, PaymentService>();
         builder.Services.AddScoped<IInvoiceService, InvoiceService>();
         builder.Services.AddHostedService<MonthlyInvoiceJob>();
-
-        // Payment & Invoice
-        builder.Services.AddHttpClient();
-        builder.Services.AddScoped<IPaymentService, PaymentService>();
-        builder.Services.AddScoped<IInvoiceService, InvoiceService>();
-        builder.Services.AddHostedService<MonthlyInvoiceJob>();
-
-        // Notifications
-        builder.Services.AddScoped<IEmailService, EmailService>();
-        builder.Services.AddScoped<INotificationService, NotificationService>();
-        builder.Services.AddHostedService<ExpiryReminderJob>();
 
         builder.Services.AddAutoMapper(typeof(AdvertMappingProfile));
 

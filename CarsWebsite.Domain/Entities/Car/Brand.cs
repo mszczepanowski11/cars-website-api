@@ -7,4 +7,5 @@ public class Brand
     public string Slug { get; set; }
 
     public ICollection<Model> Models { get; set; }
+    public ICollection<VehicleCategory> Categories { get; set; }
 }

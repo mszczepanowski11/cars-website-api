@@ -1,4 +1,4 @@
-﻿namespace cars_website_api.CarsWebsite.DTOs.Event;
+namespace cars_website_api.CarsWebsite.DTOs.Event;
 
 public class EventResponseDto
 {
@@ -15,10 +15,15 @@ public class EventResponseDto
     public string? OrganizerEmail { get; set; }
     public string? OrganizerPhone { get; set; }
     public string Status { get; set; }
+    public bool IsFeatured { get; set; }
     public DateTime CreatedAt { get; set; }
     public int CreatedByUserId { get; set; }
     public string? CreatedByName { get; set; }
     public List<EventImageDto> Images { get; set; } = new();
+    public int AttendingCount { get; set; }
+    public int InterestedCount { get; set; }
+    public bool IsUserInterested { get; set; }
+    public bool IsUserFavorite { get; set; }
 }
 
 public class EventImageDto
