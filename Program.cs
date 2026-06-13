@@ -41,9 +41,12 @@ internal class Program
             });
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddDbContext<AppDbContext>(options => options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
-        
-        builder.Services.AddScoped<UserService>();     
-        builder.Services.AddScoped<AuthService>();
+
+        builder.Services.AddHttpContextAccessor();
+
+        // Core services
+        builder.Services.AddScoped<IUserService, UserService>();
+        builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IAdvertService, AdvertService>();
         builder.Services.AddScoped<IAdvertImageService, AdvertImageService>();
         builder.Services.AddScoped<ITaxonomyService, TaxonomyService>();
@@ -57,6 +60,15 @@ internal class Program
         builder.Services.AddScoped<IPaymentService, PaymentService>();
         builder.Services.AddScoped<IInvoiceService, InvoiceService>();
         builder.Services.AddHostedService<MonthlyInvoiceJob>();
+
+        // New services
+        builder.Services.AddScoped<INotificationService, NotificationService>();
+        builder.Services.AddScoped<IReviewService, ReviewService>();
+        builder.Services.AddScoped<IFollowService, FollowService>();
+        builder.Services.AddScoped<ISavedSearchService, SavedSearchService>();
+        builder.Services.AddScoped<ITransactionService, TransactionService>();
+        builder.Services.AddScoped<INewsletterService, NewsletterService>();
+        builder.Services.AddScoped<IStatsService, StatsService>();
 
         builder.Services.AddAutoMapper(typeof(AdvertMappingProfile));
 
@@ -75,15 +87,17 @@ internal class Program
                         Encoding.UTF8.GetBytes(jwtKey))
                 };
             });
-        
+
+        var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
+            ?? new[] { "http://localhost:3000" };
         builder.Services.AddCors(options => {
             options.AddPolicy("AllowNuxt", policy => {
-                policy.WithOrigins("http://localhost:3000")
+                policy.WithOrigins(allowedOrigins)
                     .AllowAnyHeader()
                     .AllowAnyMethod();
             });
         });
-        
+
         builder.Services.AddSwaggerGen(c =>
         {
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -119,13 +133,13 @@ internal class Program
             app.UseSwagger();
             app.UseSwaggerUI();
         }
-        
-        app.UseStaticFiles(); 
+
+        app.UseStaticFiles();
         app.UseHttpsRedirection();
         app.UseCors("AllowNuxt");
         app.UseAuthentication();
         app.UseAuthorization();
-        app.MapControllers();      
+        app.MapControllers();
         app.Run();
     }
 }

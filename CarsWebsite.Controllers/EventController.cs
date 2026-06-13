@@ -1,4 +1,4 @@
-﻿using cars_website_api.CarsWebsite.DTOs.Event;
+using cars_website_api.CarsWebsite.DTOs.Event;
 using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
 using Microsoft.AspNetCore.Authorization;
@@ -37,15 +37,11 @@ public class EventController : ControllerBase
         [FromQuery] string? search,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 12)
-    {
-        return Ok(await _eventService.GetPublishedEventsAsync(search, page, pageSize));
-    }
+        => Ok(await _eventService.GetPublishedEventsAsync(search, page, pageSize));
 
     [HttpGet("upcoming")]
     public async Task<IActionResult> GetUpcoming([FromQuery] int count = 4)
-    {
-        return Ok(await _eventService.GetUpcomingEventsAsync(count));
-    }
+        => Ok(await _eventService.GetUpcomingEventsAsync(count));
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetEvent(int id)
@@ -53,6 +49,17 @@ public class EventController : ControllerBase
         var ev = await _eventService.GetEventByIdAsync(id);
         if (ev == null) return NotFound();
         return Ok(ev);
+    }
+
+    [HttpGet("my")]
+    [Authorize]
+    public async Task<IActionResult> GetMyEvents(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        return Ok(await _eventService.GetMyEventsAsync(userId.Value, page, pageSize));
     }
 
     [HttpPost]
@@ -77,6 +84,46 @@ public class EventController : ControllerBase
         if (userId == null) return Unauthorized();
 
         await _eventService.ReportEventAsync(id, userId.Value, dto);
+        return NoContent();
+    }
+
+    [HttpPost("{id}/attend")]
+    [Authorize]
+    public async Task<IActionResult> Attend(int id)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        await _eventService.AttendEventAsync(id, userId.Value);
+        return NoContent();
+    }
+
+    [HttpDelete("{id}/attend")]
+    [Authorize]
+    public async Task<IActionResult> Unattend(int id)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        await _eventService.UnattendEventAsync(id, userId.Value);
+        return NoContent();
+    }
+
+    [HttpPost("{id}/favourite")]
+    [Authorize]
+    public async Task<IActionResult> Favourite(int id)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        await _eventService.FavouriteEventAsync(id, userId.Value);
+        return NoContent();
+    }
+
+    [HttpDelete("{id}/favourite")]
+    [Authorize]
+    public async Task<IActionResult> Unfavourite(int id)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        await _eventService.UnfavouriteEventAsync(id, userId.Value);
         return NoContent();
     }
 
@@ -124,6 +171,24 @@ public class EventController : ControllerBase
     {
         if (!await IsAdminAsync()) return Forbid();
         await _eventService.ArchiveEventAsync(id, GetUserId()!.Value);
+        return NoContent();
+    }
+
+    [HttpPost("admin/{id}/feature")]
+    [Authorize]
+    public async Task<IActionResult> FeatureEvent(int id)
+    {
+        if (!await IsAdminAsync()) return Forbid();
+        await _eventService.FeatureEventAsync(id, GetUserId()!.Value, true);
+        return NoContent();
+    }
+
+    [HttpDelete("admin/{id}/feature")]
+    [Authorize]
+    public async Task<IActionResult> UnfeatureEvent(int id)
+    {
+        if (!await IsAdminAsync()) return Forbid();
+        await _eventService.FeatureEventAsync(id, GetUserId()!.Value, false);
         return NoContent();
     }
 

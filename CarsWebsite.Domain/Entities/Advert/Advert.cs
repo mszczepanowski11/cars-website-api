@@ -15,5 +15,7 @@ public class Advert
     public DateTime? UpdatedAt { get; set; }
     public bool IsHidden { get; set; } = false;
     public bool IsActive { get; set; } = true;
+    public string? Slug { get; set; }
+    public DateTime? ExpiresAt { get; set; }
     public ICollection<AdvertImage> Images { get; set; }
 }

@@ -1,4 +1,4 @@
-﻿using cars_website_api.CarsWebsite.DTOs.Event;
+using cars_website_api.CarsWebsite.DTOs.Event;
 using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
 using Microsoft.EntityFrameworkCore;
@@ -46,7 +46,7 @@ public class EventService : IEventService
         return $"/uploads/events/{eventId}/{fileName}";
     }
 
-    private static EventResponseDto MapToDto(global::CarsWebsite.Event e) => new()
+    private static EventResponseDto MapToDto(global::CarsWebsite.Event e, int attendingCount = 0, int interestedCount = 0, bool isUserInterested = false, bool isUserFavorite = false) => new()
     {
         Id = e.Id,
         Name = e.Name,
@@ -61,10 +61,15 @@ public class EventService : IEventService
         OrganizerEmail = e.OrganizerEmail,
         OrganizerPhone = e.OrganizerPhone,
         Status = e.Status.ToString(),
+        IsFeatured = e.IsFeatured,
         CreatedAt = e.CreatedAt,
         CreatedByUserId = e.CreatedByUserId,
         CreatedByName = e.CreatedBy != null ? $"{e.CreatedBy.Name} {e.CreatedBy.Surname}" : null,
-        Images = e.Images.Select(i => new EventImageDto { Id = i.Id, Url = i.Url, IsMain = i.IsMain }).ToList()
+        Images = e.Images.Select(i => new EventImageDto { Id = i.Id, Url = i.Url, IsMain = i.IsMain }).ToList(),
+        AttendingCount = attendingCount,
+        InterestedCount = interestedCount,
+        IsUserInterested = isUserInterested,
+        IsUserFavorite = isUserFavorite
     };
 
     public async Task<PagedResult<EventResponseDto>> GetPublishedEventsAsync(string? search, int page, int pageSize)
@@ -85,7 +90,7 @@ public class EventService : IEventService
 
         return new PagedResult<EventResponseDto>
         {
-            Items = items.Select(MapToDto).ToList(),
+            Items = items.Select(e => MapToDto(e)).ToList(),
             TotalCount = total
         };
     }
@@ -101,7 +106,7 @@ public class EventService : IEventService
             .Take(count)
             .ToListAsync();
 
-        return items.Select(MapToDto).ToList();
+        return items.Select(e => MapToDto(e)).ToList();
     }
 
     public async Task<EventResponseDto?> GetEventByIdAsync(int id)
@@ -111,7 +116,12 @@ public class EventService : IEventService
             .Include(e => e.CreatedBy)
             .FirstOrDefaultAsync(e => e.Id == id && e.Status == EventStatus.Published);
 
-        return e == null ? null : MapToDto(e);
+        if (e == null) return null;
+
+        var attendingCount = await _context.EventAttendees.CountAsync(a => a.EventId == id);
+        var interestedCount = await _context.EventFavourites.CountAsync(f => f.EventId == id);
+
+        return MapToDto(e, attendingCount, interestedCount);
     }
 
     public async Task<EventResponseDto> CreateEventAsync(CreateEventDto dto, int userId, IFormFile? mainImage, List<IFormFile>? galleryImages)
@@ -217,7 +227,8 @@ public class EventService : IEventService
                 CreatedByUserId = e.CreatedByUserId,
                 CreatedByName = e.CreatedBy != null ? $"{e.CreatedBy.Name} {e.CreatedBy.Surname}" : null,
                 ReportCount = e.Reports.Count(r => !r.IsResolved),
-                MainImageUrl = e.Images.FirstOrDefault(i => i.IsMain)?.Url ?? e.Images.FirstOrDefault()?.Url
+                MainImageUrl = e.Images.FirstOrDefault(i => i.IsMain)?.Url ?? e.Images.FirstOrDefault()?.Url,
+                IsFeatured = e.IsFeatured
             }).ToList(),
             TotalCount = total
         };
@@ -291,5 +302,64 @@ public class EventService : IEventService
 
         await _context.SaveChangesAsync();
         return MapToDto(ev);
+    }
+
+    public async Task FeatureEventAsync(int id, int adminId, bool featured)
+    {
+        var ev = await _context.Events.FindAsync(id)
+            ?? throw new KeyNotFoundException("Event not found.");
+        ev.IsFeatured = featured;
+        ev.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task AttendEventAsync(int eventId, int userId)
+    {
+        var exists = await _context.EventAttendees.AnyAsync(a => a.EventId == eventId && a.UserId == userId);
+        if (exists) return;
+        _context.EventAttendees.Add(new EventAttendee { EventId = eventId, UserId = userId });
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task UnattendEventAsync(int eventId, int userId)
+    {
+        var a = await _context.EventAttendees.FirstOrDefaultAsync(a => a.EventId == eventId && a.UserId == userId);
+        if (a == null) return;
+        _context.EventAttendees.Remove(a);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task FavouriteEventAsync(int eventId, int userId)
+    {
+        var exists = await _context.EventFavourites.AnyAsync(f => f.EventId == eventId && f.UserId == userId);
+        if (exists) return;
+        _context.EventFavourites.Add(new EventFavourite { EventId = eventId, UserId = userId });
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task UnfavouriteEventAsync(int eventId, int userId)
+    {
+        var f = await _context.EventFavourites.FirstOrDefaultAsync(f => f.EventId == eventId && f.UserId == userId);
+        if (f == null) return;
+        _context.EventFavourites.Remove(f);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<PagedResult<EventResponseDto>> GetMyEventsAsync(int userId, int page, int pageSize)
+    {
+        var query = _context.Events
+            .Include(e => e.Images)
+            .Include(e => e.CreatedBy)
+            .Where(e => e.CreatedByUserId == userId)
+            .OrderByDescending(e => e.CreatedAt);
+
+        var total = await query.CountAsync();
+        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+
+        return new PagedResult<EventResponseDto>
+        {
+            Items = items.Select(e => MapToDto(e)).ToList(),
+            TotalCount = total
+        };
     }
 }

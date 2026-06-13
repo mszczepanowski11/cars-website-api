@@ -1,4 +1,4 @@
-﻿using cars_website_api.CarsWebsite.DTOs.Event;
+using cars_website_api.CarsWebsite.DTOs.Event;
 using CarsWebsite;
 
 namespace cars_website_api.CarsWebsite.Interfaces;
@@ -17,4 +17,12 @@ public interface IEventService
     Task ArchiveEventAsync(int id, int adminId);
     Task DeleteEventAsync(int id, int adminId);
     Task<EventResponseDto> UpdateEventAsync(int id, CreateEventDto dto, int adminId);
-} 
+    Task FeatureEventAsync(int id, int adminId, bool featured);
+
+    // User actions
+    Task AttendEventAsync(int eventId, int userId);
+    Task UnattendEventAsync(int eventId, int userId);
+    Task FavouriteEventAsync(int eventId, int userId);
+    Task UnfavouriteEventAsync(int eventId, int userId);
+    Task<PagedResult<EventResponseDto>> GetMyEventsAsync(int userId, int page, int pageSize);
+}
