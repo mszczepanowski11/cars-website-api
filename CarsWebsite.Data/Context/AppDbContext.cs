@@ -2,6 +2,7 @@ using System;
 using cars_website_api.CarsWebsite.Domain.Entities;
 using CarsWebsite;
 using Microsoft.EntityFrameworkCore;
+using DriveType = cars_website_api.CarsWebsite.Domain.Entities.DriveType;
 
 namespace CarsWebsite
 {
