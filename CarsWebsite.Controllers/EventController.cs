@@ -21,6 +21,8 @@ public class EventController : ControllerBase
         return int.TryParse(s, out var id) ? id : null;
     }
 
+    private bool IsAdmin() => User.FindFirstValue("isAdmin") == "true";
+
     [HttpGet]
     public async Task<IActionResult> GetEvents(
         [FromQuery] string? search,
@@ -160,7 +162,7 @@ public class EventController : ControllerBase
     [Authorize]
     public async Task<IActionResult> FeatureEvent(int id)
     {
-        if (!await IsAdminAsync()) return Forbid();
+        if (!IsAdmin()) return Forbid();
         await _eventService.FeatureEventAsync(id, GetUserId()!.Value, true);
         return NoContent();
     }
@@ -169,7 +171,7 @@ public class EventController : ControllerBase
     [Authorize]
     public async Task<IActionResult> UnfeatureEvent(int id)
     {
-        if (!await IsAdminAsync()) return Forbid();
+        if (!IsAdmin()) return Forbid();
         await _eventService.FeatureEventAsync(id, GetUserId()!.Value, false);
         return NoContent();
     }

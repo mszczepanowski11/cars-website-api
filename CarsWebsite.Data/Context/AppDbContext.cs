@@ -44,6 +44,14 @@ namespace CarsWebsite
         public DbSet<UserFollow> UserFollows { get; set; }
         public DbSet<Review> Reviews { get; set; }
 
+        // Notifications
+        public DbSet<AppNotification> AppNotifications { get; set; }
+        public DbSet<UserNotificationSetting> UserNotificationSettings { get; set; }
+
+        // Event social
+        public DbSet<EventAttendee> EventAttendees { get; set; }
+        public DbSet<EventFavourite> EventFavourites { get; set; }
+
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -205,6 +213,20 @@ namespace CarsWebsite
             modelBuilder.Entity<UserFollow>().ToTable("UserFollows").HasKey(f => f.Id);
             modelBuilder.Entity<UserFollow>().HasIndex(f => new { f.FollowerId, f.FollowedId }).IsUnique();
             modelBuilder.Entity<Review>().ToTable("Reviews").HasKey(r => r.Id);
+
+            // Notifications
+            modelBuilder.Entity<AppNotification>().ToTable("AppNotifications").HasKey(n => n.Id);
+            modelBuilder.Entity<AppNotification>().HasOne(n => n.User).WithMany().HasForeignKey(n => n.UserId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<AppNotification>().Property(n => n.Type).HasConversion<string>();
+            modelBuilder.Entity<UserNotificationSetting>().ToTable("UserNotificationSettings").HasKey(s => s.Id);
+            modelBuilder.Entity<UserNotificationSetting>().HasOne(s => s.User).WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<UserNotificationSetting>().HasIndex(s => new { s.UserId, s.Category }).IsUnique();
+
+            // Event social
+            modelBuilder.Entity<EventAttendee>().ToTable("EventAttendees").HasKey(a => a.Id);
+            modelBuilder.Entity<EventAttendee>().HasIndex(a => new { a.EventId, a.UserId }).IsUnique();
+            modelBuilder.Entity<EventFavourite>().ToTable("EventFavourites").HasKey(f => f.Id);
+            modelBuilder.Entity<EventFavourite>().HasIndex(f => new { f.EventId, f.UserId }).IsUnique();
         }
     }
 }
