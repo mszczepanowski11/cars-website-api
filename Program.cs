@@ -63,6 +63,7 @@ internal class Program
         builder.Services.AddScoped<IPaymentService, PaymentService>();
         builder.Services.AddScoped<IInvoiceService, InvoiceService>();
         builder.Services.AddHostedService<MonthlyInvoiceJob>();
+        builder.Services.AddHostedService<ExpiryReminderJob>();
 
         builder.Services.AddAutoMapper(typeof(AdvertMappingProfile));
 
