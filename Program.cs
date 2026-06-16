@@ -75,6 +75,8 @@ internal class Program
         builder.Services.AddScoped<IAdminService, AdminService>();
         builder.Services.AddScoped<IEventService, EventService>();
         builder.Services.AddHttpClient();
+        builder.Services.AddScoped<IEmailService, EmailService>();
+        builder.Services.AddScoped<INotificationService, NotificationService>();
         builder.Services.AddScoped<IPaymentService, PaymentService>();
         builder.Services.AddScoped<IInvoiceService, InvoiceService>();
         builder.Services.AddHostedService<MonthlyInvoiceJob>();
@@ -156,8 +158,6 @@ internal class Program
 
             // Rename PascalCase tables to lowercase if they were created by a
             // previous deployment before we standardised on lowercase names.
-            // Errors are swallowed: the table either doesn't exist (nothing to do)
-            // or is already lowercase (CREATE IF NOT EXISTS below is a no-op).
             var renameSql = new[]
             {
                 "RENAME TABLE `AppNotifications` TO `appnotifications`",
@@ -225,6 +225,53 @@ internal class Program
   `CategoriesId` int NOT NULL,
   PRIMARY KEY (`BrandsId`, `CategoriesId`),
   KEY `IX_BrandVehicleCategories_CategoriesId` (`CategoriesId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+                @"CREATE TABLE IF NOT EXISTS `featurecategories` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `Name` longtext NOT NULL,
+  PRIMARY KEY (`Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+                @"CREATE TABLE IF NOT EXISTS `drivetypes` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `Name` longtext NOT NULL,
+  PRIMARY KEY (`Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+                @"CREATE TABLE IF NOT EXISTS `carcolors` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `Name` longtext NOT NULL,
+  `HexCode` longtext NULL,
+  PRIMARY KEY (`Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+                @"CREATE TABLE IF NOT EXISTS `advertviews` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `AdvertId` int NOT NULL,
+  `ViewedAt` datetime(6) NOT NULL,
+  `IpAddress` longtext NULL,
+  PRIMARY KEY (`Id`),
+  KEY `IX_AdvertViews_AdvertId` (`AdvertId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+                @"CREATE TABLE IF NOT EXISTS `userfollows` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `FollowerId` int NOT NULL,
+  `FollowedId` int NOT NULL,
+  `CreatedAt` datetime(6) NOT NULL,
+  PRIMARY KEY (`Id`),
+  UNIQUE KEY `IX_UserFollows_FollowerId_FollowedId` (`FollowerId`, `FollowedId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+                @"CREATE TABLE IF NOT EXISTS `reviews` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `ReviewerId` int NOT NULL,
+  `ReviewedUserId` int NOT NULL,
+  `Rating` int NOT NULL,
+  `Comment` longtext NULL,
+  `CreatedAt` datetime(6) NOT NULL,
+  PRIMARY KEY (`Id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
             };
 
@@ -239,6 +286,94 @@ internal class Program
                     logger.LogWarning("Could not create table: {Message}", ex.Message);
                 }
             }
+
+            // Make formerly NOT NULL columns nullable to match current entity definitions.
+            // Wrap each in try/catch: if already nullable or column doesn't exist, skip.
+            var modifyColumnSql = new[]
+            {
+                "ALTER TABLE `caradverts` MODIFY COLUMN `GearboxId` int NULL",
+                "ALTER TABLE `caradverts` MODIFY COLUMN `BodyTypeId` int NULL",
+                "ALTER TABLE `caradverts` MODIFY COLUMN `PowerHP` int NULL",
+                "ALTER TABLE `caradverts` MODIFY COLUMN `PowerKW` int NULL",
+                "ALTER TABLE `caradverts` MODIFY COLUMN `EngineSize` int NULL",
+            };
+            foreach (var sql in modifyColumnSql)
+            {
+                try { db.Database.ExecuteSqlRaw(sql); }
+                catch (Exception ex) { logger.LogDebug("MODIFY COLUMN skipped: {Message}", ex.Message); }
+            }
+
+            // Add columns to `adverts` that were added to the entity after the last migration.
+            // Each statement is wrapped in try/catch; MySQL raises an error if the column
+            // already exists so failures here are expected and safe to ignore.
+            var addAdvertColumnsSql = new[]
+            {
+                "ALTER TABLE `adverts` ADD COLUMN `IsHidden` tinyint(1) NOT NULL DEFAULT 0",
+                "ALTER TABLE `adverts` ADD COLUMN `IsActive` tinyint(1) NOT NULL DEFAULT 1",
+                "ALTER TABLE `adverts` ADD COLUMN `ExpiresAt` datetime(6) NULL",
+            };
+            foreach (var sql in addAdvertColumnsSql)
+            {
+                try { db.Database.ExecuteSqlRaw(sql); }
+                catch (Exception ex) { logger.LogDebug("ADD COLUMN adverts skipped: {Message}", ex.Message); }
+            }
+
+            // Add columns to `caradverts` that were added to the entity after the last migration.
+            var addCarAdvertColumnsSql = new[]
+            {
+                "ALTER TABLE `caradverts` ADD COLUMN `VehicleCategoryId` int NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `DriveTypeId` int NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `ColorId` int NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `DoorCount` int NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `SeatsCount` int NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `Vin` varchar(17) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `Slug` varchar(255) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `Condition` varchar(50) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `IsNegotiable` tinyint(1) NOT NULL DEFAULT 0",
+                "ALTER TABLE `caradverts` ADD COLUMN `SellerType` varchar(50) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `FirstRegistrationDate` datetime(6) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `RegistrationCountry` varchar(100) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `OwnersCount` int NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `IsImported` tinyint(1) NOT NULL DEFAULT 0",
+                "ALTER TABLE `caradverts` ADD COLUMN `ImportCountry` varchar(100) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `NextInspection` datetime(6) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `HasServiceBook` tinyint(1) NOT NULL DEFAULT 0",
+                "ALTER TABLE `caradverts` ADD COLUMN `HasFullServiceHistory` tinyint(1) NOT NULL DEFAULT 0",
+                "ALTER TABLE `caradverts` ADD COLUMN `HasDamage` tinyint(1) NOT NULL DEFAULT 0",
+                "ALTER TABLE `caradverts` ADD COLUMN `DamageDescription` longtext NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `HasWarranty` tinyint(1) NOT NULL DEFAULT 0",
+                "ALTER TABLE `caradverts` ADD COLUMN `WarrantyUntil` datetime(6) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `Torque` int NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `Acceleration` decimal(18,2) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `FuelConsumptionCity` decimal(18,2) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `FuelConsumptionHighway` decimal(18,2) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `FuelConsumptionCombined` decimal(18,2) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `Co2Emission` int NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `EuroNorm` varchar(50) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `CurbWeight` int NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `GrossWeight` int NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `Badge` varchar(50) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `BadgeExpiresAt` datetime(6) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `AxleCount` int NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `Payload` int NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `CargoLength` decimal(18,2) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `CargoHeight` decimal(18,2) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `Volume` decimal(18,2) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `HasRetarder` tinyint(1) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `HasTachograph` tinyint(1) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `BodySubtype` varchar(255) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `CatalogNumber` varchar(255) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `Compatibility` longtext NULL",
+            };
+            foreach (var sql in addCarAdvertColumnsSql)
+            {
+                try { db.Database.ExecuteSqlRaw(sql); }
+                catch (Exception ex) { logger.LogDebug("ADD COLUMN caradverts skipped: {Message}", ex.Message); }
+            }
+
+            // Add CategoryId to features if it was added after the DB was exported.
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `features` ADD COLUMN `CategoryId` int NOT NULL DEFAULT 0"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN features.CategoryId skipped: {Message}", ex.Message); }
         }
 
         app.UseSwagger();
