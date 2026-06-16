@@ -155,6 +155,12 @@ internal class Program
             // even if individual tables are missing (e.g. after a partial data import).
             // Explicitly create any tables that may be absent so the API never
             // crashes with "Table doesn't exist" on first use.
+            // FK constraints are omitted because the referenced table names may
+            // differ in case on Linux MySQL; try/catch ensures a warning is logged
+            // rather than crashing the process.
+            var logger = scope.ServiceProvider
+                .GetRequiredService<ILogger<AppDbContext>>();
+
             var missingTableSql = new[]
             {
                 @"CREATE TABLE IF NOT EXISTS `AppNotifications` (
@@ -170,8 +176,7 @@ internal class Program
   `InvoiceId` int NULL,
   `EmailSent` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`Id`),
-  KEY `IX_AppNotifications_UserId` (`UserId`),
-  CONSTRAINT `FK_AppNotifications_Users_UserId` FOREIGN KEY (`UserId`) REFERENCES `Users` (`Id`) ON DELETE CASCADE
+  KEY `IX_AppNotifications_UserId` (`UserId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
 
                 @"CREATE TABLE IF NOT EXISTS `UserNotificationSettings` (
@@ -180,8 +185,7 @@ internal class Program
   `Category` varchar(255) NOT NULL,
   `EmailEnabled` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`Id`),
-  UNIQUE KEY `IX_UserNotificationSettings_UserId_Category` (`UserId`, `Category`),
-  CONSTRAINT `FK_UserNotificationSettings_Users_UserId` FOREIGN KEY (`UserId`) REFERENCES `Users` (`Id`) ON DELETE CASCADE
+  UNIQUE KEY `IX_UserNotificationSettings_UserId_Category` (`UserId`, `Category`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
 
                 @"CREATE TABLE IF NOT EXISTS `EventAttendees` (
@@ -191,9 +195,7 @@ internal class Program
   `CreatedAt` datetime(6) NOT NULL,
   PRIMARY KEY (`Id`),
   UNIQUE KEY `IX_EventAttendees_EventId_UserId` (`EventId`, `UserId`),
-  KEY `IX_EventAttendees_UserId` (`UserId`),
-  CONSTRAINT `FK_EventAttendees_Events_EventId` FOREIGN KEY (`EventId`) REFERENCES `Events` (`Id`) ON DELETE CASCADE,
-  CONSTRAINT `FK_EventAttendees_Users_UserId` FOREIGN KEY (`UserId`) REFERENCES `Users` (`Id`) ON DELETE CASCADE
+  KEY `IX_EventAttendees_UserId` (`UserId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
 
                 @"CREATE TABLE IF NOT EXISTS `EventFavourites` (
@@ -203,23 +205,28 @@ internal class Program
   `CreatedAt` datetime(6) NOT NULL,
   PRIMARY KEY (`Id`),
   UNIQUE KEY `IX_EventFavourites_EventId_UserId` (`EventId`, `UserId`),
-  KEY `IX_EventFavourites_UserId` (`UserId`),
-  CONSTRAINT `FK_EventFavourites_Events_EventId` FOREIGN KEY (`EventId`) REFERENCES `Events` (`Id`) ON DELETE CASCADE,
-  CONSTRAINT `FK_EventFavourites_Users_UserId` FOREIGN KEY (`UserId`) REFERENCES `Users` (`Id`) ON DELETE CASCADE
+  KEY `IX_EventFavourites_UserId` (`UserId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
 
                 @"CREATE TABLE IF NOT EXISTS `BrandVehicleCategories` (
   `BrandsId` int NOT NULL,
   `CategoriesId` int NOT NULL,
   PRIMARY KEY (`BrandsId`, `CategoriesId`),
-  KEY `IX_BrandVehicleCategories_CategoriesId` (`CategoriesId`),
-  CONSTRAINT `FK_BrandVehicleCategories_Brands_BrandsId` FOREIGN KEY (`BrandsId`) REFERENCES `Brands` (`Id`) ON DELETE CASCADE,
-  CONSTRAINT `FK_BrandVehicleCategories_VehicleCategories_CategoriesId` FOREIGN KEY (`CategoriesId`) REFERENCES `VehicleCategories` (`Id`) ON DELETE CASCADE
+  KEY `IX_BrandVehicleCategories_CategoriesId` (`CategoriesId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
             };
 
             foreach (var sql in missingTableSql)
-                db.Database.ExecuteSqlRaw(sql);
+            {
+                try
+                {
+                    db.Database.ExecuteSqlRaw(sql);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning("Could not create table: {Message}", ex.Message);
+                }
+            }
         }
 
         app.UseSwagger();
