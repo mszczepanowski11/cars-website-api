@@ -22,6 +22,20 @@ internal class Program
         });
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+        // Fall back to individual Railway MySQL env vars when the ASP.NET Core config
+        // binding doesn't pick up ConnectionStrings__DefaultConnection
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            var host = Environment.GetEnvironmentVariable("MYSQLHOST");
+            var port = Environment.GetEnvironmentVariable("MYSQLPORT") ?? "3306";
+            var db   = Environment.GetEnvironmentVariable("MYSQLDATABASE") ?? Environment.GetEnvironmentVariable("MYSQL_DATABASE") ?? "railway";
+            var user = Environment.GetEnvironmentVariable("MYSQLUSER") ?? "root";
+            var pass = Environment.GetEnvironmentVariable("MYSQLPASSWORD");
+            if (!string.IsNullOrEmpty(host) && !string.IsNullOrEmpty(pass))
+                connectionString = $"Server={host};Port={port};Database={db};User={user};Password={pass};";
+        }
+
         if (string.IsNullOrEmpty(connectionString))
             throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
 
