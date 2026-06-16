@@ -238,30 +238,64 @@ public class PaymentService : IPaymentService
             "Aktywacja usługi {ServiceType} dla ogłoszenia {AdvertId}, {Days} dni, płatność #{PaymentId}",
             payment.ServiceType, payment.AdvertId, payment.DurationDays, payment.Id);
 
+        var advert = await _context.CarAdverts
+            .FirstOrDefaultAsync(a => a.Id == payment.AdvertId);
+
+        if (advert != null)
+        {
+            if (payment.ServiceType == ServiceType.Refresh)
+            {
+                advert.UpdatedAt = DateTime.UtcNow;
+            }
+            else
+            {
+                var badge = payment.ServiceType switch
+                {
+                    ServiceType.Top      => "TOP",
+                    ServiceType.Premium  => "PREMIUM",
+                    ServiceType.Featured => "FEATURED",
+                    _                    => null
+                };
+
+                if (badge != null)
+                {
+                    var baseDate = advert.BadgeExpiresAt.HasValue && advert.BadgeExpiresAt > DateTime.UtcNow
+                        ? advert.BadgeExpiresAt.Value
+                        : DateTime.UtcNow;
+                    advert.Badge = badge;
+                    advert.BadgeExpiresAt = baseDate.AddDays(payment.DurationDays);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+        }
+        else
+        {
+            _logger.LogWarning("ActivateServiceAsync: ogłoszenie {AdvertId} nie znalezione.", payment.AdvertId);
+        }
+
         var notifType = payment.ServiceType switch
         {
-            ServiceType.Top     => EmailNotificationType.TopStarted,
-            ServiceType.Premium => EmailNotificationType.PremiumStarted,
+            ServiceType.Top      => EmailNotificationType.TopStarted,
+            ServiceType.Premium  => EmailNotificationType.PremiumStarted,
             ServiceType.Featured => EmailNotificationType.FeaturedStarted,
-            ServiceType.Refresh => EmailNotificationType.RefreshStarted,
-            _                   => EmailNotificationType.PromotionActivated
+            ServiceType.Refresh  => EmailNotificationType.RefreshStarted,
+            _                    => EmailNotificationType.PromotionActivated
         };
 
         var typeName = payment.ServiceType switch
         {
-            ServiceType.Top     => "Wyróżnienie TOP",
-            ServiceType.Premium => "Oferta Premium",
+            ServiceType.Top      => "Wyróżnienie TOP",
+            ServiceType.Premium  => "Oferta Premium",
             ServiceType.Featured => "Wyróżnienie",
-            ServiceType.Refresh => "Odświeżenie",
-            _                   => "Promocja"
+            ServiceType.Refresh  => "Odświeżenie",
+            _                    => "Promocja"
         };
 
         _ = _notifications.NotifyAsync(payment.UserId, notifType,
             $"{typeName} aktywowane",
             $"Usługa \"{payment.ServiceDescription}\" została aktywowana na {payment.DurationDays} dni.",
             advertId: payment.AdvertId, paymentId: payment.Id);
-
-        await Task.CompletedTask;
     }
 
     private bool VerifySignature(string rawBody, string signature)
