@@ -6,7 +6,6 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>cars_website_api</RootNamespace>
         <UserSecretsId>d9ae50a9-ab11-483e-8dc0-f0962c1c1c42</UserSecretsId>
-        <UseAppHost>false</UseAppHost>
         <BaseOutputPath>out</BaseOutputPath>
     </PropertyGroup>
 
