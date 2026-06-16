@@ -151,19 +151,31 @@ internal class Program
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Database.EnsureCreated();
 
-            // EnsureCreated() is a no-op when the database already exists,
-            // even if individual tables are missing (e.g. after a partial data import).
-            // Explicitly create any tables that may be absent so the API never
-            // crashes with "Table doesn't exist" on first use.
-            // FK constraints are omitted because the referenced table names may
-            // differ in case on Linux MySQL; try/catch ensures a warning is logged
-            // rather than crashing the process.
             var logger = scope.ServiceProvider
                 .GetRequiredService<ILogger<AppDbContext>>();
 
+            // Rename PascalCase tables to lowercase if they were created by a
+            // previous deployment before we standardised on lowercase names.
+            // Errors are swallowed: the table either doesn't exist (nothing to do)
+            // or is already lowercase (CREATE IF NOT EXISTS below is a no-op).
+            var renameSql = new[]
+            {
+                "RENAME TABLE `AppNotifications` TO `appnotifications`",
+                "RENAME TABLE `UserNotificationSettings` TO `usernotificationsettings`",
+                "RENAME TABLE `EventAttendees` TO `eventattendees`",
+                "RENAME TABLE `EventFavourites` TO `eventfavourites`",
+                "RENAME TABLE `BrandVehicleCategories` TO `brandvehiclecategories`",
+            };
+            foreach (var sql in renameSql)
+            {
+                try { db.Database.ExecuteSqlRaw(sql); }
+                catch (Exception ex) { logger.LogDebug("RENAME TABLE skipped: {Message}", ex.Message); }
+            }
+
+            // Create any tables that are still missing (no FKs to avoid case issues).
             var missingTableSql = new[]
             {
-                @"CREATE TABLE IF NOT EXISTS `AppNotifications` (
+                @"CREATE TABLE IF NOT EXISTS `appnotifications` (
   `Id` int NOT NULL AUTO_INCREMENT,
   `UserId` int NOT NULL,
   `Type` varchar(255) NOT NULL,
@@ -179,7 +191,7 @@ internal class Program
   KEY `IX_AppNotifications_UserId` (`UserId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
 
-                @"CREATE TABLE IF NOT EXISTS `UserNotificationSettings` (
+                @"CREATE TABLE IF NOT EXISTS `usernotificationsettings` (
   `Id` int NOT NULL AUTO_INCREMENT,
   `UserId` int NOT NULL,
   `Category` varchar(255) NOT NULL,
@@ -188,7 +200,7 @@ internal class Program
   UNIQUE KEY `IX_UserNotificationSettings_UserId_Category` (`UserId`, `Category`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
 
-                @"CREATE TABLE IF NOT EXISTS `EventAttendees` (
+                @"CREATE TABLE IF NOT EXISTS `eventattendees` (
   `Id` int NOT NULL AUTO_INCREMENT,
   `EventId` int NOT NULL,
   `UserId` int NOT NULL,
@@ -198,7 +210,7 @@ internal class Program
   KEY `IX_EventAttendees_UserId` (`UserId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
 
-                @"CREATE TABLE IF NOT EXISTS `EventFavourites` (
+                @"CREATE TABLE IF NOT EXISTS `eventfavourites` (
   `Id` int NOT NULL AUTO_INCREMENT,
   `EventId` int NOT NULL,
   `UserId` int NOT NULL,
@@ -208,7 +220,7 @@ internal class Program
   KEY `IX_EventFavourites_UserId` (`UserId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
 
-                @"CREATE TABLE IF NOT EXISTS `BrandVehicleCategories` (
+                @"CREATE TABLE IF NOT EXISTS `brandvehiclecategories` (
   `BrandsId` int NOT NULL,
   `CategoriesId` int NOT NULL,
   PRIMARY KEY (`BrandsId`, `CategoriesId`),

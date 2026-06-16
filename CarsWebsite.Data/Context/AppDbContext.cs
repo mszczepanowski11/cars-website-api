@@ -161,7 +161,7 @@ namespace CarsWebsite
                 .HasForeignKey(r => r.ReportedByUserId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<EventReport>()
                 .Property(r => r.Reason).HasConversion<string>();
-            // Payment & Invoice
+
             modelBuilder.Entity<Payment>().ToTable("Payments").HasKey(p => p.Id);
             modelBuilder.Entity<Payment>()
                 .HasOne(p => p.User).WithMany()
@@ -196,19 +196,16 @@ namespace CarsWebsite
             modelBuilder.Entity<Invoice>()
                 .Property(i => i.VatRate).HasPrecision(5, 4);
 
-            // Taxonomy extensions
             modelBuilder.Entity<DriveType>().ToTable("DriveTypes").HasKey(d => d.Id);
             modelBuilder.Entity<CarColor>().ToTable("CarColors").HasKey(c => c.Id);
             modelBuilder.Entity<CarAdvert>().HasOne(a => a.DriveType).WithMany().HasForeignKey(a => a.DriveTypeId).IsRequired(false);
             modelBuilder.Entity<CarAdvert>().HasOne(a => a.CarColor).WithMany().HasForeignKey(a => a.ColorId).IsRequired(false);
 
-            // Social / stats
             modelBuilder.Entity<AdvertView>().ToTable("AdvertViews").HasKey(v => v.Id);
             modelBuilder.Entity<UserFollow>().ToTable("UserFollows").HasKey(f => f.Id);
             modelBuilder.Entity<UserFollow>().HasIndex(f => new { f.FollowerId, f.FollowedId }).IsUnique();
             modelBuilder.Entity<Review>().ToTable("Reviews").HasKey(r => r.Id);
 
-            // Notifications
             modelBuilder.Entity<AppNotification>().ToTable("AppNotifications").HasKey(n => n.Id);
             modelBuilder.Entity<AppNotification>().HasOne(n => n.User).WithMany().HasForeignKey(n => n.UserId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<AppNotification>().Property(n => n.Type).HasConversion<string>();
@@ -216,11 +213,20 @@ namespace CarsWebsite
             modelBuilder.Entity<UserNotificationSetting>().HasOne(s => s.User).WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<UserNotificationSetting>().HasIndex(s => new { s.UserId, s.Category }).IsUnique();
 
-            // Event social
             modelBuilder.Entity<EventAttendee>().ToTable("EventAttendees").HasKey(a => a.Id);
             modelBuilder.Entity<EventAttendee>().HasIndex(a => new { a.EventId, a.UserId }).IsUnique();
             modelBuilder.Entity<EventFavourite>().ToTable("EventFavourites").HasKey(f => f.Id);
             modelBuilder.Entity<EventFavourite>().HasIndex(f => new { f.EventId, f.UserId }).IsUnique();
+
+            // Lowercase every table name so EF Core generates lowercase SQL,
+            // matching Railway Linux MySQL where tables were imported with
+            // lowercase names from Windows (case-insensitive) MySQL.
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                var tableName = entityType.GetTableName();
+                if (tableName != null)
+                    entityType.SetTableName(tableName.ToLower());
+            }
         }
     }
 }

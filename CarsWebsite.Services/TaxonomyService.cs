@@ -36,8 +36,8 @@ public class TaxonomyService : ITaxonomyService
     {
         return await _context.Brands
             .FromSqlRaw(@"
-                SELECT b.* FROM Brands b
-                INNER JOIN BrandVehicleCategories bvc ON bvc.BrandsId = b.Id
+                SELECT b.* FROM brands b
+                INNER JOIN brandvehiclecategories bvc ON bvc.BrandsId = b.Id
                 WHERE bvc.CategoriesId = {0}
                 ORDER BY b.Name", categoryId)
             .AsNoTracking()
