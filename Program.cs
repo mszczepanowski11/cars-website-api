@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using cars_website_api.CarsWebsite.Interfaces;
 using cars_website_api.CarsWebsite.Services;
 using CarsWebsite;
+using CloudinaryDotNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -67,6 +68,15 @@ internal class Program
         builder.Services.AddScoped<IReviewService, ReviewService>();
         builder.Services.AddScoped<IAdvertService, AdvertService>();
         builder.Services.AddScoped<IAdvertImageService, AdvertImageService>();
+
+        var cloudinaryAccount = new Account(
+            Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME") ?? "",
+            Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY") ?? "",
+            Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET") ?? ""
+        );
+        var cloudinary = new Cloudinary(cloudinaryAccount);
+        cloudinary.Api.Secure = true;
+        builder.Services.AddSingleton(cloudinary);
         builder.Services.AddScoped<ITaxonomyService, TaxonomyService>();
         builder.Services.AddScoped<ICategoryService, CategoryService>();
         builder.Services.AddScoped<IFavoriteService, FavoriteService>();
@@ -370,6 +380,10 @@ internal class Program
                 try { db.Database.ExecuteSqlRaw(sql); }
                 catch (Exception ex) { logger.LogDebug("ADD COLUMN caradverts skipped: {Message}", ex.Message); }
             }
+
+            // Add IsMain to advertimages — column was added to entity after the original migration.
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `advertimages` ADD COLUMN `IsMain` tinyint(1) NOT NULL DEFAULT 0"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN advertimages.IsMain skipped: {Message}", ex.Message); }
 
             // Add CategoryId to features if it was added after the DB was exported.
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `features` ADD COLUMN `CategoryId` int NOT NULL DEFAULT 0"); }
