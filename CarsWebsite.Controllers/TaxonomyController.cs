@@ -1,5 +1,6 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using cars_website_api.CarsWebsite.DTOs.Advert;
 using cars_website_api.CarsWebsite.DTOs.Car;
 using cars_website_api.CarsWebsite.Interfaces;
 
@@ -76,5 +77,12 @@ namespace cars_website_api.CarsWebsite.Controllers
         [HttpGet("feature-categories")]
         public async Task<IActionResult> GetFeatureCategories()
             => Ok(await _taxonomyService.GetFeatureCategoriesAsync());
+
+        [HttpGet("feature-categories/by-vehicle/{vehicleCategoryId}")]
+        public async Task<IActionResult> GetFeatureCategoriesByVehicle(int vehicleCategoryId)
+        {
+            var categories = await _taxonomyService.GetFeatureCategoriesByVehicleCategoryAsync(vehicleCategoryId);
+            return Ok(_mapper.Map<IEnumerable<FeatureCategoryDto>>(categories));
+        }
     }
 }

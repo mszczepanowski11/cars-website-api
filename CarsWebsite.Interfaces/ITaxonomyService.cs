@@ -19,4 +19,5 @@ public interface ITaxonomyService
     Task<IEnumerable<Feature>> GetFeaturesAsync();
     Task<IEnumerable<VehicleCategory>> GetVehicleCategoriesAsync();
     Task<IEnumerable<FeatureCategory>> GetFeatureCategoriesAsync();
+    Task<IEnumerable<FeatureCategory>> GetFeatureCategoriesByVehicleCategoryAsync(int vehicleCategoryId);
 }

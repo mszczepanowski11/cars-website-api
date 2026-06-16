@@ -2,12 +2,14 @@ using System.Text;
 using System.Text.Json.Serialization;
 using cars_website_api.CarsWebsite.Interfaces;
 using cars_website_api.CarsWebsite.Services;
+using cars_website_api.CarsWebsite.Domain.Entities;
 using CarsWebsite;
 using CloudinaryDotNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using DriveType = cars_website_api.CarsWebsite.Domain.Entities.DriveType;
 
 
 internal class Program
@@ -386,6 +388,10 @@ internal class Program
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `advertimages` ADD COLUMN `IsMain` tinyint(1) NOT NULL DEFAULT 0"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN advertimages.IsMain skipped: {Message}", ex.Message); }
 
+            // Add VehicleCategoryId to featurecategories for category-specific equipment grouping
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `featurecategories` ADD COLUMN `VehicleCategoryId` int NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN featurecategories.VehicleCategoryId skipped: {Message}", ex.Message); }
+
             // Add CategoryId to features if it was added after the DB was exported.
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `features` ADD COLUMN `CategoryId` int NOT NULL DEFAULT 0"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN features.CategoryId skipped: {Message}", ex.Message); }
@@ -449,17 +455,378 @@ internal class Program
                 try { db.Database.ExecuteSqlRaw(sql); }
                 catch (Exception ex) { logger.LogDebug("ADD COLUMN reviews skipped: {Message}", ex.Message); }
             }
+
+            SeedDataIfEmpty(db, logger);
         }
 
         app.UseSwagger();
         app.UseSwaggerUI();
-        
-        app.UseStaticFiles(); 
+
+        app.UseStaticFiles();
         app.UseHttpsRedirection();
         app.UseCors("AllowNuxt");
         app.UseAuthentication();
         app.UseAuthorization();
-        app.MapControllers();      
+        app.MapControllers();
         app.Run();
+    }
+
+    private static void SeedDataIfEmpty(AppDbContext db, ILogger logger)
+    {
+        // Vehicle Categories
+        if (!db.VehicleCategories.Any())
+        {
+            db.VehicleCategories.AddRange(
+                new VehicleCategory { Slug = "auta-osobowe",  Name = "Auta osobowe",  Description = "Sedany, coupe, SUV-y i więcej",          IconName = "mdi-car",                    SortOrder = 1 },
+                new VehicleCategory { Slug = "dostawcze",     Name = "Dostawcze",     Description = "Busy, vany, samochody dostawcze",          IconName = "mdi-truck-delivery",         SortOrder = 2 },
+                new VehicleCategory { Slug = "ciezarowe",     Name = "Ciężarowe",     Description = "Ciężarówki, TIR-y, naczepy i więcej",      IconName = "mdi-truck",                  SortOrder = 3 },
+                new VehicleCategory { Slug = "maszyny",       Name = "Maszyny",       Description = "Maszyny budowlane, rolnicze i przemysłowe", IconName = "mdi-excavator",              SortOrder = 4 },
+                new VehicleCategory { Slug = "czesci",        Name = "Części",        Description = "Części samochodowe, akcesoria i tuning",    IconName = "mdi-cog",                    SortOrder = 5 },
+                new VehicleCategory { Slug = "motocykle",     Name = "Motocykle",     Description = "Motocykle, skutery, quady i więcej",        IconName = "mdi-motorbike",              SortOrder = 6 },
+                new VehicleCategory { Slug = "przyczepy",     Name = "Przyczepy",     Description = "Przyczepy, lawety, naczepy i więcej",       IconName = "mdi-rv-truck",               SortOrder = 7 },
+                new VehicleCategory { Slug = "rolnicze",      Name = "Rolnicze",      Description = "Maszyny i pojazdy rolnicze",                IconName = "mdi-tractor",                SortOrder = 8 },
+                new VehicleCategory { Slug = "budowlane",     Name = "Budowlane",     Description = "Sprzęt budowlany i narzędzia",              IconName = "mdi-hard-hat",               SortOrder = 9 },
+                new VehicleCategory { Slug = "inne",          Name = "Inne",          Description = "Pozostałe pojazdy i przedmioty",            IconName = "mdi-dots-horizontal-circle", SortOrder = 10 }
+            );
+            db.SaveChanges();
+            logger.LogInformation("Seeded vehicle categories");
+        }
+
+        // Fuel Types
+        if (!db.FuelTypes.Any())
+        {
+            db.FuelTypes.AddRange(
+                new FuelType { Name = "Benzyna" },
+                new FuelType { Name = "Diesel" },
+                new FuelType { Name = "LPG" },
+                new FuelType { Name = "CNG" },
+                new FuelType { Name = "Hybryda" },
+                new FuelType { Name = "Hybryda mild" },
+                new FuelType { Name = "Hybryda plug-in" },
+                new FuelType { Name = "Elektryczny" },
+                new FuelType { Name = "Wodór" },
+                new FuelType { Name = "Benzyna + LPG" }
+            );
+            db.SaveChanges();
+            logger.LogInformation("Seeded fuel types");
+        }
+
+        // Gearboxes
+        if (!db.Gearboxes.Any())
+        {
+            db.Gearboxes.AddRange(
+                new Gearbox { Name = "Manualna" },
+                new Gearbox { Name = "Automatyczna" },
+                new Gearbox { Name = "Automatyczna (DSG/DCT)" },
+                new Gearbox { Name = "Półautomatyczna" },
+                new Gearbox { Name = "CVT" }
+            );
+            db.SaveChanges();
+            logger.LogInformation("Seeded gearboxes");
+        }
+
+        // Body Types
+        if (!db.BodyTypes.Any())
+        {
+            db.BodyTypes.AddRange(
+                new BodyType { Name = "Sedan" },
+                new BodyType { Name = "Hatchback" },
+                new BodyType { Name = "Kombi" },
+                new BodyType { Name = "SUV" },
+                new BodyType { Name = "Crossover" },
+                new BodyType { Name = "Coupe" },
+                new BodyType { Name = "Kabriolet" },
+                new BodyType { Name = "Minivan / Van" },
+                new BodyType { Name = "Pickup" },
+                new BodyType { Name = "Liftback" },
+                new BodyType { Name = "Roadster" },
+                new BodyType { Name = "MPV" }
+            );
+            db.SaveChanges();
+            logger.LogInformation("Seeded body types");
+        }
+
+        // Drive Types
+        if (!db.DriveTypes.Any())
+        {
+            db.DriveTypes.AddRange(
+                new DriveType { Name = "Przedni (FWD)" },
+                new DriveType { Name = "Tylny (RWD)" },
+                new DriveType { Name = "4x4 stały (AWD)" },
+                new DriveType { Name = "4x4 dołączany (4WD)" }
+            );
+            db.SaveChanges();
+            logger.LogInformation("Seeded drive types");
+        }
+
+        // Colors
+        if (!db.CarColors.Any())
+        {
+            db.CarColors.AddRange(
+                new CarColor { Name = "Biały",       HexCode = "#FFFFFF" },
+                new CarColor { Name = "Czarny",      HexCode = "#111111" },
+                new CarColor { Name = "Srebrny",      HexCode = "#C0C0C0" },
+                new CarColor { Name = "Szary",        HexCode = "#808080" },
+                new CarColor { Name = "Czerwony",     HexCode = "#CC0000" },
+                new CarColor { Name = "Niebieski",    HexCode = "#0055CC" },
+                new CarColor { Name = "Granatowy",    HexCode = "#1a237e" },
+                new CarColor { Name = "Zielony",      HexCode = "#2E7D32" },
+                new CarColor { Name = "Brązowy",      HexCode = "#5D4037" },
+                new CarColor { Name = "Beżowy",       HexCode = "#D7CCC8" },
+                new CarColor { Name = "Żółty",        HexCode = "#F9A825" },
+                new CarColor { Name = "Pomarańczowy", HexCode = "#E65100" },
+                new CarColor { Name = "Fioletowy",    HexCode = "#6A1B9A" },
+                new CarColor { Name = "Złoty",        HexCode = "#FFD700" },
+                new CarColor { Name = "Bordowy",      HexCode = "#800000" },
+                new CarColor { Name = "Turkusowy",    HexCode = "#006064" }
+            );
+            db.SaveChanges();
+            logger.LogInformation("Seeded car colors");
+        }
+
+        // Feature Categories + Features (per vehicle category)
+        if (!db.FeatureCategories.Any())
+        {
+            var catList = db.VehicleCategories.ToList();
+
+            int carCatId     = catList.FirstOrDefault(c => c.Slug == "auta-osobowe")?.Id ?? 0;
+            int motoCatId    = catList.FirstOrDefault(c => c.Slug == "motocykle")?.Id ?? 0;
+            int trailerCatId = catList.FirstOrDefault(c => c.Slug == "przyczepy")?.Id ?? 0;
+            int agriCatId    = catList.FirstOrDefault(c => c.Slug == "rolnicze")?.Id ?? 0;
+
+            var featureCategories = new List<FeatureCategory>
+            {
+                // ── CARS & VANS (VehicleCategoryId = carCatId) ──
+                new FeatureCategory
+                {
+                    Name = "Bezpieczeństwo", VehicleCategoryId = carCatId == 0 ? null : carCatId,
+                    Features = new List<Feature> {
+                        new Feature { Name = "ABS" }, new Feature { Name = "ESP" }, new Feature { Name = "ASR / kontrola trakcji" },
+                        new Feature { Name = "Airbag kierowcy" }, new Feature { Name = "Airbag pasażera" }, new Feature { Name = "Kurtyny powietrzne" },
+                        new Feature { Name = "Boczne poduszki powietrzne" }, new Feature { Name = "Isofix" },
+                        new Feature { Name = "Czujniki parkowania przednie" }, new Feature { Name = "Czujniki parkowania tylne" },
+                        new Feature { Name = "Alarm" }, new Feature { Name = "Immobilizer" }
+                    }
+                },
+                new FeatureCategory
+                {
+                    Name = "Komfort", VehicleCategoryId = carCatId == 0 ? null : carCatId,
+                    Features = new List<Feature> {
+                        new Feature { Name = "Klimatyzacja manualna" }, new Feature { Name = "Klimatyzacja automatyczna" },
+                        new Feature { Name = "Dwustrefowa klimatyzacja" }, new Feature { Name = "Trzystrefowa klimatyzacja" },
+                        new Feature { Name = "Podgrzewane fotele przednie" }, new Feature { Name = "Podgrzewane fotele tylne" },
+                        new Feature { Name = "Wentylowane fotele" }, new Feature { Name = "Elektryczne fotele" },
+                        new Feature { Name = "Pamięć ustawień fotela" }, new Feature { Name = "Podgrzewana kierownica" },
+                        new Feature { Name = "Elektryczna regulacja lusterek" }, new Feature { Name = "Podgrzewane lusterka" },
+                        new Feature { Name = "Elektryczna szyba przednia" }, new Feature { Name = "Elektryczna szyba tylna" },
+                        new Feature { Name = "Keyless Entry" }, new Feature { Name = "Start/Stop" }
+                    }
+                },
+                new FeatureCategory
+                {
+                    Name = "Multimedia", VehicleCategoryId = carCatId == 0 ? null : carCatId,
+                    Features = new List<Feature> {
+                        new Feature { Name = "Bluetooth" }, new Feature { Name = "Android Auto" }, new Feature { Name = "Apple CarPlay" },
+                        new Feature { Name = "GPS / Nawigacja" }, new Feature { Name = "USB" }, new Feature { Name = "Ładowarka indukcyjna Qi" },
+                        new Feature { Name = "System audio premium" }, new Feature { Name = "Radio fabryczne" },
+                        new Feature { Name = "Ekran dotykowy" }, new Feature { Name = "Head-up display (HUD)" },
+                        new Feature { Name = "Asystent głosowy" }, new Feature { Name = "Wi-Fi hotspot" }
+                    }
+                },
+                new FeatureCategory
+                {
+                    Name = "Oświetlenie", VehicleCategoryId = carCatId == 0 ? null : carCatId,
+                    Features = new List<Feature> {
+                        new Feature { Name = "Halogeny" }, new Feature { Name = "Xenon" }, new Feature { Name = "Bi-Xenon" },
+                        new Feature { Name = "Full LED" }, new Feature { Name = "Matrix LED" }, new Feature { Name = "Światła adaptacyjne" },
+                        new Feature { Name = "Światła do jazdy dziennej (DRL)" }, new Feature { Name = "Podświetlenie wnętrza" }
+                    }
+                },
+                new FeatureCategory
+                {
+                    Name = "Systemy wspomagania", VehicleCategoryId = carCatId == 0 ? null : carCatId,
+                    Features = new List<Feature> {
+                        new Feature { Name = "Tempomat" }, new Feature { Name = "Aktywny tempomat (ACC)" },
+                        new Feature { Name = "Asystent pasa ruchu (LKA)" }, new Feature { Name = "Asystent martwego pola (BSM)" },
+                        new Feature { Name = "Asystent parkowania" }, new Feature { Name = "Automatyczne parkowanie" },
+                        new Feature { Name = "Kamera cofania" }, new Feature { Name = "Kamera 360°" },
+                        new Feature { Name = "Hamowanie awaryjne (AEB)" }, new Feature { Name = "Rozpoznawanie znaków (TSR)" },
+                        new Feature { Name = "Asystent zmęczenia kierowcy" }, new Feature { Name = "Asystent zjazdu ze wzniesienia (HDC)" },
+                        new Feature { Name = "Asystent ruszania pod górkę (HSA)" }
+                    }
+                },
+                new FeatureCategory
+                {
+                    Name = "Nadwozie i wyposażenie zewnętrzne", VehicleCategoryId = carCatId == 0 ? null : carCatId,
+                    Features = new List<Feature> {
+                        new Feature { Name = "Dach panoramiczny" }, new Feature { Name = "Szklany dach (moonroof)" },
+                        new Feature { Name = "Relingi dachowe" }, new Feature { Name = "Hak holowniczy" },
+                        new Feature { Name = "Przyciemniane szyby" }, new Feature { Name = "Felgi aluminiowe" },
+                        new Feature { Name = "Opony zimowe (komplet)" }, new Feature { Name = "Koło zapasowe pełnowymiarowe" },
+                        new Feature { Name = "Boczne progi" }, new Feature { Name = "Elektrycznie otwierana klapa bagażnika" }
+                    }
+                },
+                // ── MOTORCYCLES ──
+                new FeatureCategory
+                {
+                    Name = "Bezpieczeństwo", VehicleCategoryId = motoCatId == 0 ? null : motoCatId,
+                    Features = new List<Feature> {
+                        new Feature { Name = "ABS" }, new Feature { Name = "Kontrola trakcji (TCS)" },
+                        new Feature { Name = "Asystent ruszania pod górkę (HSA)" }, new Feature { Name = "Hamowanie kombinowane (CBS)" }
+                    }
+                },
+                new FeatureCategory
+                {
+                    Name = "Komfort", VehicleCategoryId = motoCatId == 0 ? null : motoCatId,
+                    Features = new List<Feature> {
+                        new Feature { Name = "Quickshifter" }, new Feature { Name = "Podgrzewane manetki" },
+                        new Feature { Name = "Tempomat" }, new Feature { Name = "Elektrycznie regulowana szyba" },
+                        new Feature { Name = "Elektryczna regulacja zawieszenia" }, new Feature { Name = "Podgrzewane siodełko" }
+                    }
+                },
+                new FeatureCategory
+                {
+                    Name = "Bagaż i akcesoria", VehicleCategoryId = motoCatId == 0 ? null : motoCatId,
+                    Features = new List<Feature> {
+                        new Feature { Name = "Kufry boczne (oryginalne)" }, new Feature { Name = "Centralny kufer (oryginalne)" },
+                        new Feature { Name = "Tankbag" }, new Feature { Name = "Owiewki boczne" },
+                        new Feature { Name = "Osłona silnika" }, new Feature { Name = "Uchwyty pasażera" },
+                        new Feature { Name = "Podnóżki pasażera" }
+                    }
+                },
+                // ── TRAILERS ──
+                new FeatureCategory
+                {
+                    Name = "Wyposażenie techniczne", VehicleCategoryId = trailerCatId == 0 ? null : trailerCatId,
+                    Features = new List<Feature> {
+                        new Feature { Name = "Hamulec najazdowy" }, new Feature { Name = "Koło podporowe" },
+                        new Feature { Name = "Podpory tylne" }, new Feature { Name = "Burtownica aluminiowa" },
+                        new Feature { Name = "Plandeka" }, new Feature { Name = "Rampa załadowcza" },
+                        new Feature { Name = "Oświetlenie LED" }, new Feature { Name = "Blokada kuli" }
+                    }
+                },
+                // ── AGRICULTURAL ──
+                new FeatureCategory
+                {
+                    Name = "Kabina i komfort", VehicleCategoryId = agriCatId == 0 ? null : agriCatId,
+                    Features = new List<Feature> {
+                        new Feature { Name = "Klimatyzacja kabiny" }, new Feature { Name = "Zawieszenie kabiny" },
+                        new Feature { Name = "Radio / Bluetooth" }, new Feature { Name = "Fotel z zawieszeniem pneumatycznym" }
+                    }
+                },
+                new FeatureCategory
+                {
+                    Name = "Technologia i systemy", VehicleCategoryId = agriCatId == 0 ? null : agriCatId,
+                    Features = new List<Feature> {
+                        new Feature { Name = "GPS / Autosteering" }, new Feature { Name = "Kamera robocza" },
+                        new Feature { Name = "System telematyczny" }, new Feature { Name = "4WD" },
+                        new Feature { Name = "Przedni WOM" }, new Feature { Name = "Tylny WOM" },
+                        new Feature { Name = "Blokada mechanizmu różnicowego" }
+                    }
+                },
+            };
+
+            db.FeatureCategories.AddRange(featureCategories);
+            db.SaveChanges();
+            logger.LogInformation("Seeded feature categories and features");
+        }
+
+        // Brands
+        if (!db.Brands.Any())
+        {
+            var catList = db.VehicleCategories.ToList();
+            var carCat    = catList.FirstOrDefault(c => c.Slug == "auta-osobowe");
+            var vanCat    = catList.FirstOrDefault(c => c.Slug == "dostawcze");
+            var truckCat  = catList.FirstOrDefault(c => c.Slug == "ciezarowe");
+            var motoCat   = catList.FirstOrDefault(c => c.Slug == "motocykle");
+            var agriCat   = catList.FirstOrDefault(c => c.Slug == "rolnicze");
+
+            var carVanTruck = new[] { carCat, vanCat, truckCat }.Where(c => c != null).Cast<VehicleCategory>().ToList();
+            var carVan = new[] { carCat, vanCat }.Where(c => c != null).Cast<VehicleCategory>().ToList();
+            var carOnly = new[] { carCat }.Where(c => c != null).Cast<VehicleCategory>().ToList();
+            var motoOnly = new[] { motoCat }.Where(c => c != null).Cast<VehicleCategory>().ToList();
+            var truckOnly = new[] { truckCat, vanCat }.Where(c => c != null).Cast<VehicleCategory>().ToList();
+            var agriOnly = new[] { agriCat }.Where(c => c != null).Cast<VehicleCategory>().ToList();
+
+            var carMoto = new[] { carCat, motoCat }.Where(c => c != null).Cast<VehicleCategory>().ToList();
+            var carVanMoto = new[] { carCat, vanCat, motoCat }.Where(c => c != null).Cast<VehicleCategory>().ToList();
+
+            var brands = new List<Brand>
+            {
+                // Cars & vans
+                new Brand { Name = "Abarth",         Slug = "abarth",         Categories = carOnly },
+                new Brand { Name = "Alfa Romeo",      Slug = "alfa-romeo",     Categories = carOnly },
+                new Brand { Name = "Audi",            Slug = "audi",           Categories = carVan },
+                new Brand { Name = "BMW",             Slug = "bmw",            Categories = new[] { carCat, vanCat, motoCat }.Where(c => c != null).Cast<VehicleCategory>().ToList() },
+                new Brand { Name = "Chevrolet",       Slug = "chevrolet",      Categories = carOnly },
+                new Brand { Name = "Chrysler",        Slug = "chrysler",       Categories = carOnly },
+                new Brand { Name = "Citroën",         Slug = "citroen",        Categories = carVan },
+                new Brand { Name = "Dacia",           Slug = "dacia",          Categories = carVan },
+                new Brand { Name = "Dodge",           Slug = "dodge",          Categories = carOnly },
+                new Brand { Name = "Ferrari",         Slug = "ferrari",        Categories = carOnly },
+                new Brand { Name = "Fiat",            Slug = "fiat",           Categories = carVan },
+                new Brand { Name = "Ford",            Slug = "ford",           Categories = carVan },
+                new Brand { Name = "Genesis",         Slug = "genesis",        Categories = carOnly },
+                new Brand { Name = "Honda",           Slug = "honda",          Categories = new[] { carCat, motoCat }.Where(c => c != null).Cast<VehicleCategory>().ToList() },
+                new Brand { Name = "Hyundai",         Slug = "hyundai",        Categories = carVan },
+                new Brand { Name = "Jaguar",          Slug = "jaguar",         Categories = carOnly },
+                new Brand { Name = "Jeep",            Slug = "jeep",           Categories = carOnly },
+                new Brand { Name = "Kia",             Slug = "kia",            Categories = carVan },
+                new Brand { Name = "Lamborghini",     Slug = "lamborghini",    Categories = carOnly },
+                new Brand { Name = "Land Rover",      Slug = "land-rover",     Categories = carOnly },
+                new Brand { Name = "Lexus",           Slug = "lexus",          Categories = carOnly },
+                new Brand { Name = "Maserati",        Slug = "maserati",       Categories = carOnly },
+                new Brand { Name = "Mazda",           Slug = "mazda",          Categories = carVan },
+                new Brand { Name = "Mercedes-Benz",   Slug = "mercedes-benz",  Categories = carVanTruck },
+                new Brand { Name = "MG",              Slug = "mg",             Categories = carOnly },
+                new Brand { Name = "Mini",            Slug = "mini",           Categories = carOnly },
+                new Brand { Name = "Mitsubishi",      Slug = "mitsubishi",     Categories = carVan },
+                new Brand { Name = "Nissan",          Slug = "nissan",         Categories = carVan },
+                new Brand { Name = "Opel",            Slug = "opel",           Categories = carVan },
+                new Brand { Name = "Peugeot",         Slug = "peugeot",        Categories = carVan },
+                new Brand { Name = "Porsche",         Slug = "porsche",        Categories = carOnly },
+                new Brand { Name = "Renault",         Slug = "renault",        Categories = carVan },
+                new Brand { Name = "Seat",            Slug = "seat",           Categories = carVan },
+                new Brand { Name = "Skoda",           Slug = "skoda",          Categories = carVan },
+                new Brand { Name = "Subaru",          Slug = "subaru",         Categories = carOnly },
+                new Brand { Name = "Suzuki",          Slug = "suzuki",         Categories = new[] { carCat, motoCat }.Where(c => c != null).Cast<VehicleCategory>().ToList() },
+                new Brand { Name = "Tesla",           Slug = "tesla",          Categories = carVan },
+                new Brand { Name = "Toyota",          Slug = "toyota",         Categories = carVan },
+                new Brand { Name = "Volkswagen",      Slug = "volkswagen",     Categories = carVan },
+                new Brand { Name = "Volvo",           Slug = "volvo",          Categories = carVanTruck },
+                new Brand { Name = "BYD",             Slug = "byd",            Categories = carVan },
+                // Motorcycles only
+                new Brand { Name = "Aprilia",         Slug = "aprilia",        Categories = motoOnly },
+                new Brand { Name = "Ducati",          Slug = "ducati",         Categories = motoOnly },
+                new Brand { Name = "Harley-Davidson", Slug = "harley-davidson", Categories = motoOnly },
+                new Brand { Name = "Kawasaki",        Slug = "kawasaki",       Categories = motoOnly },
+                new Brand { Name = "KTM",             Slug = "ktm",            Categories = motoOnly },
+                new Brand { Name = "MV Agusta",       Slug = "mv-agusta",      Categories = motoOnly },
+                new Brand { Name = "Royal Enfield",   Slug = "royal-enfield",  Categories = motoOnly },
+                new Brand { Name = "Triumph",         Slug = "triumph",        Categories = motoOnly },
+                new Brand { Name = "Yamaha",          Slug = "yamaha",         Categories = motoOnly },
+                new Brand { Name = "Indian",          Slug = "indian",         Categories = motoOnly },
+                new Brand { Name = "Husqvarna",       Slug = "husqvarna",      Categories = motoOnly },
+                // Trucks
+                new Brand { Name = "DAF",             Slug = "daf",            Categories = truckOnly },
+                new Brand { Name = "Iveco",           Slug = "iveco",          Categories = truckOnly },
+                new Brand { Name = "MAN",             Slug = "man",            Categories = truckOnly },
+                new Brand { Name = "Scania",          Slug = "scania",         Categories = truckOnly },
+                new Brand { Name = "Renault Trucks",  Slug = "renault-trucks", Categories = truckOnly },
+                // Agricultural
+                new Brand { Name = "Case IH",         Slug = "case-ih",        Categories = agriOnly },
+                new Brand { Name = "Claas",           Slug = "claas",          Categories = agriOnly },
+                new Brand { Name = "Fendt",           Slug = "fendt",          Categories = agriOnly },
+                new Brand { Name = "John Deere",      Slug = "john-deere",     Categories = agriOnly },
+                new Brand { Name = "Kubota",          Slug = "kubota",         Categories = agriOnly },
+                new Brand { Name = "Massey Ferguson", Slug = "massey-ferguson", Categories = agriOnly },
+                new Brand { Name = "New Holland",     Slug = "new-holland",    Categories = agriOnly },
+                new Brand { Name = "Zetor",           Slug = "zetor",          Categories = agriOnly },
+            };
+
+            db.Brands.AddRange(brands);
+            db.SaveChanges();
+            logger.LogInformation("Seeded {Count} brands", brands.Count);
+        }
     }
 }

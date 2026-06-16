@@ -106,6 +106,7 @@ public class TaxonomyService : ITaxonomyService
     public async Task<IEnumerable<Feature>> GetFeaturesAsync()
     {
         return await _context.Features
+            .Include(f => f.Category)
             .OrderBy(f => f.Name)
             .ToListAsync();
     }
@@ -121,6 +122,15 @@ public class TaxonomyService : ITaxonomyService
     {
         return await _context.FeatureCategories
             .Include(fc => fc.Features)
+            .OrderBy(fc => fc.Name)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<FeatureCategory>> GetFeatureCategoriesByVehicleCategoryAsync(int vehicleCategoryId)
+    {
+        return await _context.FeatureCategories
+            .Include(fc => fc.Features)
+            .Where(fc => fc.VehicleCategoryId == vehicleCategoryId || fc.VehicleCategoryId == null)
             .OrderBy(fc => fc.Name)
             .ToListAsync();
     }

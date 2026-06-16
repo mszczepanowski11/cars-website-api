@@ -218,6 +218,19 @@ namespace CarsWebsite
             modelBuilder.Entity<EventFavourite>().ToTable("EventFavourites").HasKey(f => f.Id);
             modelBuilder.Entity<EventFavourite>().HasIndex(f => new { f.EventId, f.UserId }).IsUnique();
 
+            // Many-to-many: Brand ↔ VehicleCategory
+            modelBuilder.Entity<Brand>()
+                .HasMany(b => b.Categories)
+                .WithMany(c => c.Brands)
+                .UsingEntity(j => j.ToTable("brandvehiclecategories"));
+
+            // FeatureCategory → VehicleCategory (optional FK)
+            modelBuilder.Entity<FeatureCategory>()
+                .HasOne(fc => fc.VehicleCategory)
+                .WithMany()
+                .HasForeignKey(fc => fc.VehicleCategoryId)
+                .IsRequired(false);
+
             // Lowercase every table name so EF Core generates lowercase SQL,
             // matching Railway Linux MySQL where tables were imported with
             // lowercase names from Windows (case-insensitive) MySQL.

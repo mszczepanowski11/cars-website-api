@@ -87,7 +87,9 @@ public class AdvertService : IAdvertService
         if (advert.UserId != userId)
             throw new UnauthorizedAccessException("You do not own this advert");
 
-        _context.CarAdverts.Remove(advert);
+        advert.IsActive = false;
+        advert.IsHidden = true;
+        advert.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
     }
 
@@ -129,6 +131,9 @@ public class AdvertService : IAdvertService
             .Include(a => a.AdvertFeatures)
                 .ThenInclude(af => af.Feature)
             .AsQueryable();
+
+        // Only show active, non-hidden adverts
+        query = query.Where(a => a.IsActive && !a.IsHidden);
 
         if (dto.BrandId.HasValue)
             query = query.Where(a => a.BrandId == dto.BrandId);
@@ -183,13 +188,89 @@ public class AdvertService : IAdvertService
             query = query.Where(a =>
                 a.Title.Contains(dto.TextSearch) || a.Description.Contains(dto.TextSearch));
 
+        if (dto.DriveTypeId.HasValue)
+            query = query.Where(a => a.DriveTypeId == dto.DriveTypeId);
+
+        if (dto.ColorId.HasValue)
+            query = query.Where(a => a.ColorId == dto.ColorId);
+
+        if (dto.PowerFrom.HasValue)
+            query = query.Where(a => a.PowerHP >= dto.PowerFrom);
+
+        if (dto.PowerTo.HasValue)
+            query = query.Where(a => a.PowerHP <= dto.PowerTo);
+
+        if (dto.EngineSizeFrom.HasValue)
+            query = query.Where(a => a.EngineSize >= dto.EngineSizeFrom);
+
+        if (dto.EngineSizeTo.HasValue)
+            query = query.Where(a => a.EngineSize <= dto.EngineSizeTo);
+
+        if (dto.DoorCount.HasValue)
+            query = query.Where(a => a.DoorCount == dto.DoorCount);
+
+        if (dto.SeatsCount.HasValue)
+            query = query.Where(a => a.SeatsCount == dto.SeatsCount);
+
+        if (!string.IsNullOrWhiteSpace(dto.Condition))
+            query = query.Where(a => a.Condition == dto.Condition);
+
+        if (!string.IsNullOrWhiteSpace(dto.SellerType))
+            query = query.Where(a => a.SellerType == dto.SellerType);
+
+        if (dto.IsNegotiable.HasValue)
+            query = query.Where(a => a.IsNegotiable == dto.IsNegotiable);
+
+        if (dto.HasDamage.HasValue)
+            query = query.Where(a => a.HasDamage == dto.HasDamage);
+
+        if (dto.HasWarranty.HasValue)
+            query = query.Where(a => a.HasWarranty == dto.HasWarranty);
+
+        if (dto.HasServiceBook.HasValue)
+            query = query.Where(a => a.HasServiceBook == dto.HasServiceBook);
+
+        if (dto.IsImported.HasValue)
+            query = query.Where(a => a.IsImported == dto.IsImported);
+
+        if (!string.IsNullOrWhiteSpace(dto.EuroNorm))
+            query = query.Where(a => a.EuroNorm == dto.EuroNorm);
+
+        if (dto.AxleCount.HasValue)
+            query = query.Where(a => a.AxleCount == dto.AxleCount);
+
+        if (dto.PayloadFrom.HasValue)
+            query = query.Where(a => a.Payload >= dto.PayloadFrom);
+
+        if (dto.PayloadTo.HasValue)
+            query = query.Where(a => a.Payload <= dto.PayloadTo);
+
+        if (dto.GrossWeightFrom.HasValue)
+            query = query.Where(a => a.GrossWeight >= dto.GrossWeightFrom);
+
+        if (dto.GrossWeightTo.HasValue)
+            query = query.Where(a => a.GrossWeight <= dto.GrossWeightTo);
+
+        if (!string.IsNullOrWhiteSpace(dto.BodySubtype))
+            query = query.Where(a => a.BodySubtype == dto.BodySubtype);
+
+        if (dto.HasRetarder.HasValue)
+            query = query.Where(a => a.HasRetarder == dto.HasRetarder);
+
+        if (dto.HasTachograph.HasValue)
+            query = query.Where(a => a.HasTachograph == dto.HasTachograph);
+
+        // Badge priority: TOP=0, PREMIUM=1, FEATURED=2, none=3
+        var prioritized = query.OrderBy(a =>
+            a.Badge == "TOP" ? 0 : a.Badge == "PREMIUM" ? 1 : a.Badge == "FEATURED" ? 2 : 3);
+
         query = dto.SortBy switch
         {
-            "price_asc" => query.OrderBy(a => a.Price),
-            "price_desc" => query.OrderByDescending(a => a.Price),
-            "year_desc" => query.OrderByDescending(a => a.Year),
-            "year_asc" => query.OrderBy(a => a.Year),
-            _ => query.OrderByDescending(a => a.CreatedAt)
+            "price_asc"  => prioritized.ThenBy(a => a.Price),
+            "price_desc" => prioritized.ThenByDescending(a => a.Price),
+            "year_desc"  => prioritized.ThenByDescending(a => a.Year),
+            "year_asc"   => prioritized.ThenBy(a => a.Year),
+            _            => prioritized.ThenByDescending(a => a.UpdatedAt ?? a.CreatedAt)
         };
 
         var totalCount = await query.CountAsync();

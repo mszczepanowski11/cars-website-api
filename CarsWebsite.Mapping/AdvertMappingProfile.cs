@@ -21,7 +21,8 @@ public class AdvertMappingProfile : Profile
         CreateMap<DriveType, DriveTypeDto>();
         CreateMap<CarColor, CarColorDto>();
 
-        CreateMap<FeatureCategory, FeatureCategoryDto>();
+        CreateMap<FeatureCategory, FeatureCategoryDto>()
+            .ForMember(dest => dest.Features, opt => opt.MapFrom(src => src.Features));
         CreateMap<Feature, FeatureDto>();
 
         CreateMap<AdvertImage, AdvertImageDto>();
@@ -40,7 +41,16 @@ public class AdvertMappingProfile : Profile
             .ForMember(dest => dest.Badge, opt => opt.Ignore())
             .ForMember(dest => dest.BadgeExpiresAt, opt => opt.Ignore())
             .ForMember(dest => dest.CarColor, opt => opt.Ignore())
-            .ForMember(dest => dest.DriveType, opt => opt.Ignore());
+            .ForMember(dest => dest.DriveType, opt => opt.Ignore())
+            .ForMember(dest => dest.VehicleCategory, opt => opt.Ignore())
+            .ForMember(dest => dest.Brand, opt => opt.Ignore())
+            .ForMember(dest => dest.Model, opt => opt.Ignore())
+            .ForMember(dest => dest.Generation, opt => opt.Ignore())
+            .ForMember(dest => dest.EngineVersion, opt => opt.Ignore())
+            .ForMember(dest => dest.FuelType, opt => opt.Ignore())
+            .ForMember(dest => dest.Gearbox, opt => opt.Ignore())
+            .ForMember(dest => dest.BodyType, opt => opt.Ignore())
+            .ForMember(dest => dest.createdBy, opt => opt.Ignore());
 
         CreateMap<UpdateCarAdvertDto, CarAdvert>()
             .ForMember(dest => dest.AdvertFeatures, opt => opt.Ignore())
