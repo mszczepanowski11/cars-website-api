@@ -189,7 +189,7 @@ public class PaymentService : IPaymentService
         if (string.IsNullOrEmpty(serviceId) || string.IsNullOrEmpty(apiKey))
         {
             _logger.LogWarning("Bramka imoje nie jest skonfigurowana. Zwracam URL zastępczy.");
-            return $"{siteUrl}/platnosc/oczekujaca?paymentId={payment.Id}";
+            return $"{siteUrl}/payment/return?status=pending&paymentId={payment.Id}";
         }
 
         var body = new
