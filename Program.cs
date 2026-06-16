@@ -21,19 +21,20 @@ internal class Program
             WebRootPath = webRootPath
         });
 
-        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-        // Fall back to individual Railway MySQL env vars when the ASP.NET Core config
-        // binding doesn't pick up ConnectionStrings__DefaultConnection
-        if (string.IsNullOrEmpty(connectionString))
+        // Prefer Railway-injected MySQL env vars (always correct) over manually set connection string
+        var mysqlHost = Environment.GetEnvironmentVariable("MYSQLHOST");
+        var mysqlPass = Environment.GetEnvironmentVariable("MYSQLPASSWORD");
+        string? connectionString = null;
+        if (!string.IsNullOrEmpty(mysqlHost) && !string.IsNullOrEmpty(mysqlPass))
         {
-            var host = Environment.GetEnvironmentVariable("MYSQLHOST");
             var port = Environment.GetEnvironmentVariable("MYSQLPORT") ?? "3306";
             var db   = Environment.GetEnvironmentVariable("MYSQLDATABASE") ?? Environment.GetEnvironmentVariable("MYSQL_DATABASE") ?? "railway";
             var user = Environment.GetEnvironmentVariable("MYSQLUSER") ?? "root";
-            var pass = Environment.GetEnvironmentVariable("MYSQLPASSWORD");
-            if (!string.IsNullOrEmpty(host) && !string.IsNullOrEmpty(pass))
-                connectionString = $"Server={host};Port={port};Database={db};User={user};Password={pass};";
+            connectionString = $"Server={mysqlHost};Port={port};Database={db};User={user};Password={mysqlPass};";
+        }
+        else
+        {
+            connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
         }
 
         if (string.IsNullOrEmpty(connectionString))
