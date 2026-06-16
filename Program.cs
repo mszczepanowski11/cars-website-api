@@ -374,6 +374,66 @@ internal class Program
             // Add CategoryId to features if it was added after the DB was exported.
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `features` ADD COLUMN `CategoryId` int NOT NULL DEFAULT 0"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN features.CategoryId skipped: {Message}", ex.Message); }
+
+            // Add columns to `users` that were added to the User entity after the original schema.
+            // Missing columns cause `FindAsync` to fail with "Unknown column", making /api/User/me return 500.
+            var addUserColumnsSql = new[]
+            {
+                "ALTER TABLE `users` ADD COLUMN `AccountType` int NOT NULL DEFAULT 0",
+                "ALTER TABLE `users` ADD COLUMN `CompanyName` longtext NULL",
+                "ALTER TABLE `users` ADD COLUMN `Nip` varchar(50) NULL",
+                "ALTER TABLE `users` ADD COLUMN `IsAdmin` tinyint(1) NOT NULL DEFAULT 0",
+                "ALTER TABLE `users` ADD COLUMN `IsBlocked` tinyint(1) NOT NULL DEFAULT 0",
+                "ALTER TABLE `users` ADD COLUMN `BlockedAt` datetime(6) NULL",
+                "ALTER TABLE `users` ADD COLUMN `BlockedReason` longtext NULL",
+                "ALTER TABLE `users` ADD COLUMN `AvatarUrl` longtext NULL",
+                "ALTER TABLE `users` ADD COLUMN `EmailVerified` tinyint(1) NOT NULL DEFAULT 0",
+                "ALTER TABLE `users` ADD COLUMN `LastLoginAt` datetime(6) NULL",
+                "ALTER TABLE `users` ADD COLUMN `CreatedAt` datetime(6) NOT NULL DEFAULT '2000-01-01 00:00:00'",
+                "ALTER TABLE `users` ADD COLUMN `City` longtext NULL",
+                "ALTER TABLE `users` ADD COLUMN `Region` longtext NULL",
+                "ALTER TABLE `users` ADD COLUMN `Street` longtext NULL",
+                "ALTER TABLE `users` ADD COLUMN `PostalCode` longtext NULL",
+                "ALTER TABLE `users` ADD COLUMN `Country` longtext NULL",
+                "ALTER TABLE `users` ADD COLUMN `About` longtext NULL",
+                "ALTER TABLE `users` ADD COLUMN `EmailNotifications` tinyint(1) NOT NULL DEFAULT 1",
+                "ALTER TABLE `users` ADD COLUMN `PriceChangeAlerts` tinyint(1) NOT NULL DEFAULT 1",
+                "ALTER TABLE `users` ADD COLUMN `NewMessageAlerts` tinyint(1) NOT NULL DEFAULT 1",
+                "ALTER TABLE `users` ADD COLUMN `NewsletterSubscribed` tinyint(1) NOT NULL DEFAULT 0",
+            };
+            foreach (var sql in addUserColumnsSql)
+            {
+                try { db.Database.ExecuteSqlRaw(sql); }
+                catch (Exception ex) { logger.LogDebug("ADD COLUMN users skipped: {Message}", ex.Message); }
+            }
+
+            // Make `adverts.City` and `adverts.Region` nullable — migration had them NOT NULL
+            // but the entity has them as nullable, so INSERT fails when no city/region is provided.
+            var modifyAdvertNullableSql = new[]
+            {
+                "ALTER TABLE `adverts` MODIFY COLUMN `City` longtext NULL",
+                "ALTER TABLE `adverts` MODIFY COLUMN `Region` longtext NULL",
+            };
+            foreach (var sql in modifyAdvertNullableSql)
+            {
+                try { db.Database.ExecuteSqlRaw(sql); }
+                catch (Exception ex) { logger.LogDebug("MODIFY COLUMN adverts skipped: {Message}", ex.Message); }
+            }
+
+            // Fix `reviews` table: the initial CREATE TABLE used wrong column names
+            // (ReviewerId/ReviewedUserId); the entity uses SellerId/BuyerId/AdvertId.
+            var addReviewColumnsSql = new[]
+            {
+                "ALTER TABLE `reviews` ADD COLUMN `SellerId` int NOT NULL DEFAULT 0",
+                "ALTER TABLE `reviews` ADD COLUMN `BuyerId` int NOT NULL DEFAULT 0",
+                "ALTER TABLE `reviews` ADD COLUMN `AdvertId` int NOT NULL DEFAULT 0",
+                "ALTER TABLE `reviews` ADD COLUMN `IsVerifiedPurchase` tinyint(1) NOT NULL DEFAULT 0",
+            };
+            foreach (var sql in addReviewColumnsSql)
+            {
+                try { db.Database.ExecuteSqlRaw(sql); }
+                catch (Exception ex) { logger.LogDebug("ADD COLUMN reviews skipped: {Message}", ex.Message); }
+            }
         }
 
         app.UseSwagger();
