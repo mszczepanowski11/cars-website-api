@@ -11,7 +11,8 @@
         RejectReport,
         EditAdvert,
         ActivateAdvert,
-        DeactivateAdvert
+        DeactivateAdvert,
+        DeleteUser
     }
 
     public class AdminActionLog

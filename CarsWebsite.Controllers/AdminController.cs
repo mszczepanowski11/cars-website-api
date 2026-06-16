@@ -101,6 +101,13 @@ public class AdminController : ControllerBase
         return NoContent();
     }
 
+    [HttpDelete("users/{id}")]
+    public async Task<IActionResult> DeleteUser(int id, [FromBody] AdminActionRequestDto dto)
+    {
+        await _adminService.DeleteUserAsync(id, GetUserId(), dto.Note);
+        return NoContent();
+    }
+
     [HttpGet("users")]
     public async Task<IActionResult> GetUsers([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         => Ok(await _adminService.GetUsersAsync(search, page, pageSize));

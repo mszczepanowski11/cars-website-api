@@ -109,7 +109,9 @@ namespace cars_website_api.CarsWebsite.Services
         {
             var advert = await _context.CarAdverts.FindAsync(advertId) ?? throw new KeyNotFoundException("Advert not found");
             _context.AdminActionLogs.Add(new AdminActionLog { AdminUserId = adminUserId, ActionType = AdminActionType.DeleteAdvert, TargetAdvertId = advertId, Note = note, PerformedAt = DateTime.UtcNow });
-            _context.CarAdverts.Remove(advert);
+            advert.IsHidden = true;
+            advert.IsActive = false;
+            advert.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
 
@@ -142,6 +144,49 @@ namespace cars_website_api.CarsWebsite.Services
             var user = await _context.Users.FindAsync(userId) ?? throw new KeyNotFoundException("User not found");
             user.IsBlocked = false; user.BlockedAt = null; user.BlockedReason = null;
             _context.AdminActionLogs.Add(new AdminActionLog { AdminUserId = adminUserId, ActionType = AdminActionType.UnblockUser, TargetUserId = userId, PerformedAt = DateTime.UtcNow });
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteUserAsync(int userId, int adminUserId, string? note)
+        {
+            var user = await _context.Users.FindAsync(userId)
+                ?? throw new KeyNotFoundException("User not found");
+
+            // Anonymize for RODO compliance instead of hard delete
+            user.Name = "Usunięty";
+            user.Surname = "Użytkownik";
+            user.Email = $"deleted_{userId}@carizo.deleted";
+            user.PasswordHash = string.Empty;
+            user.PhoneNumber = null;
+            user.AvatarUrl = null;
+            user.About = null;
+            user.City = null;
+            user.Region = null;
+            user.Street = null;
+            user.PostalCode = null;
+            user.CompanyName = null;
+            user.Nip = null;
+            user.IsBlocked = true;
+            user.BlockedReason = "Konto usunięte przez administratora";
+
+            // Soft-delete all adverts belonging to this user
+            var adverts = await _context.CarAdverts.Where(a => a.UserId == userId).ToListAsync();
+            foreach (var advert in adverts)
+            {
+                advert.IsActive = false;
+                advert.IsHidden = true;
+                advert.UpdatedAt = DateTime.UtcNow;
+            }
+
+            _context.AdminActionLogs.Add(new AdminActionLog
+            {
+                AdminUserId = adminUserId,
+                ActionType = AdminActionType.DeleteUser,
+                TargetUserId = userId,
+                Note = note,
+                PerformedAt = DateTime.UtcNow
+            });
+
             await _context.SaveChangesAsync();
         }
 

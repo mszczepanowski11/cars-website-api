@@ -91,6 +91,7 @@ internal class Program
         builder.Services.AddScoped<IInvoiceService, InvoiceService>();
         builder.Services.AddHostedService<MonthlyInvoiceJob>();
         builder.Services.AddHostedService<ExpiryReminderJob>();
+        builder.Services.AddHostedService<BadgeExpiryJob>();
 
         builder.Services.AddAutoMapper(typeof(AdvertMappingProfile));
 

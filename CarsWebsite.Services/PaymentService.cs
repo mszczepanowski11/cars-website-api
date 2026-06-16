@@ -96,9 +96,13 @@ public class PaymentService : IPaymentService
         };
     }
 
-    public async Task HandleWebhookAsync(ImojeWebhookDto dto, string rawBody, string signature)
+    public async Task HandleWebhookAsync(ImojeWebhookDto dto, string rawBody, string signature, string? internalSecret = null)
     {
-        if (!VerifySignature(rawBody, signature))
+        var configuredInternalSecret = _config["InternalServiceSecret"];
+        bool isInternalCall = !string.IsNullOrEmpty(configuredInternalSecret)
+            && configuredInternalSecret == internalSecret;
+
+        if (!isInternalCall && !VerifySignature(rawBody, signature))
         {
             _logger.LogWarning("Nieprawidłowy podpis webhooka imoje dla zamówienia {OrderId}", dto.OrderId);
             throw new UnauthorizedAccessException("Nieprawidłowy podpis webhooka.");
@@ -116,7 +120,7 @@ public class PaymentService : IPaymentService
 
         if (payment.Status == PaymentStatus.Completed) return;
 
-        if (dto.Status is "settled" or "confirmed" or "authorized")
+        if (dto.Status is "settled" or "confirmed" or "authorized" or "completed" or "Completed")
         {
             payment.Status = PaymentStatus.Completed;
             payment.PaidAt = DateTime.UtcNow;
@@ -130,7 +134,7 @@ public class PaymentService : IPaymentService
 
             await ActivateServiceAsync(payment);
         }
-        else if (dto.Status is "rejected" or "cancelled" or "error")
+        else if (dto.Status is "rejected" or "cancelled" or "error" or "Failed" or "Cancelled" or "Refunded")
         {
             payment.Status = PaymentStatus.Failed;
             await _context.SaveChangesAsync();
@@ -197,10 +201,10 @@ public class PaymentService : IPaymentService
             customerFirstName = user.Name,
             customerLastName = user.Surname,
             customerEmail = user.Email,
-            urlSuccess = $"{siteUrl}/platnosc/sukces?paymentId={payment.Id}",
-            urlFailure = $"{siteUrl}/platnosc/blad?paymentId={payment.Id}",
-            urlReturn = $"{siteUrl}/platnosc/powrot",
-            urlNotification = $"{siteUrl}/api/Payment/webhook",
+            urlSuccess = $"{siteUrl}/payment/return?status=success&paymentId={payment.Id}&advertId={payment.AdvertId}",
+            urlFailure = $"{siteUrl}/payment/return?status=failure&paymentId={payment.Id}",
+            urlReturn = $"{siteUrl}/payment/return?status=cancel",
+            urlNotification = $"{siteUrl}/api/payment/webhook",
             description = payment.ServiceDescription
         };
 

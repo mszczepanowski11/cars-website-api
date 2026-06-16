@@ -6,10 +6,12 @@ using Microsoft.EntityFrameworkCore;
 public class MessageService : IMessageService
 {
     private readonly AppDbContext _context;
+    private readonly INotificationService _notifications;
 
-    public MessageService(AppDbContext context)
+    public MessageService(AppDbContext context, INotificationService notifications)
     {
         _context = context;
+        _notifications = notifications;
     }
 
     public async Task<int> StartOrGetConversationAsync(int buyerId, int advertId, string initialMessage)
@@ -148,6 +150,14 @@ public class MessageService : IMessageService
         await _context.SaveChangesAsync();
 
         var sender = await _context.Users.FindAsync(senderId);
+
+        // Notify the recipient
+        var recipientId = conv.BuyerId == senderId ? conv.SellerId : conv.BuyerId;
+        _ = _notifications.NotifyAsync(recipientId, EmailNotificationType.NewMessage,
+            "Nowa wiadomość",
+            $"{sender!.Name} {sender.Surname} wysłał(a) Ci wiadomość: \"{(content.Length > 100 ? content[..100] + "..." : content)}\"",
+            advertId: conv.AdvertId);
+
         return new MessageDto
         {
             Id = msg.Id,
