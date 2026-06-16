@@ -54,12 +54,6 @@ namespace CarsWebsite
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            if (!optionsBuilder.IsConfigured)
-                optionsBuilder.UseMySql("DefaultConnection", new MySqlServerVersion(new Version(8, 0, 21)));
-        }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Brand>().HasMany(b => b.Models).WithOne(m => m.Brand).HasForeignKey(m => m.BrandId);
