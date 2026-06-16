@@ -33,6 +33,9 @@ namespace CarsWebsite
         public DbSet<EventReport> EventReports { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Invoice> Invoices { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<EventAttendee> EventAttendees { get; set; }
+        public DbSet<EventFavourite> EventFavourites { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -183,6 +186,31 @@ namespace CarsWebsite
                 .Property(i => i.VatAmount).HasPrecision(10, 2);
             modelBuilder.Entity<Invoice>()
                 .Property(i => i.VatRate).HasPrecision(5, 4);
+
+            modelBuilder.Entity<Notification>().ToTable("Notifications").HasKey(n => n.Id);
+            modelBuilder.Entity<Notification>()
+                .HasOne(n => n.User).WithMany()
+                .HasForeignKey(n => n.UserId).OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<EventAttendee>().ToTable("EventAttendees").HasKey(a => a.Id);
+            modelBuilder.Entity<EventAttendee>()
+                .HasIndex(a => new { a.EventId, a.UserId }).IsUnique();
+            modelBuilder.Entity<EventAttendee>()
+                .HasOne(a => a.Event).WithMany()
+                .HasForeignKey(a => a.EventId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<EventAttendee>()
+                .HasOne(a => a.User).WithMany()
+                .HasForeignKey(a => a.UserId).OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<EventFavourite>().ToTable("EventFavourites").HasKey(f => f.Id);
+            modelBuilder.Entity<EventFavourite>()
+                .HasIndex(f => new { f.EventId, f.UserId }).IsUnique();
+            modelBuilder.Entity<EventFavourite>()
+                .HasOne(f => f.Event).WithMany()
+                .HasForeignKey(f => f.EventId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<EventFavourite>()
+                .HasOne(f => f.User).WithMany()
+                .HasForeignKey(f => f.UserId).OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
