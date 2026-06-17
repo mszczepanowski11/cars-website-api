@@ -171,6 +171,10 @@ namespace CarsWebsite
                 .HasForeignKey(p => p.AdvertId).OnDelete(DeleteBehavior.SetNull)
                 .IsRequired(false);
             modelBuilder.Entity<Payment>()
+                .HasOne(p => p.Event).WithMany()
+                .HasForeignKey(p => p.EventId).OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+            modelBuilder.Entity<Payment>()
                 .Property(p => p.ServiceType).HasConversion<string>();
             modelBuilder.Entity<Payment>()
                 .Property(p => p.Status).HasConversion<string>();

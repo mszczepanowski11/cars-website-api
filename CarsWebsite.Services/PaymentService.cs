@@ -21,6 +21,9 @@ public class PaymentService : IPaymentService
         { (ServiceType.Featured, 14), (24.99m, "Wyróżnienie – 14 dni") },
         { (ServiceType.Featured, 30), (39.99m, "Wyróżnienie – 30 dni") },
         { (ServiceType.Refresh, 1),   (4.99m,  "Odświeżenie ogłoszenia") },
+        { (ServiceType.EventFeatured, 7),  (9.99m,  "Wyróżnienie wydarzenia – 7 dni") },
+        { (ServiceType.EventFeatured, 14), (17.99m, "Wyróżnienie wydarzenia – 14 dni") },
+        { (ServiceType.EventFeatured, 30), (29.99m, "Wyróżnienie wydarzenia – 30 dni") },
     };
 
     private readonly AppDbContext _context;
@@ -72,6 +75,7 @@ public class PaymentService : IPaymentService
         {
             UserId = userId,
             AdvertId = dto.AdvertId,
+            EventId = dto.EventId,
             ServiceType = dto.ServiceType,
             ServiceDescription = priceInfo.Description,
             Amount = priceInfo.Price,
@@ -236,6 +240,12 @@ public class PaymentService : IPaymentService
 
     private async Task ActivateServiceAsync(Payment payment)
     {
+        if (payment.ServiceType == ServiceType.EventFeatured)
+        {
+            await ActivateEventServiceAsync(payment);
+            return;
+        }
+
         if (payment.AdvertId == null) return;
 
         _logger.LogInformation(
@@ -302,6 +312,35 @@ public class PaymentService : IPaymentService
             advertId: payment.AdvertId, paymentId: payment.Id);
     }
 
+    private async Task ActivateEventServiceAsync(Payment payment)
+    {
+        if (payment.EventId == null) return;
+
+        _logger.LogInformation(
+            "Aktywacja wyróżnienia wydarzenia {EventId}, {Days} dni, płatność #{PaymentId}",
+            payment.EventId, payment.DurationDays, payment.Id);
+
+        var ev = await _context.Events.FirstOrDefaultAsync(e => e.Id == payment.EventId);
+        if (ev != null)
+        {
+            var baseDate = ev.FeaturedUntil.HasValue && ev.FeaturedUntil > DateTime.UtcNow
+                ? ev.FeaturedUntil.Value
+                : DateTime.UtcNow;
+            ev.IsFeatured = true;
+            ev.FeaturedUntil = baseDate.AddDays(payment.DurationDays ?? 7);
+            await _context.SaveChangesAsync();
+        }
+        else
+        {
+            _logger.LogWarning("ActivateEventServiceAsync: wydarzenie {EventId} nie znalezione.", payment.EventId);
+        }
+
+        _ = _notifications.NotifyAsync(payment.UserId, EmailNotificationType.PromotionActivated,
+            "Wyróżnienie wydarzenia aktywowane",
+            $"Twoje wydarzenie zostało wyróżnione na {payment.DurationDays} dni.",
+            paymentId: payment.Id);
+    }
+
     private bool VerifySignature(string rawBody, string signature)
     {
         var secret = _config["Imoje:WebhookSecret"];
@@ -325,6 +364,7 @@ public class PaymentService : IPaymentService
         CreatedAt = p.CreatedAt,
         PaidAt = p.PaidAt,
         AdvertId = p.AdvertId,
+        EventId = p.EventId,
         DurationDays = p.DurationDays
     };
 }

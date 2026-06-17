@@ -24,6 +24,7 @@ public class Event
     public string? OrganizerPhone { get; set; }
     public EventStatus Status { get; set; } = EventStatus.Pending;
     public bool IsFeatured { get; set; } = false;
+    public DateTime? FeaturedUntil { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
     public int CreatedByUserId { get; set; }

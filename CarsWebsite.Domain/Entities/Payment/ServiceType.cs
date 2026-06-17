@@ -6,5 +6,6 @@ public enum ServiceType
     Premium,
     Featured,
     Refresh,
+    EventFeatured,
     Other
 }

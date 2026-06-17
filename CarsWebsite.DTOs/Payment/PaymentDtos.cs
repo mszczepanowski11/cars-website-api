@@ -6,6 +6,7 @@ public class InitiatePaymentDto
 {
     public ServiceType ServiceType { get; set; }
     public int? AdvertId { get; set; }
+    public int? EventId { get; set; }
     public int DurationDays { get; set; } = 7;
 }
 
@@ -29,6 +30,7 @@ public class PaymentResponseDto
     public DateTime CreatedAt { get; set; }
     public DateTime? PaidAt { get; set; }
     public int? AdvertId { get; set; }
+    public int? EventId { get; set; }
     public int? DurationDays { get; set; }
 }
 

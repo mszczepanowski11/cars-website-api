@@ -9,6 +9,9 @@ public class Payment
     public int? AdvertId { get; set; }
     public Advert? Advert { get; set; }
 
+    public int? EventId { get; set; }
+    public Event? Event { get; set; }
+
     public ServiceType ServiceType { get; set; }
     public string ServiceDescription { get; set; } = string.Empty;
     public decimal Amount { get; set; }

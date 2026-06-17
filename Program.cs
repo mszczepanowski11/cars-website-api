@@ -94,6 +94,7 @@ internal class Program
         builder.Services.AddHostedService<MonthlyInvoiceJob>();
         builder.Services.AddHostedService<ExpiryReminderJob>();
         builder.Services.AddHostedService<BadgeExpiryJob>();
+        builder.Services.AddHostedService<EventFeaturedExpiryJob>();
 
         builder.Services.AddAutoMapper(typeof(AdvertMappingProfile));
 
@@ -391,6 +392,14 @@ internal class Program
             // Add VehicleCategoryId to featurecategories for category-specific equipment grouping
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `featurecategories` ADD COLUMN `VehicleCategoryId` int NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN featurecategories.VehicleCategoryId skipped: {Message}", ex.Message); }
+
+            // Add FeaturedUntil to events for time-limited event promotions
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `events` ADD COLUMN `FeaturedUntil` datetime(6) NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN events.FeaturedUntil skipped: {Message}", ex.Message); }
+
+            // Add EventId to payments to link event promotion payments
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `payments` ADD COLUMN `EventId` int NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN payments.EventId skipped: {Message}", ex.Message); }
 
             // Add CategoryId to features if it was added after the DB was exported.
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `features` ADD COLUMN `CategoryId` int NOT NULL DEFAULT 0"); }
