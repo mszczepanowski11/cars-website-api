@@ -1,7 +1,10 @@
-﻿using cars_website_api.CarsWebsite.DTOs.Admin;
+﻿using cars_website_api.CarsWebsite.Domain.Entities;
+using cars_website_api.CarsWebsite.DTOs.Admin;
 using cars_website_api.CarsWebsite.Interfaces;
+using CarsWebsite;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 [ApiController]
@@ -10,10 +13,12 @@ using System.Security.Claims;
 public class AdminController : ControllerBase
 {
     private readonly IAdminService _adminService;
+    private readonly AppDbContext _db;
 
-    public AdminController(IAdminService adminService)
+    public AdminController(IAdminService adminService, AppDbContext db)
     {
         _adminService = adminService;
+        _db = db;
     }
 
     private int GetUserId()
@@ -124,4 +129,71 @@ public class AdminController : ControllerBase
     [HttpGet("logs")]
     public async Task<IActionResult> GetLogs([FromQuery] int page = 1, [FromQuery] int pageSize = 50)
         => Ok(await _adminService.GetActionLogsAsync(page, pageSize));
+
+    // ── Taxonomy management ────────────────────────────────────────────────────
+
+    [HttpGet("features")]
+    public async Task<IActionResult> GetFeatures([FromQuery] string? search, [FromQuery] int? categoryId)
+    {
+        var q = _db.Features.Include(f => f.Category).AsQueryable();
+        if (!string.IsNullOrWhiteSpace(search))
+            q = q.Where(f => f.Name.Contains(search));
+        if (categoryId.HasValue)
+            q = q.Where(f => f.CategoryId == categoryId.Value);
+        var items = await q.OrderBy(f => f.Category.Name).ThenBy(f => f.Name)
+            .Select(f => new { f.Id, f.Name, Category = new { f.Category.Id, f.Category.Name, f.Category.VehicleCategoryId } })
+            .ToListAsync();
+        return Ok(items);
+    }
+
+    [HttpPost("features")]
+    public async Task<IActionResult> CreateFeature([FromBody] CreateFeatureDto dto)
+    {
+        var cat = await _db.FeatureCategories.FindAsync(dto.CategoryId);
+        if (cat == null) return BadRequest("Kategoria wyposażenia nie istnieje.");
+        var feature = new Feature { Name = dto.Name, CategoryId = dto.CategoryId };
+        _db.Features.Add(feature);
+        await _db.SaveChangesAsync();
+        return Ok(new { feature.Id, feature.Name });
+    }
+
+    [HttpDelete("features/{id}")]
+    public async Task<IActionResult> DeleteFeature(int id)
+    {
+        var feature = await _db.Features.FindAsync(id);
+        if (feature == null) return NotFound();
+        _db.Features.Remove(feature);
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpGet("feature-categories")]
+    public async Task<IActionResult> GetFeatureCategories()
+    {
+        var items = await _db.FeatureCategories
+            .Include(fc => fc.VehicleCategory)
+            .OrderBy(fc => fc.Name)
+            .Select(fc => new { fc.Id, fc.Name, fc.VehicleCategoryId, VehicleCategoryName = fc.VehicleCategory != null ? fc.VehicleCategory.Name : null })
+            .ToListAsync();
+        return Ok(items);
+    }
+
+    [HttpPost("feature-categories")]
+    public async Task<IActionResult> CreateFeatureCategory([FromBody] CreateFeatureCategoryDto dto)
+    {
+        var cat = new FeatureCategory { Name = dto.Name, VehicleCategoryId = dto.VehicleCategoryId };
+        _db.FeatureCategories.Add(cat);
+        await _db.SaveChangesAsync();
+        return Ok(new { cat.Id, cat.Name });
+    }
+
+    [HttpDelete("feature-categories/{id}")]
+    public async Task<IActionResult> DeleteFeatureCategory(int id)
+    {
+        var cat = await _db.FeatureCategories.FindAsync(id);
+        if (cat == null) return NotFound();
+        _db.FeatureCategories.Remove(cat);
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
 }
