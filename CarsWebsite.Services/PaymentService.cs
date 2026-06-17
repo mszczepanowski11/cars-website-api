@@ -344,7 +344,7 @@ public class PaymentService : IPaymentService
     private bool VerifySignature(string rawBody, string signature)
     {
         var secret = _config["Imoje:WebhookSecret"];
-        if (string.IsNullOrEmpty(secret)) return true;
+        if (string.IsNullOrEmpty(secret)) return false;
 
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
         var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(rawBody));

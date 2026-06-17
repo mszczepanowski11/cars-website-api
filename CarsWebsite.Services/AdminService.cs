@@ -24,7 +24,7 @@ namespace cars_website_api.CarsWebsite.Services
                 TotalUsers = await _context.Users.CountAsync(),
                 TotalReports = await _context.Reports.CountAsync(),
                 PendingReports = await _context.Reports.CountAsync(r => r.Status == ReportStatus.Pending),
-                NewRegistrationsThisMonth = 0,
+                NewRegistrationsThisMonth = await _context.Users.CountAsync(u => u.CreatedAt.Month == now.Month && u.CreatedAt.Year == now.Year),
                 BlockedUsers = await _context.Users.CountAsync(u => u.IsBlocked)
             };
         }

@@ -389,6 +389,16 @@ internal class Program
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `advertimages` ADD COLUMN `IsMain` tinyint(1) NOT NULL DEFAULT 0"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN advertimages.IsMain skipped: {Message}", ex.Message); }
 
+            // Auth token columns for email verification and password reset
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `users` ADD COLUMN `EmailVerificationToken` varchar(64) NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN users.EmailVerificationToken skipped: {Message}", ex.Message); }
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `users` ADD COLUMN `EmailVerificationTokenExpires` datetime(6) NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN users.EmailVerificationTokenExpires skipped: {Message}", ex.Message); }
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `users` ADD COLUMN `PasswordResetToken` varchar(64) NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN users.PasswordResetToken skipped: {Message}", ex.Message); }
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `users` ADD COLUMN `PasswordResetTokenExpires` datetime(6) NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN users.PasswordResetTokenExpires skipped: {Message}", ex.Message); }
+
             // Add VehicleCategoryId to featurecategories for category-specific equipment grouping
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `featurecategories` ADD COLUMN `VehicleCategoryId` int NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN featurecategories.VehicleCategoryId skipped: {Message}", ex.Message); }

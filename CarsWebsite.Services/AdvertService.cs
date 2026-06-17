@@ -39,6 +39,14 @@ public class AdvertService : IAdvertService
             await _context.SaveChangesAsync();
         }
 
+        // Generate URL slug from ID + title
+        var slugBase = $"{advert.Id}-{advert.Title.ToLowerInvariant()}";
+        var slugClean = System.Text.RegularExpressions.Regex.Replace(slugBase, @"[^a-z0-9\-]", "-");
+        var slug = System.Text.RegularExpressions.Regex.Replace(slugClean, @"-{2,}", "-").Trim('-');
+        if (slug.Length > 80) slug = slug[..80].TrimEnd('-');
+        advert.Slug = slug;
+        await _context.SaveChangesAsync();
+
         return advert.Id;
     }
     
@@ -187,6 +195,12 @@ public class AdvertService : IAdvertService
         if (!string.IsNullOrWhiteSpace(dto.TextSearch))
             query = query.Where(a =>
                 a.Title.Contains(dto.TextSearch) || a.Description.Contains(dto.TextSearch));
+
+        if (!string.IsNullOrWhiteSpace(dto.City))
+            query = query.Where(a => a.City != null && a.City.Contains(dto.City));
+
+        if (!string.IsNullOrWhiteSpace(dto.Region))
+            query = query.Where(a => a.Region != null && a.Region.Contains(dto.Region));
 
         if (dto.DriveTypeId.HasValue)
             query = query.Where(a => a.DriveTypeId == dto.DriveTypeId);

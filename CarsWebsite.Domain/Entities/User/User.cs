@@ -20,6 +20,10 @@ namespace CarsWebsite
         public string? BlockedReason { get; set; }
         public string? AvatarUrl { get; set; }
         public bool EmailVerified { get; set; } = false;
+        public string? EmailVerificationToken { get; set; }
+        public DateTime? EmailVerificationTokenExpires { get; set; }
+        public string? PasswordResetToken { get; set; }
+        public DateTime? PasswordResetTokenExpires { get; set; }
         public DateTime? LastLoginAt { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

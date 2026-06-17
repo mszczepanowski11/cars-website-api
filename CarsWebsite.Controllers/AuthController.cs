@@ -22,7 +22,7 @@ public class AuthController : ControllerBase
         if (result == null)
             return Conflict("An account with this email already exists.");
 
-        return Ok(result);
+        return StatusCode(201, result);
     }
 
     [HttpPost("login")]
@@ -74,5 +74,19 @@ public class AuthController : ControllerBase
             return BadRequest("Link wygasł lub jest nieprawidłowy.");
 
         return Ok(new { message = "Hasło zostało zmienione." });
+    }
+
+    [HttpGet("verify-email")]
+    public async Task<IActionResult> VerifyEmail([FromQuery] string token)
+    {
+        var ok = await _authService.VerifyEmailAsync(token);
+        return ok ? Ok(new { message = "Email zweryfikowany. Możesz się teraz zalogować." }) : BadRequest("Link wygasł lub jest nieprawidłowy.");
+    }
+
+    [HttpPost("resend-verification")]
+    public async Task<IActionResult> ResendVerification([FromBody] ForgotPasswordDto dto)
+    {
+        await _authService.ResendVerificationAsync(dto.Email);
+        return Ok(new { message = "Jeśli konto istnieje i nie jest zweryfikowane, wysłaliśmy nowy link." });
     }
 }
