@@ -68,10 +68,10 @@ public class AuthService : IAuthService
             return null;
 
         if (user.IsBlocked)
-            return null;
+            return new { error = "blocked" };
 
         if (!user.EmailVerified)
-            return null;
+            return new { error = "unverified" };
 
         return new { token = GenerateToken(user) };
     }

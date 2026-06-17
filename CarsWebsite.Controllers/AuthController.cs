@@ -30,7 +30,21 @@ public class AuthController : ControllerBase
     {
         var result = await _authService.Login(dto);
         if (result == null)
-            return Unauthorized("Błędne dane logowania lub konto zablokowane.");
+            return Unauthorized("Błędne dane logowania.");
+
+        // Check for error objects returned instead of a token
+        var resultType = result.GetType();
+        var errorProp = resultType.GetProperty("error");
+        if (errorProp != null)
+        {
+            var errorVal = errorProp.GetValue(result)?.ToString();
+            return errorVal switch
+            {
+                "unverified" => Unauthorized("Zweryfikuj swój adres email przed zalogowaniem."),
+                "blocked"    => Unauthorized("Konto zostało zablokowane."),
+                _            => Unauthorized("Błędne dane logowania.")
+            };
+        }
 
         return Ok(result);
     }

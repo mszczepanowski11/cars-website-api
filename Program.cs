@@ -427,7 +427,7 @@ internal class Program
                 "ALTER TABLE `users` ADD COLUMN `BlockedAt` datetime(6) NULL",
                 "ALTER TABLE `users` ADD COLUMN `BlockedReason` longtext NULL",
                 "ALTER TABLE `users` ADD COLUMN `AvatarUrl` longtext NULL",
-                "ALTER TABLE `users` ADD COLUMN `EmailVerified` tinyint(1) NOT NULL DEFAULT 0",
+                "ALTER TABLE `users` ADD COLUMN `EmailVerified` tinyint(1) NOT NULL DEFAULT 1",
                 "ALTER TABLE `users` ADD COLUMN `LastLoginAt` datetime(6) NULL",
                 "ALTER TABLE `users` ADD COLUMN `CreatedAt` datetime(6) NOT NULL DEFAULT '2000-01-01 00:00:00'",
                 "ALTER TABLE `users` ADD COLUMN `City` longtext NULL",
@@ -446,6 +446,11 @@ internal class Program
                 try { db.Database.ExecuteSqlRaw(sql); }
                 catch (Exception ex) { logger.LogDebug("ADD COLUMN users skipped: {Message}", ex.Message); }
             }
+
+            // Verify all users who existed before email-verification was introduced.
+            // Without this, every existing account (including admin) would be locked out.
+            try { db.Database.ExecuteSqlRaw("UPDATE `users` SET `EmailVerified` = 1 WHERE `EmailVerificationToken` IS NULL AND `EmailVerified` = 0"); }
+            catch (Exception ex) { logger.LogDebug("UPDATE users.EmailVerified skipped: {Message}", ex.Message); }
 
             // Make `adverts.City` and `adverts.Region` nullable — migration had them NOT NULL
             // but the entity has them as nullable, so INSERT fails when no city/region is provided.
