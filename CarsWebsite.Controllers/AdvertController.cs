@@ -23,6 +23,8 @@ public class AdvertController : ControllerBase
         return uid;
     }
 
+    private bool IsAdmin() => User.FindFirstValue("isAdmin") == "true";
+
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
@@ -50,7 +52,8 @@ public class AdvertController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
-        try { return Ok(await _advertService.GetCarAdvertByIdAsync(id)); }
+        var userId = GetUserId();
+        try { return Ok(await _advertService.GetCarAdvertByIdAsync(id, userId > 0 ? userId : null, IsAdmin())); }
         catch (KeyNotFoundException) { return NotFound(); }
     }
 

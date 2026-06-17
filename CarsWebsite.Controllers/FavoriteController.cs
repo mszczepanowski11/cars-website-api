@@ -12,33 +12,39 @@ public class FavoriteController : ControllerBase
 
     public FavoriteController(IFavoriteService favoriteService) => _favoriteService = favoriteService;
 
-    private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    private int GetUserId()
+    {
+        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var uid);
+        return uid;
+    }
 
     [HttpGet]
     public async Task<IActionResult> GetFavorites([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var result = await _favoriteService.GetUserFavoritesAsync(GetUserId(), page, pageSize);
-        return Ok(result);
+        var uid = GetUserId(); if (uid == 0) return Unauthorized();
+        return Ok(await _favoriteService.GetUserFavoritesAsync(uid, page, pageSize));
     }
 
     [HttpPost("{advertId}")]
     public async Task<IActionResult> Add(int advertId)
     {
-        await _favoriteService.AddFavoriteAsync(GetUserId(), advertId);
+        var uid = GetUserId(); if (uid == 0) return Unauthorized();
+        await _favoriteService.AddFavoriteAsync(uid, advertId);
         return Ok();
     }
 
     [HttpDelete("{advertId}")]
     public async Task<IActionResult> Remove(int advertId)
     {
-        await _favoriteService.RemoveFavoriteAsync(GetUserId(), advertId);
+        var uid = GetUserId(); if (uid == 0) return Unauthorized();
+        await _favoriteService.RemoveFavoriteAsync(uid, advertId);
         return NoContent();
     }
 
     [HttpGet("{advertId}/check")]
     public async Task<IActionResult> Check(int advertId)
     {
-        var isFav = await _favoriteService.IsFavoriteAsync(GetUserId(), advertId);
-        return Ok(new { isFavorite = isFav });
+        var uid = GetUserId(); if (uid == 0) return Unauthorized();
+        return Ok(new { isFavorite = await _favoriteService.IsFavoriteAsync(uid, advertId) });
     }
 }

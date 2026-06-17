@@ -6,8 +6,8 @@ public interface IInvoiceService
 {
     Task GenerateMonthlyInvoicesAsync(int month, int year);
     Task<PagedResult<InvoiceResponseDto>> GetUserInvoicesAsync(int userId, int page, int pageSize);
-    Task<InvoiceResponseDto> GetInvoiceAsync(int id, int userId);
-    Task<byte[]> GenerateInvoiceHtmlAsync(int id, int userId);
+    Task<InvoiceResponseDto> GetInvoiceAsync(int id, int userId, bool isAdmin = false);
+    Task<byte[]> GenerateInvoiceHtmlAsync(int id, int userId, bool isAdmin = false);
     Task<PagedResult<InvoiceResponseDto>> GetAllInvoicesAsync(int page, int pageSize);
     Task SendInvoiceByEmailAsync(int invoiceId);
 }

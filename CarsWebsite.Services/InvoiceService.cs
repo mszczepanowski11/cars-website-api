@@ -111,10 +111,9 @@ public class InvoiceService : IInvoiceService
         };
     }
 
-    public async Task<InvoiceResponseDto> GetInvoiceAsync(int id, int userId)
+    public async Task<InvoiceResponseDto> GetInvoiceAsync(int id, int userId, bool isAdmin = false)
     {
-        // userId == 0 means admin bypass (no ownership check)
-        var invoice = userId == 0
+        var invoice = isAdmin
             ? await _context.Invoices.Include(i => i.Payments).Include(i => i.User)
                 .FirstOrDefaultAsync(i => i.Id == id)
             : await _context.Invoices.Include(i => i.Payments).Include(i => i.User)
@@ -125,9 +124,9 @@ public class InvoiceService : IInvoiceService
             : throw new KeyNotFoundException("Faktura nie istnieje.");
     }
 
-    public async Task<byte[]> GenerateInvoiceHtmlAsync(int id, int userId)
+    public async Task<byte[]> GenerateInvoiceHtmlAsync(int id, int userId, bool isAdmin = false)
     {
-        var invoice = userId == 0
+        var invoice = isAdmin
             ? await _context.Invoices.Include(i => i.Payments).Include(i => i.User)
                 .FirstOrDefaultAsync(i => i.Id == id)
             : await _context.Invoices.Include(i => i.Payments).Include(i => i.User)

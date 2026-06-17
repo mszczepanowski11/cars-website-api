@@ -102,7 +102,7 @@ public class AdvertService : IAdvertService
     }
 
     
-    public async Task<CarAdvertResponseDto> GetCarAdvertByIdAsync(int id)
+    public async Task<CarAdvertResponseDto> GetCarAdvertByIdAsync(int id, int? requestingUserId = null, bool isAdmin = false)
     {
         var advert = await _context.CarAdverts
             .Include(a => a.Brand)
@@ -120,6 +120,14 @@ public class AdvertService : IAdvertService
 
         if (advert == null)
             throw new KeyNotFoundException("Advert not found");
+
+        // Enforce visibility: hidden or inactive adverts are only visible to the owner or admin
+        if (isAdmin) return _mapper.Map<CarAdvertResponseDto>(advert);
+        if (advert.IsHidden || !advert.IsActive)
+        {
+            if (requestingUserId == null || advert.UserId != requestingUserId)
+                throw new KeyNotFoundException("Advert not found");
+        }
 
         return _mapper.Map<CarAdvertResponseDto>(advert);
     }

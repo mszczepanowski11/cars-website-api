@@ -26,7 +26,14 @@ public class NotificationController : ControllerBase
 
     public NotificationController(AppDbContext context) => _context = context;
 
-    private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    private int UserId
+    {
+        get
+        {
+            int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var uid);
+            return uid;
+        }
+    }
 
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 20)

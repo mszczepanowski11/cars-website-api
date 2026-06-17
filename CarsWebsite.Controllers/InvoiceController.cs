@@ -34,16 +34,20 @@ public class InvoiceController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
-        try { return Ok(await _invoiceService.GetInvoiceAsync(id, IsAdmin() ? 0 : GetUserId())); }
+        var userId = GetUserId();
+        if (userId == 0) return Unauthorized();
+        try { return Ok(await _invoiceService.GetInvoiceAsync(id, userId, IsAdmin())); }
         catch (KeyNotFoundException) { return NotFound(); }
     }
 
     [HttpGet("{id:int}/html")]
     public async Task<IActionResult> DownloadHtml(int id)
     {
+        var userId = GetUserId();
+        if (userId == 0) return Unauthorized();
         try
         {
-            var bytes = await _invoiceService.GenerateInvoiceHtmlAsync(id, IsAdmin() ? 0 : GetUserId());
+            var bytes = await _invoiceService.GenerateInvoiceHtmlAsync(id, userId, IsAdmin());
             return File(bytes, "text/html; charset=utf-8", $"faktura-CARIZO-{id}.html");
         }
         catch (KeyNotFoundException) { return NotFound(); }
