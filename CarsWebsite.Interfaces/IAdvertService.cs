@@ -10,6 +10,7 @@ public interface IAdvertService
     Task<PagedResult<CarAdvertResponseDto>> GetUserAdvertsAsync(int userId, int page = 1, int pageSize = 20);
     Task PromoteAdvertAsync(int advertId, int userId, string type, int durationDays);
     Task<CarAdvertResponseDto?> GetByVinAsync(string vin);
+    Task<(int activeCount, int yearCount)> GetPersonalAdCountsAsync(int userId);
 }
 
 public class PagedResult<T>

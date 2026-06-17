@@ -42,6 +42,10 @@ public class AuthService : IAuthService
             Email = dto.Email,
             PhoneNumber = dto.PhoneNumber,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+            AccountType = dto.AccountType,
+            BusinessType = dto.BusinessType,
+            CompanyName = dto.CompanyName,
+            Nip = dto.Nip,
             EmailVerified = false,
             EmailVerificationToken = token,
             EmailVerificationTokenExpires = DateTime.UtcNow.AddHours(24),
@@ -89,7 +93,7 @@ public class AuthService : IAuthService
     public async Task ForgotPasswordAsync(string email)
     {
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-        if (user == null) return; // don't reveal if user exists
+        if (user == null) return;
 
         var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
         user.PasswordResetToken = token;
@@ -164,7 +168,6 @@ public class AuthService : IAuthService
         if (payload == null || string.IsNullOrEmpty(payload.Email) || payload.EmailVerified != "true")
             return null;
 
-        // Validate audience if client ID is configured
         var clientId = _configuration["Google:ClientId"]
             ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
         if (!string.IsNullOrEmpty(clientId) && payload.Aud != clientId)

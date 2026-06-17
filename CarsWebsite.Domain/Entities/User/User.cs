@@ -12,6 +12,7 @@ namespace CarsWebsite
         public string PhoneNumber { get; set; }
         public string PasswordHash { get; set; }
         public AccountType AccountType { get; set; } = AccountType.Personal;
+        public BusinessType? BusinessType { get; set; }
         public string? CompanyName { get; set; }
         public string? Nip { get; set; }
         public bool IsAdmin { get; set; } = false;

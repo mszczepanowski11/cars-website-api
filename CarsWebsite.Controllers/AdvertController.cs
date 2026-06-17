@@ -1,5 +1,6 @@
 using cars_website_api.CarsWebsite.DTOs.Advert;
 using cars_website_api.CarsWebsite.Interfaces;
+using CarsWebsite;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -10,11 +11,13 @@ public class AdvertController : ControllerBase
 {
     private readonly IAdvertService _advertService;
     private readonly IAdvertImageService _imageService;
+    private readonly IUserService _userService;
 
-    public AdvertController(IAdvertService advertService, IAdvertImageService imageService)
+    public AdvertController(IAdvertService advertService, IAdvertImageService imageService, IUserService userService)
     {
         _advertService = advertService;
         _imageService = imageService;
+        _userService = userService;
     }
 
     private int GetUserId()
@@ -67,6 +70,17 @@ public class AdvertController : ControllerBase
     {
         var userId = GetUserId();
         if (userId == 0) return Unauthorized();
+
+        var user = await _userService.GetById(userId);
+        if (user != null && user.AccountType == AccountType.Personal)
+        {
+            var (activeCount, yearCount) = await _advertService.GetPersonalAdCountsAsync(userId);
+            if (activeCount >= 1)
+                return BadRequest(new { error = "private_limit_active", message = "Wygląda na to, że prowadzisz działalność handlową. Załóż konto biznesowe." });
+            if (yearCount >= 3)
+                return BadRequest(new { error = "private_limit_yearly", message = "Wygląda na to, że prowadzisz działalność handlową. Załóż konto biznesowe." });
+        }
+
         var id = await _advertService.CreateCarAdvertAsync(dto, userId);
         return CreatedAtAction(nameof(GetById), new { id }, new { id });
     }
