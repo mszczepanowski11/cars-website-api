@@ -103,4 +103,23 @@ public class AuthController : ControllerBase
         await _authService.ResendVerificationAsync(dto.Email);
         return Ok(new { message = "Jeśli konto istnieje i nie jest zweryfikowane, wysłaliśmy nowy link." });
     }
+
+    [HttpPost("google")]
+    public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDto dto)
+    {
+        var result = await _authService.GoogleLoginAsync(dto.Credential);
+        if (result == null) return Unauthorized("Nie można zalogować przez Google.");
+
+        var resultType = result.GetType();
+        var errorProp = resultType.GetProperty("error");
+        if (errorProp != null)
+        {
+            var errorVal = errorProp.GetValue(result)?.ToString();
+            return errorVal == "blocked"
+                ? Unauthorized("Konto zostało zablokowane.")
+                : Unauthorized("Nie można zalogować przez Google.");
+        }
+
+        return Ok(result);
+    }
 }

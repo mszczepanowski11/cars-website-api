@@ -1,7 +1,9 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json.Serialization;
 using cars_website_api.CarsWebsite.DTOs;
 using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
@@ -16,12 +18,14 @@ public class AuthService : IAuthService
     private readonly AppDbContext _context;
     private readonly IConfiguration _configuration;
     private readonly IEmailService _email;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public AuthService(AppDbContext context, IConfiguration configuration, IEmailService email)
+    public AuthService(AppDbContext context, IConfiguration configuration, IEmailService email, IHttpClientFactory httpClientFactory)
     {
         _context = context;
         _configuration = configuration;
         _email = email;
+        _httpClientFactory = httpClientFactory;
     }
 
     public async Task<object?> Register(RegisterDto dto)
@@ -146,6 +150,56 @@ public class AuthService : IAuthService
                 "Aktywuj konto"));
     }
 
+    public async Task<object?> GoogleLoginAsync(string credential)
+    {
+        var httpClient = _httpClientFactory.CreateClient();
+        GoogleTokenPayload? payload;
+        try
+        {
+            payload = await httpClient.GetFromJsonAsync<GoogleTokenPayload>(
+                $"https://oauth2.googleapis.com/tokeninfo?id_token={Uri.EscapeDataString(credential)}");
+        }
+        catch { return null; }
+
+        if (payload == null || string.IsNullOrEmpty(payload.Email) || payload.EmailVerified != "true")
+            return null;
+
+        // Validate audience if client ID is configured
+        var clientId = _configuration["Google:ClientId"]
+            ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
+        if (!string.IsNullOrEmpty(clientId) && payload.Aud != clientId)
+            return null;
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.GoogleId == payload.Sub)
+                ?? await _context.Users.FirstOrDefaultAsync(u => u.Email == payload.Email);
+
+        if (user == null)
+        {
+            user = new User
+            {
+                Name = payload.GivenName ?? "Użytkownik",
+                Surname = payload.FamilyName ?? "Google",
+                Email = payload.Email,
+                PhoneNumber = string.Empty,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
+                EmailVerified = true,
+                GoogleId = payload.Sub,
+            };
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+        }
+        else if (user.GoogleId == null)
+        {
+            user.GoogleId = payload.Sub;
+            if (!user.EmailVerified) user.EmailVerified = true;
+            await _context.SaveChangesAsync();
+        }
+
+        if (user.IsBlocked) return new { error = "blocked" };
+
+        return new { token = GenerateToken(user) };
+    }
+
     private string GenerateToken(User user)
     {
         var jwtKey = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is not configured.");
@@ -171,5 +225,15 @@ public class AuthService : IAuthService
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    private sealed class GoogleTokenPayload
+    {
+        [JsonPropertyName("sub")]          public string Sub          { get; set; } = string.Empty;
+        [JsonPropertyName("email")]        public string? Email       { get; set; }
+        [JsonPropertyName("email_verified")] public string? EmailVerified { get; set; }
+        [JsonPropertyName("given_name")]   public string? GivenName   { get; set; }
+        [JsonPropertyName("family_name")]  public string? FamilyName  { get; set; }
+        [JsonPropertyName("aud")]          public string? Aud         { get; set; }
     }
 }

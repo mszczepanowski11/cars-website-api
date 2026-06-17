@@ -390,6 +390,9 @@ internal class Program
             catch (Exception ex) { logger.LogDebug("ADD COLUMN advertimages.IsMain skipped: {Message}", ex.Message); }
 
             // Auth token columns for email verification and password reset
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `users` ADD COLUMN `GoogleId` varchar(255) NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN users.GoogleId skipped: {Message}", ex.Message); }
+
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `users` ADD COLUMN `EmailVerificationToken` varchar(64) NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN users.EmailVerificationToken skipped: {Message}", ex.Message); }
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `users` ADD COLUMN `EmailVerificationTokenExpires` datetime(6) NULL"); }
