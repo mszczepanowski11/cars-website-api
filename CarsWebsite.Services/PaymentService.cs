@@ -277,7 +277,7 @@ public class PaymentService : IPaymentService
                         ? advert.BadgeExpiresAt.Value
                         : DateTime.UtcNow;
                     advert.Badge = badge;
-                    advert.BadgeExpiresAt = baseDate.AddDays(payment.DurationDays);
+                    advert.BadgeExpiresAt = baseDate.AddDays(payment.DurationDays ?? 30);
                 }
             }
 
