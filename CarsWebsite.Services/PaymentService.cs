@@ -238,10 +238,12 @@ public class PaymentService : IPaymentService
         HttpResponseMessage response;
         try
         {
-            response = await client.PostAsync(
-                requestUrl,
-                new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json")
-            );
+            var request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json")
+            };
+            // ResponseHeadersRead: read headers only, so we can log status code even if body read fails
+            response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
         }
         catch (Exception ex)
         {
@@ -250,15 +252,15 @@ public class PaymentService : IPaymentService
             throw new InvalidOperationException($"Błąd sieci bramki płatności: {ex.Message}");
         }
 
+        _logger.LogInformation("[Imoje] Status odpowiedzi: {StatusCode}", (int)response.StatusCode);
+
         if (!response.IsSuccessStatusCode)
         {
-            var err = await response.Content.ReadAsStringAsync();
+            string err = "";
+            try { err = await response.Content.ReadAsStringAsync(); } catch { }
             _logger.LogError(
-                "[Imoje] Błąd API: status={StatusCode}, url={Url}, serviceId={ServiceIdPrefix}, body={Body}",
-                (int)response.StatusCode,
-                requestUrl,
-                serviceId.Length >= 4 ? serviceId[..4] + "..." : serviceId,
-                err);
+                "[Imoje] Błąd API: status={StatusCode}, url={Url}, body={Body}",
+                (int)response.StatusCode, requestUrl, err);
             throw new InvalidOperationException($"Błąd bramki płatności ({(int)response.StatusCode}). Spróbuj ponownie.");
         }
 
