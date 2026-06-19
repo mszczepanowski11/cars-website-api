@@ -71,13 +71,10 @@ public class PaymentService : IPaymentService
 
         if (dto.AdvertId.HasValue)
         {
-            var advert = await _context.CarAdverts.FindAsync(dto.AdvertId.Value);
+            var advert = await _context.Adverts.FirstOrDefaultAsync(a => a.Id == dto.AdvertId.Value);
             if (advert == null)
             {
-                var existsInBase = await _context.Adverts.AnyAsync(a => a.Id == dto.AdvertId.Value);
-                _logger.LogWarning(
-                    "[Payment/Initiate] advertId={AdvertId} not found in CarAdverts. existsInAdverts={Exists}",
-                    dto.AdvertId.Value, existsInBase);
+                _logger.LogWarning("[Payment/Initiate] advertId={AdvertId} not found in Adverts", dto.AdvertId.Value);
                 throw new KeyNotFoundException("Ogłoszenie nie istnieje.");
             }
             if (advert.UserId != userId)

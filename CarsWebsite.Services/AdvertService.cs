@@ -374,11 +374,10 @@ public class AdvertService : IAdvertService
     public async Task PublishAsync(int advertId, int userId)
     {
         _logger.LogInformation("[Publish] advertId={AdvertId} userId={UserId}", advertId, userId);
-        var advert = await _context.CarAdverts.FindAsync(advertId);
+        var advert = await _context.Adverts.FirstOrDefaultAsync(a => a.Id == advertId);
         if (advert == null)
         {
-            var existsInBase = await _context.Adverts.AnyAsync(a => a.Id == advertId);
-            _logger.LogWarning("[Publish] advert {AdvertId} not found in CarAdverts. existsInAdverts={Exists}", advertId, existsInBase);
+            _logger.LogWarning("[Publish] advert {AdvertId} not found in Adverts", advertId);
             throw new KeyNotFoundException("Advert not found.");
         }
         if (advert.UserId != userId)
