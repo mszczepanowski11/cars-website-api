@@ -385,6 +385,21 @@ internal class Program
                 catch (Exception ex) { logger.LogDebug("ADD COLUMN caradverts skipped: {Message}", ex.Message); }
             }
 
+            // Ensure advertimages table exists (may be missing if it was added after initial DB creation)
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS `advertimages` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `AdvertId` int NOT NULL,
+  `Url` longtext NOT NULL,
+  `IsMain` tinyint(1) NOT NULL DEFAULT 0,
+  `Order` int NOT NULL DEFAULT 0,
+  PRIMARY KEY (`Id`),
+  KEY `IX_AdvertImages_AdvertId` (`AdvertId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            }
+            catch (Exception ex) { logger.LogWarning("CREATE TABLE advertimages skipped: {Message}", ex.Message); }
+
             // Add IsMain to advertimages — column was added to entity after the original migration.
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `advertimages` ADD COLUMN `IsMain` tinyint(1) NOT NULL DEFAULT 0"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN advertimages.IsMain skipped: {Message}", ex.Message); }

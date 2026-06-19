@@ -8,52 +8,93 @@ public class AdvertImageService : IAdvertImageService
 {
     private readonly AppDbContext _context;
     private readonly Cloudinary _cloudinary;
+    private readonly ILogger<AdvertImageService> _logger;
 
     private static readonly string[] AllowedMimeTypes = ["image/jpeg", "image/png", "image/webp"];
     private static readonly string[] AllowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
     private const long MaxFileSizeBytes = 10 * 1024 * 1024;
 
-    public AdvertImageService(AppDbContext context, Cloudinary cloudinary)
+    public AdvertImageService(AppDbContext context, Cloudinary cloudinary, ILogger<AdvertImageService> logger)
     {
         _context = context;
         _cloudinary = cloudinary;
+        _logger = logger;
     }
 
     public async Task<string> UploadAdvertImageAsync(int advertId, IFormFile file, int userId)
     {
-        if (!AllowedMimeTypes.Contains(file.ContentType.ToLowerInvariant()))
-            throw new BadHttpRequestException("Invalid file type. Only JPEG, PNG, and WebP images are allowed.");
+        _logger.LogInformation("[ImgSvc] Start: advertId={AdvertId} userId={UserId} file={File} size={Size}B mime={Mime}",
+            advertId, userId, file.FileName, file.Length, file.ContentType);
+
+        var mime = file.ContentType.ToLowerInvariant();
+        if (!AllowedMimeTypes.Contains(mime))
+        {
+            _logger.LogWarning("[ImgSvc] Rejected mime={Mime}", mime);
+            throw new BadHttpRequestException($"Niedozwolony typ pliku: {mime}. Dozwolone: JPEG, PNG, WebP.");
+        }
         if (file.Length > MaxFileSizeBytes)
-            throw new BadHttpRequestException("File size exceeds the 10 MB limit.");
+        {
+            _logger.LogWarning("[ImgSvc] Rejected size={Size}B", file.Length);
+            throw new BadHttpRequestException("Plik przekracza limit 10 MB.");
+        }
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (string.IsNullOrEmpty(extension) || !AllowedExtensions.Contains(extension))
+        {
+            // Derive extension from MIME type as fallback (happens when Nuxt sends blob without ext)
+            extension = mime switch
+            {
+                "image/jpeg" => ".jpg",
+                "image/png"  => ".png",
+                "image/webp" => ".webp",
+                _ => extension
+            };
+            _logger.LogDebug("[ImgSvc] Extension derived from mime: {Ext}", extension);
+        }
         if (!AllowedExtensions.Contains(extension))
-            throw new BadHttpRequestException("Invalid file extension.");
+        {
+            _logger.LogWarning("[ImgSvc] Rejected extension={Ext}", extension);
+            throw new BadHttpRequestException($"Niedozwolone rozszerzenie pliku: {extension}.");
+        }
 
         var advert = await _context.CarAdverts
             .Include(a => a.Images)
             .FirstOrDefaultAsync(a => a.Id == advertId);
-        if (advert == null) throw new KeyNotFoundException("Advert not found");
-        if (advert.UserId != userId) throw new UnauthorizedAccessException("You do not own this advert.");
-        if (advert.Images.Count >= 20) throw new BadHttpRequestException("Maximum of 20 images per advert.");
+        if (advert == null) throw new KeyNotFoundException($"Ogłoszenie {advertId} nie istnieje.");
+        if (advert.UserId != userId) throw new UnauthorizedAccessException("Nie jesteś właścicielem tego ogłoszenia.");
+        if (advert.Images.Count >= 20) throw new BadHttpRequestException("Ogłoszenie może mieć maksymalnie 20 zdjęć.");
 
-        using var stream = file.OpenReadStream();
-        var uploadParams = new ImageUploadParams
+        var publicId = $"adverts/{advertId}/{Guid.NewGuid()}";
+        _logger.LogInformation("[ImgSvc] Uploading to Cloudinary: publicId={PublicId}", publicId);
+
+        CloudUploadResult result;
+        using (var stream = file.OpenReadStream())
         {
-            File = new FileDescription(file.FileName, stream),
-            PublicId = $"adverts/{advertId}/{Guid.NewGuid()}",
-            Overwrite = false,
-            Transformation = new Transformation().Quality("auto").FetchFormat("auto"),
-        };
+            var uploadParams = new ImageUploadParams
+            {
+                File = new FileDescription(file.FileName, stream),
+                PublicId = publicId,
+                Overwrite = false,
+                Transformation = new Transformation().Quality("auto"),
+            };
+            result = await _cloudinary.UploadAsync(uploadParams);
+        }
 
-        var result = await _cloudinary.UploadAsync(uploadParams);
         if (result.Error != null)
-            throw new InvalidOperationException($"Image upload failed: {result.Error.Message}");
+        {
+            _logger.LogError("[ImgSvc] Cloudinary error: {Error} (httpStatus={Status})",
+                result.Error.Message, result.StatusCode);
+            throw new InvalidOperationException($"Błąd Cloudinary: {result.Error.Message}");
+        }
 
         var url = result.SecureUrl.ToString();
         var isMain = advert.Images.Count == 0;
+        _logger.LogInformation("[ImgSvc] Cloudinary OK: url={Url} isMain={IsMain}", url, isMain);
 
-        _context.AdvertImages.Add(new AdvertImage { AdvertId = advertId, Url = url, IsMain = isMain });
+        var image = new AdvertImage { AdvertId = advertId, Url = url, IsMain = isMain };
+        _context.AdvertImages.Add(image);
         await _context.SaveChangesAsync();
+
+        _logger.LogInformation("[ImgSvc] DB saved: imageId={ImageId}", image.Id);
         return url;
     }
 
