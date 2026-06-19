@@ -242,6 +242,24 @@ internal class Program
   KEY `IX_BrandVehicleCategories_CategoriesId` (`CategoriesId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
 
+                @"CREATE TABLE IF NOT EXISTS `fueltypes` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `Name` longtext NOT NULL,
+  PRIMARY KEY (`Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+                @"CREATE TABLE IF NOT EXISTS `gearboxes` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `Name` longtext NOT NULL,
+  PRIMARY KEY (`Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+                @"CREATE TABLE IF NOT EXISTS `bodytypes` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `Name` longtext NOT NULL,
+  PRIMARY KEY (`Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
                 @"CREATE TABLE IF NOT EXISTS `featurecategories` (
   `Id` int NOT NULL AUTO_INCREMENT,
   `Name` longtext NOT NULL,
