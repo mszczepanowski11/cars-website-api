@@ -407,4 +407,30 @@ public class AdvertService : IAdvertService
 
         return (activeCount, yearCount);
     }
+
+    public async Task DeactivateAsync(int advertId, int userId)
+    {
+        var advert = await _context.CarAdverts.FindAsync(advertId)
+            ?? throw new KeyNotFoundException("Advert not found.");
+        if (advert.UserId != userId)
+            throw new UnauthorizedAccessException("You do not own this advert.");
+        advert.IsActive = false;
+        advert.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task RenewAsync(int advertId, int userId)
+    {
+        var advert = await _context.CarAdverts.FindAsync(advertId)
+            ?? throw new KeyNotFoundException("Advert not found.");
+        if (advert.UserId != userId)
+            throw new UnauthorizedAccessException("You do not own this advert.");
+        if (advert.SoldAt != null)
+            throw new InvalidOperationException("Nie można odnowić sprzedanego ogłoszenia.");
+        advert.IsActive = true;
+        advert.IsHidden = false;
+        advert.ExpiresAt = DateTime.UtcNow.AddDays(30);
+        advert.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+    }
 }

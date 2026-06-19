@@ -140,6 +140,8 @@ public class AuthService : IAuthService
         if (user == null || user.PasswordResetTokenExpires < DateTime.UtcNow) return false;
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        user.RefreshToken = null;
+        user.RefreshTokenExpiry = null;
         user.PasswordResetToken = null;
         user.PasswordResetTokenExpires = null;
         await _context.SaveChangesAsync();
@@ -193,10 +195,12 @@ public class AuthService : IAuthService
         if (payload == null || string.IsNullOrEmpty(payload.Email) || payload.EmailVerified != "true")
             return null;
 
+        // Validate audience — ClientId must be configured, otherwise Google login is disabled
         var clientId = _configuration["Google:ClientId"]
             ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
-        if (!string.IsNullOrEmpty(clientId) && payload.Aud != clientId)
+        if (string.IsNullOrEmpty(clientId))
             return null;
+        if (payload.Aud != clientId) return null;
 
         var user = await _context.Users.FirstOrDefaultAsync(u => u.GoogleId == payload.Sub)
                 ?? await _context.Users.FirstOrDefaultAsync(u => u.Email == payload.Email);

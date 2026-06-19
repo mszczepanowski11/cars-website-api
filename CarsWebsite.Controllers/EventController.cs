@@ -159,19 +159,17 @@ public class EventController : ControllerBase
     }
 
     [HttpPost("admin/{id}/feature")]
-    [Authorize]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> FeatureEvent(int id)
     {
-        if (!IsAdmin()) return Forbid();
         await _eventService.FeatureEventAsync(id, GetUserId()!.Value, true);
         return NoContent();
     }
 
     [HttpDelete("admin/{id}/feature")]
-    [Authorize]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> UnfeatureEvent(int id)
     {
-        if (!IsAdmin()) return Forbid();
         await _eventService.FeatureEventAsync(id, GetUserId()!.Value, false);
         return NoContent();
     }

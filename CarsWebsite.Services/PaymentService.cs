@@ -111,7 +111,12 @@ public class PaymentService : IPaymentService
             Status = PaymentStatus.Pending,
             ImojeOrderId = orderId,
             DurationDays = dto.DurationDays,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            BillingName = dto.BillingName,
+            BillingNip = dto.BillingNip,
+            BillingStreet = dto.BillingStreet,
+            BillingPostalCode = dto.BillingPostalCode,
+            BillingCity = dto.BillingCity,
         };
 
         _logger.LogInformation("[Payment/Initiate] saving Payment record orderId={OrderId}", orderId);
@@ -422,6 +427,21 @@ public class PaymentService : IPaymentService
 
         var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawBody + secret))).ToLower();
         return hash == receivedHash;
+    }
+
+    public async Task<PaymentResponseDto?> AdminUpdateStatusAsync(int paymentId, string status)
+    {
+        var payment = await _context.Payments.Include(p => p.User).FirstOrDefaultAsync(p => p.Id == paymentId);
+        if (payment == null) return null;
+
+        if (Enum.TryParse<PaymentStatus>(status, ignoreCase: true, out var parsedStatus))
+        {
+            payment.Status = parsedStatus;
+            if (parsedStatus == PaymentStatus.Completed && payment.PaidAt == null)
+                payment.PaidAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+        return MapToDto(payment);
     }
 
     private static PaymentResponseDto MapToDto(Payment p) => new()

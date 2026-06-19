@@ -230,10 +230,21 @@ public class InvoiceService : IInvoiceService
         var monthName = ci.DateTimeFormat.GetMonthName(inv.Month);
         var user = inv.User;
 
-        var buyerName = user?.AccountType == AccountType.Business
-                        && !string.IsNullOrWhiteSpace(user.CompanyName)
-            ? user.CompanyName
-            : $"{user?.Name} {user?.Surname}";
+        // Determine buyer display data — prefer payment billing snapshot, fall back to user profile
+        var firstPayment = inv.Payments.FirstOrDefault();
+        var buyerName = !string.IsNullOrWhiteSpace(firstPayment?.BillingName)
+            ? firstPayment.BillingName
+            : (user?.AccountType == AccountType.Business && !string.IsNullOrWhiteSpace(user.CompanyName)
+                ? user.CompanyName
+                : $"{user?.Name} {user?.Surname}");
+
+        var buyerNip = !string.IsNullOrWhiteSpace(firstPayment?.BillingNip)
+            ? firstPayment.BillingNip
+            : user?.Nip;
+
+        var buyerAddress = (!string.IsNullOrWhiteSpace(firstPayment?.BillingStreet) || !string.IsNullOrWhiteSpace(firstPayment?.BillingCity))
+            ? $"{firstPayment?.BillingStreet}, {firstPayment?.BillingPostalCode} {firstPayment?.BillingCity}"
+            : null;
 
         var sb = new StringBuilder();
         sb.Append(@"<!DOCTYPE html>
@@ -262,8 +273,10 @@ td{padding:9px 12px;border:1px solid #ddd;font-size:13px}
 
         sb.Append("<div class=\"parties\">");
         sb.Append($"<div class=\"party\"><h4>Nabywca</h4><p><strong>{buyerName}</strong></p>");
-        if (user?.AccountType == AccountType.Business && !string.IsNullOrWhiteSpace(user.Nip))
-            sb.Append($"<p>NIP: {user.Nip}</p>");
+        if (!string.IsNullOrWhiteSpace(buyerNip))
+            sb.Append($"<p>NIP: {buyerNip}</p>");
+        if (!string.IsNullOrWhiteSpace(buyerAddress))
+            sb.Append($"<p>{buyerAddress}</p>");
         sb.Append($"<p>{user?.Email}</p></div>");
         sb.Append("<div class=\"party\"><h4>Sprzedawca</h4><p><strong>CARIZO Sp. z o.o.</strong></p><p>NIP: 0000000000</p><p>ul. Przykładowa 1, 00-001 Warszawa</p></div>");
         sb.Append("</div>");

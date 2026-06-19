@@ -579,6 +579,20 @@ internal class Program
                 catch (Exception ex) { logger.LogDebug("ADD COLUMN refresh token skipped: {Message}", ex.Message); }
             }
 
+            var addPaymentBillingSql = new[]
+            {
+                "ALTER TABLE `Payments` ADD COLUMN IF NOT EXISTS `BillingName` varchar(200) NULL",
+                "ALTER TABLE `Payments` ADD COLUMN IF NOT EXISTS `BillingNip` varchar(20) NULL",
+                "ALTER TABLE `Payments` ADD COLUMN IF NOT EXISTS `BillingStreet` varchar(200) NULL",
+                "ALTER TABLE `Payments` ADD COLUMN IF NOT EXISTS `BillingPostalCode` varchar(20) NULL",
+                "ALTER TABLE `Payments` ADD COLUMN IF NOT EXISTS `BillingCity` varchar(100) NULL",
+            };
+            foreach (var sql in addPaymentBillingSql)
+            {
+                try { db.Database.ExecuteSqlRaw(sql); }
+                catch (Exception ex) { logger.LogDebug("ADD COLUMN payment billing skipped: {Message}", ex.Message); }
+            }
+
             SeedDataIfEmpty(db, logger);
 
             // Startup config diagnostics

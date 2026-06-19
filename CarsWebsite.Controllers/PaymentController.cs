@@ -90,4 +90,13 @@ public class PaymentController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50)
         => Ok(await _paymentService.GetAllPaymentsAsync(page, pageSize));
+
+    [Authorize(Policy = "AdminOnly")]
+    [HttpPatch("admin/{id:int}/status")]
+    public async Task<IActionResult> AdminUpdateStatus(int id, [FromBody] AdminUpdatePaymentStatusDto dto)
+    {
+        var payment = await _paymentService.AdminUpdateStatusAsync(id, dto.Status);
+        if (payment == null) return NotFound();
+        return Ok(payment);
+    }
 }
