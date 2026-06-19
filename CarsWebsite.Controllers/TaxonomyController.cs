@@ -25,15 +25,24 @@ namespace cars_website_api.CarsWebsite.Controllers
 
         [HttpGet("brands")]
         public async Task<IActionResult> GetBrands()
-            => Ok(await _taxonomyService.GetBrandsAsync());
+        {
+            var brands = await _taxonomyService.GetBrandsAsync();
+            return Ok(brands.Select(b => new { id = b.Id, name = b.Name }));
+        }
 
         [HttpGet("brands/category/{categoryId}")]
         public async Task<IActionResult> GetBrandsByCategory(int categoryId)
-            => Ok(await _taxonomyService.GetBrandsByCategoryAsync(categoryId));
+        {
+            var brands = await _taxonomyService.GetBrandsByCategoryAsync(categoryId);
+            return Ok(brands.Select(b => new { id = b.Id, name = b.Name }));
+        }
 
         [HttpGet("brands/{brandId}/models")]
         public async Task<IActionResult> GetModelsByBrand(int brandId)
-            => Ok(await _taxonomyService.GetModelsByBrandAsync(brandId));
+        {
+            var models = await _taxonomyService.GetModelsByBrandAsync(brandId);
+            return Ok(models.Select(m => new { id = m.Id, name = m.Name }));
+        }
 
         [HttpGet("models/{modelId}/generations")]
         public async Task<IActionResult> GetGenerationsByModel(int modelId)
