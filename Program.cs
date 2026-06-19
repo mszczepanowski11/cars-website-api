@@ -72,11 +72,13 @@ internal class Program
         builder.Services.AddScoped<IAdvertService, AdvertService>();
         builder.Services.AddScoped<IAdvertImageService, AdvertImageService>();
 
-        var cloudinaryAccount = new Account(
-            Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME") ?? "",
-            Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY") ?? "",
-            Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET") ?? ""
-        );
+        var cloudName   = (Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME")   ?? "").Trim();
+        var cloudApiKey = (Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY")       ?? "").Trim();
+        var cloudSecret = (Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET")    ?? "").Trim();
+
+        Console.WriteLine($"[Cloudinary] cloud={cloudName}, key={cloudApiKey}, secret={(cloudSecret.Length > 4 ? cloudSecret[..4] + "****" : "(empty)")}");
+
+        var cloudinaryAccount = new Account(cloudName, cloudApiKey, cloudSecret);
         var cloudinary = new Cloudinary(cloudinaryAccount);
         cloudinary.Api.Secure = true;
         builder.Services.AddSingleton(cloudinary);
