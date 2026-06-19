@@ -14,6 +14,7 @@ public class PaymentInitiatedDto
 {
     public int PaymentId { get; set; }
     public string PaymentUrl { get; set; } = string.Empty;
+    public Dictionary<string, string> FormFields { get; set; } = new();
     public decimal Amount { get; set; }
     public string OrderId { get; set; } = string.Empty;
 }

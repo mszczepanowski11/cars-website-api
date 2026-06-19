@@ -1,7 +1,5 @@
-using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 using CarsWebsite;
 using cars_website_api.CarsWebsite.DTOs.Payment;
 using cars_website_api.CarsWebsite.Interfaces;
@@ -28,20 +26,17 @@ public class PaymentService : IPaymentService
 
     private readonly AppDbContext _context;
     private readonly IConfiguration _config;
-    private readonly IHttpClientFactory _httpClientFactory;
     private readonly INotificationService _notifications;
     private readonly ILogger<PaymentService> _logger;
 
     public PaymentService(
         AppDbContext context,
         IConfiguration config,
-        IHttpClientFactory httpClientFactory,
         INotificationService notifications,
         ILogger<PaymentService> logger)
     {
         _context = context;
         _config = config;
-        _httpClientFactory = httpClientFactory;
         _notifications = notifications;
         _logger = logger;
     }
@@ -116,14 +111,15 @@ public class PaymentService : IPaymentService
         }
         _logger.LogInformation("[Payment/Initiate] Payment #{PaymentId} saved", payment.Id);
 
-        var paymentUrl = await CreateImojeTransactionAsync(payment, user, orderId);
+        var (actionUrl, formFields) = BuildImojeFormData(payment, user, orderId);
 
         return new PaymentInitiatedDto
         {
-            PaymentId = payment.Id,
-            PaymentUrl = paymentUrl,
-            Amount = priceInfo.Price,
-            OrderId = orderId
+            PaymentId  = payment.Id,
+            PaymentUrl = actionUrl,
+            FormFields = formFields,
+            Amount     = priceInfo.Price,
+            OrderId    = orderId
         };
     }
 
@@ -217,97 +213,56 @@ public class PaymentService : IPaymentService
         };
     }
 
-    private async Task<string> CreateImojeTransactionAsync(Payment payment, User user, string orderId)
+    // Builds imoje paywall form fields + action URL using the official SDK algorithm.
+    // Signature: SHA256(ksort(key=value&...) + serviceKey) + ";sha256"
+    private (string ActionUrl, Dictionary<string, string> Fields) BuildImojeFormData(Payment payment, User user, string orderId)
     {
-        // IMOJE_MERCHANT_ID = "Identyfikator klienta" (used in URL path)
-        // IMOJE_API_KEY     = "Token autoryzacyjny" from Klucze API (Bearer auth)
-        // IMOJE_SERVICE_ID  = "Identyfikator sklepu" (sent in body as serviceId)
-        var merchantId = Environment.GetEnvironmentVariable("IMOJE_MERCHANT_ID") ?? "";
-        var apiKey     = Environment.GetEnvironmentVariable("IMOJE_API_KEY") ?? "";
-        var serviceId  = Environment.GetEnvironmentVariable("IMOJE_SERVICE_ID") is { Length: > 0 } sid ? sid : merchantId;
-        var apiBase    = Environment.GetEnvironmentVariable("IMOJE_API_URL") ?? "https://api.imoje.pl/v1/merchant";
-        var siteUrl    = Environment.GetEnvironmentVariable("IMOJE_SITE_URL") ?? "https://carizo.pl";
+        var section = _config.GetSection("Imoje");
+        var serviceId  = section["ServiceId"]  ?? "";
+        var serviceKey = section["ServiceKey"] ?? section["ApiKey"] ?? "";
+        var merchantId = section["MerchantId"] ?? "";
+        var sandbox    = string.Equals(section["Environment"], "sandbox", StringComparison.OrdinalIgnoreCase);
+        var siteUrl    = section["SiteUrl"] ?? "https://carizo.pl";
 
-        _logger.LogInformation(
-            "[Imoje] Config: MerchantId={HasMid} (len={MidLen}), ApiKey={HasKey} (len={KeyLen}, pfx={KeyPfx}), ServiceId={HasSid} (len={SidLen}), ApiBase={ApiBase}",
-            string.IsNullOrEmpty(merchantId) ? "EMPTY" : "SET", merchantId.Length,
-            string.IsNullOrEmpty(apiKey)     ? "EMPTY" : "SET", apiKey.Length,
-            apiKey.Length >= 6 ? apiKey[..6] + "..." : "(short)",
-            string.IsNullOrEmpty(serviceId)  ? "EMPTY" : "SET", serviceId.Length,
-            apiBase);
+        var actionUrl = sandbox
+            ? "https://sandbox.paywall.imoje.pl/payment"
+            : "https://paywall.imoje.pl/payment";
 
-        if (string.IsNullOrEmpty(merchantId) || string.IsNullOrEmpty(apiKey))
+        if (string.IsNullOrEmpty(serviceId) || string.IsNullOrEmpty(serviceKey))
         {
-            _logger.LogWarning("Bramka imoje nie jest skonfigurowana (brak merchantId/apiKey). Zwracam URL zastępczy.");
-            return $"{siteUrl}/payment/return?status=pending&paymentId={payment.Id}";
+            _logger.LogWarning("Bramka imoje nie jest skonfigurowana (brak ServiceId/ServiceKey).");
+            return ($"{siteUrl}/payment/return?status=pending&paymentId={payment.Id}", new Dictionary<string, string>());
         }
 
-        var body = new
+        var fields = new Dictionary<string, string>
         {
-            type = "payment",
-            serviceId,
-            amount   = (int)(payment.Amount * 100),
-            currency = "PLN",
-            orderId,
-            title    = payment.ServiceDescription,
-            successReturnUrl  = $"{siteUrl}/payment/return?status=success&paymentId={payment.Id}&advertId={payment.AdvertId}",
-            failureReturnUrl  = $"{siteUrl}/payment/return?status=failure&paymentId={payment.Id}",
-            notificationUrl   = $"{siteUrl}/api/payment/webhook",
-            customer = new
-            {
-                firstName = user.Name,
-                lastName  = user.Surname,
-                email     = user.Email
-            }
+            ["amount"]            = ((int)(payment.Amount * 100)).ToString(),
+            ["currency"]          = "PLN",
+            ["orderId"]           = orderId,
+            ["customerFirstName"] = user.Name ?? "",
+            ["customerLastName"]  = user.Surname ?? "",
+            ["customerEmail"]     = user.Email ?? "",
+            ["urlSuccess"]        = $"{siteUrl}/payment/return?status=success&paymentId={payment.Id}&advertId={payment.AdvertId}",
+            ["urlFailure"]        = $"{siteUrl}/payment/return?status=failure&paymentId={payment.Id}",
+            ["urlReturn"]         = $"{siteUrl}/payment/return?status=cancel",
+            ["urlNotification"]   = $"{siteUrl}/api/payment/webhook",
+            ["orderDescription"]  = payment.ServiceDescription,
+            ["serviceId"]         = serviceId,
+            ["merchantId"]        = merchantId,
         };
 
-        var serializedBody = JsonSerializer.Serialize(body);
-        _logger.LogInformation("[Imoje] Request body (preview): {Body}", serializedBody[..Math.Min(200, serializedBody.Length)]);
+        fields["signature"] = ComputeImojeSignature(fields, serviceKey);
 
-        var client = _httpClientFactory.CreateClient();
-        client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", apiKey);
+        return (actionUrl, fields);
+    }
 
-
-        var requestUrl = $"{apiBase.TrimEnd('/')}/{merchantId}/transaction";
-        _logger.LogInformation("[Imoje] Wysyłam request: POST {Url}", requestUrl);
-
-        HttpResponseMessage response;
-        try
-        {
-            var request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
-            {
-                Content = new StringContent(serializedBody, Encoding.UTF8, "application/json")
-            };
-            response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError("[Imoje] Błąd sieci przy wywołaniu {Url}: {ExType} – {Message}",
-                requestUrl, ex.GetType().Name, ex.Message);
-            throw new InvalidOperationException($"Błąd sieci bramki płatności: {ex.Message}");
-        }
-
-        _logger.LogInformation("[Imoje] Status odpowiedzi: {StatusCode}", (int)response.StatusCode);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            string err = "";
-            try { err = await response.Content.ReadAsStringAsync(); } catch { }
-            _logger.LogError(
-                "[Imoje] Błąd API: status={StatusCode}, url={Url}, body={Body}",
-                (int)response.StatusCode, requestUrl, err);
-            throw new InvalidOperationException($"Błąd bramki płatności ({(int)response.StatusCode}). Spróbuj ponownie.");
-        }
-
-        var json = await response.Content.ReadAsStringAsync();
-        using var doc = JsonDocument.Parse(json);
-
-        return doc.RootElement
-            .GetProperty("action")
-            .GetProperty("url")
-            .GetString()
-            ?? throw new InvalidOperationException("Brak URL płatności w odpowiedzi imoje.");
+    private static string ComputeImojeSignature(Dictionary<string, string> fields, string serviceKey)
+    {
+        // Match PHP SDK: ksort() → "key=value&..." → SHA256(data + serviceKey) → append ";sha256"
+        var sorted = fields.OrderBy(k => k.Key, StringComparer.Ordinal);
+        var data   = string.Join("&", sorted.Select(k => $"{k.Key}={k.Value}"));
+        var hash   = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(data + serviceKey))).ToLower();
+        return $"{hash};sha256";
     }
 
     private async Task ActivateServiceAsync(Payment payment)
@@ -415,15 +370,18 @@ public class PaymentService : IPaymentService
 
     private bool VerifySignature(string rawBody, string signature)
     {
-        var secret = Environment.GetEnvironmentVariable("IMOJE_WEBHOOK_SECRET")
-            ?? _config["Imoje:WebhookSecret"]
-            ?? "";
+        var secret = _config["Imoje:WebhookSecret"] ?? _config["Imoje:ServiceKey"] ?? _config["Imoje:ApiKey"] ?? "";
         if (string.IsNullOrEmpty(secret)) return false;
 
-        using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
-        var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(rawBody));
-        var expected = Convert.ToHexString(hash).ToLowerInvariant();
-        return expected.Equals(signature?.ToLowerInvariant(), StringComparison.Ordinal);
+        // signature from imoje webhook: "hash;sha256" — same algorithm as payment form
+        var parts = signature?.Split(';');
+        var hashMethod = parts?.Length == 2 ? parts[1].ToLower() : "sha256";
+        var receivedHash = parts?[0]?.ToLower() ?? "";
+
+        if (hashMethod != "sha256") return false;
+
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawBody + secret))).ToLower();
+        return hash == receivedHash;
     }
 
     private static PaymentResponseDto MapToDto(Payment p) => new()
