@@ -108,6 +108,25 @@ internal class Program
         builder.Services.AddHostedService<BadgeExpiryJob>();
         builder.Services.AddHostedService<EventFeaturedExpiryJob>();
 
+        builder.Services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = 429;
+            options.AddFixedWindowLimiter("auth", o =>
+            {
+                o.PermitLimit = 10;
+                o.Window = TimeSpan.FromMinutes(1);
+                o.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+                o.QueueLimit = 0;
+            });
+            options.AddFixedWindowLimiter("strict", o =>
+            {
+                o.PermitLimit = 5;
+                o.Window = TimeSpan.FromMinutes(5);
+                o.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+                o.QueueLimit = 0;
+            });
+        });
+
         builder.Services.AddAutoMapper(typeof(AdvertMappingProfile));
 
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -549,6 +568,17 @@ internal class Program
                 catch (Exception ex) { logger.LogDebug("ADD COLUMN reviews skipped: {Message}", ex.Message); }
             }
 
+            var addRefreshTokenSql = new[]
+            {
+                "ALTER TABLE `Users` ADD COLUMN IF NOT EXISTS `RefreshToken` varchar(128) NULL",
+                "ALTER TABLE `Users` ADD COLUMN IF NOT EXISTS `RefreshTokenExpiry` datetime(6) NULL",
+            };
+            foreach (var sql in addRefreshTokenSql)
+            {
+                try { db.Database.ExecuteSqlRaw(sql); }
+                catch (Exception ex) { logger.LogDebug("ADD COLUMN refresh token skipped: {Message}", ex.Message); }
+            }
+
             SeedDataIfEmpty(db, logger);
 
             // Startup config diagnostics
@@ -585,6 +615,7 @@ internal class Program
         app.UseStaticFiles();
         app.UseHttpsRedirection();
         app.UseCors("AllowNuxt");
+        app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace cars_website_api.CarsWebsite.DTOs.Advert;
 
 public class CreateCarAdvertDto
@@ -14,18 +16,18 @@ public class CreateCarAdvertDto
     public int? DriveTypeId { get; set; }
     public int? ColorId { get; set; }
 
-    public int Year { get; set; }
-    public int Mileage { get; set; }
-    public decimal Price { get; set; }
+    [Range(1900, 2030)] public int Year { get; set; }
+    [Range(0, 2000000)] public int Mileage { get; set; }
+    [Range(0, 10000000)] public decimal Price { get; set; }
     public bool IsNegotiable { get; set; }
     public string? SellerType { get; set; }
     public string? Condition { get; set; }
 
-    public string Title { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public string? City { get; set; }
-    public string? Region { get; set; }
-    public string? Vin { get; set; }
+    [Required] [MaxLength(200)] public string Title { get; set; } = string.Empty;
+    [MaxLength(5000)] public string? Description { get; set; }
+    [MaxLength(100)] public string? City { get; set; }
+    [MaxLength(100)] public string? Region { get; set; }
+    [MaxLength(17)] public string? Vin { get; set; }
     public int? DoorCount { get; set; }
     public int? SeatsCount { get; set; }
 

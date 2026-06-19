@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace cars_website_api.CarsWebsite.DTOs.Review;
 
 public class ReviewDto
@@ -17,10 +19,10 @@ public class ReviewDto
 
 public class CreateReviewDto
 {
-    public int SellerId { get; set; }
+    [Required] public int SellerId { get; set; }
     public int? AdvertId { get; set; }
-    public int Rating { get; set; }
-    public string Content { get; set; } = "";
+    [Required] [Range(1, 5)] public int Rating { get; set; }
+    [Required] [MaxLength(2000)] public string Content { get; set; } = "";
 }
 
 public class ReviewsResultDto

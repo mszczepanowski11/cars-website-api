@@ -1,6 +1,8 @@
-﻿namespace cars_website_api.CarsWebsite.DTOs.Message;
+using System.ComponentModel.DataAnnotations;
+
+namespace cars_website_api.CarsWebsite.DTOs.Message;
 
 public class SendMessageDto
 {
-    public string Content { get; set; } = string.Empty;
+    [Required] [MaxLength(4000)] public string Content { get; set; } = string.Empty;
 }

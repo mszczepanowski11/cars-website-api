@@ -1,7 +1,9 @@
-﻿namespace cars_website_api.CarsWebsite.DTOs;
+using System.ComponentModel.DataAnnotations;
+
+namespace cars_website_api.CarsWebsite.DTOs;
 
 public class LoginDto
 {
-    public string Email { get; set; }
-    public string Password { get; set; }
+    [Required] [EmailAddress] [MaxLength(256)] public string Email { get; set; }
+    [Required] [MaxLength(128)] public string Password { get; set; }
 }
