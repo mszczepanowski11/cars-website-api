@@ -3,16 +3,19 @@ using cars_website_api.CarsWebsite.Domain.Entities;
 using cars_website_api.CarsWebsite.DTOs.Advert;
 using CarsWebsite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 public class AdvertService : IAdvertService
 {
     private readonly AppDbContext _context;
     private readonly IMapper _mapper;
+    private readonly ILogger<AdvertService> _logger;
 
-    public AdvertService(AppDbContext context, IMapper mapper)
+    public AdvertService(AppDbContext context, IMapper mapper, ILogger<AdvertService> logger)
     {
         _context = context;
         _mapper = mapper;
+        _logger = logger;
     }
 
     
@@ -370,8 +373,14 @@ public class AdvertService : IAdvertService
 
     public async Task PublishAsync(int advertId, int userId)
     {
-        var advert = await _context.CarAdverts.FindAsync(advertId)
-            ?? throw new KeyNotFoundException("Advert not found.");
+        _logger.LogInformation("[Publish] advertId={AdvertId} userId={UserId}", advertId, userId);
+        var advert = await _context.CarAdverts.FindAsync(advertId);
+        if (advert == null)
+        {
+            var existsInBase = await _context.Adverts.AnyAsync(a => a.Id == advertId);
+            _logger.LogWarning("[Publish] advert {AdvertId} not found in CarAdverts. existsInAdverts={Exists}", advertId, existsInBase);
+            throw new KeyNotFoundException("Advert not found.");
+        }
         if (advert.UserId != userId)
             throw new UnauthorizedAccessException("You do not own this advert.");
         advert.IsActive = true;

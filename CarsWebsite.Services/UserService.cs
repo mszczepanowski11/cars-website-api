@@ -5,16 +5,19 @@ using cars_website_api.CarsWebsite.DTOs.User;
 using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace cars_website_api.CarsWebsite.Services;
 
 public class UserService : IUserService
 {
     private readonly AppDbContext _context;
+    private readonly ILogger<UserService> _logger;
 
-    public UserService(AppDbContext context)
+    public UserService(AppDbContext context, ILogger<UserService> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     public async Task<User?> GetById(int id)
@@ -38,38 +41,54 @@ public class UserService : IUserService
 
     public async Task<UserStatsDto> GetUserStatsAsync(int userId)
     {
-        var advertIds = await _context.CarAdverts
-            .Where(a => a.UserId == userId)
-            .Select(a => a.Id)
-            .ToListAsync();
+        var dto = new UserStatsDto();
 
-        var totalAdverts = advertIds.Count;
-        var activeAdverts = await _context.CarAdverts.CountAsync(a => a.UserId == userId && a.IsActive && !a.IsHidden);
-        var totalViews = await _context.AdvertViews.CountAsync(v => advertIds.Contains(v.AdvertId));
-        var favCount = await _context.FavoriteAdverts.CountAsync(f => f.UserId == userId);
-        var unreadMessages = await _context.Messages
-            .CountAsync(m => (m.Conversation.SellerId == userId || m.Conversation.BuyerId == userId)
-                             && !m.IsRead && m.SenderId != userId);
-        var followersCount = await _context.UserFollows.CountAsync(f => f.FollowedId == userId);
-        var followingCount = await _context.UserFollows.CountAsync(f => f.FollowerId == userId);
-        var reviews = await _context.Reviews.Where(r => r.SellerId == userId).ToListAsync();
-        var avgRating = reviews.Count > 0 ? reviews.Average(r => r.Rating) : 0.0;
-
-        return new UserStatsDto
+        try
         {
-            TotalAdverts = totalAdverts,
-            ActiveAdverts = activeAdverts,
-            TotalViews = totalViews,
-            FavoritesCount = favCount,
-            UnreadMessages = unreadMessages,
-            FollowersCount = followersCount,
-            FollowingCount = followingCount,
-            AverageRating = Math.Round(avgRating, 2),
-            ReviewCount = reviews.Count,
-            ResponseRate = 0,
-            AvgResponseMinutes = 0,
-            TotalSold = 0
-        };
+            var advertIds = await _context.CarAdverts
+                .Where(a => a.UserId == userId)
+                .Select(a => a.Id)
+                .ToListAsync();
+            dto.TotalAdverts = advertIds.Count;
+
+            dto.ActiveAdverts = await _context.CarAdverts
+                .CountAsync(a => a.UserId == userId && a.IsActive && !a.IsHidden);
+
+            if (advertIds.Count > 0)
+            {
+                try { dto.TotalViews = await _context.AdvertViews.CountAsync(v => advertIds.Contains(v.AdvertId)); }
+                catch (Exception ex) { _logger.LogWarning("[Stats] AdvertViews query failed: {Msg}", ex.Message); }
+            }
+        }
+        catch (Exception ex) { _logger.LogWarning("[Stats] CarAdverts query failed: {Msg}", ex.Message); }
+
+        try { dto.FavoritesCount = await _context.FavoriteAdverts.CountAsync(f => f.UserId == userId); }
+        catch (Exception ex) { _logger.LogWarning("[Stats] FavoriteAdverts query failed: {Msg}", ex.Message); }
+
+        try
+        {
+            dto.UnreadMessages = await _context.Messages
+                .CountAsync(m => (m.Conversation.SellerId == userId || m.Conversation.BuyerId == userId)
+                                 && !m.IsRead && m.SenderId != userId);
+        }
+        catch (Exception ex) { _logger.LogWarning("[Stats] Messages query failed: {Msg}", ex.Message); }
+
+        try
+        {
+            dto.FollowersCount = await _context.UserFollows.CountAsync(f => f.FollowedId == userId);
+            dto.FollowingCount = await _context.UserFollows.CountAsync(f => f.FollowerId == userId);
+        }
+        catch (Exception ex) { _logger.LogWarning("[Stats] UserFollows query failed: {Msg}", ex.Message); }
+
+        try
+        {
+            var reviews = await _context.Reviews.Where(r => r.SellerId == userId).ToListAsync();
+            dto.ReviewCount = reviews.Count;
+            dto.AverageRating = reviews.Count > 0 ? Math.Round(reviews.Average(r => r.Rating), 2) : 0.0;
+        }
+        catch (Exception ex) { _logger.LogWarning("[Stats] Reviews query failed: {Msg}", ex.Message); }
+
+        return dto;
     }
 
     public async Task<UserStatsDto> GetPublicStatsAsync(int userId)
