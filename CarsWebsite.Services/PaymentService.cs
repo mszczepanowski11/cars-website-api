@@ -102,7 +102,9 @@ public class PaymentService : IPaymentService
 
     public async Task HandleWebhookAsync(ImojeWebhookDto dto, string rawBody, string signature, string? internalSecret = null)
     {
-        var configuredInternalSecret = _config["InternalServiceSecret"];
+        var configuredInternalSecret = _config["InternalServiceSecret"]
+            ?? Environment.GetEnvironmentVariable("INTERNAL_SERVICE_SECRET")
+            ?? "";
         bool isInternalCall = !string.IsNullOrEmpty(configuredInternalSecret)
             && configuredInternalSecret == internalSecret;
 
@@ -184,48 +186,84 @@ public class PaymentService : IPaymentService
 
     private async Task<string> CreateImojeTransactionAsync(Payment payment, User user, string orderId)
     {
-        var section = _config.GetSection("Imoje");
-        var serviceId = section["ServiceId"];
-        var apiKey = section["ApiKey"];
-        var apiUrl = section["ApiUrl"] ?? "https://sandbox.imoje.pl";
-        var siteUrl = section["SiteUrl"] ?? "https://carizo.pl";
+        // IMOJE_MERCHANT_ID = "Identyfikator klienta" (used in URL path)
+        // IMOJE_API_KEY     = "Token autoryzacyjny" from Klucze API (Bearer auth)
+        // IMOJE_SERVICE_ID  = "Identyfikator sklepu" (sent in body as serviceId)
+        var merchantId = Environment.GetEnvironmentVariable("IMOJE_MERCHANT_ID") ?? "";
+        var apiKey     = Environment.GetEnvironmentVariable("IMOJE_API_KEY") ?? "";
+        var serviceId  = Environment.GetEnvironmentVariable("IMOJE_SERVICE_ID") is { Length: > 0 } sid ? sid : merchantId;
+        var apiBase    = Environment.GetEnvironmentVariable("IMOJE_API_URL") ?? "https://api.imoje.pl/v1/merchant";
+        var siteUrl    = Environment.GetEnvironmentVariable("IMOJE_SITE_URL") ?? "https://carizo.pl";
 
-        if (string.IsNullOrEmpty(serviceId) || string.IsNullOrEmpty(apiKey))
+        _logger.LogInformation(
+            "[Imoje] Config: MerchantId={HasMid} (len={MidLen}), ApiKey={HasKey} (len={KeyLen}, pfx={KeyPfx}), ServiceId={HasSid} (len={SidLen}), ApiBase={ApiBase}",
+            string.IsNullOrEmpty(merchantId) ? "EMPTY" : "SET", merchantId.Length,
+            string.IsNullOrEmpty(apiKey)     ? "EMPTY" : "SET", apiKey.Length,
+            apiKey.Length >= 6 ? apiKey[..6] + "..." : "(short)",
+            string.IsNullOrEmpty(serviceId)  ? "EMPTY" : "SET", serviceId.Length,
+            apiBase);
+
+        if (string.IsNullOrEmpty(merchantId) || string.IsNullOrEmpty(apiKey))
         {
-            _logger.LogWarning("Bramka imoje nie jest skonfigurowana. Zwracam URL zastępczy.");
+            _logger.LogWarning("Bramka imoje nie jest skonfigurowana (brak merchantId/apiKey). Zwracam URL zastępczy.");
             return $"{siteUrl}/payment/return?status=pending&paymentId={payment.Id}";
         }
 
         var body = new
         {
+            type = "payment",
             serviceId,
-            amount = (int)(payment.Amount * 100),
+            amount   = (int)(payment.Amount * 100),
             currency = "PLN",
             orderId,
-            customerFirstName = user.Name,
-            customerLastName = user.Surname,
-            customerEmail = user.Email,
-            urlSuccess = $"{siteUrl}/payment/return?status=success&paymentId={payment.Id}&advertId={payment.AdvertId}",
-            urlFailure = $"{siteUrl}/payment/return?status=failure&paymentId={payment.Id}",
-            urlReturn = $"{siteUrl}/payment/return?status=cancel",
-            urlNotification = $"{siteUrl}/api/payment/webhook",
-            description = payment.ServiceDescription
+            title    = payment.ServiceDescription,
+            successReturnUrl  = $"{siteUrl}/payment/return?status=success&paymentId={payment.Id}&advertId={payment.AdvertId}",
+            failureReturnUrl  = $"{siteUrl}/payment/return?status=failure&paymentId={payment.Id}",
+            notificationUrl   = $"{siteUrl}/api/payment/webhook",
+            customer = new
+            {
+                firstName = user.Name,
+                lastName  = user.Surname,
+                email     = user.Email
+            }
         };
 
-        var client = _httpClientFactory.CreateClient("imoje");
-        client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("ServiceKey", apiKey);
+        var serializedBody = JsonSerializer.Serialize(body);
+        _logger.LogInformation("[Imoje] Request body (preview): {Body}", serializedBody[..Math.Min(200, serializedBody.Length)]);
 
-        var response = await client.PostAsync(
-            $"{apiUrl}/payment/v1/transaction",
-            new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json")
-        );
+        var client = _httpClientFactory.CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", apiKey);
+
+        var requestUrl = $"{apiBase.TrimEnd('/')}/{merchantId}/transaction";
+        _logger.LogInformation("[Imoje] Wysyłam request: POST {Url}", requestUrl);
+
+        HttpResponseMessage response;
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
+            {
+                Content = new StringContent(serializedBody, Encoding.UTF8, "application/json")
+            };
+            response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("[Imoje] Błąd sieci przy wywołaniu {Url}: {ExType} – {Message}",
+                requestUrl, ex.GetType().Name, ex.Message);
+            throw new InvalidOperationException($"Błąd sieci bramki płatności: {ex.Message}");
+        }
+
+        _logger.LogInformation("[Imoje] Status odpowiedzi: {StatusCode}", (int)response.StatusCode);
 
         if (!response.IsSuccessStatusCode)
         {
-            var err = await response.Content.ReadAsStringAsync();
-            _logger.LogError("Błąd API imoje: {Error}", err);
-            throw new InvalidOperationException("Błąd bramki płatności. Spróbuj ponownie.");
+            string err = "";
+            try { err = await response.Content.ReadAsStringAsync(); } catch { }
+            _logger.LogError(
+                "[Imoje] Błąd API: status={StatusCode}, url={Url}, body={Body}",
+                (int)response.StatusCode, requestUrl, err);
+            throw new InvalidOperationException($"Błąd bramki płatności ({(int)response.StatusCode}). Spróbuj ponownie.");
         }
 
         var json = await response.Content.ReadAsStringAsync();
@@ -277,7 +315,7 @@ public class PaymentService : IPaymentService
                         ? advert.BadgeExpiresAt.Value
                         : DateTime.UtcNow;
                     advert.Badge = badge;
-                    advert.BadgeExpiresAt = baseDate.AddDays(payment.DurationDays);
+                    advert.BadgeExpiresAt = baseDate.AddDays(payment.DurationDays ?? 30);
                 }
             }
 
@@ -343,7 +381,9 @@ public class PaymentService : IPaymentService
 
     private bool VerifySignature(string rawBody, string signature)
     {
-        var secret = _config["Imoje:WebhookSecret"];
+        var secret = Environment.GetEnvironmentVariable("IMOJE_WEBHOOK_SECRET")
+            ?? _config["Imoje:WebhookSecret"]
+            ?? "";
         if (string.IsNullOrEmpty(secret)) return false;
 
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
