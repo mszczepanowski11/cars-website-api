@@ -593,6 +593,29 @@ internal class Program
                 catch (Exception ex) { logger.LogDebug("ADD COLUMN payment billing skipped: {Message}", ex.Message); }
             }
 
+            // Fix brands that were seeded with numeric names (e.g. "1", "2", "10")
+            // Detect by checking if the first brand's name is all digits
+            try
+            {
+                var firstBrand = db.Brands.OrderBy(b => b.Id).FirstOrDefault();
+                if (firstBrand != null && firstBrand.Name.All(char.IsDigit))
+                {
+                    logger.LogWarning("Detected numeric brand names — clearing brand tables for re-seed");
+                    db.Database.ExecuteSqlRaw("SET FOREIGN_KEY_CHECKS=0");
+                    try { db.Database.ExecuteSqlRaw("DELETE FROM `brandvehiclecategories`"); } catch { }
+                    try { db.Database.ExecuteSqlRaw("DELETE FROM `generations`"); } catch { }
+                    try { db.Database.ExecuteSqlRaw("DELETE FROM `models`"); } catch { }
+                    try { db.Database.ExecuteSqlRaw("DELETE FROM `brands`"); } catch { }
+                    db.Database.ExecuteSqlRaw("UPDATE `caradverts` SET `BrandId` = NULL, `ModelId` = NULL WHERE 1=1");
+                    db.Database.ExecuteSqlRaw("SET FOREIGN_KEY_CHECKS=1");
+                    logger.LogInformation("Brand tables cleared — seeder will re-populate on next call");
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning("Brand name fix skipped: {Message}", ex.Message);
+            }
+
             SeedDataIfEmpty(db, logger);
 
             // Startup config diagnostics
