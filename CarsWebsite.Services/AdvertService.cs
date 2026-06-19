@@ -340,6 +340,10 @@ public class AdvertService : IAdvertService
         if (advert.UserId != userId)
             throw new UnauthorizedAccessException("You do not own this advert.");
 
+        var allowedBadges = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "TOP", "PREMIUM", "FEATURED" };
+        if (!allowedBadges.Contains(type))
+            throw new ArgumentException($"Niedozwolony typ promocji: {type}.");
+
         advert.Badge = type;
         advert.BadgeExpiresAt = DateTime.UtcNow.AddDays(durationDays);
         await _context.SaveChangesAsync();
@@ -353,7 +357,7 @@ public class AdvertService : IAdvertService
             .Include(a => a.FuelType).Include(a => a.Gearbox)
             .Include(a => a.BodyType).Include(a => a.Images)
             .Include(a => a.AdvertFeatures).ThenInclude(af => af.Feature)
-            .FirstOrDefaultAsync(a => a.Vin == vin);
+            .FirstOrDefaultAsync(a => a.Vin == vin && a.IsActive && !a.IsHidden);
 
         return advert == null ? null : _mapper.Map<CarAdvertResponseDto>(advert);
     }

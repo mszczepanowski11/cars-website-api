@@ -79,6 +79,22 @@ public class PaymentService : IPaymentService
         var priceInfo = await GetServicePriceAsync(dto.ServiceType, dto.DurationDays);
         _logger.LogInformation("[Payment/Initiate] price={Price} desc={Desc}", priceInfo.Price, priceInfo.Description);
 
+        // K-1: Verify ownership before creating payment
+        if (dto.AdvertId.HasValue)
+        {
+            var ownerCheck = await _context.CarAdverts.AsNoTracking()
+                .FirstOrDefaultAsync(a => a.Id == dto.AdvertId.Value);
+            if (ownerCheck == null || ownerCheck.UserId != userId)
+                throw new UnauthorizedAccessException("Nie jesteś właścicielem tego ogłoszenia.");
+        }
+        if (dto.EventId.HasValue)
+        {
+            var eventCheck = await _context.Events.AsNoTracking()
+                .FirstOrDefaultAsync(e => e.Id == dto.EventId.Value);
+            if (eventCheck == null || eventCheck.CreatedByUserId != userId)
+                throw new UnauthorizedAccessException("Nie jesteś właścicielem tego wydarzenia.");
+        }
+
         var guidPart = Guid.NewGuid().ToString("N")[..8];
         var orderId = $"CARIZO-{userId}-{DateTime.UtcNow:yyyyMMddHHmmss}-{guidPart}";
         if (orderId.Length > 40) orderId = orderId[..40];
@@ -143,41 +159,65 @@ public class PaymentService : IPaymentService
             throw new UnauthorizedAccessException("Nieprawidłowy podpis webhooka.");
         }
 
-        var payment = await _context.Payments
-            .Include(p => p.User)
-            .FirstOrDefaultAsync(p => p.ImojeOrderId == dto.OrderId);
-
-        if (payment == null)
+        // K-2: Lock payment row to prevent duplicate webhook processing
+        using var tx = await _context.Database.BeginTransactionAsync();
+        try
         {
-            _logger.LogWarning("Nie znaleziono płatności dla orderId={OrderId}", dto.OrderId);
-            return;
+            await _context.Database.ExecuteSqlRawAsync(
+                "SELECT 1 FROM `Payments` WHERE `ImojeOrderId` = {0} FOR UPDATE", dto.OrderId);
+
+            var payment = await _context.Payments
+                .Include(p => p.User)
+                .FirstOrDefaultAsync(p => p.ImojeOrderId == dto.OrderId);
+
+            if (payment == null)
+            {
+                _logger.LogWarning("Nie znaleziono płatności dla orderId={OrderId}", dto.OrderId);
+                await tx.CommitAsync();
+                return;
+            }
+
+            if (payment.Status == PaymentStatus.Completed)
+            {
+                await tx.CommitAsync();
+                return;
+            }
+
+            if (dto.Status is "settled" or "confirmed" or "authorized" or "completed" or "Completed")
+            {
+                payment.Status = PaymentStatus.Completed;
+                payment.PaidAt = DateTime.UtcNow;
+                payment.ImojeTransactionId = dto.TransactionId;
+                await _context.SaveChangesAsync();
+                await tx.CommitAsync();
+
+                _ = _notifications.NotifyAsync(payment.UserId, EmailNotificationType.PaymentConfirmed,
+                    "Płatność potwierdzona",
+                    $"Twoja płatność za usługę \"{payment.ServiceDescription}\" w kwocie {payment.Amount:0.00} PLN została pomyślnie zrealizowana.",
+                    advertId: payment.AdvertId, paymentId: payment.Id);
+
+                await ActivateServiceAsync(payment);
+            }
+            else if (dto.Status is "rejected" or "cancelled" or "error" or "Failed" or "Cancelled" or "Refunded")
+            {
+                payment.Status = PaymentStatus.Failed;
+                await _context.SaveChangesAsync();
+                await tx.CommitAsync();
+
+                _ = _notifications.NotifyAsync(payment.UserId, EmailNotificationType.PaymentFailed,
+                    "Płatność nieudana",
+                    $"Niestety Twoja płatność za usługę \"{payment.ServiceDescription}\" nie została zrealizowana. Możesz spróbować ponownie.",
+                    advertId: payment.AdvertId, paymentId: payment.Id);
+            }
+            else
+            {
+                await tx.CommitAsync();
+            }
         }
-
-        if (payment.Status == PaymentStatus.Completed) return;
-
-        if (dto.Status is "settled" or "confirmed" or "authorized" or "completed" or "Completed" or "success" or "paid")
+        catch
         {
-            payment.Status = PaymentStatus.Completed;
-            payment.PaidAt = DateTime.UtcNow;
-            payment.ImojeTransactionId = dto.TransactionId;
-            await _context.SaveChangesAsync();
-
-            _ = _notifications.NotifyAsync(payment.UserId, EmailNotificationType.PaymentConfirmed,
-                "Płatność potwierdzona",
-                $"Twoja płatność za usługę \"{payment.ServiceDescription}\" w kwocie {payment.Amount:0.00} PLN została pomyślnie zrealizowana.",
-                advertId: payment.AdvertId, paymentId: payment.Id);
-
-            await ActivateServiceAsync(payment);
-        }
-        else if (dto.Status is "rejected" or "cancelled" or "error" or "Failed" or "Cancelled" or "Refunded")
-        {
-            payment.Status = PaymentStatus.Failed;
-            await _context.SaveChangesAsync();
-
-            _ = _notifications.NotifyAsync(payment.UserId, EmailNotificationType.PaymentFailed,
-                "Płatność nieudana",
-                $"Niestety Twoja płatność za usługę \"{payment.ServiceDescription}\" nie została zrealizowana. Możesz spróbować ponownie.",
-                advertId: payment.AdvertId, paymentId: payment.Id);
+            await tx.RollbackAsync();
+            throw;
         }
     }
 
