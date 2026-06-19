@@ -233,7 +233,12 @@ public class PaymentService : IPaymentService
         if (!response.IsSuccessStatusCode)
         {
             var err = await response.Content.ReadAsStringAsync();
-            _logger.LogError("Błąd API imoje: {StatusCode} {Error}", (int)response.StatusCode, err);
+            _logger.LogError(
+                "[Imoje] Błąd API: status={StatusCode}, url={Url}, serviceId={ServiceIdPrefix}, body={Body}",
+                (int)response.StatusCode,
+                $"{apiUrl}/payment/v1/transaction",
+                serviceId.Length >= 4 ? serviceId[..4] + "..." : serviceId,
+                err);
             throw new InvalidOperationException($"Błąd bramki płatności ({(int)response.StatusCode}). Spróbuj ponownie.");
         }
 
