@@ -185,10 +185,29 @@ public class PaymentService : IPaymentService
     private async Task<string> CreateImojeTransactionAsync(Payment payment, User user, string orderId)
     {
         var section = _config.GetSection("Imoje");
-        var serviceId = section["ServiceId"];
-        var apiKey = section["ApiKey"];
-        var apiUrl = section["ApiUrl"] ?? "https://sandbox.imoje.pl";
-        var siteUrl = section["SiteUrl"] ?? "https://carizo.pl";
+
+        // Read from IConfiguration first, fall back to direct env var lookup
+        var serviceId = section["ServiceId"]
+            ?? Environment.GetEnvironmentVariable("Imoje__ServiceId")
+            ?? Environment.GetEnvironmentVariable("IMOJE__SERVICE_ID")
+            ?? "";
+        var apiKey = section["ApiKey"]
+            ?? Environment.GetEnvironmentVariable("Imoje__ApiKey")
+            ?? Environment.GetEnvironmentVariable("IMOJE__MERCHANT_KEY")
+            ?? "";
+        var apiUrl = section["ApiUrl"]
+            ?? Environment.GetEnvironmentVariable("Imoje__ApiUrl")
+            ?? "https://sandbox.imoje.pl";
+        var siteUrl = section["SiteUrl"]
+            ?? Environment.GetEnvironmentVariable("Imoje__SiteUrl")
+            ?? "https://carizo.pl";
+
+        _logger.LogInformation(
+            "[Imoje] Config: ServiceId={HasSid}, ApiKey={HasKey}, ApiUrl={ApiUrl}, SiteUrl={SiteUrl}",
+            string.IsNullOrEmpty(serviceId) ? "EMPTY" : "SET",
+            string.IsNullOrEmpty(apiKey) ? "EMPTY" : "SET",
+            apiUrl,
+            siteUrl);
 
         if (string.IsNullOrEmpty(serviceId) || string.IsNullOrEmpty(apiKey))
         {
@@ -224,8 +243,8 @@ public class PaymentService : IPaymentService
         if (!response.IsSuccessStatusCode)
         {
             var err = await response.Content.ReadAsStringAsync();
-            _logger.LogError("Błąd API imoje: {Error}", err);
-            throw new InvalidOperationException("Błąd bramki płatności. Spróbuj ponownie.");
+            _logger.LogError("Błąd API imoje: {StatusCode} {Error}", (int)response.StatusCode, err);
+            throw new InvalidOperationException($"Błąd bramki płatności ({(int)response.StatusCode}). Spróbuj ponownie.");
         }
 
         var json = await response.Content.ReadAsStringAsync();
