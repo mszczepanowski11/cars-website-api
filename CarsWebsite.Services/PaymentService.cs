@@ -230,7 +230,7 @@ public class PaymentService : IPaymentService
 
         var client = _httpClientFactory.CreateClient();
         client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", apiKey);
+            new AuthenticationHeaderValue("ServiceKey", apiKey);
 
         var requestUrl = $"{apiBase.TrimEnd('/')}/{merchantId}/transaction";
         _logger.LogInformation("[Imoje] Wysyłam request: POST {Url}", requestUrl);
