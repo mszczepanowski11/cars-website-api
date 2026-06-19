@@ -187,45 +187,51 @@ public class PaymentService : IPaymentService
     private async Task<string> CreateImojeTransactionAsync(Payment payment, User user, string orderId)
     {
         // Read directly from environment variables (Railway Dockerfile builder doesn't support __ notation)
-        var serviceId = Environment.GetEnvironmentVariable("IMOJE_SERVICE_ID") ?? "";
-        var apiKey    = Environment.GetEnvironmentVariable("IMOJE_API_KEY") ?? "";
-        var apiUrl    = Environment.GetEnvironmentVariable("IMOJE_API_URL") ?? "https://sandbox.imoje.pl";
-        var siteUrl   = Environment.GetEnvironmentVariable("IMOJE_SITE_URL") ?? "https://carizo.pl";
+        var serviceId  = Environment.GetEnvironmentVariable("IMOJE_SERVICE_ID") ?? "";
+        var merchantId = Environment.GetEnvironmentVariable("IMOJE_MERCHANT_ID") ?? "";
+        var apiKey     = Environment.GetEnvironmentVariable("IMOJE_API_KEY") ?? "";
+        // Base URL should be https://api.imoje.pl/v1/merchant (production)
+        //                  or https://sandbox.api.imoje.pl/v1/merchant (sandbox)
+        var apiBase    = Environment.GetEnvironmentVariable("IMOJE_API_URL") ?? "https://api.imoje.pl/v1/merchant";
+        var siteUrl    = Environment.GetEnvironmentVariable("IMOJE_SITE_URL") ?? "https://carizo.pl";
 
         _logger.LogInformation(
-            "[Imoje] Config: ServiceId={HasSid}, ApiKey={HasKey}, ApiUrl={ApiUrl}, SiteUrl={SiteUrl}",
-            string.IsNullOrEmpty(serviceId) ? "EMPTY" : "SET",
-            string.IsNullOrEmpty(apiKey) ? "EMPTY" : "SET",
-            apiUrl,
+            "[Imoje] Config: ServiceId={HasSid}, MerchantId={HasMid}, ApiKey={HasKey}, ApiBase={ApiBase}, SiteUrl={SiteUrl}",
+            string.IsNullOrEmpty(serviceId)  ? "EMPTY" : "SET",
+            string.IsNullOrEmpty(merchantId) ? "EMPTY" : "SET",
+            string.IsNullOrEmpty(apiKey)     ? "EMPTY" : "SET",
+            apiBase,
             siteUrl);
 
-        if (string.IsNullOrEmpty(serviceId) || string.IsNullOrEmpty(apiKey))
+        if (string.IsNullOrEmpty(serviceId) || string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(merchantId))
         {
-            _logger.LogWarning("Bramka imoje nie jest skonfigurowana. Zwracam URL zastępczy.");
+            _logger.LogWarning("Bramka imoje nie jest skonfigurowana (brak serviceId/merchantId/apiKey). Zwracam URL zastępczy.");
             return $"{siteUrl}/payment/return?status=pending&paymentId={payment.Id}";
         }
 
         var body = new
         {
             serviceId,
-            amount = (int)(payment.Amount * 100),
+            amount   = (int)(payment.Amount * 100),
             currency = "PLN",
             orderId,
-            customerFirstName = user.Name,
-            customerLastName = user.Surname,
-            customerEmail = user.Email,
-            urlSuccess = $"{siteUrl}/payment/return?status=success&paymentId={payment.Id}&advertId={payment.AdvertId}",
-            urlFailure = $"{siteUrl}/payment/return?status=failure&paymentId={payment.Id}",
-            urlReturn  = $"{siteUrl}/payment/return?status=cancel",
-            urlNotification = $"{siteUrl}/api/payment/webhook",
-            description = payment.ServiceDescription
+            title    = payment.ServiceDescription,
+            successReturnUrl  = $"{siteUrl}/payment/return?status=success&paymentId={payment.Id}&advertId={payment.AdvertId}",
+            failureReturnUrl  = $"{siteUrl}/payment/return?status=failure&paymentId={payment.Id}",
+            notificationUrl   = $"{siteUrl}/api/payment/webhook",
+            customer = new
+            {
+                firstName = user.Name,
+                lastName  = user.Surname,
+                email     = user.Email
+            }
         };
 
-        var client = _httpClientFactory.CreateClient("imoje");
+        var client = _httpClientFactory.CreateClient();
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("ServiceKey", apiKey);
 
-        var requestUrl = $"{apiUrl}/payment/v1/transaction";
+        var requestUrl = $"{apiBase.TrimEnd('/')}/{merchantId}/transaction";
         _logger.LogInformation("[Imoje] Wysyłam request: POST {Url}", requestUrl);
 
         HttpResponseMessage response;
