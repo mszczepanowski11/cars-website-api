@@ -12,6 +12,7 @@ public interface IAdvertService
     Task<CarAdvertResponseDto?> GetByVinAsync(string vin);
     Task MarkAsSoldAsync(int advertId, int userId);
     Task PublishAsync(int advertId, int userId);
+    Task<(int activeCount, int yearCount)> GetPersonalAdCountsAsync(int userId);
 }
 
 public class PagedResult<T>

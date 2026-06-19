@@ -921,6 +921,9 @@ namespace cars_website_api.Migrations
                     b.Property<int>("AccountType")
                         .HasColumnType("int");
 
+                    b.Property<int?>("BusinessType")
+                        .HasColumnType("int");
+
                     b.Property<string>("AvatarUrl")
                         .HasColumnType("longtext");
 
@@ -973,6 +976,9 @@ namespace cars_website_api.Migrations
 
                     b.Property<bool>("NewsletterSubscribed")
                         .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("GoogleId")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Nip")
                         .HasColumnType("longtext");

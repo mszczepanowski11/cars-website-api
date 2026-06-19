@@ -10,6 +10,7 @@ public class RegisterDto
     public string PhoneNumber { get; set; }
     public string Password { get; set; }
     public AccountType AccountType { get; set; } = AccountType.Personal;
+    public BusinessType? BusinessType { get; set; }
     public string? CompanyName { get; set; }
     public string? Nip { get; set; }
 }

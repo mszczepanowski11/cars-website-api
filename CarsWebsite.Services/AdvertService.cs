@@ -66,10 +66,8 @@ public class AdvertService : IAdvertService
 
         _mapper.Map(dto, advert);
 
-        // Usuń stare cechy
         _context.AdvertFeatures.RemoveRange(advert.AdvertFeatures);
 
-        // Dodaj nowe
         if (dto.FeatureIds != null && dto.FeatureIds.Any())
         {
             var newFeatures = dto.FeatureIds.Select(fid => new AdvertFeature
@@ -121,7 +119,6 @@ public class AdvertService : IAdvertService
         if (advert == null)
             throw new KeyNotFoundException("Advert not found");
 
-        // Enforce visibility: hidden or inactive adverts are only visible to the owner or admin
         if (isAdmin) return _mapper.Map<CarAdvertResponseDto>(advert);
         if (advert.IsHidden || !advert.IsActive)
         {
@@ -148,7 +145,6 @@ public class AdvertService : IAdvertService
                 .ThenInclude(af => af.Feature)
             .AsQueryable();
 
-        // Only show active, non-hidden adverts
         query = query.Where(a => a.IsActive && !a.IsHidden);
 
         if (dto.BrandId.HasValue)
@@ -282,7 +278,6 @@ public class AdvertService : IAdvertService
         if (dto.HasTachograph.HasValue)
             query = query.Where(a => a.HasTachograph == dto.HasTachograph);
 
-        // Badge priority: TOP=0, PREMIUM=1, FEATURED=2, none=3
         var prioritized = query.OrderBy(a =>
             a.Badge == "TOP" ? 0 : a.Badge == "PREMIUM" ? 1 : a.Badge == "FEATURED" ? 2 : 3);
 
@@ -384,5 +379,19 @@ public class AdvertService : IAdvertService
         advert.ExpiresAt = DateTime.UtcNow.AddDays(30);
         advert.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<(int activeCount, int yearCount)> GetPersonalAdCountsAsync(int userId)
+    {
+        var yearStart = new DateTime(DateTime.UtcNow.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var yearEnd   = yearStart.AddYears(1);
+
+        var activeCount = await _context.CarAdverts
+            .CountAsync(a => a.UserId == userId && a.IsActive && !a.IsHidden);
+
+        var yearCount = await _context.CarAdverts
+            .CountAsync(a => a.UserId == userId && a.CreatedAt >= yearStart && a.CreatedAt < yearEnd);
+
+        return (activeCount, yearCount);
     }
 }

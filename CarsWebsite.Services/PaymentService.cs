@@ -186,23 +186,22 @@ public class PaymentService : IPaymentService
 
     private async Task<string> CreateImojeTransactionAsync(Payment payment, User user, string orderId)
     {
-        // Read directly from environment variables (Railway Dockerfile builder doesn't support __ notation)
-        // IMOJE_MERCHANT_ID = "Identyfikator klucza" from iMoje panel (used in URL path)
-        // IMOJE_API_KEY     = "Token autoryzacyjny" from iMoje panel (Bearer auth)
-        // IMOJE_SERVICE_ID  = "Identyfikator klucza" (same value, sent in request body as serviceId)
+        // IMOJE_MERCHANT_ID = "Identyfikator klienta" (used in URL path)
+        // IMOJE_API_KEY     = "Token autoryzacyjny" from Klucze API (Bearer auth)
+        // IMOJE_SERVICE_ID  = "Identyfikator sklepu" (sent in body as serviceId)
         var merchantId = Environment.GetEnvironmentVariable("IMOJE_MERCHANT_ID") ?? "";
         var apiKey     = Environment.GetEnvironmentVariable("IMOJE_API_KEY") ?? "";
-        // serviceId in body = same as merchantId if IMOJE_SERVICE_ID not set separately
         var serviceId  = Environment.GetEnvironmentVariable("IMOJE_SERVICE_ID") is { Length: > 0 } sid ? sid : merchantId;
         var apiBase    = Environment.GetEnvironmentVariable("IMOJE_API_URL") ?? "https://api.imoje.pl/v1/merchant";
         var siteUrl    = Environment.GetEnvironmentVariable("IMOJE_SITE_URL") ?? "https://carizo.pl";
 
         _logger.LogInformation(
-            "[Imoje] Config: MerchantId={HasMid}, ApiKey={HasKey}, ApiBase={ApiBase}, SiteUrl={SiteUrl}",
-            string.IsNullOrEmpty(merchantId) ? "EMPTY" : "SET",
-            string.IsNullOrEmpty(apiKey)     ? "EMPTY" : "SET",
-            apiBase,
-            siteUrl);
+            "[Imoje] Config: MerchantId={HasMid} (len={MidLen}), ApiKey={HasKey} (len={KeyLen}, pfx={KeyPfx}), ServiceId={HasSid} (len={SidLen}), ApiBase={ApiBase}",
+            string.IsNullOrEmpty(merchantId) ? "EMPTY" : "SET", merchantId.Length,
+            string.IsNullOrEmpty(apiKey)     ? "EMPTY" : "SET", apiKey.Length,
+            apiKey.Length >= 6 ? apiKey[..6] + "..." : "(short)",
+            string.IsNullOrEmpty(serviceId)  ? "EMPTY" : "SET", serviceId.Length,
+            apiBase);
 
         if (string.IsNullOrEmpty(merchantId) || string.IsNullOrEmpty(apiKey))
         {
@@ -212,6 +211,7 @@ public class PaymentService : IPaymentService
 
         var body = new
         {
+            type = "payment",
             serviceId,
             amount   = (int)(payment.Amount * 100),
             currency = "PLN",
@@ -228,9 +228,13 @@ public class PaymentService : IPaymentService
             }
         };
 
+        var serializedBody = JsonSerializer.Serialize(body);
+        _logger.LogInformation("[Imoje] Request body (preview): {Body}", serializedBody[..Math.Min(200, serializedBody.Length)]);
+
         var client = _httpClientFactory.CreateClient();
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", apiKey);
+
 
         var requestUrl = $"{apiBase.TrimEnd('/')}/{merchantId}/transaction";
         _logger.LogInformation("[Imoje] Wysyłam request: POST {Url}", requestUrl);
@@ -240,9 +244,8 @@ public class PaymentService : IPaymentService
         {
             var request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
             {
-                Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json")
+                Content = new StringContent(serializedBody, Encoding.UTF8, "application/json")
             };
-            // ResponseHeadersRead: read headers only, so we can log status code even if body read fails
             response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
         }
         catch (Exception ex)

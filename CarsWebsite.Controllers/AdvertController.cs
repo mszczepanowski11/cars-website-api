@@ -1,5 +1,6 @@
 using cars_website_api.CarsWebsite.DTOs.Advert;
 using cars_website_api.CarsWebsite.Interfaces;
+using CarsWebsite;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -10,11 +11,15 @@ public class AdvertController : ControllerBase
 {
     private readonly IAdvertService _advertService;
     private readonly IAdvertImageService _imageService;
+    private readonly IUserService _userService;
+    private readonly ILogger<AdvertController> _logger;
 
-    public AdvertController(IAdvertService advertService, IAdvertImageService imageService)
+    public AdvertController(IAdvertService advertService, IAdvertImageService imageService, IUserService userService, ILogger<AdvertController> logger)
     {
         _advertService = advertService;
         _imageService = imageService;
+        _userService = userService;
+        _logger = logger;
     }
 
     private int GetUserId()
@@ -67,6 +72,17 @@ public class AdvertController : ControllerBase
     {
         var userId = GetUserId();
         if (userId == 0) return Unauthorized();
+
+        var user = await _userService.GetById(userId);
+        if (user != null && user.AccountType == AccountType.Personal)
+        {
+            var (activeCount, yearCount) = await _advertService.GetPersonalAdCountsAsync(userId);
+            if (activeCount >= 1)
+                return BadRequest(new { error = "private_limit_active", message = "Wygląda na to, że prowadzisz działalność handlową. Załóż konto biznesowe." });
+            if (yearCount >= 3)
+                return BadRequest(new { error = "private_limit_yearly", message = "Wygląda na to, że prowadzisz działalność handlową. Załóż konto biznesowe." });
+        }
+
         var id = await _advertService.CreateCarAdvertAsync(dto, userId);
         return CreatedAtAction(nameof(GetById), new { id }, new { id });
     }
@@ -150,13 +166,45 @@ public class AdvertController : ControllerBase
     public async Task<IActionResult> UploadImage(int advertId, IFormFile file)
     {
         if (file == null || file.Length == 0)
-            return BadRequest("File is empty");
+            return BadRequest(new { message = "Plik jest pusty." });
 
         var userId = GetUserId();
         if (userId == 0) return Unauthorized();
 
-        var url = await _imageService.UploadAdvertImageAsync(advertId, file, userId);
-        return Ok(new { url });
+        _logger.LogInformation("[ImageUpload] advertId={AdvertId} userId={UserId} file={File} size={Size}B type={Type}",
+            advertId, userId, file.FileName, file.Length, file.ContentType);
+
+        try
+        {
+            var url = await _imageService.UploadAdvertImageAsync(advertId, file, userId);
+            _logger.LogInformation("[ImageUpload] OK advertId={AdvertId} url={Url}", advertId, url);
+            return Ok(new { url });
+        }
+        catch (BadHttpRequestException ex)
+        {
+            _logger.LogWarning("[ImageUpload] Bad request advertId={AdvertId}: {Msg}", advertId, ex.Message);
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning("[ImageUpload] Not found advertId={AdvertId}: {Msg}", advertId, ex.Message);
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _logger.LogWarning("[ImageUpload] Forbidden advertId={AdvertId} userId={UserId}", advertId, userId);
+            return Forbid();
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError("[ImageUpload] Cloudinary error advertId={AdvertId}: {Msg}", advertId, ex.Message);
+            return StatusCode(502, new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[ImageUpload] Unexpected error advertId={AdvertId}", advertId);
+            return StatusCode(500, new { message = "Błąd podczas uploadu zdjęcia." });
+        }
     }
 
     [Authorize]
