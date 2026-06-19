@@ -78,7 +78,13 @@ internal class Program
 
         Console.WriteLine($"[Cloudinary] cloud={cloudName}, key={cloudApiKey}, secret={(cloudSecret.Length > 4 ? cloudSecret[..4] + "****" : "(empty)")}");
 
-        var cloudinaryAccount = new Account(cloudName, cloudApiKey, cloudSecret);
+        // Use placeholder credentials when env vars are missing so the API still starts.
+        // Actual uploads will fail at runtime with a clear error rather than crashing the container.
+        var effectiveCloud  = string.IsNullOrEmpty(cloudName)   ? "placeholder"   : cloudName;
+        var effectiveKey    = string.IsNullOrEmpty(cloudApiKey) ? "placeholder"   : cloudApiKey;
+        var effectiveSecret = string.IsNullOrEmpty(cloudSecret) ? "placeholder"   : cloudSecret;
+
+        var cloudinaryAccount = new Account(effectiveCloud, effectiveKey, effectiveSecret);
         var cloudinary = new Cloudinary(cloudinaryAccount);
         cloudinary.Api.Secure = true;
         builder.Services.AddSingleton(cloudinary);
