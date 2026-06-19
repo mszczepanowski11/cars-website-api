@@ -16,6 +16,9 @@ internal class Program
 {
     public static void Main(string[] args)
     {
+        Console.WriteLine("===========================================");
+        Console.WriteLine("CARIZO API v1.0.2 STARTING");
+        Console.WriteLine("===========================================");
         var webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
         Directory.CreateDirectory(webRootPath);
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
