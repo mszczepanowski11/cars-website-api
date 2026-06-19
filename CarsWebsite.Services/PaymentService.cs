@@ -187,25 +187,26 @@ public class PaymentService : IPaymentService
     private async Task<string> CreateImojeTransactionAsync(Payment payment, User user, string orderId)
     {
         // Read directly from environment variables (Railway Dockerfile builder doesn't support __ notation)
-        var serviceId  = Environment.GetEnvironmentVariable("IMOJE_SERVICE_ID") ?? "";
+        // IMOJE_MERCHANT_ID = "Identyfikator klucza" from iMoje panel (used in URL path)
+        // IMOJE_API_KEY     = "Token autoryzacyjny" from iMoje panel (Bearer auth)
+        // IMOJE_SERVICE_ID  = "Identyfikator klucza" (same value, sent in request body as serviceId)
         var merchantId = Environment.GetEnvironmentVariable("IMOJE_MERCHANT_ID") ?? "";
         var apiKey     = Environment.GetEnvironmentVariable("IMOJE_API_KEY") ?? "";
-        // Base URL should be https://api.imoje.pl/v1/merchant (production)
-        //                  or https://sandbox.api.imoje.pl/v1/merchant (sandbox)
+        // serviceId in body = same as merchantId if IMOJE_SERVICE_ID not set separately
+        var serviceId  = Environment.GetEnvironmentVariable("IMOJE_SERVICE_ID") is { Length: > 0 } sid ? sid : merchantId;
         var apiBase    = Environment.GetEnvironmentVariable("IMOJE_API_URL") ?? "https://api.imoje.pl/v1/merchant";
         var siteUrl    = Environment.GetEnvironmentVariable("IMOJE_SITE_URL") ?? "https://carizo.pl";
 
         _logger.LogInformation(
-            "[Imoje] Config: ServiceId={HasSid}, MerchantId={HasMid}, ApiKey={HasKey}, ApiBase={ApiBase}, SiteUrl={SiteUrl}",
-            string.IsNullOrEmpty(serviceId)  ? "EMPTY" : "SET",
+            "[Imoje] Config: MerchantId={HasMid}, ApiKey={HasKey}, ApiBase={ApiBase}, SiteUrl={SiteUrl}",
             string.IsNullOrEmpty(merchantId) ? "EMPTY" : "SET",
             string.IsNullOrEmpty(apiKey)     ? "EMPTY" : "SET",
             apiBase,
             siteUrl);
 
-        if (string.IsNullOrEmpty(serviceId) || string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(merchantId))
+        if (string.IsNullOrEmpty(merchantId) || string.IsNullOrEmpty(apiKey))
         {
-            _logger.LogWarning("Bramka imoje nie jest skonfigurowana (brak serviceId/merchantId/apiKey). Zwracam URL zastępczy.");
+            _logger.LogWarning("Bramka imoje nie jest skonfigurowana (brak merchantId/apiKey). Zwracam URL zastępczy.");
             return $"{siteUrl}/payment/return?status=pending&paymentId={payment.Id}";
         }
 
@@ -229,7 +230,7 @@ public class PaymentService : IPaymentService
 
         var client = _httpClientFactory.CreateClient();
         client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("ServiceKey", apiKey);
+            new AuthenticationHeaderValue("Bearer", apiKey);
 
         var requestUrl = $"{apiBase.TrimEnd('/')}/{merchantId}/transaction";
         _logger.LogInformation("[Imoje] Wysyłam request: POST {Url}", requestUrl);
