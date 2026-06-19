@@ -72,9 +72,9 @@ public class AdminController : ControllerBase
     }
 
     [HttpDelete("adverts/{id}")]
-    public async Task<IActionResult> DeleteAdvert(int id, [FromBody] AdminActionRequestDto dto)
+    public async Task<IActionResult> DeleteAdvert(int id)
     {
-        await _adminService.DeleteAdvertAsync(id, GetUserId(), dto.Note);
+        await _adminService.DeleteAdvertAsync(id, GetUserId(), null);
         return NoContent();
     }
 
@@ -107,9 +107,9 @@ public class AdminController : ControllerBase
     }
 
     [HttpDelete("users/{id}")]
-    public async Task<IActionResult> DeleteUser(int id, [FromBody] AdminActionRequestDto dto)
+    public async Task<IActionResult> DeleteUser(int id)
     {
-        await _adminService.DeleteUserAsync(id, GetUserId(), dto.Note);
+        await _adminService.DeleteUserAsync(id, GetUserId(), "Usunięte przez administratora");
         return NoContent();
     }
 
