@@ -523,6 +523,19 @@ internal class Program
             }
 
             SeedDataIfEmpty(db, logger);
+
+            // Startup config diagnostics
+            var imojeMid    = Environment.GetEnvironmentVariable("IMOJE_MERCHANT_ID") ?? "";
+            var imojeKey    = Environment.GetEnvironmentVariable("IMOJE_API_KEY") ?? "";
+            var imojeSecret = Environment.GetEnvironmentVariable("IMOJE_WEBHOOK_SECRET") ?? "";
+            var internalSec = Environment.GetEnvironmentVariable("INTERNAL_SERVICE_SECRET") ?? "";
+            logger.LogInformation(
+                "[Config] IMOJE_MERCHANT_ID={HasMid} IMOJE_API_KEY={HasKey}(pfx={Pfx}) IMOJE_WEBHOOK_SECRET={HasWs} INTERNAL_SERVICE_SECRET={HasIs}",
+                string.IsNullOrEmpty(imojeMid) ? "EMPTY" : "SET",
+                string.IsNullOrEmpty(imojeKey) ? "EMPTY" : "SET",
+                imojeKey.Length >= 6 ? imojeKey[..6] + "..." : "(short)",
+                string.IsNullOrEmpty(imojeSecret) ? "EMPTY←WEBHOOKS BĘDĄ ODRZUCANE" : "SET",
+                string.IsNullOrEmpty(internalSec) ? "EMPTY←WEBHOOKS BĘDĄ ODRZUCANE" : "SET");
         }
 
         app.UseSwagger();

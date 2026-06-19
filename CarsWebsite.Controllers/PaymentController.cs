@@ -39,6 +39,7 @@ public class PaymentController : ControllerBase
         try { return Ok(await _paymentService.InitiatePaymentAsync(dto, userId)); }
         catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
         catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+        catch (UnauthorizedAccessException ex) { return Forbid(); }
         catch (InvalidOperationException ex) { return StatusCode(502, new { message = ex.Message }); }
     }
 

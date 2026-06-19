@@ -21,6 +21,7 @@ public class AdvertService : IAdvertService
         var advert = _mapper.Map<CarAdvert>(dto);
         advert.CreatedAt = DateTime.UtcNow;
         advert.UserId = userId;
+        advert.ExpiresAt = DateTime.UtcNow.AddDays(30);
         
         
         _context.CarAdverts.Add(advert);

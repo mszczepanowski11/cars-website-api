@@ -65,6 +65,14 @@ public class PaymentService : IPaymentService
         var user = await _context.Users.FindAsync(userId)
             ?? throw new KeyNotFoundException("Użytkownik nie istnieje.");
 
+        if (dto.AdvertId.HasValue)
+        {
+            var advert = await _context.CarAdverts.FindAsync(dto.AdvertId.Value)
+                ?? throw new KeyNotFoundException("Ogłoszenie nie istnieje.");
+            if (advert.UserId != userId)
+                throw new UnauthorizedAccessException("Nie masz dostępu do tego ogłoszenia.");
+        }
+
         var priceInfo = await GetServicePriceAsync(dto.ServiceType, dto.DurationDays);
 
         var guidPart = Guid.NewGuid().ToString("N")[..8];
@@ -108,9 +116,15 @@ public class PaymentService : IPaymentService
         bool isInternalCall = !string.IsNullOrEmpty(configuredInternalSecret)
             && configuredInternalSecret == internalSecret;
 
+        _logger.LogInformation(
+            "[Webhook] orderId={OrderId} status={Status} isInternalCall={IsInternal} hasInternalSecret={HasSecret}",
+            dto.OrderId, dto.Status, isInternalCall, !string.IsNullOrEmpty(configuredInternalSecret));
+
         if (!isInternalCall && !VerifySignature(rawBody, signature))
         {
-            _logger.LogWarning("Nieprawidłowy podpis webhooka imoje dla zamówienia {OrderId}", dto.OrderId);
+            _logger.LogWarning(
+                "[Webhook] Odrzucono - brak dopasowania podpisu lub sekretu wewnętrznego. orderId={OrderId} sigLen={SigLen} secretConfigured={SecretConfigured}",
+                dto.OrderId, signature?.Length ?? 0, !string.IsNullOrEmpty(configuredInternalSecret));
             throw new UnauthorizedAccessException("Nieprawidłowy podpis webhooka.");
         }
 
@@ -126,7 +140,7 @@ public class PaymentService : IPaymentService
 
         if (payment.Status == PaymentStatus.Completed) return;
 
-        if (dto.Status is "settled" or "confirmed" or "authorized" or "completed" or "Completed")
+        if (dto.Status is "settled" or "confirmed" or "authorized" or "completed" or "Completed" or "success" or "paid")
         {
             payment.Status = PaymentStatus.Completed;
             payment.PaidAt = DateTime.UtcNow;
