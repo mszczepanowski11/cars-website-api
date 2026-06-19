@@ -102,7 +102,9 @@ public class PaymentService : IPaymentService
 
     public async Task HandleWebhookAsync(ImojeWebhookDto dto, string rawBody, string signature, string? internalSecret = null)
     {
-        var configuredInternalSecret = _config["InternalServiceSecret"];
+        var configuredInternalSecret = _config["InternalServiceSecret"]
+            ?? Environment.GetEnvironmentVariable("INTERNAL_SERVICE_SECRET")
+            ?? "";
         bool isInternalCall = !string.IsNullOrEmpty(configuredInternalSecret)
             && configuredInternalSecret == internalSecret;
 
@@ -184,23 +186,11 @@ public class PaymentService : IPaymentService
 
     private async Task<string> CreateImojeTransactionAsync(Payment payment, User user, string orderId)
     {
-        var section = _config.GetSection("Imoje");
-
-        // Read from IConfiguration first, fall back to direct env var lookup
-        var serviceId = section["ServiceId"]
-            ?? Environment.GetEnvironmentVariable("Imoje__ServiceId")
-            ?? Environment.GetEnvironmentVariable("IMOJE__SERVICE_ID")
-            ?? "";
-        var apiKey = section["ApiKey"]
-            ?? Environment.GetEnvironmentVariable("Imoje__ApiKey")
-            ?? Environment.GetEnvironmentVariable("IMOJE__MERCHANT_KEY")
-            ?? "";
-        var apiUrl = section["ApiUrl"]
-            ?? Environment.GetEnvironmentVariable("Imoje__ApiUrl")
-            ?? "https://sandbox.imoje.pl";
-        var siteUrl = section["SiteUrl"]
-            ?? Environment.GetEnvironmentVariable("Imoje__SiteUrl")
-            ?? "https://carizo.pl";
+        // Read directly from environment variables (Railway Dockerfile builder doesn't support __ notation)
+        var serviceId = Environment.GetEnvironmentVariable("IMOJE_SERVICE_ID") ?? "";
+        var apiKey    = Environment.GetEnvironmentVariable("IMOJE_API_KEY") ?? "";
+        var apiUrl    = Environment.GetEnvironmentVariable("IMOJE_API_URL") ?? "https://sandbox.imoje.pl";
+        var siteUrl   = Environment.GetEnvironmentVariable("IMOJE_SITE_URL") ?? "https://carizo.pl";
 
         _logger.LogInformation(
             "[Imoje] Config: ServiceId={HasSid}, ApiKey={HasKey}, ApiUrl={ApiUrl}, SiteUrl={SiteUrl}",
@@ -226,7 +216,7 @@ public class PaymentService : IPaymentService
             customerEmail = user.Email,
             urlSuccess = $"{siteUrl}/payment/return?status=success&paymentId={payment.Id}&advertId={payment.AdvertId}",
             urlFailure = $"{siteUrl}/payment/return?status=failure&paymentId={payment.Id}",
-            urlReturn = $"{siteUrl}/payment/return?status=cancel",
+            urlReturn  = $"{siteUrl}/payment/return?status=cancel",
             urlNotification = $"{siteUrl}/api/payment/webhook",
             description = payment.ServiceDescription
         };
@@ -362,7 +352,9 @@ public class PaymentService : IPaymentService
 
     private bool VerifySignature(string rawBody, string signature)
     {
-        var secret = _config["Imoje:WebhookSecret"];
+        var secret = Environment.GetEnvironmentVariable("IMOJE_WEBHOOK_SECRET")
+            ?? _config["Imoje:WebhookSecret"]
+            ?? "";
         if (string.IsNullOrEmpty(secret)) return false;
 
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
