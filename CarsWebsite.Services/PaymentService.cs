@@ -225,10 +225,23 @@ public class PaymentService : IPaymentService
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("ServiceKey", apiKey);
 
-        var response = await client.PostAsync(
-            $"{apiUrl}/payment/v1/transaction",
-            new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json")
-        );
+        var requestUrl = $"{apiUrl}/payment/v1/transaction";
+        _logger.LogInformation("[Imoje] Wysyłam request: POST {Url}", requestUrl);
+
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.PostAsync(
+                requestUrl,
+                new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json")
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("[Imoje] Błąd sieci przy wywołaniu {Url}: {ExType} – {Message}",
+                requestUrl, ex.GetType().Name, ex.Message);
+            throw new InvalidOperationException($"Błąd sieci bramki płatności: {ex.Message}");
+        }
 
         if (!response.IsSuccessStatusCode)
         {
@@ -236,7 +249,7 @@ public class PaymentService : IPaymentService
             _logger.LogError(
                 "[Imoje] Błąd API: status={StatusCode}, url={Url}, serviceId={ServiceIdPrefix}, body={Body}",
                 (int)response.StatusCode,
-                $"{apiUrl}/payment/v1/transaction",
+                requestUrl,
                 serviceId.Length >= 4 ? serviceId[..4] + "..." : serviceId,
                 err);
             throw new InvalidOperationException($"Błąd bramki płatności ({(int)response.StatusCode}). Spróbuj ponownie.");
