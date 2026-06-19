@@ -62,18 +62,30 @@ public class PaymentService : IPaymentService
 
     public async Task<PaymentInitiatedDto> InitiatePaymentAsync(InitiatePaymentDto dto, int userId)
     {
+        _logger.LogInformation(
+            "[Payment/Initiate] userId={UserId} serviceType={ServiceType} durationDays={Days} advertId={AdvertId} eventId={EventId}",
+            userId, dto.ServiceType, dto.DurationDays, dto.AdvertId, dto.EventId);
+
         var user = await _context.Users.FindAsync(userId)
             ?? throw new KeyNotFoundException("Użytkownik nie istnieje.");
 
         if (dto.AdvertId.HasValue)
         {
-            var advert = await _context.CarAdverts.FindAsync(dto.AdvertId.Value)
-                ?? throw new KeyNotFoundException("Ogłoszenie nie istnieje.");
+            var advert = await _context.CarAdverts.FindAsync(dto.AdvertId.Value);
+            if (advert == null)
+            {
+                var existsInBase = await _context.Adverts.AnyAsync(a => a.Id == dto.AdvertId.Value);
+                _logger.LogWarning(
+                    "[Payment/Initiate] advertId={AdvertId} not found in CarAdverts. existsInAdverts={Exists}",
+                    dto.AdvertId.Value, existsInBase);
+                throw new KeyNotFoundException("Ogłoszenie nie istnieje.");
+            }
             if (advert.UserId != userId)
                 throw new UnauthorizedAccessException("Nie masz dostępu do tego ogłoszenia.");
         }
 
         var priceInfo = await GetServicePriceAsync(dto.ServiceType, dto.DurationDays);
+        _logger.LogInformation("[Payment/Initiate] price={Price} desc={Desc}", priceInfo.Price, priceInfo.Description);
 
         var guidPart = Guid.NewGuid().ToString("N")[..8];
         var orderId = $"CARIZO-{userId}-{DateTime.UtcNow:yyyyMMddHHmmss}-{guidPart}";
@@ -94,8 +106,18 @@ public class PaymentService : IPaymentService
             CreatedAt = DateTime.UtcNow
         };
 
+        _logger.LogInformation("[Payment/Initiate] saving Payment record orderId={OrderId}", orderId);
         _context.Payments.Add(payment);
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[Payment/Initiate] SaveChangesAsync FAILED for Payment: {Message}", ex.Message);
+            throw new InvalidOperationException($"Błąd zapisu płatności: {ex.InnerException?.Message ?? ex.Message}");
+        }
+        _logger.LogInformation("[Payment/Initiate] Payment #{PaymentId} saved", payment.Id);
 
         var paymentUrl = await CreateImojeTransactionAsync(payment, user, orderId);
 

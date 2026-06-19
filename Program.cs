@@ -453,6 +453,13 @@ internal class Program
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `payments` ADD COLUMN `EventId` int NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN payments.EventId skipped: {Message}", ex.Message); }
 
+            // DurationDays and InvoiceId were added to the Payment entity after the initial schema.
+            // Without these ALTER TABLEs, INSERT into payments fails with "Unknown column".
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `payments` ADD COLUMN `DurationDays` int NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN payments.DurationDays skipped: {Message}", ex.Message); }
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `payments` ADD COLUMN `InvoiceId` int NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN payments.InvoiceId skipped: {Message}", ex.Message); }
+
             // Add CategoryId to features if it was added after the DB was exported.
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `features` ADD COLUMN `CategoryId` int NOT NULL DEFAULT 0"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN features.CategoryId skipped: {Message}", ex.Message); }
