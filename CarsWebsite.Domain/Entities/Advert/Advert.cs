@@ -16,5 +16,6 @@ public class Advert
     public bool IsHidden { get; set; } = false;
     public bool IsActive { get; set; } = true;
     public DateTime? ExpiresAt { get; set; }
+    public DateTime? SoldAt { get; set; }
     public ICollection<AdvertImage> Images { get; set; }
 }

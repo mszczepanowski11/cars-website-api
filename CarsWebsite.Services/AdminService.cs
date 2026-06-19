@@ -212,13 +212,26 @@ namespace cars_website_api.CarsWebsite.Services
 
         public async Task<PagedResult<AdminAdvertDto>> GetAdvertsAsync(string? search, bool? isHidden, bool? isActive, int page, int pageSize)
         {
-            var query = _context.CarAdverts.Include(a => a.createdBy).AsQueryable();
+            var query = _context.CarAdverts
+                .Include(a => a.createdBy)
+                .Include(a => a.Brand)
+                .Include(a => a.Model)
+                .Include(a => a.Images)
+                .AsQueryable();
             if (!string.IsNullOrWhiteSpace(search)) query = query.Where(a => a.Title.Contains(search));
             if (isHidden.HasValue) query = query.Where(a => a.IsHidden == isHidden);
             if (isActive.HasValue) query = query.Where(a => a.IsActive == isActive);
             query = query.OrderByDescending(a => a.CreatedAt);
             var totalCount = await query.CountAsync();
             var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+
+            var advertIds = items.Select(a => a.Id).ToList();
+            var viewCounts = await _context.AdvertViews
+                .Where(v => advertIds.Contains(v.AdvertId))
+                .GroupBy(v => v.AdvertId)
+                .Select(g => new { AdvertId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(g => g.AdvertId, g => g.Count);
+
             return new PagedResult<AdminAdvertDto>
             {
                 TotalCount = totalCount,
@@ -227,7 +240,11 @@ namespace cars_website_api.CarsWebsite.Services
                     Id = a.Id, Title = a.Title, Price = a.Price, Currency = a.Currency,
                     IsHidden = a.IsHidden, IsActive = a.IsActive, CreatedAt = a.CreatedAt,
                     UserId = a.UserId, OwnerName = $"{a.createdBy.Name} {a.createdBy.Surname}",
-                    City = a.City, Region = a.Region
+                    City = a.City, Region = a.Region,
+                    Brand = a.Brand?.Name, Model = a.Model?.Name, Year = a.Year,
+                    Badge = a.Badge, SoldAt = a.SoldAt,
+                    MainImageUrl = a.Images?.FirstOrDefault(i => i.IsMain)?.Url ?? a.Images?.FirstOrDefault()?.Url,
+                    ViewCount = viewCounts.GetValueOrDefault(a.Id, 0)
                 }).ToList()
             };
         }
