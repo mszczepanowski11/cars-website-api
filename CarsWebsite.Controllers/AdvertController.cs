@@ -101,6 +101,36 @@ public class AdvertController : ControllerBase
     }
 
     [Authorize]
+    [HttpPost("{id}/sold")]
+    public async Task<IActionResult> MarkAsSold(int id)
+    {
+        var userId = GetUserId();
+        if (userId == 0) return Unauthorized();
+        try
+        {
+            await _advertService.MarkAsSoldAsync(id, userId);
+            return NoContent();
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+    }
+
+    [Authorize]
+    [HttpPost("{id}/publish")]
+    public async Task<IActionResult> Publish(int id)
+    {
+        var userId = GetUserId();
+        if (userId == 0) return Unauthorized();
+        try
+        {
+            await _advertService.PublishAsync(id, userId);
+            return NoContent();
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+    }
+
+    [Authorize]
     [HttpPost("{id}/promote")]
     public async Task<IActionResult> Promote(int id, [FromBody] PromoteAdvertDto dto)
     {

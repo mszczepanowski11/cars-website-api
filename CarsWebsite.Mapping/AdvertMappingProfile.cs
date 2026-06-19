@@ -32,7 +32,8 @@ public class AdvertMappingProfile : Profile
                 src.AdvertFeatures.Select(af => af.Feature)))
             .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images))
             .ForMember(dest => dest.Color, opt => opt.MapFrom(src => src.CarColor))
-            .ForMember(dest => dest.ViewCount, opt => opt.Ignore());
+            .ForMember(dest => dest.ViewCount, opt => opt.Ignore())
+            .ForMember(dest => dest.SoldAt, opt => opt.MapFrom(src => src.SoldAt));
 
         CreateMap<CreateCarAdvertDto, CarAdvert>()
             .ForMember(dest => dest.AdvertFeatures, opt => opt.Ignore())

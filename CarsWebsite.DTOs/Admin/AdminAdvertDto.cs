@@ -13,5 +13,12 @@
         public string OwnerName { get; set; } = string.Empty;
         public string? City { get; set; }
         public string? Region { get; set; }
+        public string? MainImageUrl { get; set; }
+        public string? Brand { get; set; }
+        public string? Model { get; set; }
+        public int? Year { get; set; }
+        public int ViewCount { get; set; }
+        public string? Badge { get; set; }
+        public DateTime? SoldAt { get; set; }
     }
 }

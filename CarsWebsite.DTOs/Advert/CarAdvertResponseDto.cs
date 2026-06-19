@@ -38,6 +38,7 @@ public class CarAdvertResponseDto
     public string? Badge { get; set; }
     public DateTime? BadgeExpiresAt { get; set; }
     public int ViewCount { get; set; }
+    public DateTime? SoldAt { get; set; }
 
     // Technical params
     public int? Torque { get; set; }

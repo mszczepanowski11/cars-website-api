@@ -358,4 +358,31 @@ public class AdvertService : IAdvertService
 
         return advert == null ? null : _mapper.Map<CarAdvertResponseDto>(advert);
     }
+
+    public async Task MarkAsSoldAsync(int advertId, int userId)
+    {
+        var advert = await _context.CarAdverts.FindAsync(advertId)
+            ?? throw new KeyNotFoundException("Advert not found.");
+        if (advert.UserId != userId)
+            throw new UnauthorizedAccessException("You do not own this advert.");
+        advert.SoldAt = DateTime.UtcNow;
+        advert.IsActive = false;
+        advert.IsHidden = true;
+        advert.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task PublishAsync(int advertId, int userId)
+    {
+        var advert = await _context.CarAdverts.FindAsync(advertId)
+            ?? throw new KeyNotFoundException("Advert not found.");
+        if (advert.UserId != userId)
+            throw new UnauthorizedAccessException("You do not own this advert.");
+        advert.IsActive = true;
+        advert.IsHidden = false;
+        advert.SoldAt = null;
+        advert.ExpiresAt = DateTime.UtcNow.AddDays(30);
+        advert.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+    }
 }

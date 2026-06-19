@@ -344,6 +344,7 @@ internal class Program
                 "ALTER TABLE `adverts` ADD COLUMN `IsHidden` tinyint(1) NOT NULL DEFAULT 0",
                 "ALTER TABLE `adverts` ADD COLUMN `IsActive` tinyint(1) NOT NULL DEFAULT 1",
                 "ALTER TABLE `adverts` ADD COLUMN `ExpiresAt` datetime(6) NULL",
+                "ALTER TABLE `adverts` ADD COLUMN `SoldAt` datetime(6) NULL",
             };
             foreach (var sql in addAdvertColumnsSql)
             {
