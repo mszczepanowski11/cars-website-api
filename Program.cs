@@ -571,8 +571,8 @@ internal class Program
 
             var addRefreshTokenSql = new[]
             {
-                "ALTER TABLE `Users` ADD COLUMN IF NOT EXISTS `RefreshToken` varchar(128) NULL",
-                "ALTER TABLE `Users` ADD COLUMN IF NOT EXISTS `RefreshTokenExpiry` datetime(6) NULL",
+                "ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `RefreshToken` varchar(128) NULL",
+                "ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `RefreshTokenExpiry` datetime(6) NULL",
             };
             foreach (var sql in addRefreshTokenSql)
             {
@@ -582,11 +582,11 @@ internal class Program
 
             var addPaymentBillingSql = new[]
             {
-                "ALTER TABLE `Payments` ADD COLUMN IF NOT EXISTS `BillingName` varchar(200) NULL",
-                "ALTER TABLE `Payments` ADD COLUMN IF NOT EXISTS `BillingNip` varchar(20) NULL",
-                "ALTER TABLE `Payments` ADD COLUMN IF NOT EXISTS `BillingStreet` varchar(200) NULL",
-                "ALTER TABLE `Payments` ADD COLUMN IF NOT EXISTS `BillingPostalCode` varchar(20) NULL",
-                "ALTER TABLE `Payments` ADD COLUMN IF NOT EXISTS `BillingCity` varchar(100) NULL",
+                "ALTER TABLE `payments` ADD COLUMN IF NOT EXISTS `BillingName` varchar(200) NULL",
+                "ALTER TABLE `payments` ADD COLUMN IF NOT EXISTS `BillingNip` varchar(20) NULL",
+                "ALTER TABLE `payments` ADD COLUMN IF NOT EXISTS `BillingStreet` varchar(200) NULL",
+                "ALTER TABLE `payments` ADD COLUMN IF NOT EXISTS `BillingPostalCode` varchar(20) NULL",
+                "ALTER TABLE `payments` ADD COLUMN IF NOT EXISTS `BillingCity` varchar(100) NULL",
             };
             foreach (var sql in addPaymentBillingSql)
             {
