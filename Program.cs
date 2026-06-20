@@ -367,9 +367,6 @@ internal class Program
                 catch (Exception ex) { logger.LogDebug("MODIFY COLUMN skipped: {Message}", ex.Message); }
             }
 
-            // Add columns to `adverts` that were added to the entity after the last migration.
-            // Each statement is wrapped in try/catch; MySQL raises an error if the column
-            // already exists so failures here are expected and safe to ignore.
             var addAdvertColumnsSql = new[]
             {
                 "ALTER TABLE `adverts` ADD COLUMN `IsHidden` tinyint(1) NOT NULL DEFAULT 0",
@@ -383,7 +380,6 @@ internal class Program
                 catch (Exception ex) { logger.LogDebug("ADD COLUMN adverts skipped: {Message}", ex.Message); }
             }
 
-            // Add columns to `caradverts` that were added to the entity after the last migration.
             var addCarAdvertColumnsSql = new[]
             {
                 "ALTER TABLE `caradverts` ADD COLUMN `VehicleCategoryId` int NULL",
@@ -436,7 +432,7 @@ internal class Program
                 catch (Exception ex) { logger.LogDebug("ADD COLUMN caradverts skipped: {Message}", ex.Message); }
             }
 
-            // Ensure advertimages table exists (may be missing if it was added after initial DB creation)
+            // Ensure advertimages table exists
             try
             {
                 db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS `advertimages` (
@@ -451,24 +447,18 @@ internal class Program
             }
             catch (Exception ex) { logger.LogWarning("CREATE TABLE advertimages skipped: {Message}", ex.Message); }
 
-            // Add IsMain to advertimages — column was added to entity after the original migration.
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `advertimages` ADD COLUMN `IsMain` tinyint(1) NOT NULL DEFAULT 0"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN advertimages.IsMain skipped: {Message}", ex.Message); }
 
-            // Add UserId to advertviews — entity has nullable UserId but original CREATE TABLE omitted it.
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `advertviews` ADD COLUMN `UserId` int NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN advertviews.UserId skipped: {Message}", ex.Message); }
 
-            // UserFollow entity uses FollowedAt but old CREATE TABLE IF NOT EXISTS used CreatedAt.
-            // Add FollowedAt so INSERT works regardless of which column was originally created.
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `userfollows` ADD COLUMN `FollowedAt` datetime(6) NOT NULL DEFAULT '2000-01-01 00:00:00'"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN userfollows.FollowedAt skipped: {Message}", ex.Message); }
 
-            // Auth token columns for email verification and password reset
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `users` ADD COLUMN `GoogleId` varchar(255) NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN users.GoogleId skipped: {Message}", ex.Message); }
 
-            // BusinessType added for business account categorization
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `users` ADD COLUMN `BusinessType` int NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN users.BusinessType skipped: {Message}", ex.Message); }
 
@@ -481,31 +471,23 @@ internal class Program
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `users` ADD COLUMN `PasswordResetTokenExpires` datetime(6) NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN users.PasswordResetTokenExpires skipped: {Message}", ex.Message); }
 
-            // Add VehicleCategoryId to featurecategories for category-specific equipment grouping
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `featurecategories` ADD COLUMN `VehicleCategoryId` int NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN featurecategories.VehicleCategoryId skipped: {Message}", ex.Message); }
 
-            // Add FeaturedUntil to events for time-limited event promotions
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `events` ADD COLUMN `FeaturedUntil` datetime(6) NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN events.FeaturedUntil skipped: {Message}", ex.Message); }
 
-            // Add EventId to payments to link event promotion payments
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `payments` ADD COLUMN `EventId` int NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN payments.EventId skipped: {Message}", ex.Message); }
 
-            // DurationDays and InvoiceId were added to the Payment entity after the initial schema.
-            // Without these ALTER TABLEs, INSERT into payments fails with "Unknown column".
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `payments` ADD COLUMN `DurationDays` int NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN payments.DurationDays skipped: {Message}", ex.Message); }
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `payments` ADD COLUMN `InvoiceId` int NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN payments.InvoiceId skipped: {Message}", ex.Message); }
 
-            // Add CategoryId to features if it was added after the DB was exported.
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `features` ADD COLUMN `CategoryId` int NOT NULL DEFAULT 0"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN features.CategoryId skipped: {Message}", ex.Message); }
 
-            // Add columns to `users` that were added to the User entity after the original schema.
-            // Missing columns cause `FindAsync` to fail with "Unknown column", making /api/User/me return 500.
             var addUserColumnsSql = new[]
             {
                 "ALTER TABLE `users` ADD COLUMN `AccountType` int NOT NULL DEFAULT 0",
@@ -536,13 +518,9 @@ internal class Program
                 catch (Exception ex) { logger.LogDebug("ADD COLUMN users skipped: {Message}", ex.Message); }
             }
 
-            // Verify all users who existed before email-verification was introduced.
-            // Without this, every existing account (including admin) would be locked out.
             try { db.Database.ExecuteSqlRaw("UPDATE `users` SET `EmailVerified` = 1 WHERE `EmailVerificationToken` IS NULL AND `EmailVerified` = 0"); }
             catch (Exception ex) { logger.LogDebug("UPDATE users.EmailVerified skipped: {Message}", ex.Message); }
 
-            // Make `adverts.City` and `adverts.Region` nullable — migration had them NOT NULL
-            // but the entity has them as nullable, so INSERT fails when no city/region is provided.
             var modifyAdvertNullableSql = new[]
             {
                 "ALTER TABLE `adverts` MODIFY COLUMN `City` longtext NULL",
@@ -554,8 +532,6 @@ internal class Program
                 catch (Exception ex) { logger.LogDebug("MODIFY COLUMN adverts skipped: {Message}", ex.Message); }
             }
 
-            // Fix `reviews` table: the initial CREATE TABLE used wrong column names
-            // (ReviewerId/ReviewedUserId); the entity uses SellerId/BuyerId/AdvertId.
             var addReviewColumnsSql = new[]
             {
                 "ALTER TABLE `reviews` ADD COLUMN `SellerId` int NOT NULL DEFAULT 0",
@@ -569,33 +545,25 @@ internal class Program
                 catch (Exception ex) { logger.LogDebug("ADD COLUMN reviews skipped: {Message}", ex.Message); }
             }
 
-            var addRefreshTokenSql = new[]
-            {
-                "ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `RefreshToken` varchar(128) NULL",
-                "ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `RefreshTokenExpiry` datetime(6) NULL",
-            };
-            foreach (var sql in addRefreshTokenSql)
-            {
-                try { db.Database.ExecuteSqlRaw(sql); }
-                catch (Exception ex) { logger.LogDebug("ADD COLUMN refresh token skipped: {Message}", ex.Message); }
-            }
+            // RefreshToken columns — plain ADD COLUMN, try/catch handles duplicate silently
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `users` ADD COLUMN `RefreshToken` varchar(128) NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN users.RefreshToken skipped: {Message}", ex.Message); }
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `users` ADD COLUMN `RefreshTokenExpiry` datetime(6) NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN users.RefreshTokenExpiry skipped: {Message}", ex.Message); }
 
-            var addPaymentBillingSql = new[]
-            {
-                "ALTER TABLE `payments` ADD COLUMN IF NOT EXISTS `BillingName` varchar(200) NULL",
-                "ALTER TABLE `payments` ADD COLUMN IF NOT EXISTS `BillingNip` varchar(20) NULL",
-                "ALTER TABLE `payments` ADD COLUMN IF NOT EXISTS `BillingStreet` varchar(200) NULL",
-                "ALTER TABLE `payments` ADD COLUMN IF NOT EXISTS `BillingPostalCode` varchar(20) NULL",
-                "ALTER TABLE `payments` ADD COLUMN IF NOT EXISTS `BillingCity` varchar(100) NULL",
-            };
-            foreach (var sql in addPaymentBillingSql)
-            {
-                try { db.Database.ExecuteSqlRaw(sql); }
-                catch (Exception ex) { logger.LogDebug("ADD COLUMN payment billing skipped: {Message}", ex.Message); }
-            }
+            // Billing columns for payments
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `payments` ADD COLUMN `BillingName` varchar(200) NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN payments.BillingName skipped: {Message}", ex.Message); }
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `payments` ADD COLUMN `BillingNip` varchar(20) NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN payments.BillingNip skipped: {Message}", ex.Message); }
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `payments` ADD COLUMN `BillingStreet` varchar(200) NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN payments.BillingStreet skipped: {Message}", ex.Message); }
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `payments` ADD COLUMN `BillingPostalCode` varchar(20) NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN payments.BillingPostalCode skipped: {Message}", ex.Message); }
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `payments` ADD COLUMN `BillingCity` varchar(100) NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN payments.BillingCity skipped: {Message}", ex.Message); }
 
-            // Fix brands that were seeded with numeric names (e.g. "1", "2", "10")
-            // Detect by checking if the first brand's name is all digits
+            // Fix brands seeded with numeric names
             try
             {
                 var firstBrand = db.Brands.OrderBy(b => b.Id).FirstOrDefault();
@@ -681,7 +649,6 @@ internal class Program
             logger.LogInformation("Seeded vehicle categories");
         }
 
-        // Fuel Types
         if (!db.FuelTypes.Any())
         {
             db.FuelTypes.AddRange(
@@ -700,7 +667,6 @@ internal class Program
             logger.LogInformation("Seeded fuel types");
         }
 
-        // Gearboxes
         if (!db.Gearboxes.Any())
         {
             db.Gearboxes.AddRange(
@@ -714,7 +680,6 @@ internal class Program
             logger.LogInformation("Seeded gearboxes");
         }
 
-        // Body Types
         if (!db.BodyTypes.Any())
         {
             db.BodyTypes.AddRange(
@@ -735,7 +700,6 @@ internal class Program
             logger.LogInformation("Seeded body types");
         }
 
-        // Drive Types
         if (!db.DriveTypes.Any())
         {
             db.DriveTypes.AddRange(
@@ -748,7 +712,6 @@ internal class Program
             logger.LogInformation("Seeded drive types");
         }
 
-        // Colors
         if (!db.CarColors.Any())
         {
             db.CarColors.AddRange(
@@ -773,7 +736,6 @@ internal class Program
             logger.LogInformation("Seeded car colors");
         }
 
-        // Feature Categories + Features (per vehicle category)
         if (!db.FeatureCategories.Any())
         {
             var catList = db.VehicleCategories.ToList();
@@ -785,7 +747,6 @@ internal class Program
 
             var featureCategories = new List<FeatureCategory>
             {
-                // ── CARS & VANS (VehicleCategoryId = carCatId) ──
                 new FeatureCategory
                 {
                     Name = "Bezpieczeństwo", VehicleCategoryId = carCatId == 0 ? null : carCatId,
@@ -855,7 +816,6 @@ internal class Program
                         new Feature { Name = "Boczne progi" }, new Feature { Name = "Elektrycznie otwierana klapa bagażnika" }
                     }
                 },
-                // ── MOTORCYCLES ──
                 new FeatureCategory
                 {
                     Name = "Bezpieczeństwo", VehicleCategoryId = motoCatId == 0 ? null : motoCatId,
@@ -883,7 +843,6 @@ internal class Program
                         new Feature { Name = "Podnożki pasażera" }
                     }
                 },
-                // ── TRAILERS ──
                 new FeatureCategory
                 {
                     Name = "Wyposażenie techniczne", VehicleCategoryId = trailerCatId == 0 ? null : trailerCatId,
@@ -894,7 +853,6 @@ internal class Program
                         new Feature { Name = "Oświetlenie LED" }, new Feature { Name = "Blokada kuli" }
                     }
                 },
-                // ── AGRICULTURAL ──
                 new FeatureCategory
                 {
                     Name = "Kabina i komfort", VehicleCategoryId = agriCatId == 0 ? null : agriCatId,
@@ -920,7 +878,6 @@ internal class Program
             logger.LogInformation("Seeded feature categories and features");
         }
 
-        // Brands
         if (!db.Brands.Any())
         {
             var catList = db.VehicleCategories.ToList();
@@ -937,12 +894,8 @@ internal class Program
             var truckOnly = new[] { truckCat, vanCat }.Where(c => c != null).Cast<VehicleCategory>().ToList();
             var agriOnly = new[] { agriCat }.Where(c => c != null).Cast<VehicleCategory>().ToList();
 
-            var carMoto = new[] { carCat, motoCat }.Where(c => c != null).Cast<VehicleCategory>().ToList();
-            var carVanMoto = new[] { carCat, vanCat, motoCat }.Where(c => c != null).Cast<VehicleCategory>().ToList();
-
             var brands = new List<Brand>
             {
-                // Cars & vans
                 new Brand { Name = "Abarth",         Slug = "abarth",         Categories = carOnly },
                 new Brand { Name = "Alfa Romeo",      Slug = "alfa-romeo",     Categories = carOnly },
                 new Brand { Name = "Audi",            Slug = "audi",           Categories = carVan },
@@ -984,7 +937,6 @@ internal class Program
                 new Brand { Name = "Volkswagen",      Slug = "volkswagen",     Categories = carVan },
                 new Brand { Name = "Volvo",           Slug = "volvo",          Categories = carVanTruck },
                 new Brand { Name = "BYD",             Slug = "byd",            Categories = carVan },
-                // Motorcycles only
                 new Brand { Name = "Aprilia",         Slug = "aprilia",        Categories = motoOnly },
                 new Brand { Name = "Ducati",          Slug = "ducati",         Categories = motoOnly },
                 new Brand { Name = "Harley-Davidson", Slug = "harley-davidson", Categories = motoOnly },
@@ -996,13 +948,11 @@ internal class Program
                 new Brand { Name = "Yamaha",          Slug = "yamaha",         Categories = motoOnly },
                 new Brand { Name = "Indian",          Slug = "indian",         Categories = motoOnly },
                 new Brand { Name = "Husqvarna",       Slug = "husqvarna",      Categories = motoOnly },
-                // Trucks
                 new Brand { Name = "DAF",             Slug = "daf",            Categories = truckOnly },
                 new Brand { Name = "Iveco",           Slug = "iveco",          Categories = truckOnly },
                 new Brand { Name = "MAN",             Slug = "man",            Categories = truckOnly },
                 new Brand { Name = "Scania",          Slug = "scania",         Categories = truckOnly },
                 new Brand { Name = "Renault Trucks",  Slug = "renault-trucks", Categories = truckOnly },
-                // Agricultural
                 new Brand { Name = "Case IH",         Slug = "case-ih",        Categories = agriOnly },
                 new Brand { Name = "Claas",           Slug = "claas",          Categories = agriOnly },
                 new Brand { Name = "Fendt",           Slug = "fendt",          Categories = agriOnly },
