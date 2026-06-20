@@ -149,7 +149,8 @@ public class AdvertService : IAdvertService
                 .ThenInclude(af => af.Feature)
             .AsQueryable();
 
-        query = query.Where(a => a.IsActive && !a.IsHidden);
+        // Only show active, non-hidden, non-expired adverts
+        query = query.Where(a => a.IsActive && !a.IsHidden && (a.ExpiresAt == null || a.ExpiresAt > DateTime.UtcNow));
 
         if (dto.BrandId.HasValue)
             query = query.Where(a => a.BrandId == dto.BrandId);
@@ -201,8 +202,11 @@ public class AdvertService : IAdvertService
             query = query.Where(a => a.VehicleCategoryId == dto.CategoryId);
 
         if (!string.IsNullOrWhiteSpace(dto.TextSearch))
+        {
+            var textSearch = dto.TextSearch.Trim();
             query = query.Where(a =>
-                a.Title.Contains(dto.TextSearch) || a.Description.Contains(dto.TextSearch));
+                a.Title.Contains(textSearch) || a.Description.Contains(textSearch));
+        }
 
         if (!string.IsNullOrWhiteSpace(dto.City))
             query = query.Where(a => a.City != null && a.City.Contains(dto.City));
