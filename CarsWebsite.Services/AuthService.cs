@@ -19,13 +19,15 @@ public class AuthService : IAuthService
     private readonly IConfiguration _configuration;
     private readonly IEmailService _email;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<AuthService> _logger;
 
-    public AuthService(AppDbContext context, IConfiguration configuration, IEmailService email, IHttpClientFactory httpClientFactory)
+    public AuthService(AppDbContext context, IConfiguration configuration, IEmailService email, IHttpClientFactory httpClientFactory, ILogger<AuthService> logger)
     {
         _context = context;
         _configuration = configuration;
         _email = email;
         _httpClientFactory = httpClientFactory;
+        _logger = logger;
     }
 
     private static void ValidatePasswordStrength(string password)
@@ -38,7 +40,9 @@ public class AuthService : IAuthService
     {
         ValidatePasswordStrength(dto.Password);
 
-        if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
+        var normalizedEmail = (dto.Email ?? "").Trim().ToLowerInvariant();
+
+        if (await _context.Users.AnyAsync(u => u.Email == normalizedEmail))
             return null;
 
         var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
@@ -47,7 +51,7 @@ public class AuthService : IAuthService
         {
             Name = dto.Name,
             Surname = dto.Surname,
-            Email = dto.Email,
+            Email = normalizedEmail,
             PhoneNumber = dto.PhoneNumber,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
             AccountType = dto.AccountType,
@@ -78,7 +82,8 @@ public class AuthService : IAuthService
 
     public async Task<object?> Login(LoginDto dto)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+        var normalizedEmail = (dto.Email ?? "").Trim().ToLowerInvariant();
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail);
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
             return null;
@@ -180,7 +185,12 @@ public class AuthService : IAuthService
 
         var clientId = _configuration["Google:ClientId"]
             ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
-        if (!string.IsNullOrEmpty(clientId) && payload.Aud != clientId)
+        if (string.IsNullOrEmpty(clientId))
+        {
+            _logger.LogError("[GoogleLogin] Google:ClientId nie skonfigurowany — logowanie przez Google wyłączone.");
+            return null;
+        }
+        if (payload.Aud != clientId)
             return null;
 
         var user = await _context.Users.FirstOrDefaultAsync(u => u.GoogleId == payload.Sub)
@@ -242,12 +252,22 @@ public class AuthService : IAuthService
 
     public async Task<object?> FacebookLoginAsync(string accessToken)
     {
+        var appSecret = _configuration["Facebook:AppSecret"]
+            ?? Environment.GetEnvironmentVariable("FACEBOOK_APP_SECRET") ?? "";
+        if (string.IsNullOrEmpty(appSecret))
+        {
+            _logger.LogError("[FacebookLogin] Facebook:AppSecret nie skonfigurowany — logowanie wyłączone.");
+            return null;
+        }
+        using var hmac = new System.Security.Cryptography.HMACSHA256(System.Text.Encoding.UTF8.GetBytes(appSecret));
+        var proof = Convert.ToHexString(hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(accessToken))).ToLowerInvariant();
+        var graphUrl = $"https://graph.facebook.com/me?fields=id,name,first_name,last_name,email&access_token={Uri.EscapeDataString(accessToken)}&appsecret_proof={proof}";
+
         var httpClient = _httpClientFactory.CreateClient();
         FacebookUserPayload? payload;
         try
         {
-            payload = await httpClient.GetFromJsonAsync<FacebookUserPayload>(
-                $"https://graph.facebook.com/me?fields=id,name,first_name,last_name,email&access_token={Uri.EscapeDataString(accessToken)}");
+            payload = await httpClient.GetFromJsonAsync<FacebookUserPayload>(graphUrl);
         }
         catch { return null; }
 

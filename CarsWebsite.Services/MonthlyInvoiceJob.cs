@@ -8,7 +8,7 @@ public class MonthlyInvoiceJob : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<MonthlyInvoiceJob> _logger;
-    private int _lastRunMonth = -1;
+    private DateOnly _lastRunDate = DateOnly.MinValue;
 
     public MonthlyInvoiceJob(IServiceScopeFactory scopeFactory, ILogger<MonthlyInvoiceJob> logger)
     {
@@ -22,9 +22,9 @@ public class MonthlyInvoiceJob : BackgroundService
         {
             var now = DateTime.UtcNow;
 
-            if (now.Day == 1 && now.Hour == 2 && now.Month != _lastRunMonth)
+            if (now.Day == 1 && now.Hour >= 2 && DateOnly.FromDateTime(now) != _lastRunDate)
             {
-                _lastRunMonth = now.Month;
+                _lastRunDate = DateOnly.FromDateTime(now);
                 var (invoiceMonth, invoiceYear) = now.Month == 1
                     ? (12, now.Year - 1)
                     : (now.Month - 1, now.Year);

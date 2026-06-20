@@ -253,6 +253,14 @@ namespace CarsWebsite
             modelBuilder.Entity<AppNotification>()
                 .HasIndex(n => new { n.UserId, n.IsRead });
 
+            // Additional performance indexes (SR-9)
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.Price);
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.Year);
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.CreatedAt);
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.VehicleCategoryId);
+            modelBuilder.Entity<User>().HasIndex(u => u.GoogleId);
+            modelBuilder.Entity<User>().HasIndex(u => u.FacebookId);
+
             // Lowercase every table name so EF Core generates lowercase SQL,
             // matching Railway Linux MySQL where tables were imported with
             // lowercase names from Windows (case-insensitive) MySQL.

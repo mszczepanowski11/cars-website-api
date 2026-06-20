@@ -154,7 +154,7 @@ public class AdvertController : ControllerBase
         catch (UnauthorizedAccessException) { return Forbid(); }
     }
 
-    [Authorize]
+    [Authorize(Policy = "AdminOnly")]
     [HttpPost("{id}/promote")]
     public async Task<IActionResult> Promote(int id, [FromBody] PromoteAdvertDto dto)
     {
@@ -205,8 +205,8 @@ public class AdvertController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            _logger.LogError("[ImageUpload] Cloudinary error advertId={AdvertId}: {Msg}", advertId, ex.Message);
-            return StatusCode(502, new { message = ex.Message });
+            _logger.LogError(ex, "[Upload] Cloudinary error advertId={AdvertId}", advertId);
+            return StatusCode(502, new { message = "Błąd usługi przechowywania zdjęć. Spróbuj ponownie." });
         }
         catch (Exception ex)
         {

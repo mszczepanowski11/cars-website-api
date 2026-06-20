@@ -124,6 +124,9 @@ public class UserService : IUserService
 
     public async Task UpdatePasswordAsync(int userId, string currentPassword, string newPassword)
     {
+        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 8)
+            throw new ArgumentException("Hasło musi mieć co najmniej 8 znaków.");
+
         var user = await _context.Users.FindAsync(userId)
             ?? throw new KeyNotFoundException("User not found.");
 
@@ -182,10 +185,13 @@ public class UserService : IUserService
         user.CompanyName = null;
         user.Nip = null;
         user.GoogleId = null;
+        user.FacebookId = null;
         user.IsBlocked = true;
         user.EmailVerified = false;
         user.EmailVerificationToken = null;
+        user.EmailVerificationTokenExpires = null;
         user.PasswordResetToken = null;
+        user.PasswordResetTokenExpires = null;
 
         await _context.SaveChangesAsync();
     }

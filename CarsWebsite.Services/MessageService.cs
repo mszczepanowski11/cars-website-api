@@ -144,6 +144,9 @@ public class MessageService : IMessageService
 
     public async Task<MessageDto> SendMessageAsync(int conversationId, int senderId, string content)
     {
+        if (string.IsNullOrWhiteSpace(content) || content.Length > 5000)
+            throw new ArgumentException("Treść wiadomości jest nieprawidłowa (max 5000 znaków).");
+
         var conv = await _context.Conversations
             .FirstOrDefaultAsync(c => c.Id == conversationId &&
                 (c.BuyerId == senderId || c.SellerId == senderId))

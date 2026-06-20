@@ -127,8 +127,8 @@ public class UserController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[Stats] Unhandled exception for userId={UserId}: {Message}", userId, ex.Message);
-            return StatusCode(500, new { message = "Błąd statystyk: " + ex.Message });
+            _logger.LogError(ex, "[Stats] userId={UserId}", userId);
+            return StatusCode(500, new { message = "Wystąpił błąd pobierania statystyk." });
         }
     }
 

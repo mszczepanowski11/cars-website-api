@@ -559,12 +559,15 @@ internal class Program
                     exLogger.LogError(feature.Error, "[GlobalExceptionHandler] Unhandled exception at {Path}", context.Request.Path);
                 context.Response.StatusCode = 500;
                 context.Response.ContentType = "application/json";
-                await context.Response.WriteAsJsonAsync(new { message = feature?.Error?.Message ?? "Internal server error" });
+                await context.Response.WriteAsJsonAsync(new { message = "Internal server error" });
             });
         });
 
-        app.UseSwagger();
-        app.UseSwaggerUI();
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI();
+        }
 
         app.UseStaticFiles();
         app.UseHttpsRedirection();

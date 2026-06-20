@@ -1015,6 +1015,10 @@ namespace cars_website_api.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
+                    b.HasIndex("GoogleId");
+
+                    b.HasIndex("FacebookId");
+
                     b.ToTable("Users");
                 });
 

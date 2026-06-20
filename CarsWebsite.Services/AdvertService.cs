@@ -21,6 +21,9 @@ public class AdvertService : IAdvertService
     
     public async Task<int> CreateCarAdvertAsync(CreateCarAdvertDto dto,int userId)
     {
+        if (!string.IsNullOrWhiteSpace(dto.Vin) && dto.Vin.Length != 17)
+            throw new ArgumentException("Numer VIN musi mieć dokładnie 17 znaków.");
+
         var advert = _mapper.Map<CarAdvert>(dto);
         advert.CreatedAt = DateTime.UtcNow;
         advert.UserId = userId;
@@ -136,6 +139,8 @@ public class AdvertService : IAdvertService
     
     public async Task<PagedResult<CarAdvertResponseDto>> SearchCarAdvertsAsync(SearchCarAdvertDto dto)
     {
+        dto.PageSize = Math.Clamp(dto.PageSize, 1, 100);
+
         var query = _context.CarAdverts
             .AsNoTracking()
             .Include(a => a.Brand)

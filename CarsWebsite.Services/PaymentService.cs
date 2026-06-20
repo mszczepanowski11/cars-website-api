@@ -161,6 +161,13 @@ public class PaymentService : IPaymentService
 
         if (dto.Status is "settled" or "confirmed" or "authorized" or "completed" or "Completed" or "success" or "paid")
         {
+            if (dto.Amount > 0 && Math.Abs(dto.Amount - payment.Amount) > 0.01m)
+            {
+                _logger.LogWarning("[Webhook] Kwota niezgodna: oczekiwano={Exp} otrzymano={Got} orderId={OrderId}",
+                    payment.Amount, dto.Amount, dto.OrderId);
+                throw new InvalidOperationException("Amount mismatch");
+            }
+
             payment.Status = PaymentStatus.Completed;
             payment.PaidAt = DateTime.UtcNow;
             payment.ImojeTransactionId = dto.TransactionId;
