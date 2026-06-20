@@ -6,6 +6,7 @@ using cars_website_api.CarsWebsite.Domain.Entities;
 using CarsWebsite;
 using CloudinaryDotNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -879,7 +880,7 @@ internal class Program
                         new Feature { Name = "Kufry boczne (oryginalne)" }, new Feature { Name = "Centralny kufer (oryginalne)" },
                         new Feature { Name = "Tankbag" }, new Feature { Name = "Owiewki boczne" },
                         new Feature { Name = "Osłona silnika" }, new Feature { Name = "Uchwyty pasażera" },
-                        new Feature { Name = "Podnóżki pasażera" }
+                        new Feature { Name = "Podnożki pasażera" }
                     }
                 },
                 // ── TRAILERS ──

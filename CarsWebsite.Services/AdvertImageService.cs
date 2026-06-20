@@ -66,7 +66,7 @@ public class AdvertImageService : IAdvertImageService
         var publicId = $"adverts/{advertId}/{Guid.NewGuid()}";
         _logger.LogInformation("[ImgSvc] Uploading to Cloudinary: publicId={PublicId}", publicId);
 
-        CloudUploadResult result;
+        ImageUploadResult result;
         using (var stream = file.OpenReadStream())
         {
             var uploadParams = new ImageUploadParams
