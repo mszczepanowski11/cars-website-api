@@ -10,4 +10,5 @@ public interface IPaymentService
     Task HandleWebhookAsync(ImojeWebhookDto dto, string rawBody, string signature, string? internalSecret = null);
     Task<PagedResult<PaymentResponseDto>> GetUserPaymentsAsync(int userId, int page, int pageSize);
     Task<PagedResult<PaymentResponseDto>> GetAllPaymentsAsync(int page, int pageSize);
+    Task<PaymentResponseDto?> AdminUpdateStatusAsync(int paymentId, string status);
 }

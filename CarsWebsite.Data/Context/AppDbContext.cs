@@ -52,6 +52,9 @@ namespace CarsWebsite
         public DbSet<EventAttendee> EventAttendees { get; set; }
         public DbSet<EventFavourite> EventFavourites { get; set; }
 
+        // Newsletter
+        public DbSet<NewsletterSubscriber> NewsletterSubscribers { get; set; }
+
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -221,6 +224,10 @@ namespace CarsWebsite
             modelBuilder.Entity<EventAttendee>().HasIndex(a => new { a.EventId, a.UserId }).IsUnique();
             modelBuilder.Entity<EventFavourite>().ToTable("EventFavourites").HasKey(f => f.Id);
             modelBuilder.Entity<EventFavourite>().HasIndex(f => new { f.EventId, f.UserId }).IsUnique();
+
+            // Newsletter
+            modelBuilder.Entity<NewsletterSubscriber>().ToTable("NewsletterSubscribers").HasKey(n => n.Id);
+            modelBuilder.Entity<NewsletterSubscriber>().HasIndex(n => n.Email).IsUnique();
 
             // Many-to-many: Brand ↔ VehicleCategory
             modelBuilder.Entity<Brand>()

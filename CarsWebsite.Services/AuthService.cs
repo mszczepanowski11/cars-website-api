@@ -81,14 +81,39 @@ public class AuthService : IAuthService
         if (!user.EmailVerified)
             return new { error = "unverified" };
 
-        return new { token = GenerateToken(user) };
+        var refreshToken = GenerateRefreshToken();
+        user.RefreshToken = refreshToken;
+        user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(30);
+        user.LastLoginAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return new { token = GenerateToken(user), refreshToken };
     }
 
-    public Task<object?> RefreshAsync(string refreshToken)
-        => Task.FromResult<object?>(null);
+    public async Task<object?> RefreshAsync(string refreshToken)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u =>
+            u.RefreshToken == refreshToken && u.RefreshTokenExpiry > DateTime.UtcNow);
 
-    public Task RevokeAsync(string refreshToken)
-        => Task.CompletedTask;
+        if (user == null) return null;
+        if (user.IsBlocked) return new { error = "blocked" };
+
+        var newRefreshToken = GenerateRefreshToken();
+        user.RefreshToken = newRefreshToken;
+        user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(30);
+        await _context.SaveChangesAsync();
+
+        return new { token = GenerateToken(user), refreshToken = newRefreshToken };
+    }
+
+    public async Task RevokeAsync(string refreshToken)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+        if (user == null) return;
+        user.RefreshToken = null;
+        user.RefreshTokenExpiry = null;
+        await _context.SaveChangesAsync();
+    }
 
     public async Task ForgotPasswordAsync(string email)
     {
@@ -115,6 +140,8 @@ public class AuthService : IAuthService
         if (user == null || user.PasswordResetTokenExpires < DateTime.UtcNow) return false;
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        user.RefreshToken = null;
+        user.RefreshTokenExpiry = null;
         user.PasswordResetToken = null;
         user.PasswordResetTokenExpires = null;
         await _context.SaveChangesAsync();
@@ -168,10 +195,12 @@ public class AuthService : IAuthService
         if (payload == null || string.IsNullOrEmpty(payload.Email) || payload.EmailVerified != "true")
             return null;
 
+        // Validate audience — ClientId must be configured, otherwise Google login is disabled
         var clientId = _configuration["Google:ClientId"]
             ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
-        if (!string.IsNullOrEmpty(clientId) && payload.Aud != clientId)
+        if (string.IsNullOrEmpty(clientId))
             return null;
+        if (payload.Aud != clientId) return null;
 
         var user = await _context.Users.FirstOrDefaultAsync(u => u.GoogleId == payload.Sub)
                 ?? await _context.Users.FirstOrDefaultAsync(u => u.Email == payload.Email);
@@ -200,8 +229,15 @@ public class AuthService : IAuthService
 
         if (user.IsBlocked) return new { error = "blocked" };
 
-        return new { token = GenerateToken(user) };
+        var rt = GenerateRefreshToken();
+        user.RefreshToken = rt;
+        user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(30);
+        await _context.SaveChangesAsync();
+        return new { token = GenerateToken(user), refreshToken = rt };
     }
+
+    private static string GenerateRefreshToken()
+        => Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
 
     private string GenerateToken(User user)
     {

@@ -8,12 +8,20 @@ public class InitiatePaymentDto
     public int? AdvertId { get; set; }
     public int? EventId { get; set; }
     public int DurationDays { get; set; } = 7;
+
+    // Billing data snapshot for invoice (optional — used for business accounts)
+    public string? BillingName { get; set; }
+    public string? BillingNip { get; set; }
+    public string? BillingStreet { get; set; }
+    public string? BillingPostalCode { get; set; }
+    public string? BillingCity { get; set; }
 }
 
 public class PaymentInitiatedDto
 {
     public int PaymentId { get; set; }
     public string PaymentUrl { get; set; } = string.Empty;
+    public Dictionary<string, string> FormFields { get; set; } = new();
     public decimal Amount { get; set; }
     public string OrderId { get; set; } = string.Empty;
 }
@@ -49,4 +57,10 @@ public class ImojeWebhookDto
     public string Status { get; set; } = string.Empty;
     public decimal Amount { get; set; }
     public string Currency { get; set; } = "PLN";
+}
+
+public class AdminUpdatePaymentStatusDto
+{
+    [System.ComponentModel.DataAnnotations.Required]
+    public string Status { get; set; } = string.Empty;
 }

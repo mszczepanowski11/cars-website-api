@@ -37,10 +37,11 @@ public class PaymentController : ControllerBase
         if (!int.TryParse(userIdStr, out var userId)) return Unauthorized();
 
         try { return Ok(await _paymentService.InitiatePaymentAsync(dto, userId)); }
-        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
-        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
-        catch (UnauthorizedAccessException ex) { return Forbid(); }
-        catch (InvalidOperationException ex) { return StatusCode(502, new { message = ex.Message }); }
+        catch (ArgumentException ex)          { return BadRequest(new { message = ex.Message }); }
+        catch (KeyNotFoundException ex)       { return NotFound(new { message = ex.Message }); }
+        catch (UnauthorizedAccessException ex){ return StatusCode(403, new { message = ex.Message }); }
+        catch (InvalidOperationException ex)  { return StatusCode(502, new { message = ex.Message }); }
+        catch (Exception ex)                  { return StatusCode(500, new { message = $"Błąd bramki płatności: {ex.Message}" }); }
     }
 
     /// <summary>Lista płatności zalogowanego użytkownika.</summary>
@@ -90,4 +91,13 @@ public class PaymentController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50)
         => Ok(await _paymentService.GetAllPaymentsAsync(page, pageSize));
+
+    [Authorize(Policy = "AdminOnly")]
+    [HttpPatch("admin/{id:int}/status")]
+    public async Task<IActionResult> AdminUpdateStatus(int id, [FromBody] AdminUpdatePaymentStatusDto dto)
+    {
+        var payment = await _paymentService.AdminUpdateStatusAsync(id, dto.Status);
+        if (payment == null) return NotFound();
+        return Ok(payment);
+    }
 }

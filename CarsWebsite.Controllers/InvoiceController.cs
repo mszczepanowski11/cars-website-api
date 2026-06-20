@@ -81,4 +81,16 @@ public class InvoiceController : ControllerBase
         }
         catch (KeyNotFoundException) { return NotFound(); }
     }
+
+    [HttpPost("admin/{id:int}/resend")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> AdminResend(int id)
+    {
+        try
+        {
+            await _invoiceService.SendInvoiceByEmailAsync(id);
+            return Ok(new { message = "Faktura została ponownie wysłana." });
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+    }
 }

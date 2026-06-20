@@ -16,6 +16,9 @@ internal class Program
 {
     public static void Main(string[] args)
     {
+        Console.WriteLine("===========================================");
+        Console.WriteLine("CARIZO API v1.0.2 STARTING");
+        Console.WriteLine("===========================================");
         var webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
         Directory.CreateDirectory(webRootPath);
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -72,11 +75,19 @@ internal class Program
         builder.Services.AddScoped<IAdvertService, AdvertService>();
         builder.Services.AddScoped<IAdvertImageService, AdvertImageService>();
 
-        var cloudinaryAccount = new Account(
-            Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME") ?? "",
-            Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY") ?? "",
-            Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET") ?? ""
-        );
+        var cloudName   = (Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME")   ?? "").Trim();
+        var cloudApiKey = (Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY")       ?? "").Trim();
+        var cloudSecret = (Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET")    ?? "").Trim();
+
+        Console.WriteLine($"[Cloudinary] cloud={cloudName}, key={cloudApiKey}, secret={(cloudSecret.Length > 4 ? cloudSecret[..4] + "****" : "(empty)")}");
+
+        // Use placeholder credentials when env vars are missing so the API still starts.
+        // Actual uploads will fail at runtime with a clear error rather than crashing the container.
+        var effectiveCloud  = string.IsNullOrEmpty(cloudName)   ? "placeholder"   : cloudName;
+        var effectiveKey    = string.IsNullOrEmpty(cloudApiKey) ? "placeholder"   : cloudApiKey;
+        var effectiveSecret = string.IsNullOrEmpty(cloudSecret) ? "placeholder"   : cloudSecret;
+
+        var cloudinaryAccount = new Account(effectiveCloud, effectiveKey, effectiveSecret);
         var cloudinary = new Cloudinary(cloudinaryAccount);
         cloudinary.Api.Secure = true;
         builder.Services.AddSingleton(cloudinary);
@@ -96,6 +107,25 @@ internal class Program
         builder.Services.AddHostedService<ExpiryReminderJob>();
         builder.Services.AddHostedService<BadgeExpiryJob>();
         builder.Services.AddHostedService<EventFeaturedExpiryJob>();
+
+        builder.Services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = 429;
+            options.AddFixedWindowLimiter("auth", o =>
+            {
+                o.PermitLimit = 10;
+                o.Window = TimeSpan.FromMinutes(1);
+                o.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+                o.QueueLimit = 0;
+            });
+            options.AddFixedWindowLimiter("strict", o =>
+            {
+                o.PermitLimit = 5;
+                o.Window = TimeSpan.FromMinutes(5);
+                o.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+                o.QueueLimit = 0;
+            });
+        });
 
         builder.Services.AddAutoMapper(typeof(AdvertMappingProfile));
 
@@ -428,6 +458,11 @@ internal class Program
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `advertviews` ADD COLUMN `UserId` int NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN advertviews.UserId skipped: {Message}", ex.Message); }
 
+            // UserFollow entity uses FollowedAt but old CREATE TABLE IF NOT EXISTS used CreatedAt.
+            // Add FollowedAt so INSERT works regardless of which column was originally created.
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `userfollows` ADD COLUMN `FollowedAt` datetime(6) NOT NULL DEFAULT '2000-01-01 00:00:00'"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN userfollows.FollowedAt skipped: {Message}", ex.Message); }
+
             // Auth token columns for email verification and password reset
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `users` ADD COLUMN `GoogleId` varchar(255) NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN users.GoogleId skipped: {Message}", ex.Message); }
@@ -533,6 +568,54 @@ internal class Program
                 catch (Exception ex) { logger.LogDebug("ADD COLUMN reviews skipped: {Message}", ex.Message); }
             }
 
+            var addRefreshTokenSql = new[]
+            {
+                "ALTER TABLE `Users` ADD COLUMN IF NOT EXISTS `RefreshToken` varchar(128) NULL",
+                "ALTER TABLE `Users` ADD COLUMN IF NOT EXISTS `RefreshTokenExpiry` datetime(6) NULL",
+            };
+            foreach (var sql in addRefreshTokenSql)
+            {
+                try { db.Database.ExecuteSqlRaw(sql); }
+                catch (Exception ex) { logger.LogDebug("ADD COLUMN refresh token skipped: {Message}", ex.Message); }
+            }
+
+            var addPaymentBillingSql = new[]
+            {
+                "ALTER TABLE `Payments` ADD COLUMN IF NOT EXISTS `BillingName` varchar(200) NULL",
+                "ALTER TABLE `Payments` ADD COLUMN IF NOT EXISTS `BillingNip` varchar(20) NULL",
+                "ALTER TABLE `Payments` ADD COLUMN IF NOT EXISTS `BillingStreet` varchar(200) NULL",
+                "ALTER TABLE `Payments` ADD COLUMN IF NOT EXISTS `BillingPostalCode` varchar(20) NULL",
+                "ALTER TABLE `Payments` ADD COLUMN IF NOT EXISTS `BillingCity` varchar(100) NULL",
+            };
+            foreach (var sql in addPaymentBillingSql)
+            {
+                try { db.Database.ExecuteSqlRaw(sql); }
+                catch (Exception ex) { logger.LogDebug("ADD COLUMN payment billing skipped: {Message}", ex.Message); }
+            }
+
+            // Fix brands that were seeded with numeric names (e.g. "1", "2", "10")
+            // Detect by checking if the first brand's name is all digits
+            try
+            {
+                var firstBrand = db.Brands.OrderBy(b => b.Id).FirstOrDefault();
+                if (firstBrand != null && firstBrand.Name.All(char.IsDigit))
+                {
+                    logger.LogWarning("Detected numeric brand names — clearing brand tables for re-seed");
+                    db.Database.ExecuteSqlRaw("SET FOREIGN_KEY_CHECKS=0");
+                    try { db.Database.ExecuteSqlRaw("DELETE FROM `brandvehiclecategories`"); } catch { }
+                    try { db.Database.ExecuteSqlRaw("DELETE FROM `generations`"); } catch { }
+                    try { db.Database.ExecuteSqlRaw("DELETE FROM `models`"); } catch { }
+                    try { db.Database.ExecuteSqlRaw("DELETE FROM `brands`"); } catch { }
+                    db.Database.ExecuteSqlRaw("UPDATE `caradverts` SET `BrandId` = NULL, `ModelId` = NULL WHERE 1=1");
+                    db.Database.ExecuteSqlRaw("SET FOREIGN_KEY_CHECKS=1");
+                    logger.LogInformation("Brand tables cleared — seeder will re-populate on next call");
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning("Brand name fix skipped: {Message}", ex.Message);
+            }
+
             SeedDataIfEmpty(db, logger);
 
             // Startup config diagnostics
@@ -569,6 +652,7 @@ internal class Program
         app.UseStaticFiles();
         app.UseHttpsRedirection();
         app.UseCors("AllowNuxt");
+        app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();

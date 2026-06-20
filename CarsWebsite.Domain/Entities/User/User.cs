@@ -26,6 +26,8 @@ namespace CarsWebsite
         public string? PasswordResetToken { get; set; }
         public DateTime? PasswordResetTokenExpires { get; set; }
         public string? GoogleId { get; set; }
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiry { get; set; }
         public DateTime? LastLoginAt { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
