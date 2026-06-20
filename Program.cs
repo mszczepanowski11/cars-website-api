@@ -424,6 +424,10 @@ internal class Program
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `advertimages` ADD COLUMN `IsMain` tinyint(1) NOT NULL DEFAULT 0"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN advertimages.IsMain skipped: {Message}", ex.Message); }
 
+            // Add UserId to advertviews — entity has nullable UserId but original CREATE TABLE omitted it.
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `advertviews` ADD COLUMN `UserId` int NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN advertviews.UserId skipped: {Message}", ex.Message); }
+
             // Auth token columns for email verification and password reset
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `users` ADD COLUMN `GoogleId` varchar(255) NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN users.GoogleId skipped: {Message}", ex.Message); }
@@ -544,6 +548,20 @@ internal class Program
                 string.IsNullOrEmpty(imojeSecret) ? "EMPTY←WEBHOOKS BĘDĄ ODRZUCANE" : "SET",
                 string.IsNullOrEmpty(internalSec) ? "EMPTY←WEBHOOKS BĘDĄ ODRZUCANE" : "SET");
         }
+
+        app.UseExceptionHandler(exApp =>
+        {
+            exApp.Run(async context =>
+            {
+                var feature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+                var exLogger = app.Services.GetRequiredService<ILogger<Program>>();
+                if (feature?.Error != null)
+                    exLogger.LogError(feature.Error, "[GlobalExceptionHandler] Unhandled exception at {Path}", context.Request.Path);
+                context.Response.StatusCode = 500;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(new { message = feature?.Error?.Message ?? "Internal server error" });
+            });
+        });
 
         app.UseSwagger();
         app.UseSwaggerUI();

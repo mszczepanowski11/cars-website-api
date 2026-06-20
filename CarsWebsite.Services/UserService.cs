@@ -41,15 +41,18 @@ public class UserService : IUserService
 
     public async Task<UserStatsDto> GetUserStatsAsync(int userId)
     {
+        _logger.LogInformation("[Stats] Starting for userId={UserId}", userId);
         var dto = new UserStatsDto();
 
         try
         {
+            _logger.LogDebug("[Stats] Querying CarAdverts for userId={UserId}", userId);
             var advertIds = await _context.CarAdverts
                 .Where(a => a.UserId == userId)
                 .Select(a => a.Id)
                 .ToListAsync();
             dto.TotalAdverts = advertIds.Count;
+            _logger.LogDebug("[Stats] CarAdverts count={Count}", dto.TotalAdverts);
 
             dto.ActiveAdverts = await _context.CarAdverts
                 .CountAsync(a => a.UserId == userId && a.IsActive && !a.IsHidden);
@@ -60,34 +63,38 @@ public class UserService : IUserService
                 catch (Exception ex) { _logger.LogWarning("[Stats] AdvertViews query failed: {Msg}", ex.Message); }
             }
         }
-        catch (Exception ex) { _logger.LogWarning("[Stats] CarAdverts query failed: {Msg}", ex.Message); }
+        catch (Exception ex) { _logger.LogWarning("[Stats] CarAdverts query failed: {Type} {Msg}", ex.GetType().Name, ex.Message); }
 
         try { dto.FavoritesCount = await _context.FavoriteAdverts.CountAsync(f => f.UserId == userId); }
-        catch (Exception ex) { _logger.LogWarning("[Stats] FavoriteAdverts query failed: {Msg}", ex.Message); }
+        catch (Exception ex) { _logger.LogWarning("[Stats] FavoriteAdverts query failed: {Type} {Msg}", ex.GetType().Name, ex.Message); }
 
         try
         {
+            _logger.LogDebug("[Stats] Querying Messages for userId={UserId}", userId);
             dto.UnreadMessages = await _context.Messages
                 .CountAsync(m => (m.Conversation.SellerId == userId || m.Conversation.BuyerId == userId)
                                  && !m.IsRead && m.SenderId != userId);
         }
-        catch (Exception ex) { _logger.LogWarning("[Stats] Messages query failed: {Msg}", ex.Message); }
+        catch (Exception ex) { _logger.LogWarning("[Stats] Messages query failed: {Type} {Msg}", ex.GetType().Name, ex.Message); }
 
         try
         {
             dto.FollowersCount = await _context.UserFollows.CountAsync(f => f.FollowedId == userId);
             dto.FollowingCount = await _context.UserFollows.CountAsync(f => f.FollowerId == userId);
         }
-        catch (Exception ex) { _logger.LogWarning("[Stats] UserFollows query failed: {Msg}", ex.Message); }
+        catch (Exception ex) { _logger.LogWarning("[Stats] UserFollows query failed: {Type} {Msg}", ex.GetType().Name, ex.Message); }
 
         try
         {
+            _logger.LogDebug("[Stats] Querying Reviews for userId={UserId}", userId);
             var reviews = await _context.Reviews.Where(r => r.SellerId == userId).ToListAsync();
             dto.ReviewCount = reviews.Count;
             dto.AverageRating = reviews.Count > 0 ? Math.Round(reviews.Average(r => r.Rating), 2) : 0.0;
         }
-        catch (Exception ex) { _logger.LogWarning("[Stats] Reviews query failed: {Msg}", ex.Message); }
+        catch (Exception ex) { _logger.LogWarning("[Stats] Reviews query failed: {Type} {Msg}", ex.GetType().Name, ex.Message); }
 
+        _logger.LogInformation("[Stats] Completed for userId={UserId}: totalAdverts={T} activeAdverts={A} views={V} favorites={F} messages={M} followers={Fo} following={Fi}",
+            userId, dto.TotalAdverts, dto.ActiveAdverts, dto.TotalViews, dto.FavoritesCount, dto.UnreadMessages, dto.FollowersCount, dto.FollowingCount);
         return dto;
     }
 
