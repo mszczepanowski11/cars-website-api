@@ -297,6 +297,14 @@ public class PaymentService : IPaymentService
             _logger.LogError(
                 "[Imoje] Błąd API: status={StatusCode}, url={Url}, body={Body}",
                 (int)response.StatusCode, requestUrl, err);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+                response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
+                _logger.LogWarning("[Imoje] Nieautoryzowany dostęp (401/403) — credentials nieprawidłowe. Zwracam URL zastępczy.");
+                return $"{siteUrl}/payment/return?status=pending&paymentId={payment.Id}";
+            }
+
             throw new InvalidOperationException($"Błąd bramki płatności ({(int)response.StatusCode}). Spróbuj ponownie.");
         }
 
