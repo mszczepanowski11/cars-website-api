@@ -122,4 +122,23 @@ public class AuthController : ControllerBase
 
         return Ok(result);
     }
+
+    [HttpPost("facebook")]
+    public async Task<IActionResult> FacebookLogin([FromBody] FacebookLoginDto dto)
+    {
+        var result = await _authService.FacebookLoginAsync(dto.AccessToken);
+        if (result == null) return Unauthorized("Nie można zalogować przez Facebook.");
+
+        var resultType = result.GetType();
+        var errorProp = resultType.GetProperty("error");
+        if (errorProp != null)
+        {
+            var errorVal = errorProp.GetValue(result)?.ToString();
+            return errorVal == "blocked"
+                ? Unauthorized("Konto zostało zablokowane.")
+                : Unauthorized("Nie można zalogować przez Facebook.");
+        }
+
+        return Ok(result);
+    }
 }

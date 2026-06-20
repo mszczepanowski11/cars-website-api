@@ -977,6 +977,9 @@ namespace cars_website_api.Migrations
                     b.Property<bool>("NewsletterSubscribed")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<string>("FacebookId")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("GoogleId")
                         .HasColumnType("longtext");
 

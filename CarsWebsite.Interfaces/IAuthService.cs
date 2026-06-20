@@ -13,4 +13,5 @@ public interface IAuthService
     Task<bool> VerifyEmailAsync(string token);
     Task ResendVerificationAsync(string email);
     Task<object?> GoogleLoginAsync(string credential);
+    Task<object?> FacebookLoginAsync(string accessToken);
 }

@@ -240,6 +240,55 @@ public class AuthService : IAuthService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    public async Task<object?> FacebookLoginAsync(string accessToken)
+    {
+        var httpClient = _httpClientFactory.CreateClient();
+        FacebookUserPayload? payload;
+        try
+        {
+            payload = await httpClient.GetFromJsonAsync<FacebookUserPayload>(
+                $"https://graph.facebook.com/me?fields=id,name,first_name,last_name,email&access_token={Uri.EscapeDataString(accessToken)}");
+        }
+        catch { return null; }
+
+        if (payload == null || string.IsNullOrEmpty(payload.Id))
+            return null;
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.FacebookId == payload.Id)
+                ?? (!string.IsNullOrEmpty(payload.Email)
+                    ? await _context.Users.FirstOrDefaultAsync(u => u.Email == payload.Email)
+                    : null);
+
+        if (user == null)
+        {
+            if (string.IsNullOrEmpty(payload.Email))
+                return null;
+
+            user = new User
+            {
+                Name = payload.FirstName ?? payload.Name?.Split(' ').FirstOrDefault() ?? "Użytkownik",
+                Surname = payload.LastName ?? (payload.Name?.Contains(' ') == true ? payload.Name.Substring(payload.Name.IndexOf(' ') + 1) : "Facebook"),
+                Email = payload.Email,
+                PhoneNumber = string.Empty,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
+                EmailVerified = true,
+                FacebookId = payload.Id,
+            };
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+        }
+        else if (user.FacebookId == null)
+        {
+            user.FacebookId = payload.Id;
+            if (!user.EmailVerified) user.EmailVerified = true;
+            await _context.SaveChangesAsync();
+        }
+
+        if (user.IsBlocked) return new { error = "blocked" };
+
+        return new { token = GenerateToken(user) };
+    }
+
     private sealed class GoogleTokenPayload
     {
         [JsonPropertyName("sub")]          public string Sub          { get; set; } = string.Empty;
@@ -248,5 +297,14 @@ public class AuthService : IAuthService
         [JsonPropertyName("given_name")]   public string? GivenName   { get; set; }
         [JsonPropertyName("family_name")]  public string? FamilyName  { get; set; }
         [JsonPropertyName("aud")]          public string? Aud         { get; set; }
+    }
+
+    private sealed class FacebookUserPayload
+    {
+        [JsonPropertyName("id")]         public string? Id        { get; set; }
+        [JsonPropertyName("name")]       public string? Name      { get; set; }
+        [JsonPropertyName("first_name")] public string? FirstName { get; set; }
+        [JsonPropertyName("last_name")]  public string? LastName  { get; set; }
+        [JsonPropertyName("email")]      public string? Email     { get; set; }
     }
 }
