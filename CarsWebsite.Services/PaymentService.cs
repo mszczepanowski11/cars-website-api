@@ -169,7 +169,7 @@ public class PaymentService : IPaymentService
         try
         {
             await _context.Database.ExecuteSqlRawAsync(
-                "SELECT 1 FROM `Payments` WHERE `ImojeOrderId` = {0} FOR UPDATE", dto.OrderId);
+                "SELECT 1 FROM `payments` WHERE `ImojeOrderId` = {0} FOR UPDATE", dto.OrderId);
 
             var payment = await _context.Payments
                 .Include(p => p.User)
@@ -268,35 +268,52 @@ public class PaymentService : IPaymentService
         var merchantId = section["MerchantId"] ?? "";
         var sandbox    = string.Equals(section["Environment"], "sandbox", StringComparison.OrdinalIgnoreCase);
         var siteUrl    = section["SiteUrl"] ?? "https://carizo.pl";
+        // Imoje__ApiUrl should point to the API server (Railway API URL) for webhook delivery.
+        // If not set, falls back to siteUrl (only works if Nuxt proxy forwards /api/* to the API).
+        var apiUrl     = section["ApiUrl"] ?? siteUrl;
 
         var actionUrl = sandbox
             ? "https://sandbox.paywall.imoje.pl/payment"
             : "https://paywall.imoje.pl/payment";
 
+        _logger.LogInformation(
+            "[Imoje/Build] serviceId={Sid} merchantId={Mid} keyLen={KeyLen} sandbox={Sandbox} siteUrl={Site} apiUrl={Api}",
+            serviceId, merchantId, serviceKey.Length, sandbox, siteUrl, apiUrl);
+
         if (string.IsNullOrEmpty(serviceId) || string.IsNullOrEmpty(serviceKey))
         {
-            _logger.LogWarning("Bramka imoje nie jest skonfigurowana (brak ServiceId/ServiceKey).");
+            _logger.LogWarning("[Imoje/Build] MISSING credentials — serviceId empty={SidEmpty} serviceKey empty={SkEmpty}",
+                string.IsNullOrEmpty(serviceId), string.IsNullOrEmpty(serviceKey));
             return ($"{siteUrl}/payment/return?status=pending&paymentId={payment.Id}", new Dictionary<string, string>());
         }
+
+        // Some imoje configurations require non-empty customer name fields.
+        var firstName = string.IsNullOrWhiteSpace(user.Name)    ? "Klient" : user.Name;
+        var lastName  = string.IsNullOrWhiteSpace(user.Surname) ? "Carizo" : user.Surname;
 
         var fields = new Dictionary<string, string>
         {
             ["amount"]            = ((int)(payment.Amount * 100)).ToString(),
             ["currency"]          = "PLN",
             ["orderId"]           = orderId,
-            ["customerFirstName"] = user.Name ?? "",
-            ["customerLastName"]  = user.Surname ?? "",
+            ["customerFirstName"] = firstName,
+            ["customerLastName"]  = lastName,
             ["customerEmail"]     = user.Email ?? "",
             ["urlSuccess"]        = $"{siteUrl}/payment/return?status=success&paymentId={payment.Id}&advertId={payment.AdvertId}",
             ["urlFailure"]        = $"{siteUrl}/payment/return?status=failure&paymentId={payment.Id}",
             ["urlReturn"]         = $"{siteUrl}/payment/return?status=cancel",
-            ["urlNotification"]   = $"{siteUrl}/api/payment/webhook",
+            ["urlNotification"]   = $"{apiUrl}/api/Payment/webhook",
             ["orderDescription"]  = payment.ServiceDescription,
             ["serviceId"]         = serviceId,
             ["merchantId"]        = merchantId,
         };
 
         fields["signature"] = ComputeImojeSignature(fields, serviceKey);
+
+        _logger.LogInformation(
+            "[Imoje/Build] amount={Amount} orderId={OrderId} firstName={First} lastName={Last} email={Email} urlNotification={Notif} sigPrefix={Sig}",
+            fields["amount"], orderId, firstName, lastName, user.Email,
+            fields["urlNotification"], fields["signature"][..16] + "...");
 
         return (actionUrl, fields);
     }
