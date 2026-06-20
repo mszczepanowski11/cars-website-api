@@ -167,7 +167,26 @@ public class UserService : IUserService
         var user = await _context.Users.FindAsync(userId)
             ?? throw new KeyNotFoundException("User not found.");
 
-        _context.Users.Remove(user);
+        user.Name = "Usunięty";
+        user.Surname = "Użytkownik";
+        user.Email = $"deleted_{userId}_{Guid.NewGuid():N}@deleted.carizo.pl";
+        user.PhoneNumber = null;
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString());
+        user.AvatarUrl = null;
+        user.City = null;
+        user.Region = null;
+        user.Street = null;
+        user.PostalCode = null;
+        user.Country = null;
+        user.About = null;
+        user.CompanyName = null;
+        user.Nip = null;
+        user.GoogleId = null;
+        user.IsBlocked = true;
+        user.EmailVerified = false;
+        user.EmailVerificationToken = null;
+        user.PasswordResetToken = null;
+
         await _context.SaveChangesAsync();
     }
 

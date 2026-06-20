@@ -28,8 +28,16 @@ public class AuthService : IAuthService
         _httpClientFactory = httpClientFactory;
     }
 
+    private static void ValidatePasswordStrength(string password)
+    {
+        if (string.IsNullOrWhiteSpace(password) || password.Length < 8)
+            throw new ArgumentException("Hasło musi mieć co najmniej 8 znaków.");
+    }
+
     public async Task<object?> Register(RegisterDto dto)
     {
+        ValidatePasswordStrength(dto.Password);
+
         if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
             return null;
 
@@ -111,6 +119,8 @@ public class AuthService : IAuthService
 
     public async Task<bool> ResetPasswordAsync(string token, string newPassword)
     {
+        ValidatePasswordStrength(newPassword);
+
         var user = await _context.Users.FirstOrDefaultAsync(u => u.PasswordResetToken == token);
         if (user == null || user.PasswordResetTokenExpires < DateTime.UtcNow) return false;
 

@@ -235,6 +235,24 @@ namespace CarsWebsite
                 .HasForeignKey(fc => fc.VehicleCategoryId)
                 .IsRequired(false);
 
+            // Performance indexes for common query patterns
+            modelBuilder.Entity<Advert>()
+                .HasIndex(a => new { a.IsActive, a.IsHidden });
+            modelBuilder.Entity<CarAdvert>()
+                .HasIndex(a => a.UserId);
+            modelBuilder.Entity<CarAdvert>()
+                .HasIndex(a => new { a.BrandId, a.ModelId });
+            modelBuilder.Entity<CarAdvert>()
+                .HasIndex(a => a.FuelTypeId);
+            modelBuilder.Entity<CarAdvert>()
+                .HasIndex(a => a.Badge);
+            modelBuilder.Entity<Conversation>()
+                .HasIndex(c => new { c.BuyerId, c.LastMessageAt });
+            modelBuilder.Entity<Message>()
+                .HasIndex(m => new { m.ConversationId, m.IsRead });
+            modelBuilder.Entity<AppNotification>()
+                .HasIndex(n => new { n.UserId, n.IsRead });
+
             // Lowercase every table name so EF Core generates lowercase SQL,
             // matching Railway Linux MySQL where tables were imported with
             // lowercase names from Windows (case-insensitive) MySQL.

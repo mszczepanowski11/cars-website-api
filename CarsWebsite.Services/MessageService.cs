@@ -71,17 +71,29 @@ public class MessageService : IMessageService
             .Include(c => c.Buyer)
             .Include(c => c.Seller)
             .Include(c => c.Advert)
-            .Include(c => c.Messages)
             .Where(c => c.BuyerId == userId || c.SellerId == userId)
             .OrderByDescending(c => c.LastMessageAt)
             .ToListAsync();
+
+        var convIds = convs.Select(c => c.Id).ToList();
+
+        var lastMessages = await _context.Messages
+            .Where(m => convIds.Contains(m.ConversationId))
+            .GroupBy(m => m.ConversationId)
+            .Select(g => g.OrderByDescending(m => m.SentAt).First())
+            .ToListAsync();
+
+        var unreadCounts = await _context.Messages
+            .Where(m => convIds.Contains(m.ConversationId) && m.SenderId != userId && !m.IsRead)
+            .GroupBy(m => m.ConversationId)
+            .Select(g => new { ConvId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.ConvId, x => x.Count);
 
         return convs.Select(c =>
         {
             bool isBuyer = c.BuyerId == userId;
             var other = isBuyer ? c.Seller : c.Buyer;
-            var last = c.Messages.OrderByDescending(m => m.SentAt).FirstOrDefault();
-            int unread = c.Messages.Count(m => m.SenderId != userId && !m.IsRead);
+            var last = lastMessages.FirstOrDefault(m => m.ConversationId == c.Id);
 
             return new ConversationDto
             {
@@ -94,7 +106,7 @@ public class MessageService : IMessageService
                 AdvertTitle = c.Advert.Title,
                 LastMessageAt = c.LastMessageAt,
                 LastMessageContent = last?.Content,
-                UnreadCount = unread,
+                UnreadCount = unreadCounts.GetValueOrDefault(c.Id, 0),
                 OtherUserId = other.Id,
                 OtherUserName = $"{other.Name} {other.Surname}"
             };

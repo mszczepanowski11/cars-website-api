@@ -253,7 +253,10 @@ td{padding:9px 12px;border:1px solid #ddd;font-size:13px}
         if (user?.AccountType == AccountType.Business && !string.IsNullOrWhiteSpace(user.Nip))
             sb.Append($"<p>NIP: {user.Nip}</p>");
         sb.Append($"<p>{user?.Email}</p></div>");
-        sb.Append("<div class=\"party\"><h4>Sprzedawca</h4><p><strong>CARIZO Sp. z o.o.</strong></p><p>NIP: 0000000000</p><p>ul. Przykładowa 1, 00-001 Warszawa</p></div>");
+        sb.Append($"<div class=\"party\"><h4>Sprzedawca</h4>" +
+                  $"<p><strong>CARIZO Wiktor Niezgoda</strong></p>" +
+                  $"<p>NIP: 9452331007</p><p>REGON: 544870688</p>" +
+                  $"<p>ul. Henryka Pachońskiego 7/60, 31-223 Kraków</p></div>");
         sb.Append("</div>");
 
         sb.Append("<table><thead><tr><th>Lp.</th><th>Opis usługi</th><th>Data</th><th style=\"text-align:right\">Kwota brutto</th></tr></thead><tbody>");

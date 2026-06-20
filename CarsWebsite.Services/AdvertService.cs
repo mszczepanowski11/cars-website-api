@@ -137,6 +137,7 @@ public class AdvertService : IAdvertService
     public async Task<PagedResult<CarAdvertResponseDto>> SearchCarAdvertsAsync(SearchCarAdvertDto dto)
     {
         var query = _context.CarAdverts
+            .AsNoTracking()
             .Include(a => a.Brand)
             .Include(a => a.Model)
             .Include(a => a.Generation)
@@ -313,6 +314,7 @@ public class AdvertService : IAdvertService
     public async Task<PagedResult<CarAdvertResponseDto>> GetUserAdvertsAsync(int userId, int page = 1, int pageSize = 20)
     {
         var query = _context.CarAdverts
+            .AsNoTracking()
             .Include(a => a.Brand).Include(a => a.Model)
             .Include(a => a.Generation).Include(a => a.EngineVersion)
             .Include(a => a.FuelType).Include(a => a.Gearbox)
