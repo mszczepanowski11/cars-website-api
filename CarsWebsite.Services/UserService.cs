@@ -216,4 +216,44 @@ public class UserService : IUserService
             EmailVerified = user.EmailVerified
         };
     }
+
+    public async Task<object> ExportUserDataAsync(int userId)
+    {
+        var user = await _context.Users
+            .Include(u => u.Adverts)
+            .FirstOrDefaultAsync(u => u.Id == userId)
+            ?? throw new KeyNotFoundException("Użytkownik nie istnieje.");
+
+        var adverts = await _context.CarAdverts
+            .Where(a => a.UserId == userId)
+            .Select(a => new { a.Id, a.Title, a.Price, a.CreatedAt, a.IsActive })
+            .ToListAsync();
+
+        var favorites = await _context.FavoriteAdverts
+            .Where(f => f.UserId == userId)
+            .Select(f => new { f.AdvertId, f.CreatedAt })
+            .ToListAsync();
+
+        var messages = await _context.Messages
+            .Where(m => m.SenderId == userId)
+            .Select(m => new { m.Id, m.Content, m.SentAt, m.ConversationId })
+            .ToListAsync();
+
+        return new
+        {
+            exportedAt = DateTime.UtcNow,
+            profile = new
+            {
+                user.Id, user.Name, user.Surname, user.Email, user.PhoneNumber,
+                user.AccountType, user.CompanyName, user.Nip,
+                user.City, user.Region, user.Street, user.PostalCode, user.Country,
+                user.About, user.AvatarUrl, user.EmailVerified,
+                user.EmailNotifications, user.PriceChangeAlerts, user.NewMessageAlerts,
+                user.NewsletterSubscribed, user.CreatedAt, user.LastLoginAt
+            },
+            adverts,
+            favorites,
+            sentMessages = messages
+        };
+    }
 }

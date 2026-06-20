@@ -132,6 +132,19 @@ public class UserController : ControllerBase
         }
     }
 
+    [Authorize]
+    [HttpGet("me/export")]
+    public async Task<IActionResult> ExportData()
+    {
+        var userId = GetUserId();
+        if (userId == 0) return Unauthorized();
+        var data = await _userService.ExportUserDataAsync(userId);
+        return File(
+            System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(data, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
+            "application/json",
+            $"carizo-data-export-{userId}-{DateTime.UtcNow:yyyyMMdd}.json");
+    }
+
     [HttpGet("{id:int}/public")]
     public async Task<IActionResult> GetPublicProfile(int id)
     {

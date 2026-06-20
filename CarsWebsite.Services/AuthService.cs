@@ -40,6 +40,12 @@ public class AuthService : IAuthService
     {
         ValidatePasswordStrength(dto.Password);
 
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var age = today.Year - dto.DateOfBirth.Year;
+        if (dto.DateOfBirth.AddYears(age) > today) age--;
+        if (age < 18)
+            throw new InvalidOperationException("Musisz mieć ukończone 18 lat, aby założyć konto.");
+
         var normalizedEmail = (dto.Email ?? "").Trim().ToLowerInvariant();
 
         if (await _context.Users.AnyAsync(u => u.Email == normalizedEmail))
@@ -54,6 +60,7 @@ public class AuthService : IAuthService
             Email = normalizedEmail,
             PhoneNumber = dto.PhoneNumber,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+            DateOfBirth = dto.DateOfBirth.ToDateTime(TimeOnly.MinValue),
             AccountType = dto.AccountType,
             BusinessType = dto.BusinessType,
             CompanyName = dto.CompanyName,
