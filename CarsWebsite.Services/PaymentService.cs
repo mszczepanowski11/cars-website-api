@@ -457,6 +457,8 @@ public class PaymentService : IPaymentService
             if (parsedStatus == PaymentStatus.Completed && payment.PaidAt == null)
                 payment.PaidAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
+            if (parsedStatus == PaymentStatus.Completed)
+                await ActivateServiceAsync(payment);
         }
         return MapToDto(payment);
     }

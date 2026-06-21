@@ -50,6 +50,9 @@ public class ReviewService : IReviewService
         if (buyerId == dto.SellerId)
             throw new InvalidOperationException("Cannot review yourself.");
 
+        if (!await CanReviewAsync(buyerId, dto.SellerId))
+            throw new InvalidOperationException("Already reviewed this seller.");
+
         var review = new Review
         {
             SellerId = dto.SellerId,

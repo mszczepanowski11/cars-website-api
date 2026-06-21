@@ -80,7 +80,7 @@ internal class Program
         var cloudApiKey = (Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY")       ?? "").Trim();
         var cloudSecret = (Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET")    ?? "").Trim();
 
-        Console.WriteLine($"[Cloudinary] cloud={cloudName}, key={cloudApiKey}, secret={(cloudSecret.Length > 4 ? cloudSecret[..4] + "****" : "(empty)")}");
+        Console.WriteLine($"[Cloudinary] cloud={cloudName}, key={(cloudApiKey.Length > 4 ? cloudApiKey[..4] + "****" : "(empty)")}, secret={(cloudSecret.Length > 4 ? cloudSecret[..4] + "****" : "(empty)")}");
 
         // Use placeholder credentials when env vars are missing so the API still starts.
         // Actual uploads will fail at runtime with a clear error rather than crashing the container.
@@ -621,6 +621,11 @@ internal class Program
             app.UseSwaggerUI();
         }
 
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
+                             | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+        });
         app.UseStaticFiles();
         app.UseHttpsRedirection();
         app.UseCors("AllowNuxt");

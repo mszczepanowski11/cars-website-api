@@ -195,6 +195,12 @@ public class UserService : IUserService
         user.EmailVerificationTokenExpires = null;
         user.PasswordResetToken = null;
         user.PasswordResetTokenExpires = null;
+
+        var tokens = await _context.RefreshTokens
+            .Where(t => t.UserId == userId && !t.IsRevoked)
+            .ToListAsync();
+        foreach (var t in tokens) t.IsRevoked = true;
+
         await _context.SaveChangesAsync();
     }
 
