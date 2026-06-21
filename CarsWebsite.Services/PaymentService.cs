@@ -316,12 +316,16 @@ public class PaymentService : IPaymentService
         if (!string.IsNullOrEmpty(merchantId))
             fields["merchantId"] = merchantId;
 
+        // Remove empty-value fields before computing signature (PHP SDK behaviour)
+        foreach (var key in fields.Where(kv => string.IsNullOrEmpty(kv.Value)).Select(kv => kv.Key).ToList())
+            fields.Remove(key);
+
         fields["signature"] = ComputeImojeSignature(fields, serviceKey);
 
         _logger.LogInformation(
             "[Imoje/Build] amount={Amount} orderId={OrderId} firstName={First} lastName={Last} email={Email} urlNotification={Notif} fieldKeys={Keys} sigPrefix={Sig}",
             fields["amount"], orderId, firstName, lastName, user.Email,
-            fields["urlNotification"], string.Join(",", fields.Keys.Where(k => k != "signature")),
+            fields.GetValueOrDefault("urlNotification", ""), string.Join(",", fields.Keys.Where(k => k != "signature")),
             fields["signature"][..16] + "...");
 
         return (actionUrl, fields);
@@ -329,10 +333,12 @@ public class PaymentService : IPaymentService
 
     private static string ComputeImojeSignature(Dictionary<string, string> fields, string serviceKey)
     {
-        // Match PHP SDK: ksort() → "key=value&..." → SHA256(data + serviceKey) → append ";sha256"
-        var sorted = fields.OrderBy(k => k.Key, StringComparer.Ordinal);
-        var data   = string.Join("&", sorted.Select(k => $"{k.Key}={k.Value}"));
-        var hash   = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(data + serviceKey))).ToLower();
+        // Match PHP SDK: ksort(), skip empty values, "key=value&...", SHA256(data+serviceKey), ";sha256"
+        var sorted = fields
+            .Where(kv => !string.IsNullOrEmpty(kv.Value))
+            .OrderBy(kv => kv.Key, StringComparer.Ordinal);
+        var data = string.Join("&", sorted.Select(kv => $"{kv.Key}={kv.Value}"));
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(data + serviceKey))).ToLower();
         return $"{hash};sha256";
     }
 
