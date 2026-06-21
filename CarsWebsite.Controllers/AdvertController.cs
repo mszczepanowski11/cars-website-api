@@ -1,9 +1,7 @@
-using cars_website_api.CarsWebsite.DTOs.Advert;
 using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Net.Http.Json;
 using System.Security.Claims;
 
 [ApiController]
@@ -14,15 +12,13 @@ public class AdvertController : ControllerBase
     private readonly IAdvertImageService _imageService;
     private readonly IUserService _userService;
     private readonly ILogger<AdvertController> _logger;
-    private readonly IConfiguration _configuration;
 
-    public AdvertController(IAdvertService advertService, IAdvertImageService imageService, IUserService userService, ILogger<AdvertController> logger, IConfiguration configuration)
+    public AdvertController(IAdvertService advertService, IAdvertImageService imageService, IUserService userService, ILogger<AdvertController> logger)
     {
         _advertService = advertService;
         _imageService = imageService;
         _userService = userService;
         _logger = logger;
-        _configuration = configuration;
     }
 
     private int GetUserId()
@@ -287,77 +283,4 @@ public class AdvertController : ControllerBase
         catch (UnauthorizedAccessException) { return Forbid(); }
     }
 
-    [HttpPost("ai-description")]
-    [Authorize]
-    public async Task<IActionResult> GenerateDescription([FromBody] AiDescriptionRequestDto dto)
-    {
-        var apiKey = _configuration["Anthropic:ApiKey"];
-        if (string.IsNullOrWhiteSpace(apiKey))
-            return StatusCode(503, new { message = "Generowanie AI tymczasowo niedostępne." });
-
-        // Build the prompt
-        var parts = new List<string>();
-        if (!string.IsNullOrWhiteSpace(dto.Brand)) parts.Add($"Marka: {dto.Brand}");
-        if (!string.IsNullOrWhiteSpace(dto.Model)) parts.Add($"Model: {dto.Model}");
-        if (!string.IsNullOrWhiteSpace(dto.Generation)) parts.Add($"Generacja: {dto.Generation}");
-        if (dto.Year.HasValue) parts.Add($"Rok produkcji: {dto.Year}");
-        if (dto.Mileage.HasValue) parts.Add($"Przebieg: {dto.Mileage:N0} km");
-        if (!string.IsNullOrWhiteSpace(dto.FuelType)) parts.Add($"Paliwo: {dto.FuelType}");
-        if (dto.PowerHP.HasValue) parts.Add($"Moc: {dto.PowerHP} KM");
-        if (dto.EngineCapacity.HasValue) parts.Add($"Pojemność: {dto.EngineCapacity} cm³");
-        if (!string.IsNullOrWhiteSpace(dto.Gearbox)) parts.Add($"Skrzynia biegów: {dto.Gearbox}");
-        if (dto.HasServiceBook) parts.Add("Książka serwisowa: TAK");
-        if (dto.HasFullServiceHistory) parts.Add("Pełna historia ASO: TAK");
-        if (dto.OwnersCount.HasValue) parts.Add($"Liczba właścicieli: {dto.OwnersCount}");
-        if (!string.IsNullOrWhiteSpace(dto.Condition)) parts.Add($"Stan: {dto.Condition}");
-        if (dto.FeaturesCount > 0) parts.Add($"Wyposażenie: {dto.FeaturesCount} opcji");
-
-        var vehicleInfo = string.Join("\n", parts);
-        var prompt = $"""
-Jesteś ekspertem od sprzedaży samochodów w Polsce. Na podstawie poniższych danych technicznych napisz profesjonalny opis ogłoszenia sprzedaży pojazdu.
-
-Dane pojazdu:
-{vehicleInfo}
-
-Zasady:
-- Napisz opis po polsku, w 3-4 akapitach
-- Zacznij od zdania zachęcającego kupującego
-- Opisz mocne strony pojazdu bazując na podanych danych
-- Wspomnij o historii serwisowej jeśli dane są korzystne
-- Zakończ zaproszeniem do kontaktu lub jazdy próbnej
-- Długość: 300-500 słów
-- Ton: profesjonalny, ale przyjazny — jak sprzedawca który zna się na autach
-- NIE wymyślaj informacji których nie ma w danych
-
-Napisz wyłącznie treść opisu, bez żadnych nagłówków ani wprowadzeń.
-""";
-
-        try
-        {
-            using var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Add("x-api-key", apiKey);
-            httpClient.DefaultRequestHeaders.Add("anthropic-version", "2023-06-01");
-
-            var requestBody = new
-            {
-                model = "claude-haiku-4-5-20251001",
-                max_tokens = 1024,
-                messages = new[] { new { role = "user", content = prompt } }
-            };
-
-            var response = await httpClient.PostAsJsonAsync("https://api.anthropic.com/v1/messages", requestBody);
-            if (!response.IsSuccessStatusCode)
-                return StatusCode(502, new { message = "Błąd komunikacji z AI. Spróbuj ponownie." });
-
-            var result = await response.Content.ReadFromJsonAsync<AnthropicResponse>();
-            var text = result?.Content?.FirstOrDefault()?.Text ?? "";
-
-            return Ok(new { description = text.Trim() });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "[AI Description] Error calling Anthropic API");
-            return StatusCode(502, new { message = "Błąd komunikacji z AI. Spróbuj ponownie." });
-        }
-    }
 }
