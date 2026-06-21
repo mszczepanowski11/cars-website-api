@@ -90,9 +90,17 @@ public class AdvertController : ControllerBase
             }
         }
 
-        var id = await _advertService.CreateCarAdvertAsync(dto, userId);
-        _logger.LogInformation("[Advert/Create] Created advertId={AdvertId} userId={UserId}", id, userId);
-        return CreatedAtAction(nameof(GetById), new { id }, new { id });
+        try
+        {
+            var id = await _advertService.CreateCarAdvertAsync(dto, userId);
+            _logger.LogInformation("[Advert/Create] Created advertId={AdvertId} userId={UserId}", id, userId);
+            return CreatedAtAction(nameof(GetById), new { id }, new { id });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[Advert/Create] FAILED userId={UserId} msg={Message} inner={Inner}", userId, ex.Message, ex.InnerException?.Message);
+            return StatusCode(500, new { message = ex.InnerException?.Message ?? ex.Message });
+        }
     }
 
     [Authorize]
