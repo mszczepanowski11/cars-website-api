@@ -603,6 +603,15 @@ internal class Program
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `payments` ADD COLUMN `BillingCity` varchar(100) NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN payments.BillingCity skipped: {Message}", ex.Message); }
 
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `newslettersubscribers` ADD COLUMN `IsConfirmed` tinyint(1) NOT NULL DEFAULT 0"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN newslettersubscribers.IsConfirmed skipped: {Message}", ex.Message); }
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `newslettersubscribers` ADD COLUMN `ConfirmationToken` varchar(64) NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN newslettersubscribers.ConfirmationToken skipped: {Message}", ex.Message); }
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `newslettersubscribers` ADD COLUMN `ConfirmationTokenExpires` datetime(6) NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN newslettersubscribers.ConfirmationTokenExpires skipped: {Message}", ex.Message); }
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `newslettersubscribers` ADD COLUMN `ConfirmedAt` datetime(6) NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN newslettersubscribers.ConfirmedAt skipped: {Message}", ex.Message); }
+
             // Fix brands seeded with numeric names
             try
             {
