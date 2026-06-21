@@ -999,6 +999,36 @@ internal class Program
         }
 
 
+        // Deduplicate brands if same slug was inserted multiple times
+        try
+        {
+            var duplicateSlugs = db.Brands
+                .GroupBy(b => b.Slug)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key)
+                .ToList();
+
+            if (duplicateSlugs.Any())
+            {
+                logger.LogWarning("Found {Count} duplicate brand slugs — deduplicating", duplicateSlugs.Count);
+                foreach (var slug in duplicateSlugs)
+                {
+                    var dupes = db.Brands.Where(b => b.Slug == slug).OrderBy(b => b.Id).ToList();
+                    var keepId = dupes.First().Id;
+                    var deleteIds = string.Join(",", dupes.Skip(1).Select(b => b.Id));
+                    db.Database.ExecuteSqlRaw($"DELETE FROM `brandvehiclecategories` WHERE `BrandsId` IN ({deleteIds})");
+                    db.Database.ExecuteSqlRaw($"UPDATE `caradverts` SET `BrandId` = {keepId} WHERE `BrandId` IN ({deleteIds})");
+                    db.Database.ExecuteSqlRaw($"DELETE FROM `brands` WHERE `Id` IN ({deleteIds})");
+                }
+                logger.LogInformation("Brand deduplication complete");
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning("Brand deduplication skipped: {Message}", ex.Message);
+        }
+
+        if (!db.Brands.Any())
         {
             var catList = db.VehicleCategories.ToList();
             var carCat    = catList.FirstOrDefault(c => c.Slug == "auta-osobowe");
@@ -1086,7 +1116,7 @@ internal class Program
             db.Brands.AddRange(brands);
             db.SaveChanges();
             logger.LogInformation("Seeded {Count} brands", brands.Count);
-        }
+        } // end if (!db.Brands.Any())
 
         // Brands for budowlane and przyczepy (may be missing from initial seed)
         {
