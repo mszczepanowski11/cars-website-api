@@ -92,6 +92,29 @@ public class PaymentController : ControllerBase
         catch (InvalidOperationException ex) when (ex.Message == "Amount mismatch") { return BadRequest(new { message = "Amount mismatch" }); }
     }
 
+    /// <summary>Diagnostyka konfiguracji imoje (bez ujawniania kluczy).</summary>
+    [Authorize(Policy = "AdminOnly")]
+    [HttpGet("admin/imoje-config")]
+    public IActionResult ImojeConfig([FromServices] IConfiguration config)
+    {
+        var s = config.GetSection("Imoje");
+        return Ok(new
+        {
+            serviceIdSet     = !string.IsNullOrEmpty(s["ServiceId"]),
+            serviceIdLength  = s["ServiceId"]?.Length ?? 0,
+            serviceIdPrefix  = s["ServiceId"]?.Length > 8 ? s["ServiceId"]![..8] + "..." : s["ServiceId"],
+            serviceKeySet    = !string.IsNullOrEmpty(s["ServiceKey"]),
+            serviceKeyLength = s["ServiceKey"]?.Length ?? 0,
+            merchantIdSet    = !string.IsNullOrEmpty(s["MerchantId"]),
+            merchantIdLength = s["MerchantId"]?.Length ?? 0,
+            webhookSecretSet = !string.IsNullOrEmpty(s["WebhookSecret"]),
+            sandbox          = string.Equals(s["Environment"], "sandbox", StringComparison.OrdinalIgnoreCase),
+            environment      = s["Environment"] ?? "(not set — defaults to production)",
+            siteUrl          = s["SiteUrl"] ?? "(not set)",
+            apiUrl           = s["ApiUrl"] ?? "(not set)",
+        });
+    }
+
     [Authorize(Policy = "AdminOnly")]
     [HttpGet("admin/all")]
     public async Task<IActionResult> AdminGetAll(
