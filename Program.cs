@@ -197,7 +197,47 @@ internal class Program
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            // Bootstrap EF Core migration history for databases that were created via
+            // EnsureCreated before formal migrations were adopted. On a fresh DB,
+            // EnsureCreated builds the schema; then MigrateAsync applies only the new
+            // pending migrations (e.g. indexes). On an existing DB without migration
+            // history we pre-mark historical migrations as applied so MigrateAsync
+            // only runs the new ones.
             db.Database.EnsureCreated();
+            try
+            {
+                var histLogger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
+                db.Database.ExecuteSqlRaw(@"
+                    CREATE TABLE IF NOT EXISTS `__EFMigrationsHistory` (
+                        `MigrationId` varchar(150) CHARACTER SET utf8mb4 NOT NULL,
+                        `ProductVersion` varchar(32) CHARACTER SET utf8mb4 NOT NULL,
+                        PRIMARY KEY (`MigrationId`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+                var applied = db.Database.GetAppliedMigrations().ToHashSet();
+                if (!applied.Any())
+                {
+                    // DB was created via EnsureCreated — mark all pre-existing migrations
+                    // as applied so MigrateAsync only runs genuinely new ones.
+                    var allMigrations = db.Database.GetMigrations().ToList();
+                    var newMigration = "20260621000000_AddMissingIndexesAndConstraints";
+                    foreach (var m in allMigrations.Where(m => m != newMigration))
+                    {
+                        db.Database.ExecuteSqlRaw(
+                            $"INSERT IGNORE INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) VALUES ('{m}', '9.0.0')");
+                    }
+                    histLogger.LogInformation("[Migrations] Bootstrapped migration history with {Count} pre-existing migrations", allMigrations.Count - 1);
+                }
+
+                db.Database.Migrate();
+                histLogger.LogInformation("[Migrations] MigrateAsync completed");
+            }
+            catch (Exception ex)
+            {
+                var histLogger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
+                histLogger.LogWarning("[Migrations] Migration bootstrap failed (non-fatal): {Msg}", ex.Message);
+            }
 
             var logger = scope.ServiceProvider
                 .GetRequiredService<ILogger<AppDbContext>>();
