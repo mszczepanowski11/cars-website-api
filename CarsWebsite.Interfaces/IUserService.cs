@@ -15,4 +15,5 @@ public interface IUserService
     Task<UserSettingsDto> UpdateSettingsAsync(int userId, UserSettingsDto dto);
     Task DeleteAccountAsync(int userId);
     Task<PublicUserProfileDto?> GetPublicProfileAsync(int userId);
+    Task<object> ExportUserDataAsync(int userId);
 }

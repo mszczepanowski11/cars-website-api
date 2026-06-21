@@ -80,7 +80,7 @@ internal class Program
         var cloudApiKey = (Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY")       ?? "").Trim();
         var cloudSecret = (Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET")    ?? "").Trim();
 
-        Console.WriteLine($"[Cloudinary] cloud={cloudName}, key={cloudApiKey}, secret={(cloudSecret.Length > 4 ? cloudSecret[..4] + "****" : "(empty)")}");
+        Console.WriteLine($"[Cloudinary] cloud={cloudName}, key={(cloudApiKey.Length > 4 ? cloudApiKey[..4] + "****" : "(empty)")}, secret={(cloudSecret.Length > 4 ? cloudSecret[..4] + "****" : "(empty)")}");
 
         // Use placeholder credentials when env vars are missing so the API still starts.
         // Actual uploads will fail at runtime with a clear error rather than crashing the container.
@@ -611,13 +611,21 @@ internal class Program
                     exLogger.LogError(feature.Error, "[GlobalExceptionHandler] Unhandled exception at {Path}", context.Request.Path);
                 context.Response.StatusCode = 500;
                 context.Response.ContentType = "application/json";
-                await context.Response.WriteAsJsonAsync(new { message = feature?.Error?.Message ?? "Internal server error" });
+                await context.Response.WriteAsJsonAsync(new { message = "Internal server error" });
             });
         });
 
-        app.UseSwagger();
-        app.UseSwaggerUI();
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI();
+        }
 
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
+                             | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+        });
         app.UseStaticFiles();
         app.UseHttpsRedirection();
         app.UseCors("AllowNuxt");

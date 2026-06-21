@@ -12,9 +12,9 @@ public class StatsController : ControllerBase
     [HttpGet("home")]
     public async Task<IActionResult> GetHomeStats()
     {
-        var activeAdverts = await _context.Adverts.CountAsync(a => a.IsActive && !a.IsHidden);
+        var activeAdverts = await _context.CarAdverts.CountAsync(a => a.IsActive && !a.IsHidden);
         var totalUsers = await _context.Users.CountAsync();
-        var soldVehicles = await _context.Adverts.CountAsync(a => a.SoldAt != null);
+        var soldVehicles = await _context.CarAdverts.CountAsync(a => a.SoldAt != null);
         var companies = await _context.Users.CountAsync(u => u.AccountType == AccountType.Business);
         var events = await _context.Events.CountAsync(e => e.Status == EventStatus.Published);
         return Ok(new { activeAdverts, totalUsers, soldVehicles, companies, events });

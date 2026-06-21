@@ -124,6 +124,9 @@ public class UserService : IUserService
 
     public async Task UpdatePasswordAsync(int userId, string currentPassword, string newPassword)
     {
+        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 8)
+            throw new ArgumentException("Hasło musi mieć co najmniej 8 znaków.");
+
         var user = await _context.Users.FindAsync(userId)
             ?? throw new KeyNotFoundException("User not found.");
 
@@ -171,18 +174,33 @@ public class UserService : IUserService
         user.Email = $"deleted_{userId}_{Guid.NewGuid():N}@carizo.deleted";
         user.Name = "Usunięty";
         user.Surname = "Użytkownik";
-        user.PhoneNumber = "";
+        user.PhoneNumber = null;
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString());
         user.AvatarUrl = null;
+        user.City = null;
+        user.Region = null;
+        user.Street = null;
+        user.PostalCode = null;
+        user.Country = null;
         user.About = null;
+        user.CompanyName = null;
+        user.Nip = null;
         user.GoogleId = null;
-        user.RefreshToken = null;
-        user.RefreshTokenExpiry = null;
-        user.PasswordHash = "";
+        user.FacebookId = null;
         user.IsBlocked = true;
         user.BlockedAt = DateTime.UtcNow;
         user.BlockedReason = "Konto usunięte przez użytkownika";
+        user.EmailVerified = false;
         user.EmailVerificationToken = null;
+        user.EmailVerificationTokenExpires = null;
         user.PasswordResetToken = null;
+        user.PasswordResetTokenExpires = null;
+
+        var tokens = await _context.RefreshTokens
+            .Where(t => t.UserId == userId && !t.IsRevoked)
+            .ToListAsync();
+        foreach (var t in tokens) t.IsRevoked = true;
+
         await _context.SaveChangesAsync();
     }
 
@@ -204,6 +222,46 @@ public class UserService : IUserService
             CompanyName = user.CompanyName,
             CreatedAt = user.CreatedAt,
             EmailVerified = user.EmailVerified
+        };
+    }
+
+    public async Task<object> ExportUserDataAsync(int userId)
+    {
+        var user = await _context.Users
+            .Include(u => u.Adverts)
+            .FirstOrDefaultAsync(u => u.Id == userId)
+            ?? throw new KeyNotFoundException("Użytkownik nie istnieje.");
+
+        var adverts = await _context.CarAdverts
+            .Where(a => a.UserId == userId)
+            .Select(a => new { a.Id, a.Title, a.Price, a.CreatedAt, a.IsActive })
+            .ToListAsync();
+
+        var favorites = await _context.FavoriteAdverts
+            .Where(f => f.UserId == userId)
+            .Select(f => new { f.AdvertId, f.CreatedAt })
+            .ToListAsync();
+
+        var messages = await _context.Messages
+            .Where(m => m.SenderId == userId)
+            .Select(m => new { m.Id, m.Content, m.SentAt, m.ConversationId })
+            .ToListAsync();
+
+        return new
+        {
+            exportedAt = DateTime.UtcNow,
+            profile = new
+            {
+                user.Id, user.Name, user.Surname, user.Email, user.PhoneNumber,
+                user.AccountType, user.CompanyName, user.Nip,
+                user.City, user.Region, user.Street, user.PostalCode, user.Country,
+                user.About, user.AvatarUrl, user.EmailVerified,
+                user.EmailNotifications, user.PriceChangeAlerts, user.NewMessageAlerts,
+                user.NewsletterSubscribed, user.CreatedAt, user.LastLoginAt
+            },
+            adverts,
+            favorites,
+            sentMessages = messages
         };
     }
 }

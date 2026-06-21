@@ -18,13 +18,15 @@ namespace cars_website_api.CarsWebsite.Services
         public async Task<AdminStatsDto> GetStatsAsync()
         {
             var now = DateTime.UtcNow;
+            var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var monthEnd = monthStart.AddMonths(1);
             return new AdminStatsDto
             {
                 TotalActiveAdverts = await _context.CarAdverts.CountAsync(a => a.IsActive && !a.IsHidden),
                 TotalUsers = await _context.Users.CountAsync(),
                 TotalReports = await _context.Reports.CountAsync(),
                 PendingReports = await _context.Reports.CountAsync(r => r.Status == ReportStatus.Pending),
-                NewRegistrationsThisMonth = await _context.Users.CountAsync(u => u.CreatedAt.Month == now.Month && u.CreatedAt.Year == now.Year),
+                NewRegistrationsThisMonth = await _context.Users.CountAsync(u => u.CreatedAt >= monthStart && u.CreatedAt < monthEnd),
                 BlockedUsers = await _context.Users.CountAsync(u => u.IsBlocked)
             };
         }
@@ -151,14 +153,18 @@ namespace cars_website_api.CarsWebsite.Services
 
         public async Task DeleteUserAsync(int userId, int adminUserId, string? note)
         {
+            if (userId == adminUserId)
+                throw new InvalidOperationException("Admin nie może usunąć własnego konta z panelu administracyjnego.");
             var user = await _context.Users.FindAsync(userId)
-                ?? throw new KeyNotFoundException("User not found");
+                ?? throw new KeyNotFoundException("Użytkownik nie istnieje.");
+            if (user.IsAdmin)
+                throw new InvalidOperationException("Nie można usunąć konta administratora.");
 
             // Anonymize for RODO compliance instead of hard delete
             user.Name = "Usunięty";
             user.Surname = "Użytkownik";
             user.Email = $"deleted_{userId}@carizo.deleted";
-            user.PasswordHash = string.Empty;
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString());
             user.PhoneNumber = null;
             user.AvatarUrl = null;
             user.About = null;
@@ -170,6 +176,10 @@ namespace cars_website_api.CarsWebsite.Services
             user.Nip = null;
             user.IsBlocked = true;
             user.BlockedReason = "Konto usunięte przez administratora";
+            user.PasswordResetToken = null;
+            user.PasswordResetTokenExpires = null;
+            user.EmailVerificationToken = null;
+            user.EmailVerificationTokenExpires = null;
 
             // Soft-delete all adverts belonging to this user
             var adverts = await _context.CarAdverts.Where(a => a.UserId == userId).ToListAsync();

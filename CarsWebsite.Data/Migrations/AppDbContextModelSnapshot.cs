@@ -977,6 +977,9 @@ namespace cars_website_api.Migrations
                     b.Property<bool>("NewsletterSubscribed")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<string>("FacebookId")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("GoogleId")
                         .HasColumnType("longtext");
 
@@ -1011,6 +1014,10 @@ namespace cars_website_api.Migrations
 
                     b.HasIndex("Email")
                         .IsUnique();
+
+                    b.HasIndex("GoogleId");
+
+                    b.HasIndex("FacebookId");
 
                     b.ToTable("Users");
                 });

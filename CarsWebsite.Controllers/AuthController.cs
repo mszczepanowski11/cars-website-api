@@ -20,11 +20,17 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterDto dto)
     {
-        var result = await _authService.Register(dto);
-        if (result == null)
-            return Conflict("An account with this email already exists.");
-
-        return StatusCode(201, result);
+        try
+        {
+            var result = await _authService.Register(dto);
+            if (result == null)
+                return Conflict(new { message = "Konto z tym adresem email już istnieje." });
+            return StatusCode(201, result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPost("login")]
@@ -131,6 +137,25 @@ public class AuthController : ControllerBase
             return errorVal == "blocked"
                 ? Unauthorized("Konto zostało zablokowane.")
                 : Unauthorized("Nie można zalogować przez Google.");
+        }
+
+        return Ok(result);
+    }
+
+    [HttpPost("facebook")]
+    public async Task<IActionResult> FacebookLogin([FromBody] FacebookLoginDto dto)
+    {
+        var result = await _authService.FacebookLoginAsync(dto.AccessToken);
+        if (result == null) return Unauthorized("Nie można zalogować przez Facebook.");
+
+        var resultType = result.GetType();
+        var errorProp = resultType.GetProperty("error");
+        if (errorProp != null)
+        {
+            var errorVal = errorProp.GetValue(result)?.ToString();
+            return errorVal == "blocked"
+                ? Unauthorized("Konto zostało zablokowane.")
+                : Unauthorized("Nie można zalogować przez Facebook.");
         }
 
         return Ok(result);

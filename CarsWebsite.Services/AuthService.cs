@@ -19,18 +19,36 @@ public class AuthService : IAuthService
     private readonly IConfiguration _configuration;
     private readonly IEmailService _email;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<AuthService> _logger;
 
-    public AuthService(AppDbContext context, IConfiguration configuration, IEmailService email, IHttpClientFactory httpClientFactory)
+    public AuthService(AppDbContext context, IConfiguration configuration, IEmailService email, IHttpClientFactory httpClientFactory, ILogger<AuthService> logger)
     {
         _context = context;
         _configuration = configuration;
         _email = email;
         _httpClientFactory = httpClientFactory;
+        _logger = logger;
+    }
+
+    private static void ValidatePasswordStrength(string password)
+    {
+        if (string.IsNullOrWhiteSpace(password) || password.Length < 8)
+            throw new ArgumentException("Hasło musi mieć co najmniej 8 znaków.");
     }
 
     public async Task<object?> Register(RegisterDto dto)
     {
-        if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
+        ValidatePasswordStrength(dto.Password);
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var age = today.Year - dto.DateOfBirth.Year;
+        if (dto.DateOfBirth.AddYears(age) > today) age--;
+        if (age < 18)
+            throw new InvalidOperationException("Musisz mieć ukończone 18 lat, aby założyć konto.");
+
+        var normalizedEmail = (dto.Email ?? "").Trim().ToLowerInvariant();
+
+        if (await _context.Users.AnyAsync(u => u.Email == normalizedEmail))
             return null;
 
         var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
@@ -39,9 +57,10 @@ public class AuthService : IAuthService
         {
             Name = dto.Name,
             Surname = dto.Surname,
-            Email = dto.Email,
+            Email = normalizedEmail,
             PhoneNumber = dto.PhoneNumber,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+            DateOfBirth = dto.DateOfBirth.ToDateTime(TimeOnly.MinValue),
             AccountType = dto.AccountType,
             BusinessType = dto.BusinessType,
             CompanyName = dto.CompanyName,
@@ -70,7 +89,8 @@ public class AuthService : IAuthService
 
     public async Task<object?> Login(LoginDto dto)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+        var normalizedEmail = (dto.Email ?? "").Trim().ToLowerInvariant();
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail);
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
             return null;
@@ -81,38 +101,48 @@ public class AuthService : IAuthService
         if (!user.EmailVerified)
             return new { error = "unverified" };
 
-        var refreshToken = GenerateRefreshToken();
-        user.RefreshToken = refreshToken;
-        user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(30);
         user.LastLoginAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
-
-        return new { token = GenerateToken(user), refreshToken };
+        return await IssueTokenPairAsync(user);
     }
 
     public async Task<object?> RefreshAsync(string refreshToken)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u =>
-            u.RefreshToken == refreshToken && u.RefreshTokenExpiry > DateTime.UtcNow);
+        var record = await _context.RefreshTokens
+            .Include(t => t.User)
+            .FirstOrDefaultAsync(t => t.Token == refreshToken);
 
-        if (user == null) return null;
-        if (user.IsBlocked) return new { error = "blocked" };
+        if (record == null || record.IsRevoked || record.ExpiresAt <= DateTime.UtcNow)
+            return null;
 
-        var newRefreshToken = GenerateRefreshToken();
-        user.RefreshToken = newRefreshToken;
-        user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(30);
+        if (record.User.IsBlocked) return new { error = "blocked" };
+
+        record.IsRevoked = true;
+        var newPair = await IssueTokenPairAsync(record.User);
         await _context.SaveChangesAsync();
-
-        return new { token = GenerateToken(user), refreshToken = newRefreshToken };
+        return newPair;
     }
 
     public async Task RevokeAsync(string refreshToken)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
-        if (user == null) return;
-        user.RefreshToken = null;
-        user.RefreshTokenExpiry = null;
+        var record = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.Token == refreshToken);
+        if (record == null) return;
+        record.IsRevoked = true;
         await _context.SaveChangesAsync();
+    }
+
+    private async Task<object> IssueTokenPairAsync(User user)
+    {
+        var raw = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
+        _context.RefreshTokens.Add(new RefreshToken
+        {
+            Token = raw,
+            UserId = user.Id,
+            ExpiresAt = DateTime.UtcNow.AddDays(30),
+            CreatedAt = DateTime.UtcNow
+        });
+        await _context.SaveChangesAsync();
+        return new { token = GenerateToken(user), refreshToken = raw };
     }
 
     public async Task ForgotPasswordAsync(string email)
@@ -136,12 +166,12 @@ public class AuthService : IAuthService
 
     public async Task<bool> ResetPasswordAsync(string token, string newPassword)
     {
+        ValidatePasswordStrength(newPassword);
+
         var user = await _context.Users.FirstOrDefaultAsync(u => u.PasswordResetToken == token);
         if (user == null || user.PasswordResetTokenExpires < DateTime.UtcNow) return false;
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
-        user.RefreshToken = null;
-        user.RefreshTokenExpiry = null;
         user.PasswordResetToken = null;
         user.PasswordResetTokenExpires = null;
         await _context.SaveChangesAsync();
@@ -199,7 +229,10 @@ public class AuthService : IAuthService
         var clientId = _configuration["Google:ClientId"]
             ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
         if (string.IsNullOrEmpty(clientId))
+        {
+            _logger.LogError("[GoogleLogin] Google:ClientId nie skonfigurowany — logowanie przez Google wyłączone.");
             return null;
+        }
         if (payload.Aud != clientId) return null;
 
         var user = await _context.Users.FirstOrDefaultAsync(u => u.GoogleId == payload.Sub)
@@ -229,11 +262,8 @@ public class AuthService : IAuthService
 
         if (user.IsBlocked) return new { error = "blocked" };
 
-        var rt = GenerateRefreshToken();
-        user.RefreshToken = rt;
-        user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(30);
-        await _context.SaveChangesAsync();
-        return new { token = GenerateToken(user), refreshToken = rt };
+        user.LastLoginAt = DateTime.UtcNow;
+        return await IssueTokenPairAsync(user);
     }
 
     private static string GenerateRefreshToken()
@@ -266,6 +296,66 @@ public class AuthService : IAuthService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    public async Task<object?> FacebookLoginAsync(string accessToken)
+    {
+        var appSecret = _configuration["Facebook:AppSecret"]
+            ?? Environment.GetEnvironmentVariable("FACEBOOK_APP_SECRET") ?? "";
+        if (string.IsNullOrEmpty(appSecret))
+        {
+            _logger.LogError("[FacebookLogin] Facebook:AppSecret nie skonfigurowany — logowanie wyłączone.");
+            return null;
+        }
+        using var hmac = new System.Security.Cryptography.HMACSHA256(System.Text.Encoding.UTF8.GetBytes(appSecret));
+        var proof = Convert.ToHexString(hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(accessToken))).ToLowerInvariant();
+        var graphUrl = $"https://graph.facebook.com/me?fields=id,name,first_name,last_name,email&access_token={Uri.EscapeDataString(accessToken)}&appsecret_proof={proof}";
+
+        var httpClient = _httpClientFactory.CreateClient();
+        FacebookUserPayload? payload;
+        try
+        {
+            payload = await httpClient.GetFromJsonAsync<FacebookUserPayload>(graphUrl);
+        }
+        catch { return null; }
+
+        if (payload == null || string.IsNullOrEmpty(payload.Id))
+            return null;
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.FacebookId == payload.Id)
+                ?? (!string.IsNullOrEmpty(payload.Email)
+                    ? await _context.Users.FirstOrDefaultAsync(u => u.Email == payload.Email)
+                    : null);
+
+        if (user == null)
+        {
+            if (string.IsNullOrEmpty(payload.Email))
+                return null;
+
+            user = new User
+            {
+                Name = payload.FirstName ?? payload.Name?.Split(' ').FirstOrDefault() ?? "Użytkownik",
+                Surname = payload.LastName ?? (payload.Name?.Contains(' ') == true ? payload.Name.Substring(payload.Name.IndexOf(' ') + 1) : "Facebook"),
+                Email = payload.Email,
+                PhoneNumber = string.Empty,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
+                EmailVerified = true,
+                FacebookId = payload.Id,
+            };
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+        }
+        else if (user.FacebookId == null)
+        {
+            user.FacebookId = payload.Id;
+            if (!user.EmailVerified) user.EmailVerified = true;
+            await _context.SaveChangesAsync();
+        }
+
+        if (user.IsBlocked) return new { error = "blocked" };
+
+        user.LastLoginAt = DateTime.UtcNow;
+        return await IssueTokenPairAsync(user);
+    }
+
     private sealed class GoogleTokenPayload
     {
         [JsonPropertyName("sub")]          public string Sub          { get; set; } = string.Empty;
@@ -274,5 +364,14 @@ public class AuthService : IAuthService
         [JsonPropertyName("given_name")]   public string? GivenName   { get; set; }
         [JsonPropertyName("family_name")]  public string? FamilyName  { get; set; }
         [JsonPropertyName("aud")]          public string? Aud         { get; set; }
+    }
+
+    private sealed class FacebookUserPayload
+    {
+        [JsonPropertyName("id")]         public string? Id        { get; set; }
+        [JsonPropertyName("name")]       public string? Name      { get; set; }
+        [JsonPropertyName("first_name")] public string? FirstName { get; set; }
+        [JsonPropertyName("last_name")]  public string? LastName  { get; set; }
+        [JsonPropertyName("email")]      public string? Email     { get; set; }
     }
 }

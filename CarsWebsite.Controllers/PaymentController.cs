@@ -85,6 +85,7 @@ public class PaymentController : ControllerBase
             return Ok();
         }
         catch (UnauthorizedAccessException) { return Unauthorized(); }
+        catch (InvalidOperationException ex) when (ex.Message == "Amount mismatch") { return BadRequest(new { message = "Amount mismatch" }); }
     }
 
     [Authorize(Policy = "AdminOnly")]

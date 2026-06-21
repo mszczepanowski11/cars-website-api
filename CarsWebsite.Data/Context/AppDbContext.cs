@@ -52,6 +52,9 @@ namespace CarsWebsite
         public DbSet<EventAttendee> EventAttendees { get; set; }
         public DbSet<EventFavourite> EventFavourites { get; set; }
 
+        // Auth
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
+
         // Newsletter
         public DbSet<NewsletterSubscriber> NewsletterSubscribers { get; set; }
 
@@ -225,10 +228,6 @@ namespace CarsWebsite
             modelBuilder.Entity<EventFavourite>().ToTable("EventFavourites").HasKey(f => f.Id);
             modelBuilder.Entity<EventFavourite>().HasIndex(f => new { f.EventId, f.UserId }).IsUnique();
 
-            // Newsletter
-            modelBuilder.Entity<NewsletterSubscriber>().ToTable("NewsletterSubscribers").HasKey(n => n.Id);
-            modelBuilder.Entity<NewsletterSubscriber>().HasIndex(n => n.Email).IsUnique();
-
             // Many-to-many: Brand ↔ VehicleCategory
             modelBuilder.Entity<Brand>()
                 .HasMany(b => b.Categories)
@@ -241,6 +240,40 @@ namespace CarsWebsite
                 .WithMany()
                 .HasForeignKey(fc => fc.VehicleCategoryId)
                 .IsRequired(false);
+
+            // Performance indexes for common query patterns
+            modelBuilder.Entity<Advert>()
+                .HasIndex(a => new { a.IsActive, a.IsHidden });
+            modelBuilder.Entity<CarAdvert>()
+                .HasIndex(a => a.UserId);
+            modelBuilder.Entity<CarAdvert>()
+                .HasIndex(a => new { a.BrandId, a.ModelId });
+            modelBuilder.Entity<CarAdvert>()
+                .HasIndex(a => a.FuelTypeId);
+            modelBuilder.Entity<CarAdvert>()
+                .HasIndex(a => a.Badge);
+            modelBuilder.Entity<Conversation>()
+                .HasIndex(c => new { c.BuyerId, c.LastMessageAt });
+            modelBuilder.Entity<Message>()
+                .HasIndex(m => new { m.ConversationId, m.IsRead });
+            modelBuilder.Entity<AppNotification>()
+                .HasIndex(n => new { n.UserId, n.IsRead });
+
+            modelBuilder.Entity<RefreshToken>().ToTable("refreshtokens").HasKey(t => t.Id);
+            modelBuilder.Entity<RefreshToken>().HasIndex(t => t.Token).IsUnique();
+            modelBuilder.Entity<RefreshToken>().HasIndex(t => t.UserId);
+            modelBuilder.Entity<RefreshToken>().HasOne(t => t.User).WithMany().HasForeignKey(t => t.UserId).OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<NewsletterSubscriber>().ToTable("newslettersubscribers").HasKey(n => n.Id);
+            modelBuilder.Entity<NewsletterSubscriber>().HasIndex(n => n.Email).IsUnique();
+
+            // Additional performance indexes (SR-9)
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.Price);
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.Year);
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.CreatedAt);
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.VehicleCategoryId);
+            modelBuilder.Entity<User>().HasIndex(u => u.GoogleId);
+            modelBuilder.Entity<User>().HasIndex(u => u.FacebookId);
 
             // Lowercase every table name so EF Core generates lowercase SQL,
             // matching Railway Linux MySQL where tables were imported with

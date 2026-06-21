@@ -6,6 +6,9 @@ using cars_website_api.CarsWebsite.DTOs.Invoice;
 using cars_website_api.CarsWebsite.DTOs.Payment;
 using cars_website_api.CarsWebsite.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 
 public class InvoiceService : IInvoiceService
 {
@@ -149,6 +152,107 @@ public class InvoiceService : IInvoiceService
         return Encoding.UTF8.GetBytes(BuildInvoiceHtml(invoice));
     }
 
+    public async Task<byte[]> GenerateInvoicePdfAsync(int id, int userId, bool isAdmin = false)
+    {
+        var invoice = isAdmin
+            ? await _context.Invoices.Include(i => i.Payments).Include(i => i.User)
+                .FirstOrDefaultAsync(i => i.Id == id)
+            : await _context.Invoices.Include(i => i.Payments).Include(i => i.User)
+                .FirstOrDefaultAsync(i => i.Id == id && i.UserId == userId);
+
+        if (invoice == null) throw new KeyNotFoundException("Faktura nie istnieje.");
+
+        QuestPDF.Settings.License = LicenseType.Community;
+
+        var ci = new System.Globalization.CultureInfo("pl-PL");
+        var monthName = ci.DateTimeFormat.GetMonthName(invoice.Month);
+        var user = invoice.User;
+        var buyerName = user?.AccountType == AccountType.Business && !string.IsNullOrWhiteSpace(user.CompanyName)
+            ? user.CompanyName : $"{user?.Name} {user?.Surname}";
+
+        return Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Margin(40);
+                page.Size(PageSizes.A4);
+                page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Arial"));
+
+                page.Content().Column(col =>
+                {
+                    col.Item().Row(row =>
+                    {
+                        row.RelativeItem().Column(c =>
+                        {
+                            c.Item().Text("Faktura zbiorcza").FontSize(20).Bold();
+                            c.Item().Text($"Nr: {invoice.InvoiceNumber}").FontSize(11);
+                            c.Item().Text($"Okres: {monthName} {invoice.Year}").FontSize(10).FontColor(Colors.Grey.Medium);
+                            c.Item().Text($"Wystawiono: {invoice.GeneratedAt:dd.MM.yyyy}").FontSize(10).FontColor(Colors.Grey.Medium);
+                        });
+                        row.RelativeItem().Column(c =>
+                        {
+                            c.Item().Text("CARIZO Wiktor Niezgoda").Bold().AlignRight();
+                            c.Item().Text("NIP: 9452331007").AlignRight();
+                            c.Item().Text("ul. H. Pachońskiego 7/60, 31-223 Kraków").AlignRight();
+                        });
+                    });
+
+                    col.Item().PaddingVertical(12).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+
+                    col.Item().Row(row =>
+                    {
+                        row.RelativeItem().Column(c =>
+                        {
+                            c.Item().Text("NABYWCA").FontSize(8).FontColor(Colors.Grey.Medium);
+                            c.Item().Text(buyerName).Bold();
+                            if (user?.AccountType == AccountType.Business && !string.IsNullOrWhiteSpace(user.Nip))
+                                c.Item().Text($"NIP: {user.Nip}");
+                            c.Item().Text(user?.Email ?? "");
+                        });
+                    });
+
+                    col.Item().PaddingTop(16).Table(table =>
+                    {
+                        table.ColumnsDefinition(columns =>
+                        {
+                            columns.ConstantColumn(25);
+                            columns.RelativeColumn(3);
+                            columns.RelativeColumn(1);
+                            columns.ConstantColumn(90);
+                        });
+
+                        table.Header(header =>
+                        {
+                            header.Cell().Background(Colors.Grey.Lighten3).Padding(6).Text("Lp.").Bold();
+                            header.Cell().Background(Colors.Grey.Lighten3).Padding(6).Text("Opis usługi").Bold();
+                            header.Cell().Background(Colors.Grey.Lighten3).Padding(6).Text("Data").Bold();
+                            header.Cell().Background(Colors.Grey.Lighten3).Padding(6).Text("Kwota brutto").Bold().AlignRight();
+                        });
+
+                        var i = 1;
+                        foreach (var p in invoice.Payments)
+                        {
+                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(6).Text(i++.ToString());
+                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(6).Text(p.ServiceDescription);
+                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(6).Text(p.PaidAt?.ToString("dd.MM.yyyy") ?? "–");
+                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(6).Text($"{p.Amount:0.00} PLN").AlignRight();
+                        }
+                    });
+
+                    col.Item().PaddingTop(12).AlignRight().Column(c =>
+                    {
+                        c.Item().Text($"Wartość netto: {invoice.NetAmount:0.00} PLN");
+                        c.Item().Text($"VAT 23%: {invoice.VatAmount:0.00} PLN");
+                        c.Item().Text($"Razem do zapłaty: {invoice.TotalAmount:0.00} PLN").FontSize(13).Bold();
+                    });
+
+                    col.Item().PaddingTop(30).Text("Dokument wygenerowany automatycznie przez system CARIZO · carizo.pl")
+                        .FontSize(8).FontColor(Colors.Grey.Medium).AlignCenter();
+                });
+            });
+        }).GeneratePdf();
+    }
+
     public async Task<PagedResult<InvoiceResponseDto>> GetAllInvoicesAsync(int page, int pageSize)
     {
         var query = _context.Invoices
@@ -278,8 +382,10 @@ td{padding:9px 12px;border:1px solid #ddd;font-size:13px}
         if (!string.IsNullOrWhiteSpace(buyerAddress))
             sb.Append($"<p>{buyerAddress}</p>");
         sb.Append($"<p>{user?.Email}</p></div>");
-        var companyNip = _config["Company:Nip"] ?? "0000000000";
-        sb.Append($"<div class=\"party\"><h4>Sprzedawca</h4><p><strong>CARIZO Sp. z o.o.</strong></p><p>NIP: {companyNip}</p><p>ul. Przykładowa 1, 00-001 Warszawa</p></div>");
+        sb.Append($"<div class=\"party\"><h4>Sprzedawca</h4>" +
+                  $"<p><strong>CARIZO Wiktor Niezgoda</strong></p>" +
+                  $"<p>NIP: 9452331007</p><p>REGON: 544870688</p>" +
+                  $"<p>ul. Henryka Pachońskiego 7/60, 31-223 Kraków</p></div>");
         sb.Append("</div>");
 
         sb.Append("<table><thead><tr><th>Lp.</th><th>Opis usługi</th><th>Data</th><th style=\"text-align:right\">Kwota brutto</th></tr></thead><tbody>");

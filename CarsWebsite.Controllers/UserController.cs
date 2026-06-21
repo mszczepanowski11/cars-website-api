@@ -127,9 +127,22 @@ public class UserController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[Stats] Unhandled exception for userId={UserId}: {Message}", userId, ex.Message);
-            return StatusCode(500, new { message = "Błąd statystyk: " + ex.Message });
+            _logger.LogError(ex, "[Stats] userId={UserId}", userId);
+            return StatusCode(500, new { message = "Wystąpił błąd pobierania statystyk." });
         }
+    }
+
+    [Authorize]
+    [HttpGet("me/export")]
+    public async Task<IActionResult> ExportData()
+    {
+        var userId = GetUserId();
+        if (userId == 0) return Unauthorized();
+        var data = await _userService.ExportUserDataAsync(userId);
+        return File(
+            System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(data, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
+            "application/json",
+            $"carizo-data-export-{userId}-{DateTime.UtcNow:yyyyMMdd}.json");
     }
 
     [HttpGet("{id:int}/public")]
