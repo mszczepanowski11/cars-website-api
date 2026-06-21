@@ -733,6 +733,340 @@ public static class ModelSeeder
                     E("T7.260 260 KM", 260, 191, 8728, die)) ]},
         ]);
 
+        // ─── DAF ──────────────────────────────────────────────────────────────────
+        if (B("DAF") > 0) models.AddRange([
+            new Model { BrandId = B("DAF"), Name = "XF", Slug = "daf-xf", Generations = [
+                G("XF105 (2006–2017)", "daf-xf105-2006", 2006, 2017,
+                    E("MX-340 340 KM", 340, 250, 12902, die), E("MX-375 375 KM", 375, 276, 12902, die),
+                    E("MX-410 410 KM", 410, 302, 12902, die), E("MX-460 460 KM", 460, 338, 12902, die)),
+                G("XF NG (2017–)", "daf-xf-ng", 2017, null,
+                    E("MX-375 375 KM", 375, 276, 12902, die), E("MX-430 430 KM", 430, 316, 12902, die),
+                    E("MX-480 480 KM", 480, 353, 12902, die), E("MX-530 530 KM", 530, 390, 12902, die)) ]},
+            new Model { BrandId = B("DAF"), Name = "CF", Slug = "daf-cf", Generations = [
+                G("CF85 (2001–2017)", "daf-cf85-2001", 2001, 2017,
+                    E("MX-300 300 KM", 300, 221, 12902, die), E("MX-340 340 KM", 340, 250, 12902, die),
+                    E("MX-375 375 KM", 375, 276, 12902, die), E("MX-410 410 KM", 410, 302, 12902, die)),
+                G("CF NG (2017–)", "daf-cf-ng", 2017, null,
+                    E("MX-310 310 KM", 310, 228, 12902, die), E("MX-350 350 KM", 350, 257, 12902, die),
+                    E("MX-395 395 KM", 395, 291, 12902, die), E("MX-460 460 KM", 460, 338, 12902, die)) ]},
+            new Model { BrandId = B("DAF"), Name = "LF", Slug = "daf-lf", Generations = [
+                G("LF (2006–)", "daf-lf-2006", 2006, null,
+                    E("PX-5 150 KM", 150, 110, 4486, die), E("PX-5 180 KM", 180, 132, 4486, die),
+                    E("PX-7 210 KM", 210, 154, 6728, die), E("PX-7 220 KM", 220, 162, 6728, die)) ]},
+        ]);
+
+        // ─── IVECO ────────────────────────────────────────────────────────────────
+        if (B("Iveco") > 0) models.AddRange([
+            new Model { BrandId = B("Iveco"), Name = "Stralis", Slug = "iveco-stralis", Generations = [
+                G("Stralis I (2002–2012)", "iveco-stralis-i", 2002, 2012,
+                    E("Cursor 10 400 KM", 400, 294, 10308, die), E("Cursor 10 430 KM", 430, 316, 10308, die),
+                    E("Cursor 13 480 KM", 480, 353, 12882, die), E("Cursor 13 500 KM", 500, 368, 12882, die)),
+                G("Stralis Hi-Way (2012–)", "iveco-stralis-hiway", 2012, null,
+                    E("Cursor 10 420 KM", 420, 309, 10308, die), E("Cursor 11 460 KM", 460, 338, 10874, die),
+                    E("Cursor 13 500 KM", 500, 368, 12882, die), E("Cursor 13 560 KM", 560, 412, 12882, die)) ]},
+            new Model { BrandId = B("Iveco"), Name = "Eurocargo", Slug = "iveco-eurocargo", Generations = [
+                G("Eurocargo (2008–)", "iveco-eurocargo-2008", 2008, null,
+                    E("F4AE 150 KM", 150, 110, 3920, die), E("F4AE 180 KM", 180, 132, 3920, die),
+                    E("F4AE 220 KM", 220, 162, 5880, die), E("F4AE 250 KM", 250, 184, 5880, die),
+                    E("F4AE 280 KM", 280, 206, 5880, die)) ]},
+            new Model { BrandId = B("Iveco"), Name = "Daily", Slug = "iveco-daily", Generations = [
+                G("VI (2014–)", "iveco-daily-vi", 2014, null,
+                    E("F1A 120 KM", 120, 88, 2287, die), E("F1A 140 KM", 140, 103, 2287, die),
+                    E("F1C 160 KM", 160, 118, 2998, die), E("F1C 180 KM", 180, 132, 2998, die),
+                    E("F1C 210 KM", 210, 154, 2998, die)) ]},
+        ]);
+
+        // ─── RENAULT TRUCKS ───────────────────────────────────────────────────────
+        if (B("Renault Trucks") > 0) models.AddRange([
+            new Model { BrandId = B("Renault Trucks"), Name = "T-series", Slug = "renault-trucks-t", Generations = [
+                G("T (2013–)", "renault-trucks-t-2013", 2013, null,
+                    E("DTI11 380 KM", 380, 279, 10837, die), E("DTI11 430 KM", 430, 316, 10837, die),
+                    E("DTI13 480 KM", 480, 353, 12777, die), E("DTI13 520 KM", 520, 382, 12777, die)) ]},
+            new Model { BrandId = B("Renault Trucks"), Name = "C-series", Slug = "renault-trucks-c", Generations = [
+                G("C (2013–)", "renault-trucks-c-2013", 2013, null,
+                    E("DTI8 330 KM", 330, 243, 7696, die), E("DTI8 370 KM", 370, 272, 7696, die),
+                    E("DTI11 410 KM", 410, 302, 10837, die), E("DTI11 460 KM", 460, 338, 10837, die)) ]},
+            new Model { BrandId = B("Renault Trucks"), Name = "D-series", Slug = "renault-trucks-d", Generations = [
+                G("D (2013–)", "renault-trucks-d-2013", 2013, null,
+                    E("DTI5 210 KM", 210, 154, 4769, die), E("DTI8 250 KM", 250, 184, 7696, die),
+                    E("DTI8 280 KM", 280, 206, 7696, die), E("DTI8 330 KM", 330, 243, 7696, die)) ]},
+        ]);
+
+        // ─── BMW (motorcycles) ────────────────────────────────────────────────────
+        if (B("BMW") > 0) models.AddRange([
+            new Model { BrandId = B("BMW"), Name = "R 1250 GS", Slug = "bmw-r1250gs", Generations = [
+                G("2018–", "bmw-r1250gs-2018", 2018, null,
+                    E("1254cc Boxer 136 KM", 136, 100, 1254, ben)) ]},
+            new Model { BrandId = B("BMW"), Name = "F 900 R", Slug = "bmw-f900r", Generations = [
+                G("2020–", "bmw-f900r-2020", 2020, null,
+                    E("895cc parallel twin 105 KM", 105, 77, 895, ben)) ]},
+            new Model { BrandId = B("BMW"), Name = "S 1000 RR", Slug = "bmw-s1000rr", Generations = [
+                G("2009–2018", "bmw-s1000rr-2009", 2009, 2018,
+                    E("999cc inline-4 193 KM", 193, 142, 999, ben)),
+                G("2019–", "bmw-s1000rr-2019", 2019, null,
+                    E("999cc inline-4 210 KM", 210, 154, 999, ben)) ]},
+            new Model { BrandId = B("BMW"), Name = "R nineT", Slug = "bmw-r-ninet", Generations = [
+                G("2014–", "bmw-r-ninet-2014", 2014, null,
+                    E("1170cc Boxer 109 KM", 109, 80, 1170, ben)) ]},
+        ]);
+
+        // ─── HONDA (motorcycles) ──────────────────────────────────────────────────
+        if (B("Honda") > 0) models.AddRange([
+            new Model { BrandId = B("Honda"), Name = "CB500F", Slug = "honda-cb500f", Generations = [
+                G("2013–", "honda-cb500f-2013", 2013, null,
+                    E("471cc parallel twin 47 KM", 47, 35, 471, ben)) ]},
+            new Model { BrandId = B("Honda"), Name = "Africa Twin CRF1100L", Slug = "honda-africa-twin-crf1100l", Generations = [
+                G("2020–", "honda-africa-twin-2020", 2020, null,
+                    E("1084cc parallel twin 101 KM", 101, 74, 1084, ben)) ]},
+            new Model { BrandId = B("Honda"), Name = "CBR1000RR Fireblade", Slug = "honda-cbr1000rr-fireblade", Generations = [
+                G("2017–", "honda-cbr1000rr-2017", 2017, null,
+                    E("999cc inline-4 214 KM", 214, 157, 999, ben)) ]},
+            new Model { BrandId = B("Honda"), Name = "Gold Wing GL1800", Slug = "honda-gold-wing-gl1800", Generations = [
+                G("2018–", "honda-gold-wing-2018", 2018, null,
+                    E("1833cc flat-6 126 KM", 126, 93, 1833, ben)) ]},
+            new Model { BrandId = B("Honda"), Name = "CB650R", Slug = "honda-cb650r", Generations = [
+                G("2019–", "honda-cb650r-2019", 2019, null,
+                    E("649cc inline-4 95 KM", 95, 70, 649, ben)) ]},
+        ]);
+
+        // ─── SUZUKI (motorcycles) ─────────────────────────────────────────────────
+        if (B("Suzuki") > 0) models.AddRange([
+            new Model { BrandId = B("Suzuki"), Name = "GSX-R1000", Slug = "suzuki-gsx-r1000", Generations = [
+                G("2017–", "suzuki-gsx-r1000-2017", 2017, null,
+                    E("999cc inline-4 202 KM", 202, 149, 999, ben)) ]},
+            new Model { BrandId = B("Suzuki"), Name = "V-Strom 650", Slug = "suzuki-v-strom-650", Generations = [
+                G("2017–", "suzuki-v-strom-650-2017", 2017, null,
+                    E("645cc V-twin 71 KM", 71, 52, 645, ben)) ]},
+            new Model { BrandId = B("Suzuki"), Name = "GSX-S1000", Slug = "suzuki-gsx-s1000", Generations = [
+                G("2021–", "suzuki-gsx-s1000-2021", 2021, null,
+                    E("999cc inline-4 152 KM", 152, 112, 999, ben)) ]},
+            new Model { BrandId = B("Suzuki"), Name = "Hayabusa", Slug = "suzuki-hayabusa", Generations = [
+                G("2021–", "suzuki-hayabusa-2021", 2021, null,
+                    E("1340cc inline-4 190 KM", 190, 140, 1340, ben)) ]},
+        ]);
+
+        // ─── APRILIA ──────────────────────────────────────────────────────────────
+        if (B("Aprilia") > 0) models.AddRange([
+            new Model { BrandId = B("Aprilia"), Name = "RSV4", Slug = "aprilia-rsv4", Generations = [
+                G("2021–", "aprilia-rsv4-2021", 2021, null,
+                    E("1099cc V4 217 KM", 217, 160, 1099, ben)) ]},
+            new Model { BrandId = B("Aprilia"), Name = "Tuono V4", Slug = "aprilia-tuono-v4", Generations = [
+                G("2021–", "aprilia-tuono-v4-2021", 2021, null,
+                    E("1099cc V4 175 KM", 175, 129, 1099, ben)) ]},
+            new Model { BrandId = B("Aprilia"), Name = "RS 660", Slug = "aprilia-rs-660", Generations = [
+                G("2020–", "aprilia-rs-660-2020", 2020, null,
+                    E("659cc parallel twin 100 KM", 100, 74, 659, ben)) ]},
+        ]);
+
+        // ─── ROYAL ENFIELD ────────────────────────────────────────────────────────
+        if (B("Royal Enfield") > 0) models.AddRange([
+            new Model { BrandId = B("Royal Enfield"), Name = "Classic 350", Slug = "royal-enfield-classic-350", Generations = [
+                G("2021–", "royal-enfield-classic-350-2021", 2021, null,
+                    E("349cc single-cylinder 20 KM", 20, 15, 349, ben)) ]},
+            new Model { BrandId = B("Royal Enfield"), Name = "Himalayan 450", Slug = "royal-enfield-himalayan-450", Generations = [
+                G("2024–", "royal-enfield-himalayan-450-2024", 2024, null,
+                    E("452cc single-cylinder 40 KM", 40, 29, 452, ben)) ]},
+            new Model { BrandId = B("Royal Enfield"), Name = "Meteor 350", Slug = "royal-enfield-meteor-350", Generations = [
+                G("2020–", "royal-enfield-meteor-350-2020", 2020, null,
+                    E("349cc single-cylinder 20 KM", 20, 15, 349, ben)) ]},
+        ]);
+
+        // ─── INDIAN ───────────────────────────────────────────────────────────────
+        if (B("Indian") > 0) models.AddRange([
+            new Model { BrandId = B("Indian"), Name = "Scout", Slug = "indian-scout", Generations = [
+                G("2015–", "indian-scout-2015", 2015, null,
+                    E("1133cc V-twin 100 KM", 100, 74, 1133, ben)) ]},
+            new Model { BrandId = B("Indian"), Name = "Chief", Slug = "indian-chief", Generations = [
+                G("2021–", "indian-chief-2021", 2021, null,
+                    E("1890cc Thunderstroke 116 V-twin 93 KM", 93, 68, 1890, ben)) ]},
+            new Model { BrandId = B("Indian"), Name = "Challenger", Slug = "indian-challenger", Generations = [
+                G("2020–", "indian-challenger-2020", 2020, null,
+                    E("1768cc PowerPlus V-twin 122 KM", 122, 90, 1768, ben)) ]},
+        ]);
+
+        // ─── MV AGUSTA ────────────────────────────────────────────────────────────
+        if (B("MV Agusta") > 0) models.AddRange([
+            new Model { BrandId = B("MV Agusta"), Name = "Brutale 800", Slug = "mv-agusta-brutale-800", Generations = [
+                G("2012–", "mv-agusta-brutale-800-2012", 2012, null,
+                    E("798cc inline-3 140 KM", 140, 103, 798, ben)) ]},
+            new Model { BrandId = B("MV Agusta"), Name = "Turismo Veloce 800", Slug = "mv-agusta-turismo-veloce-800", Generations = [
+                G("2015–", "mv-agusta-turismo-veloce-2015", 2015, null,
+                    E("798cc inline-3 110 KM", 110, 81, 798, ben)) ]},
+        ]);
+
+        // ─── HUSQVARNA ────────────────────────────────────────────────────────────
+        if (B("Husqvarna") > 0) models.AddRange([
+            new Model { BrandId = B("Husqvarna"), Name = "Vitpilen 401", Slug = "husqvarna-vitpilen-401", Generations = [
+                G("2018–", "husqvarna-vitpilen-401-2018", 2018, null,
+                    E("373cc single-cylinder 44 KM", 44, 32, 373, ben)) ]},
+            new Model { BrandId = B("Husqvarna"), Name = "Svartpilen 401", Slug = "husqvarna-svartpilen-401", Generations = [
+                G("2018–", "husqvarna-svartpilen-401-2018", 2018, null,
+                    E("373cc single-cylinder 44 KM", 44, 32, 373, ben)) ]},
+            new Model { BrandId = B("Husqvarna"), Name = "Norden 901", Slug = "husqvarna-norden-901", Generations = [
+                G("2022–", "husqvarna-norden-901-2022", 2022, null,
+                    E("889cc parallel twin 105 KM", 105, 77, 889, ben)) ]},
+        ]);
+
+        // ─── CASE IH ──────────────────────────────────────────────────────────────
+        if (B("Case IH") > 0) models.AddRange([
+            new Model { BrandId = B("Case IH"), Name = "Puma", Slug = "case-ih-puma", Generations = [
+                G("Puma (2014–)", "case-ih-puma-2014", 2014, null,
+                    E("FPT F5H 150 KM", 150, 110, 4485, die), E("FPT F5H 185 KM", 185, 136, 4485, die),
+                    E("FPT F5H 210 KM", 210, 154, 4485, die), E("FPT Cursor 9 240 KM", 240, 177, 8728, die)) ]},
+            new Model { BrandId = B("Case IH"), Name = "Maxxum", Slug = "case-ih-maxxum", Generations = [
+                G("Maxxum (2014–)", "case-ih-maxxum-2014", 2014, null,
+                    E("FPT F5H 110 KM", 110, 81, 4485, die), E("FPT F5H 125 KM", 125, 92, 4485, die),
+                    E("FPT F5H 145 KM", 145, 107, 4485, die)) ]},
+            new Model { BrandId = B("Case IH"), Name = "Optum", Slug = "case-ih-optum", Generations = [
+                G("Optum (2016–)", "case-ih-optum-2016", 2016, null,
+                    E("FPT Cursor 9 270 KM", 270, 199, 8728, die), E("FPT Cursor 9 300 KM", 300, 221, 8728, die),
+                    E("FPT Cursor 9 340 KM", 340, 250, 8728, die)) ]},
+        ]);
+
+        // ─── CLAAS ────────────────────────────────────────────────────────────────
+        if (B("Claas") > 0) models.AddRange([
+            new Model { BrandId = B("Claas"), Name = "Axion 800", Slug = "claas-axion-800", Generations = [
+                G("Axion 800 (2015–)", "claas-axion-800-2015", 2015, null,
+                    E("FPT Cursor 9 205 KM", 205, 151, 8728, die), E("FPT Cursor 9 245 KM", 245, 180, 8728, die),
+                    E("FPT Cursor 9 270 KM", 270, 199, 8728, die), E("FPT Cursor 9 295 KM", 295, 217, 8728, die)) ]},
+            new Model { BrandId = B("Claas"), Name = "Arion 600", Slug = "claas-arion-600", Generations = [
+                G("Arion 600 (2015–)", "claas-arion-600-2015", 2015, null,
+                    E("FPT F5H 130 KM", 130, 96, 4485, die), E("FPT F5H 155 KM", 155, 114, 4485, die),
+                    E("FPT F5H 185 KM", 185, 136, 4485, die)) ]},
+            new Model { BrandId = B("Claas"), Name = "Lexion 8000", Slug = "claas-lexion-8000", Generations = [
+                G("Lexion 8000 (2019–)", "claas-lexion-8000-2019", 2019, null,
+                    E("Mercedes-Benz OM473 476 KM", 476, 350, 15600, die),
+                    E("Mercedes-Benz OM473 598 KM", 598, 440, 15600, die),
+                    E("Mercedes-Benz OM473 627 KM", 627, 461, 15600, die)) ]},
+            new Model { BrandId = B("Claas"), Name = "Jaguar 900", Slug = "claas-jaguar-900", Generations = [
+                G("Jaguar 900 (2016–)", "claas-jaguar-900-2016", 2016, null,
+                    E("Mercedes-Benz OM471 624 KM", 624, 459, 12799, die),
+                    E("Mercedes-Benz OM473 680 KM", 680, 500, 15600, die),
+                    E("Mercedes-Benz OM473 730 KM", 730, 537, 15600, die)) ]},
+        ]);
+
+        // ─── MASSEY FERGUSON ──────────────────────────────────────────────────────
+        if (B("Massey Ferguson") > 0) models.AddRange([
+            new Model { BrandId = B("Massey Ferguson"), Name = "5700S", Slug = "massey-ferguson-5700s", Generations = [
+                G("5700S (2017–)", "massey-ferguson-5700s-2017", 2017, null,
+                    E("AGCO Power 4.4L 105 KM", 105, 77, 4400, die), E("AGCO Power 4.4L 120 KM", 120, 88, 4400, die),
+                    E("AGCO Power 4.4L 140 KM", 140, 103, 4400, die)) ]},
+            new Model { BrandId = B("Massey Ferguson"), Name = "6700S", Slug = "massey-ferguson-6700s", Generations = [
+                G("6700S (2016–)", "massey-ferguson-6700s-2016", 2016, null,
+                    E("AGCO Power 6.6L 155 KM", 155, 114, 6600, die), E("AGCO Power 6.6L 175 KM", 175, 129, 6600, die),
+                    E("AGCO Power 6.6L 205 KM", 205, 151, 6600, die)) ]},
+            new Model { BrandId = B("Massey Ferguson"), Name = "7700S", Slug = "massey-ferguson-7700s", Generations = [
+                G("7700S (2016–)", "massey-ferguson-7700s-2016", 2016, null,
+                    E("AGCO Power 6.6L 215 KM", 215, 158, 6600, die), E("AGCO Power 6.6L 240 KM", 240, 177, 6600, die),
+                    E("AGCO Power 6.6L 270 KM", 270, 199, 6600, die)) ]},
+        ]);
+
+        // ─── ZETOR ────────────────────────────────────────────────────────────────
+        if (B("Zetor") > 0) models.AddRange([
+            new Model { BrandId = B("Zetor"), Name = "Forterra", Slug = "zetor-forterra", Generations = [
+                G("Forterra (2010–)", "zetor-forterra-2010", 2010, null,
+                    E("Z 1006 100 KM", 100, 74, 6211, die), E("Z 1006 115 KM", 115, 85, 6211, die),
+                    E("Z 1006 135 KM", 135, 99, 6211, die), E("Z 1006 150 KM", 150, 110, 6211, die)) ]},
+            new Model { BrandId = B("Zetor"), Name = "Proxima", Slug = "zetor-proxima", Generations = [
+                G("Proxima (2010–)", "zetor-proxima-2010", 2010, null,
+                    E("Z 1006 75 KM", 75, 55, 6211, die), E("Z 1006 90 KM", 90, 66, 6211, die),
+                    E("Z 1006 105 KM", 105, 77, 6211, die)) ]},
+        ]);
+
+        // ─── KUBOTA ───────────────────────────────────────────────────────────────
+        if (B("Kubota") > 0) models.AddRange([
+            new Model { BrandId = B("Kubota"), Name = "M7", Slug = "kubota-m7", Generations = [
+                G("M7 (2015–)", "kubota-m7-2015", 2015, null,
+                    E("V6108 121 KM", 121, 89, 6100, die), E("V6108 145 KM", 145, 107, 6100, die),
+                    E("V6108 175 KM", 175, 129, 6100, die)) ]},
+            new Model { BrandId = B("Kubota"), Name = "M5", Slug = "kubota-m5", Generations = [
+                G("M5 (2016–)", "kubota-m5-2016", 2016, null,
+                    E("V3800 95 KM", 95, 70, 3769, die), E("V3800 105 KM", 105, 77, 3769, die),
+                    E("V3800 115 KM", 115, 85, 3769, die)) ]},
+            new Model { BrandId = B("Kubota"), Name = "L-Series", Slug = "kubota-l-series", Generations = [
+                G("L-Series (2010–)", "kubota-l-series-2010", 2010, null,
+                    E("D1305 24 KM", 24, 18, 1261, die), E("D1803 37 KM", 37, 27, 1826, die),
+                    E("V2403 52 KM", 52, 38, 2434, die), E("V3307 70 KM", 70, 51, 3318, die)) ]},
+        ]);
+
+        // ─── CATERPILLAR ──────────────────────────────────────────────────────────
+        if (B("Caterpillar") > 0) models.AddRange([
+            new Model { BrandId = B("Caterpillar"), Name = "320", Slug = "caterpillar-320", Generations = [
+                G("320 (2019–)", "caterpillar-320-2019", 2019, null,
+                    E("Cat C4.4 ACERT 121 KM", 121, 89, 4400, die)) ]},
+            new Model { BrandId = B("Caterpillar"), Name = "336", Slug = "caterpillar-336", Generations = [
+                G("336 (2019–)", "caterpillar-336-2019", 2019, null,
+                    E("Cat C9.3B 265 KM", 265, 195, 9300, die)) ]},
+            new Model { BrandId = B("Caterpillar"), Name = "966", Slug = "caterpillar-966", Generations = [
+                G("966 (2017–)", "caterpillar-966-2017", 2017, null,
+                    E("Cat C9.3B 263 KM", 263, 193, 9300, die)) ]},
+            new Model { BrandId = B("Caterpillar"), Name = "D6", Slug = "caterpillar-d6", Generations = [
+                G("D6 (2017–)", "caterpillar-d6-2017", 2017, null,
+                    E("Cat C9.3B 215 KM", 215, 158, 9300, die)) ]},
+        ]);
+
+        // ─── JCB ──────────────────────────────────────────────────────────────────
+        if (B("JCB") > 0) models.AddRange([
+            new Model { BrandId = B("JCB"), Name = "3CX", Slug = "jcb-3cx", Generations = [
+                G("3CX (2008–)", "jcb-3cx-2008", 2008, null,
+                    E("JCB EcoMAX 109 KM", 109, 80, 4400, die)) ]},
+            new Model { BrandId = B("JCB"), Name = "4CX", Slug = "jcb-4cx", Generations = [
+                G("4CX (2008–)", "jcb-4cx-2008", 2008, null,
+                    E("JCB EcoMAX 109 KM", 109, 80, 4400, die)) ]},
+            new Model { BrandId = B("JCB"), Name = "JS220", Slug = "jcb-js220", Generations = [
+                G("JS220 (2015–)", "jcb-js220-2015", 2015, null,
+                    E("JCB EcoMAX 160 KM", 160, 118, 4400, die)) ]},
+            new Model { BrandId = B("JCB"), Name = "540-180", Slug = "jcb-540-180", Generations = [
+                G("540-180 (2016–)", "jcb-540-180-2016", 2016, null,
+                    E("JCB EcoMAX 109 KM", 109, 80, 4400, die)) ]},
+        ]);
+
+        // ─── KOMATSU ──────────────────────────────────────────────────────────────
+        if (B("Komatsu") > 0) models.AddRange([
+            new Model { BrandId = B("Komatsu"), Name = "PC200", Slug = "komatsu-pc200", Generations = [
+                G("PC200 (2012–)", "komatsu-pc200-2012", 2012, null,
+                    E("SAA6D107E 112 KM", 112, 82, 6690, die)) ]},
+            new Model { BrandId = B("Komatsu"), Name = "PC360", Slug = "komatsu-pc360", Generations = [
+                G("PC360 (2012–)", "komatsu-pc360-2012", 2012, null,
+                    E("SAA6D114E 258 KM", 258, 190, 8270, die)) ]},
+            new Model { BrandId = B("Komatsu"), Name = "WA320", Slug = "komatsu-wa320", Generations = [
+                G("WA320 (2013–)", "komatsu-wa320-2013", 2013, null,
+                    E("SAA6D107E 150 KM", 150, 110, 6690, die)) ]},
+        ]);
+
+        // ─── LIEBHERR ─────────────────────────────────────────────────────────────
+        if (B("Liebherr") > 0) models.AddRange([
+            new Model { BrandId = B("Liebherr"), Name = "R 924", Slug = "liebherr-r-924", Generations = [
+                G("R 924 (2018–)", "liebherr-r-924-2018", 2018, null,
+                    E("Liebherr D934 156 KM", 156, 115, 6700, die)) ]},
+            new Model { BrandId = B("Liebherr"), Name = "R 934", Slug = "liebherr-r-934", Generations = [
+                G("R 934 (2018–)", "liebherr-r-934-2018", 2018, null,
+                    E("Liebherr D946 215 KM", 215, 158, 9900, die)) ]},
+            new Model { BrandId = B("Liebherr"), Name = "LTM 1030", Slug = "liebherr-ltm-1030", Generations = [
+                G("LTM 1030 (2010–)", "liebherr-ltm-1030-2010", 2010, null,
+                    E("Liebherr D924 174 KM", 174, 128, 6700, die)) ]},
+        ]);
+
+        // ─── BOBCAT ───────────────────────────────────────────────────────────────
+        if (B("Bobcat") > 0) models.AddRange([
+            new Model { BrandId = B("Bobcat"), Name = "E50", Slug = "bobcat-e50", Generations = [
+                G("E50 (2014–)", "bobcat-e50-2014", 2014, null,
+                    E("Kubota V2607 41 KM", 41, 30, 2615, die)) ]},
+            new Model { BrandId = B("Bobcat"), Name = "T650", Slug = "bobcat-t650", Generations = [
+                G("T650 (2012–)", "bobcat-t650-2012", 2012, null,
+                    E("Bobcat/Doosan D24 74 KM", 74, 54, 2400, die)) ]},
+        ]);
+
+        // ─── TAKEUCHI ─────────────────────────────────────────────────────────────
+        if (B("Takeuchi") > 0) models.AddRange([
+            new Model { BrandId = B("Takeuchi"), Name = "TB216", Slug = "takeuchi-tb216", Generations = [
+                G("TB216 (2018–)", "takeuchi-tb216-2018", 2018, null,
+                    E("Yanmar 3TNV70 13 KM", 13, 10, 854, die)) ]},
+            new Model { BrandId = B("Takeuchi"), Name = "TB260", Slug = "takeuchi-tb260", Generations = [
+                G("TB260 (2015–)", "takeuchi-tb260-2015", 2015, null,
+                    E("Yanmar 4TNV94 47 KM", 47, 35, 2196, die)) ]},
+        ]);
+
         if (models.Count == 0) return;
 
         db.Models.AddRange(models);
