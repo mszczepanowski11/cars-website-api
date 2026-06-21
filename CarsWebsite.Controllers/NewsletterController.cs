@@ -1,7 +1,9 @@
 using CarsWebsite;
+using cars_website_api.CarsWebsite.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Cryptography;
 
 namespace cars_website_api.CarsWebsite.Controllers;
 
@@ -10,10 +12,14 @@ namespace cars_website_api.CarsWebsite.Controllers;
 public class NewsletterController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IEmailService _email;
+    private readonly IConfiguration _config;
 
-    public NewsletterController(AppDbContext context)
+    public NewsletterController(AppDbContext context, IEmailService email, IConfiguration config)
     {
         _context = context;
+        _email = email;
+        _config = config;
     }
 
     [HttpPost("subscribe")]
@@ -25,27 +31,69 @@ public class NewsletterController : ControllerBase
         var email = dto.Email.Trim().ToLowerInvariant();
         var existing = await _context.NewsletterSubscribers.FirstOrDefaultAsync(n => n.Email == email);
 
+        if (existing != null && existing.IsConfirmed && existing.IsActive)
+            return Ok(new { message = "Ten adres e-mail jest już zapisany do newslettera." });
+
+        var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
+        var expires = DateTime.UtcNow.AddHours(24);
+
         if (existing != null)
         {
-            if (existing.IsActive)
-                return Ok(new { message = "Ten adres e-mail jest już zapisany do newslettera." });
-
-            existing.IsActive = true;
-            existing.UnsubscribedAt = null;
+            existing.ConfirmationToken = token;
+            existing.ConfirmationTokenExpires = expires;
+            existing.IsConfirmed = false;
+            existing.IsActive = false;
             existing.SubscribedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "Zapisano do newslettera." });
+            existing.UnsubscribedAt = null;
+        }
+        else
+        {
+            _context.NewsletterSubscribers.Add(new NewsletterSubscriber
+            {
+                Email = email,
+                IsActive = false,
+                IsConfirmed = false,
+                ConfirmationToken = token,
+                ConfirmationTokenExpires = expires,
+                SubscribedAt = DateTime.UtcNow
+            });
         }
 
-        _context.NewsletterSubscribers.Add(new NewsletterSubscriber
-        {
-            Email = email,
-            IsActive = true,
-            SubscribedAt = DateTime.UtcNow
-        });
-
         await _context.SaveChangesAsync();
-        return Ok(new { message = "Zapisano do newslettera." });
+
+        var siteUrl = _config["SiteUrl"] ?? "https://carizo.pl";
+        var confirmUrl = $"{siteUrl}/newsletter/potwierdz?token={token}";
+        await _email.SendAsync(email, "Potwierdź zapis na newsletter — CARIZO",
+            $@"<div style=""font-family:Inter,sans-serif;max-width:560px;margin:0 auto;background:#050505;color:#e0e0e0;padding:32px;border-radius:8px"">
+                <h2 style=""color:#8B0D1D;margin-top:0"">Potwierdź zapis na newsletter</h2>
+                <p>Kliknij poniższy przycisk, aby potwierdzić zapis. Link jest ważny przez <strong>24 godziny</strong>.</p>
+                <p><a href=""{confirmUrl}"" style=""display:inline-block;background:#8B0D1D;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:700"">Potwierdź zapis</a></p>
+                <p style=""font-size:12px;color:#666"">Jeśli nie zapisywałeś/aś się na newsletter CARIZO, zignoruj tę wiadomość.</p>
+               </div>");
+
+        return Ok(new { message = "Sprawdź swoją skrzynkę email i kliknij link potwierdzający." });
+    }
+
+    [HttpGet("confirm")]
+    public async Task<IActionResult> Confirm([FromQuery] string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            return BadRequest(new { message = "Brakuje tokenu." });
+
+        var record = await _context.NewsletterSubscribers
+            .FirstOrDefaultAsync(n => n.ConfirmationToken == token);
+
+        if (record == null || record.ConfirmationTokenExpires < DateTime.UtcNow)
+            return BadRequest(new { message = "Link potwierdzający wygasł lub jest nieprawidłowy." });
+
+        record.IsConfirmed = true;
+        record.IsActive = true;
+        record.ConfirmedAt = DateTime.UtcNow;
+        record.ConfirmationToken = null;
+        record.ConfirmationTokenExpires = null;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Zapis potwierdzony! Możesz teraz korzystać z newslettera CARIZO." });
     }
 
     [HttpPost("unsubscribe")]

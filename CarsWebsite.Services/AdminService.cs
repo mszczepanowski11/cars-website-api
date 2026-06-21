@@ -2,6 +2,8 @@
 using cars_website_api.CarsWebsite.DTOs.Report;
 using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using Microsoft.EntityFrameworkCore;
 
 namespace cars_website_api.CarsWebsite.Services
@@ -9,10 +11,12 @@ namespace cars_website_api.CarsWebsite.Services
     public class AdminService : IAdminService
     {
         private readonly AppDbContext _context;
+        private readonly Cloudinary _cloudinary;
 
-        public AdminService(AppDbContext context)
+        public AdminService(AppDbContext context, Cloudinary cloudinary)
         {
             _context = context;
+            _cloudinary = cloudinary;
         }
 
         public async Task<AdminStatsDto> GetStatsAsync()
@@ -109,7 +113,22 @@ namespace cars_website_api.CarsWebsite.Services
 
         public async Task DeleteAdvertAsync(int advertId, int adminUserId, string? note)
         {
-            var advert = await _context.CarAdverts.FindAsync(advertId) ?? throw new KeyNotFoundException("Advert not found");
+            var advert = await _context.CarAdverts
+                .Include(a => a.Images)
+                .FirstOrDefaultAsync(a => a.Id == advertId)
+                ?? throw new KeyNotFoundException("Advert not found");
+
+            foreach (var image in advert.Images)
+            {
+                var publicId = ExtractPublicId(image.Url);
+                if (publicId != null)
+                {
+                    try { await _cloudinary.DestroyAsync(new DeletionParams(publicId)); }
+                    catch { /* best-effort cleanup */ }
+                }
+            }
+            _context.AdvertImages.RemoveRange(advert.Images);
+
             _context.AdminActionLogs.Add(new AdminActionLog { AdminUserId = adminUserId, ActionType = AdminActionType.DeleteAdvert, TargetAdvertId = advertId, Note = note, PerformedAt = DateTime.UtcNow });
             advert.IsHidden = true;
             advert.IsActive = false;
@@ -273,6 +292,23 @@ namespace cars_website_api.CarsWebsite.Services
                 ActionType = l.ActionType.ToString(), TargetAdvertId = l.TargetAdvertId,
                 TargetUserId = l.TargetUserId, ReportId = l.ReportId, Note = l.Note, PerformedAt = l.PerformedAt
             }).ToList();
+        }
+
+        private static string? ExtractPublicId(string url)
+        {
+            try
+            {
+                var segments = new Uri(url).AbsolutePath.Split('/');
+                var uploadIdx = Array.IndexOf(segments, "upload");
+                if (uploadIdx < 0) return null;
+                var start = uploadIdx + 1;
+                if (start < segments.Length && segments[start].StartsWith('v') && long.TryParse(segments[start][1..], out _))
+                    start++;
+                var idWithExt = string.Join("/", segments[start..]);
+                var dot = idWithExt.LastIndexOf('.');
+                return dot > 0 ? idWithExt[..dot] : idWithExt;
+            }
+            catch { return null; }
         }
     }
 }
