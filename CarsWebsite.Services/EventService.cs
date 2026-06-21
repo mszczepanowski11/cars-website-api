@@ -1,6 +1,8 @@
 using cars_website_api.CarsWebsite.DTOs.Event;
 using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using Microsoft.EntityFrameworkCore;
 
 namespace cars_website_api.CarsWebsite.Services;
@@ -8,12 +10,12 @@ namespace cars_website_api.CarsWebsite.Services;
 public class EventService : IEventService
 {
     private readonly AppDbContext _context;
-    private readonly IWebHostEnvironment _env;
+    private readonly Cloudinary _cloudinary;
 
-    public EventService(AppDbContext context, IWebHostEnvironment env)
+    public EventService(AppDbContext context, Cloudinary cloudinary)
     {
         _context = context;
-        _env = env;
+        _cloudinary = cloudinary;
     }
 
     private static readonly string[] AllowedMimeTypes = ["image/jpeg", "image/png", "image/webp"];
@@ -21,29 +23,59 @@ public class EventService : IEventService
 
     private async Task<string> SaveImageAsync(IFormFile file, int eventId)
     {
-        if (!AllowedMimeTypes.Contains(file.ContentType.ToLowerInvariant()))
+        var mime = file.ContentType.ToLowerInvariant();
+        if (!AllowedMimeTypes.Contains(mime))
             throw new BadHttpRequestException("Invalid file type.");
         if (file.Length > MaxFileSizeBytes)
             throw new BadHttpRequestException("File too large (max 10 MB).");
 
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (ext is not (".jpg" or ".jpeg" or ".png" or ".webp"))
-            throw new BadHttpRequestException("Invalid file extension.");
+        {
+            ext = mime switch
+            {
+                "image/jpeg" => ".jpg",
+                "image/png"  => ".png",
+                "image/webp" => ".webp",
+                _ => throw new BadHttpRequestException("Invalid file extension.")
+            };
+        }
 
-        var basePath = string.IsNullOrEmpty(_env.WebRootPath)
-            ? Path.Combine(_env.ContentRootPath, "wwwroot")
-            : _env.WebRootPath;
+        var publicId = $"events/{eventId}/{Guid.NewGuid()}";
 
-        var folder = Path.Combine(basePath, "uploads", "events", eventId.ToString());
-        Directory.CreateDirectory(folder);
+        ImageUploadResult result;
+        using (var stream = file.OpenReadStream())
+        {
+            result = await _cloudinary.UploadAsync(new ImageUploadParams
+            {
+                File = new FileDescription(file.FileName, stream),
+                PublicId = publicId,
+                Overwrite = false,
+                Transformation = new Transformation().Quality("auto"),
+            });
+        }
 
-        var fileName = $"{Guid.NewGuid()}{ext}";
-        var filePath = Path.Combine(folder, fileName);
+        if (result.Error != null)
+            throw new InvalidOperationException($"Błąd Cloudinary: {result.Error.Message}");
 
-        using var stream = new FileStream(filePath, FileMode.Create);
-        await file.CopyToAsync(stream);
+        return result.SecureUrl.ToString();
+    }
 
-        return $"/uploads/events/{eventId}/{fileName}";
+    private static string? ExtractPublicId(string url)
+    {
+        try
+        {
+            var segments = new Uri(url).AbsolutePath.Split('/');
+            var uploadIdx = Array.IndexOf(segments, "upload");
+            if (uploadIdx < 0) return null;
+            var start = uploadIdx + 1;
+            if (start < segments.Length && segments[start].StartsWith('v') && long.TryParse(segments[start][1..], out _))
+                start++;
+            var idWithExt = string.Join("/", segments[start..]);
+            var dot = idWithExt.LastIndexOf('.');
+            return dot > 0 ? idWithExt[..dot] : idWithExt;
+        }
+        catch { return null; }
     }
 
     private static EventResponseDto MapToDto(global::CarsWebsite.Event e, int attendingCount = 0, int interestedCount = 0, bool isUserInterested = false, bool isUserFavorite = false) => new()
@@ -273,8 +305,18 @@ public class EventService : IEventService
 
     public async Task DeleteEventAsync(int id, int adminId)
     {
-        var ev = await _context.Events.FindAsync(id)
+        var ev = await _context.Events
+            .Include(e => e.Images)
+            .FirstOrDefaultAsync(e => e.Id == id)
             ?? throw new KeyNotFoundException("Event not found.");
+
+        foreach (var img in ev.Images)
+        {
+            var publicId = ExtractPublicId(img.Url);
+            if (publicId != null)
+                await _cloudinary.DestroyAsync(new DeletionParams(publicId));
+        }
+
         _context.Events.Remove(ev);
         await _context.SaveChangesAsync();
     }
