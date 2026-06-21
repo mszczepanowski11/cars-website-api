@@ -93,5 +93,15 @@ namespace cars_website_api.CarsWebsite.Controllers
             var categories = await _taxonomyService.GetFeatureCategoriesByVehicleCategoryAsync(vehicleCategoryId);
             return Ok(_mapper.Map<IEnumerable<FeatureCategoryDto>>(categories));
         }
+
+        [HttpGet("feature-categories/by-context")]
+        public async Task<IActionResult> GetFeatureCategoriesByContext(
+            [FromQuery] int? vehicleCategoryId,
+            [FromQuery] int? brandId,
+            [FromQuery] int? modelId)
+        {
+            var categories = await _taxonomyService.GetFeatureCategoriesByContextAsync(vehicleCategoryId, brandId, modelId);
+            return Ok(_mapper.Map<IEnumerable<FeatureCategoryDto>>(categories));
+        }
     }
 }

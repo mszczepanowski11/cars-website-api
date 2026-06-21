@@ -172,8 +172,15 @@ public class AdminController : ControllerBase
     {
         var items = await _db.FeatureCategories
             .Include(fc => fc.VehicleCategory)
+            .Include(fc => fc.Brand)
+            .Include(fc => fc.Model)
             .OrderBy(fc => fc.Name)
-            .Select(fc => new { fc.Id, fc.Name, fc.VehicleCategoryId, VehicleCategoryName = fc.VehicleCategory != null ? fc.VehicleCategory.Name : null })
+            .Select(fc => new {
+                fc.Id, fc.Name, fc.VehicleCategoryId,
+                VehicleCategoryName = fc.VehicleCategory != null ? fc.VehicleCategory.Name : null,
+                fc.BrandId, BrandName = fc.Brand != null ? fc.Brand.Name : null,
+                fc.ModelId, ModelName = fc.Model != null ? fc.Model.Name : null,
+            })
             .ToListAsync();
         return Ok(items);
     }
@@ -181,7 +188,12 @@ public class AdminController : ControllerBase
     [HttpPost("feature-categories")]
     public async Task<IActionResult> CreateFeatureCategory([FromBody] CreateFeatureCategoryDto dto)
     {
-        var cat = new FeatureCategory { Name = dto.Name, VehicleCategoryId = dto.VehicleCategoryId };
+        var cat = new FeatureCategory {
+            Name = dto.Name,
+            VehicleCategoryId = dto.VehicleCategoryId,
+            BrandId = dto.BrandId,
+            ModelId = dto.ModelId,
+        };
         _db.FeatureCategories.Add(cat);
         await _db.SaveChangesAsync();
         return Ok(new { cat.Id, cat.Name });

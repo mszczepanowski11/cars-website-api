@@ -241,6 +241,22 @@ namespace CarsWebsite
                 .HasForeignKey(fc => fc.VehicleCategoryId)
                 .IsRequired(false);
 
+            // FeatureCategory → Brand (optional FK)
+            modelBuilder.Entity<FeatureCategory>()
+                .HasOne(fc => fc.Brand)
+                .WithMany()
+                .HasForeignKey(fc => fc.BrandId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
+            // FeatureCategory → Model (optional FK)
+            modelBuilder.Entity<FeatureCategory>()
+                .HasOne(fc => fc.Model)
+                .WithMany()
+                .HasForeignKey(fc => fc.ModelId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
             // Performance indexes for common query patterns
             modelBuilder.Entity<Advert>()
                 .HasIndex(a => new { a.IsActive, a.IsHidden });
