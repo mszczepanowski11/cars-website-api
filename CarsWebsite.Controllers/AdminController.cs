@@ -208,4 +208,102 @@ public class AdminController : ControllerBase
         await _db.SaveChangesAsync();
         return NoContent();
     }
+
+    // ── Quality report ────────────────────────────────────────────────────────
+
+    [HttpGet("quality-report")]
+    public async Task<IActionResult> GetQualityReport()
+    {
+        var brandsWithoutModels = await _db.Brands
+            .Where(b => !b.Models.Any())
+            .Select(b => new { b.Id, b.Name })
+            .OrderBy(b => b.Name)
+            .ToListAsync();
+
+        var modelsWithoutGenerations = await _db.Models
+            .Include(m => m.Brand)
+            .Where(m => !m.Generations.Any())
+            .Select(m => new { m.Id, m.Name, BrandName = m.Brand.Name })
+            .OrderBy(m => m.Brand.Name).ThenBy(m => m.Name)
+            .ToListAsync();
+
+        var brandsWithoutAdverts = await _db.Brands
+            .Where(b => !_db.CarAdverts.Any(ca => ca.BrandId == b.Id))
+            .Select(b => new { b.Id, b.Name })
+            .OrderBy(b => b.Name)
+            .ToListAsync();
+
+        var modelsWithoutAdverts = await _db.Models
+            .Include(m => m.Brand)
+            .Where(m => !_db.CarAdverts.Any(ca => ca.ModelId == m.Id))
+            .Select(m => new { m.Id, m.Name, BrandName = m.Brand.Name })
+            .OrderBy(m => m.Brand.Name).ThenBy(m => m.Name)
+            .ToListAsync();
+
+        var featureCategoriesEmpty = await _db.FeatureCategories
+            .Where(fc => !fc.Features.Any())
+            .Select(fc => new { fc.Id, fc.Name, fc.VehicleCategoryId })
+            .OrderBy(fc => fc.Name)
+            .ToListAsync();
+
+        var generationsEmpty = await _db.Generations
+            .Include(g => g.Model).ThenInclude(m => m.Brand)
+            .Where(g => !g.EngineVersions.Any())
+            .Select(g => new { g.Id, g.Name, ModelName = g.Model.Name, BrandName = g.Model.Brand.Name, g.YearFrom, g.YearTo })
+            .OrderBy(g => g.BrandName).ThenBy(g => g.ModelName).ThenBy(g => g.YearFrom)
+            .ToListAsync();
+
+        var duplicateBrands = await _db.Brands
+            .GroupBy(b => b.Name.ToLower())
+            .Where(g => g.Count() > 1)
+            .Select(g => new { Name = g.Key, Count = g.Count(), Ids = g.Select(b => b.Id).ToList() })
+            .ToListAsync();
+
+        var duplicateModels = await _db.Models
+            .GroupBy(m => new { m.BrandId, NameLower = m.Name.ToLower() })
+            .Where(g => g.Count() > 1)
+            .Select(g => new { g.Key.BrandId, NameLower = g.Key.NameLower, Count = g.Count(), Ids = g.Select(m => m.Id).ToList() })
+            .ToListAsync();
+
+        var advertsWithBlankTitle = await _db.Adverts
+            .Where(a => string.IsNullOrEmpty(a.Title))
+            .Select(a => new { a.Id, a.Title, a.CreatedAt })
+            .OrderByDescending(a => a.CreatedAt)
+            .Take(50)
+            .ToListAsync();
+
+        var advertsNoImages = await _db.CarAdverts
+            .Where(ca => ca.IsActive && !ca.IsHidden && !ca.Images.Any())
+            .Select(ca => new { ca.Id, ca.Title, ca.CreatedAt })
+            .OrderByDescending(ca => ca.CreatedAt)
+            .Take(50)
+            .ToListAsync();
+
+        return Ok(new
+        {
+            summary = new
+            {
+                brandsWithoutModelsCount      = brandsWithoutModels.Count,
+                modelsWithoutGenerationsCount = modelsWithoutGenerations.Count,
+                brandsWithoutAdvertsCount     = brandsWithoutAdverts.Count,
+                modelsWithoutAdvertsCount     = modelsWithoutAdverts.Count,
+                emptyFeatureCategoriesCount   = featureCategoriesEmpty.Count,
+                emptyGenerationsCount         = generationsEmpty.Count,
+                duplicateBrandsCount          = duplicateBrands.Count,
+                duplicateModelsCount          = duplicateModels.Count,
+                advertsBlankTitleCount        = advertsWithBlankTitle.Count,
+                advertsNoImagesCount          = advertsNoImages.Count,
+            },
+            brandsWithoutModels,
+            modelsWithoutGenerations,
+            brandsWithoutAdverts,
+            modelsWithoutAdverts,
+            featureCategoriesEmpty,
+            generationsEmpty,
+            duplicateBrands,
+            duplicateModels,
+            advertsWithBlankTitle,
+            advertsNoImages,
+        });
+    }
 }
