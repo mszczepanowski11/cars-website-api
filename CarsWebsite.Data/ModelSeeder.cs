@@ -1,4 +1,5 @@
 using CarsWebsite;
+using cars_website_api.CarsWebsite.Domain.Entities;
 
 namespace cars_website_api.CarsWebsite.Data;
 

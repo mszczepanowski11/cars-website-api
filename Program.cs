@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using cars_website_api.CarsWebsite.Data;
 using cars_website_api.CarsWebsite.Interfaces;
 using cars_website_api.CarsWebsite.Services;
 using cars_website_api.CarsWebsite.Domain.Entities;
