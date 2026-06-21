@@ -3,6 +3,7 @@ using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
@@ -30,6 +31,7 @@ public class PaymentController : ControllerBase
 
     /// <summary>Inicjuje transakcję w bramce imoje i zwraca URL płatności.</summary>
     [Authorize]
+    [EnableRateLimiting("auth")]
     [HttpPost("initiate")]
     public async Task<IActionResult> Initiate([FromBody] InitiatePaymentDto dto)
     {

@@ -328,7 +328,7 @@ public class InvoiceService : IInvoiceService
         }
     }
 
-    private static string BuildInvoiceHtml(Invoice inv)
+    private string BuildInvoiceHtml(Invoice inv)
     {
         var ci = new System.Globalization.CultureInfo("pl-PL");
         var monthName = ci.DateTimeFormat.GetMonthName(inv.Month);

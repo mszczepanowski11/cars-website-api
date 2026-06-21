@@ -52,11 +52,32 @@ public class ServicePriceDto
 
 public class ImojeWebhookDto
 {
+    // imoje standard: nested object
+    public ImojeTransactionDto? Transaction { get; set; }
+
+    // flat fallback (some integration modes)
+    public string? OrderId { get; set; }
+    public string? TransactionId { get; set; }
+    public string? Status { get; set; }
+    public decimal Amount { get; set; }
+    public string Currency { get; set; } = "PLN";
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string ResolvedOrderId => Transaction?.OrderId ?? OrderId ?? "";
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string ResolvedTransactionId => Transaction?.Id ?? TransactionId ?? "";
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string ResolvedStatus => Transaction?.Status ?? Status ?? "";
+}
+
+public class ImojeTransactionDto
+{
+    public string Id { get; set; } = string.Empty;
     public string OrderId { get; set; } = string.Empty;
-    public string TransactionId { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public decimal Amount { get; set; }
     public string Currency { get; set; } = "PLN";
+    public string? PaymentMethod { get; set; }
 }
 
 public class AdminUpdatePaymentStatusDto

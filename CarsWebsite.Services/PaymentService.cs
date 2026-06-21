@@ -153,14 +153,15 @@ public class PaymentService : IPaymentService
             && configuredInternalSecret == internalSecret;
 
         _logger.LogInformation(
-            "[Webhook] orderId={OrderId} status={Status} isInternalCall={IsInternal} hasInternalSecret={HasSecret}",
-            dto.OrderId, dto.Status, isInternalCall, !string.IsNullOrEmpty(configuredInternalSecret));
+            "[Webhook] orderId={OrderId} status={Status} isInternalCall={IsInternal} hasInternalSecret={HasSecret} rawBodyLen={RawLen} hasTransaction={HasTx}",
+            dto.ResolvedOrderId, dto.ResolvedStatus, isInternalCall, !string.IsNullOrEmpty(configuredInternalSecret),
+            rawBody.Length, dto.Transaction != null);
 
         if (!isInternalCall && !VerifySignature(rawBody, signature))
         {
             _logger.LogWarning(
                 "[Webhook] Odrzucono - brak dopasowania podpisu lub sekretu wewnętrznego. orderId={OrderId} sigLen={SigLen} secretConfigured={SecretConfigured}",
-                dto.OrderId, signature?.Length ?? 0, !string.IsNullOrEmpty(configuredInternalSecret));
+                dto.ResolvedOrderId, signature?.Length ?? 0, !string.IsNullOrEmpty(configuredInternalSecret));
             throw new UnauthorizedAccessException("Nieprawidłowy podpis webhooka.");
         }
 
@@ -169,15 +170,15 @@ public class PaymentService : IPaymentService
         try
         {
             await _context.Database.ExecuteSqlRawAsync(
-                "SELECT 1 FROM `payments` WHERE `ImojeOrderId` = {0} FOR UPDATE", dto.OrderId);
+                "SELECT 1 FROM `payments` WHERE `ImojeOrderId` = {0} FOR UPDATE", dto.ResolvedOrderId);
 
             var payment = await _context.Payments
                 .Include(p => p.User)
-                .FirstOrDefaultAsync(p => p.ImojeOrderId == dto.OrderId);
+                .FirstOrDefaultAsync(p => p.ImojeOrderId == dto.ResolvedOrderId);
 
             if (payment == null)
             {
-                _logger.LogWarning("Nie znaleziono płatności dla orderId={OrderId}", dto.OrderId);
+                _logger.LogWarning("Nie znaleziono płatności dla orderId={OrderId}", dto.ResolvedOrderId);
                 await tx.CommitAsync();
                 return;
             }
@@ -188,11 +189,11 @@ public class PaymentService : IPaymentService
                 return;
             }
 
-            if (dto.Status is "settled" or "confirmed" or "authorized" or "completed" or "Completed")
+            if (dto.ResolvedStatus is "settled" or "confirmed" or "authorized" or "completed" or "Completed")
             {
                 payment.Status = PaymentStatus.Completed;
                 payment.PaidAt = DateTime.UtcNow;
-                payment.ImojeTransactionId = dto.TransactionId;
+                payment.ImojeTransactionId = dto.ResolvedTransactionId;
                 await _context.SaveChangesAsync();
                 await tx.CommitAsync();
 
@@ -203,7 +204,7 @@ public class PaymentService : IPaymentService
 
                 await ActivateServiceAsync(payment);
             }
-            else if (dto.Status is "rejected" or "cancelled" or "error" or "Failed" or "Cancelled" or "Refunded")
+            else if (dto.ResolvedStatus is "rejected" or "cancelled" or "error" or "Failed" or "Cancelled" or "Refunded")
             {
                 payment.Status = PaymentStatus.Failed;
                 await _context.SaveChangesAsync();
@@ -433,17 +434,35 @@ public class PaymentService : IPaymentService
     private bool VerifySignature(string rawBody, string signature)
     {
         var secret = _config["Imoje:WebhookSecret"] ?? _config["Imoje:ServiceKey"] ?? _config["Imoje:ApiKey"] ?? "";
-        if (string.IsNullOrEmpty(secret)) return false;
 
-        // signature from imoje webhook: "hash;sha256" — same algorithm as payment form
+        _logger.LogInformation(
+            "[Webhook/Verify] secretLen={SecretLen} sigHeader={Sig} bodyLen={BodyLen} bodyPrefix={Prefix}",
+            secret.Length, signature, rawBody.Length, rawBody.Length > 80 ? rawBody[..80] : rawBody);
+
+        if (string.IsNullOrEmpty(secret))
+        {
+            _logger.LogWarning("[Webhook/Verify] BRAK klucza — skonfiguruj Imoje__ServiceKey w Railway");
+            return false;
+        }
+
         var parts = signature?.Split(';');
         var hashMethod = parts?.Length == 2 ? parts[1].ToLower() : "sha256";
         var receivedHash = parts?[0]?.ToLower() ?? "";
 
-        if (hashMethod != "sha256") return false;
+        if (hashMethod != "sha256")
+        {
+            _logger.LogWarning("[Webhook/Verify] Nieobsługiwana metoda hash: {Method}", hashMethod);
+            return false;
+        }
 
         var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawBody + secret))).ToLower();
-        return hash == receivedHash;
+        var match = hash == receivedHash;
+
+        _logger.LogInformation(
+            "[Webhook/Verify] computed={Computed} received={Received} match={Match}",
+            hash[..16] + "...", receivedHash.Length > 16 ? receivedHash[..16] + "..." : receivedHash, match);
+
+        return match;
     }
 
     public async Task<PaymentResponseDto?> AdminUpdateStatusAsync(int paymentId, string status)
@@ -453,11 +472,13 @@ public class PaymentService : IPaymentService
 
         if (Enum.TryParse<PaymentStatus>(status, ignoreCase: true, out var parsedStatus))
         {
+            var wasAlreadyCompleted = payment.Status == PaymentStatus.Completed;
             payment.Status = parsedStatus;
             if (parsedStatus == PaymentStatus.Completed && payment.PaidAt == null)
                 payment.PaidAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
-            if (parsedStatus == PaymentStatus.Completed)
+
+            if (parsedStatus == PaymentStatus.Completed && !wasAlreadyCompleted)
                 await ActivateServiceAsync(payment);
         }
         return MapToDto(payment);
