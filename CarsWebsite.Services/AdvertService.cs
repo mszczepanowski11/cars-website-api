@@ -521,6 +521,9 @@ public class AdvertService : IAdvertService
 
     public async Task RecordViewAsync(int advertId, string? ipAddress)
     {
+        var exists = await _context.CarAdverts.AnyAsync(a => a.Id == advertId && a.IsActive);
+        if (!exists) return;
+
         _context.AdvertViews.Add(new cars_website_api.CarsWebsite.Domain.Entities.AdvertView
         {
             AdvertId = advertId,

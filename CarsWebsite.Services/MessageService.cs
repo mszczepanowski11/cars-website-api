@@ -103,7 +103,7 @@ public class MessageService : IMessageService
                 SellerId = c.SellerId,
                 SellerName = $"{c.Seller.Name} {c.Seller.Surname}",
                 AdvertId = c.AdvertId,
-                AdvertTitle = c.Advert.Title,
+                AdvertTitle = c.Advert?.Title ?? "(Ogłoszenie usunięte)",
                 LastMessageAt = c.LastMessageAt,
                 LastMessageContent = last?.Content,
                 UnreadCount = unreadCounts.GetValueOrDefault(c.Id, 0),
