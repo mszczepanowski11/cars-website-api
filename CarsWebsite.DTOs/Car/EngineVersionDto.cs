@@ -9,4 +9,6 @@ public class EngineVersionDto
     public int? Horsepower { get; set; }
     public int? PowerKW { get; set; }
     public int? Displacement { get; set; }
+    public int? FuelTypeId { get; set; }
+    public string? FuelTypeName { get; set; }
 }

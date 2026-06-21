@@ -14,7 +14,8 @@ public class AdvertMappingProfile : Profile
         CreateMap<Generation, GenerationDto>();
         CreateMap<EngineVersion, EngineVersionDto>()
             .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.EngineName))
-            .ForMember(dest => dest.Horsepower, opt => opt.MapFrom(src => src.PowerHP));
+            .ForMember(dest => dest.Horsepower, opt => opt.MapFrom(src => src.PowerHP))
+            .ForMember(dest => dest.FuelTypeName, opt => opt.MapFrom(src => src.FuelType != null ? src.FuelType.Name : null));
         CreateMap<FuelType, FuelTypeDto>();
         CreateMap<Gearbox, GearboxDto>();
         CreateMap<BodyType, BodyTypeDto>();

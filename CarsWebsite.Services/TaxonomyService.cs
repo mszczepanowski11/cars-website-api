@@ -63,6 +63,7 @@ public class TaxonomyService : ITaxonomyService
     public async Task<IEnumerable<EngineVersion>> GetEnginesByGenerationAsync(int generationId)
     {
         return await _context.EngineVersions
+            .Include(e => e.FuelType)
             .Where(e => e.GenerationId == generationId)
             .OrderBy(e => e.EngineName)
             .ToListAsync();
