@@ -58,6 +58,15 @@ public class AuthController : ControllerBase
         if (result == null)
             return Unauthorized("Nieprawidłowy lub wygasły refresh token.");
 
+        var resultType = result.GetType();
+        var errorProp = resultType.GetProperty("error");
+        if (errorProp != null)
+        {
+            var errorVal = errorProp.GetValue(result)?.ToString();
+            if (errorVal == "blocked")
+                return Unauthorized("Konto zostało zablokowane.");
+        }
+
         return Ok(result);
     }
 

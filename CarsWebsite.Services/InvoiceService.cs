@@ -224,7 +224,7 @@ public class InvoiceService : IInvoiceService
         }
     }
 
-    private static string BuildInvoiceHtml(Invoice inv)
+    private string BuildInvoiceHtml(Invoice inv)
     {
         var ci = new System.Globalization.CultureInfo("pl-PL");
         var monthName = ci.DateTimeFormat.GetMonthName(inv.Month);
@@ -278,7 +278,8 @@ td{padding:9px 12px;border:1px solid #ddd;font-size:13px}
         if (!string.IsNullOrWhiteSpace(buyerAddress))
             sb.Append($"<p>{buyerAddress}</p>");
         sb.Append($"<p>{user?.Email}</p></div>");
-        sb.Append("<div class=\"party\"><h4>Sprzedawca</h4><p><strong>CARIZO Sp. z o.o.</strong></p><p>NIP: 0000000000</p><p>ul. Przykładowa 1, 00-001 Warszawa</p></div>");
+        var companyNip = _config["Company:Nip"] ?? "0000000000";
+        sb.Append($"<div class=\"party\"><h4>Sprzedawca</h4><p><strong>CARIZO Sp. z o.o.</strong></p><p>NIP: {companyNip}</p><p>ul. Przykładowa 1, 00-001 Warszawa</p></div>");
         sb.Append("</div>");
 
         sb.Append("<table><thead><tr><th>Lp.</th><th>Opis usługi</th><th>Data</th><th style=\"text-align:right\">Kwota brutto</th></tr></thead><tbody>");

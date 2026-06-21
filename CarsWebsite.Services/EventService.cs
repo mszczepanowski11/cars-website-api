@@ -352,6 +352,15 @@ public class EventService : IEventService
             ?? throw new KeyNotFoundException("Event not found.");
         ev.IsFeatured = featured;
         ev.UpdatedAt = DateTime.UtcNow;
+        if (featured)
+        {
+            if (ev.FeaturedUntil == null || ev.FeaturedUntil < DateTime.UtcNow)
+                ev.FeaturedUntil = DateTime.UtcNow.AddDays(30);
+        }
+        else
+        {
+            ev.FeaturedUntil = null;
+        }
         await _context.SaveChangesAsync();
     }
 
