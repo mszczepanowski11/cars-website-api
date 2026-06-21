@@ -938,7 +938,66 @@ internal class Program
             logger.LogInformation("Seeded feature categories and features");
         }
 
-        if (!db.Brands.Any())
+        // Ensure feature categories exist for vehicle types that may have been skipped
+        {
+            var allVCats = db.VehicleCategories.ToList();
+            int vanId   = allVCats.FirstOrDefault(c => c.Slug == "dostawcze")?.Id   ?? 0;
+            int truckId = allVCats.FirstOrDefault(c => c.Slug == "ciezarowe")?.Id   ?? 0;
+            int buildId = allVCats.FirstOrDefault(c => c.Slug == "budowlane")?.Id   ?? 0;
+
+            if (vanId > 0 && !db.FeatureCategories.Any(fc => fc.VehicleCategoryId == vanId))
+            {
+                db.FeatureCategories.Add(new FeatureCategory
+                {
+                    Name = "Wyposażenie", VehicleCategoryId = vanId,
+                    Features = new List<Feature> {
+                        new Feature { Name = "Klimatyzacja" }, new Feature { Name = "Zabudowa chłodnicza" },
+                        new Feature { Name = "Brygadówka" }, new Feature { Name = "Hak holowniczy" },
+                        new Feature { Name = "GPS / Lokalizator" }, new Feature { Name = "Przegroda ładunkowa" },
+                        new Feature { Name = "Regały ładunkowe" }, new Feature { Name = "Kamera cofania" },
+                        new Feature { Name = "Podgrzewane fotele" }, new Feature { Name = "Ogrzewanie postojowe" }
+                    }
+                });
+                db.SaveChanges();
+                logger.LogInformation("Seeded feature categories for dostawcze");
+            }
+
+            if (truckId > 0 && !db.FeatureCategories.Any(fc => fc.VehicleCategoryId == truckId))
+            {
+                db.FeatureCategories.Add(new FeatureCategory
+                {
+                    Name = "Wyposażenie", VehicleCategoryId = truckId,
+                    Features = new List<Feature> {
+                        new Feature { Name = "Tachograf cyfrowy" }, new Feature { Name = "Retarder" },
+                        new Feature { Name = "Lodówka / Chłodziarka" }, new Feature { Name = "Spojlery aerodynamiczne" },
+                        new Feature { Name = "Dodatkowe zbiorniki paliwa" }, new Feature { Name = "Skrzynia chłodnicza" },
+                        new Feature { Name = "Ogrzewanie postojowe" }, new Feature { Name = "Klimatyzacja kabiny" },
+                        new Feature { Name = "GPS / System telematyczny" }, new Feature { Name = "Podnośnik kabiny" }
+                    }
+                });
+                db.SaveChanges();
+                logger.LogInformation("Seeded feature categories for ciezarowe");
+            }
+
+            if (buildId > 0 && !db.FeatureCategories.Any(fc => fc.VehicleCategoryId == buildId))
+            {
+                db.FeatureCategories.Add(new FeatureCategory
+                {
+                    Name = "Wyposażenie", VehicleCategoryId = buildId,
+                    Features = new List<Feature> {
+                        new Feature { Name = "Łyżka koparkowa" }, new Feature { Name = "Młot hydrauliczny" },
+                        new Feature { Name = "Szybkozłącze" }, new Feature { Name = "Klimatyzacja kabiny" },
+                        new Feature { Name = "Kamera cofania" }, new Feature { Name = "Hydraulika dodatkowa" },
+                        new Feature { Name = "Łyżka podsiębierna" }, new Feature { Name = "System monitorowania obciążenia" },
+                        new Feature { Name = "Centralny układ smarowania" }, new Feature { Name = "Zawieszenie kabiny" }
+                    }
+                });
+                db.SaveChanges();
+                logger.LogInformation("Seeded feature categories for budowlane");
+            }
+        }
+
+
         {
             var catList = db.VehicleCategories.ToList();
             var carCat    = catList.FirstOrDefault(c => c.Slug == "auta-osobowe");
