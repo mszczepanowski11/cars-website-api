@@ -58,6 +58,10 @@ public class PaymentController : ControllerBase
         return Ok(await _paymentService.GetUserPaymentsAsync(userId, page, pageSize));
     }
 
+    /// <summary>Weryfikacja URL webhooka przez imoje (GET probe).</summary>
+    [HttpGet("webhook")]
+    public IActionResult WebhookProbe() => Ok();
+
     /// <summary>
     /// Webhook imoje – wywoływany automatycznie po zaksięgowaniu lub odrzuceniu płatności.
     /// </summary>
