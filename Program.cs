@@ -1186,5 +1186,7 @@ internal class Program
                 logger.LogInformation("Seeded feature categories for czesci");
             }
         }
+
+        ModelSeeder.SeedModelsGenerationsEngines(db, logger);
     }
 }
