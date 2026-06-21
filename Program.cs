@@ -499,6 +499,9 @@ internal class Program
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `users` ADD COLUMN `GoogleId` varchar(255) NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN users.GoogleId skipped: {Message}", ex.Message); }
 
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `users` ADD COLUMN `FacebookId` varchar(255) NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN users.FacebookId skipped: {Message}", ex.Message); }
+
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `users` ADD COLUMN `BusinessType` int NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN users.BusinessType skipped: {Message}", ex.Message); }
 
