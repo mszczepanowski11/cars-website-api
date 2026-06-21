@@ -658,6 +658,144 @@ internal class Program
                 logger.LogWarning("Brand name fix skipped: {Message}", ex.Message);
             }
 
+            // Idempotent: add missing equipment features that weren't in original seeder
+            try
+            {
+                var safetyByCar = db.FeatureCategories
+                    .Include(fc => fc.Features)
+                    .FirstOrDefault(fc => fc.Name == "Bezpieczeństwo" && fc.VehicleCategoryId == db.VehicleCategories.Where(vc => vc.Slug == "auta-osobowe").Select(vc => vc.Id).FirstOrDefault());
+                if (safetyByCar != null)
+                {
+                    var existingNames = safetyByCar.Features.Select(f => f.Name).ToHashSet();
+                    var newSafety = new[] {
+                        "BAS (Brake Assist System)", "EBD (elektroniczny podział sił hamowania)", "HBA (Hydraulic Brake Assist)",
+                        "HDC (asystent zjazdu ze wzniesienia)", "Aktywny system unikania kolizji (FCW)",
+                        "Asystent martwego pola (BSM)", "Ostrzeganie o ruchu poprzecznym (RCTA)",
+                        "System nocnego widzenia", "Detekcja pieszych i rowerzystów",
+                        "Rozpoznawanie znaków drogowych (TSR)", "System utrzymania pasa ruchu (LDW)",
+                        "Monitoring ciśnienia w oponach (TPMS)", "Elektroniczna blokada dyferencjału"
+                    }.Where(n => !existingNames.Contains(n));
+                    foreach (var n in newSafety)
+                        safetyByCar.Features.Add(new Feature { Name = n, CategoryId = safetyByCar.Id });
+                    db.SaveChanges();
+                }
+
+                var comfortByCar = db.FeatureCategories
+                    .Include(fc => fc.Features)
+                    .FirstOrDefault(fc => fc.Name == "Komfort" && fc.VehicleCategoryId == db.VehicleCategories.Where(vc => vc.Slug == "auta-osobowe").Select(vc => vc.Id).FirstOrDefault());
+                if (comfortByCar != null)
+                {
+                    var existingNames = comfortByCar.Features.Select(f => f.Name).ToHashSet();
+                    var newComfort = new[] {
+                        "Czterostrefowa klimatyzacja", "Podgrzewana szyba przednia", "Podgrzewana szyba tylna",
+                        "Fotele masujące przednie", "Fotele masujące tylne", "Wentylowane fotele tylne",
+                        "Pamięć ustawień fotela kierowcy i pasażera", "Ambientowe oświetlenie wnętrza",
+                        "Elektryczna regulacja kierownicy", "Pamięć ustawień kierownicy",
+                        "Szyberdach elektryczny", "Dach panoramiczny z roletą", "Ładowarka indukcyjna Qi",
+                        "Automatyczne przyciemnianie lusterek", "Lusterko wsteczne z auto-ściemnianiem",
+                        "Elektrycznie składane lusterka", "Ogrzewanie postojowe (Webasto/Eberspächer)",
+                        "Elektryczna regulacja zagłówków tylnych", "Fotel relaksacyjny pasażera"
+                    }.Where(n => !existingNames.Contains(n));
+                    foreach (var n in newComfort)
+                        comfortByCar.Features.Add(new Feature { Name = n, CategoryId = comfortByCar.Id });
+                    db.SaveChanges();
+                }
+
+                var multiByCar = db.FeatureCategories
+                    .Include(fc => fc.Features)
+                    .FirstOrDefault(fc => fc.Name == "Multimedia" && fc.VehicleCategoryId == db.VehicleCategories.Where(vc => vc.Slug == "auta-osobowe").Select(vc => vc.Id).FirstOrDefault());
+                if (multiByCar != null)
+                {
+                    var existingNames = multiByCar.Features.Select(f => f.Name).ToHashSet();
+                    var newMulti = new[] {
+                        "System audio Harman Kardon", "System audio Bose", "System audio Burmester",
+                        "System audio Bang & Olufsen", "System audio Meridian", "System audio JBL",
+                        "System audio Sony", "System audio Naim", "System audio Dynaudio",
+                        "Panel dotykowy tylny", "Pilot od tyłu", "System audio 3D / surround",
+                        "Kamera cofania HD", "Kamera 360° HD", "Widok z drona (Bird's Eye View)",
+                        "Wyświetlacz przezierny (HUD)", "Cyfrowy kokpit (Digital Cockpit)",
+                        "Cyfrowe lusterko wsteczne", "Streaming muzyki (Spotify/Apple Music)"
+                    }.Where(n => !existingNames.Contains(n));
+                    foreach (var n in newMulti)
+                        multiByCar.Features.Add(new Feature { Name = n, CategoryId = multiByCar.Id });
+                    db.SaveChanges();
+                }
+
+                var lightByCar = db.FeatureCategories
+                    .Include(fc => fc.Features)
+                    .FirstOrDefault(fc => fc.Name == "Oświetlenie" && fc.VehicleCategoryId == db.VehicleCategories.Where(vc => vc.Slug == "auta-osobowe").Select(vc => vc.Id).FirstOrDefault());
+                if (lightByCar != null)
+                {
+                    var existingNames = lightByCar.Features.Select(f => f.Name).ToHashSet();
+                    var newLight = new[] {
+                        "Laser LED (BMW Laserlight / Audi Laser)", "HD Matrix LED", "Digital Matrix LED",
+                        "Adaptacyjne światła przednie (AFS)", "Dynamiczne kierunkowskazy LED",
+                        "Sekwencyjne kierunkowskazy LED", "Oświetlenie wejściowe LED (Welcome Light)",
+                        "Diody tylne Full LED", "Tylne światła dynamiczne", "Podświetlenie progów LED"
+                    }.Where(n => !existingNames.Contains(n));
+                    foreach (var n in newLight)
+                        lightByCar.Features.Add(new Feature { Name = n, CategoryId = lightByCar.Id });
+                    db.SaveChanges();
+                }
+
+                var assistByCar = db.FeatureCategories
+                    .Include(fc => fc.Features)
+                    .FirstOrDefault(fc => fc.Name == "Systemy wspomagania" && fc.VehicleCategoryId == db.VehicleCategories.Where(vc => vc.Slug == "auta-osobowe").Select(vc => vc.Id).FirstOrDefault());
+                if (assistByCar != null)
+                {
+                    var existingNames = assistByCar.Features.Select(f => f.Name).ToHashSet();
+                    var newAssist = new[] {
+                        "Aktywny asystent jazdy na autostradzie", "Asystent korytarza ratunkowego",
+                        "Automatyczna zmiana pasa ruchu (LCA)", "Adaptacyjne zawieszenie pneumatyczne",
+                        "Aktywny stabilizator przechyłów", "Skrętna tylna oś", "Tryby jazdy (Eco/Comfort/Sport/Off-Road)",
+                        "Launch Control", "Asystent manewrowania z przyczepą", "Automatyczny parking z kluczyka (Remote Park)",
+                        "Asystent drogowy (Traffic Assist)", "Predykcyjne zarządzanie energią (hybryda/EV)"
+                    }.Where(n => !existingNames.Contains(n));
+                    foreach (var n in newAssist)
+                        assistByCar.Features.Add(new Feature { Name = n, CategoryId = assistByCar.Id });
+                    db.SaveChanges();
+                }
+
+                var motoByCat = db.VehicleCategories.FirstOrDefault(vc => vc.Slug == "motocykle")?.Id;
+                if (motoByCat.HasValue)
+                {
+                    var motoSafety = db.FeatureCategories.Include(fc => fc.Features)
+                        .FirstOrDefault(fc => fc.Name == "Bezpieczeństwo" && fc.VehicleCategoryId == motoByCat.Value);
+                    if (motoSafety != null)
+                    {
+                        var existingNames = motoSafety.Features.Select(f => f.Name).ToHashSet();
+                        var newMotoSafety = new[] {
+                            "Cornering ABS", "Cornering kontrola trakcji", "IMU (jednostka inercyjna)",
+                            "DTC (Dynamic Traction Control)", "Rear Wheel Lift Mitigation",
+                            "Slide Control", "Launch Control"
+                        }.Where(n => !existingNames.Contains(n));
+                        foreach (var n in newMotoSafety)
+                            motoSafety.Features.Add(new Feature { Name = n, CategoryId = motoSafety.Id });
+                        db.SaveChanges();
+                    }
+
+                    var motoComfort = db.FeatureCategories.Include(fc => fc.Features)
+                        .FirstOrDefault(fc => fc.Name == "Komfort" && fc.VehicleCategoryId == motoByCat.Value);
+                    if (motoComfort != null)
+                    {
+                        var existingNames = motoComfort.Features.Select(f => f.Name).ToHashSet();
+                        var newMotoComfort = new[] {
+                            "Tryby jazdy", "Regulowane zawieszenie elektroniczne (ESA)", "Aktywne zawieszenie",
+                            "Adaptacyjny reflektor LED", "Ogrzewanie siodełka", "Gniazdo USB",
+                            "Bezkluczykowy zapłon (keyless)"
+                        }.Where(n => !existingNames.Contains(n));
+                        foreach (var n in newMotoComfort)
+                            motoComfort.Features.Add(new Feature { Name = n, CategoryId = motoComfort.Id });
+                        db.SaveChanges();
+                    }
+                }
+                logger.LogInformation("[Equipment] Expanded equipment features seeded successfully");
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning("[Equipment] Equipment expansion skipped: {Msg}", ex.Message);
+            }
+
             SeedDataIfEmpty(db, logger);
 
             // Startup config diagnostics
