@@ -511,7 +511,7 @@ public class AdvertService : IAdvertService
             .Include(a => a.AdvertFeatures)
                 .ThenInclude(af => af.Feature)
             .Where(a => a.IsActive && !a.IsHidden && (a.ExpiresAt == null || a.ExpiresAt > DateTime.UtcNow)
-                && (premiumBrands.Contains(a.Brand != null ? a.Brand.Name : "") || a.Badge == "PREMIUM"))
+                && (a.Brand != null && premiumBrands.Contains(a.Brand.Name) || a.Badge == "PREMIUM"))
             .OrderByDescending(a => a.CreatedAt)
             .Take(count)
             .ToListAsync();
