@@ -24,6 +24,15 @@ public class AdvertService : IAdvertService
         if (!string.IsNullOrWhiteSpace(dto.Vin) && dto.Vin.Length != 17)
             throw new ArgumentException("Numer VIN musi mieć dokładnie 17 znaków.");
 
+        if (dto.BrandId > 0 && dto.VehicleCategoryId.HasValue)
+        {
+            var brandInCategory = await _context.Brands
+                .Where(b => b.Id == dto.BrandId)
+                .AnyAsync(b => b.Categories.Any(c => c.Id == dto.VehicleCategoryId.Value));
+            if (!brandInCategory)
+                throw new ArgumentException("Wybrana marka nie należy do tej kategorii pojazdu.");
+        }
+
         var advert = _mapper.Map<CarAdvert>(dto);
         advert.CreatedAt = DateTime.UtcNow;
         advert.UserId = userId;

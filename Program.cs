@@ -1083,5 +1083,108 @@ internal class Program
             db.SaveChanges();
             logger.LogInformation("Seeded {Count} brands", brands.Count);
         }
+
+        // Brands for budowlane and przyczepy (may be missing from initial seed)
+        {
+            var allVCats2 = db.VehicleCategories.ToList();
+            var buildCat2  = allVCats2.FirstOrDefault(c => c.Slug == "budowlane");
+            var trailerCat2 = allVCats2.FirstOrDefault(c => c.Slug == "przyczepy");
+            var machineCat = allVCats2.FirstOrDefault(c => c.Slug == "maszyny");
+
+            var existingBrandSlugs = db.Brands.Select(b => b.Slug).ToHashSet();
+
+            var newBrands = new List<Brand>();
+            if (buildCat2 != null)
+            {
+                var buildOnly = new List<VehicleCategory> { buildCat2 };
+                var buildMachine = machineCat != null
+                    ? new List<VehicleCategory> { buildCat2, machineCat }
+                    : buildOnly;
+                foreach (var (n, s, cats) in new (string, string, List<VehicleCategory>)[] {
+                    ("Caterpillar", "caterpillar", buildMachine),
+                    ("JCB", "jcb", buildMachine),
+                    ("Komatsu", "komatsu", buildMachine),
+                    ("Liebherr", "liebherr", buildMachine),
+                    ("Bobcat", "bobcat", buildOnly),
+                    ("Takeuchi", "takeuchi", buildOnly),
+                    ("Wacker Neuson", "wacker-neuson", buildOnly),
+                    ("Doosan", "doosan", buildMachine),
+                    ("Hitachi Construction", "hitachi-construction", buildMachine),
+                    ("Terex", "terex", buildMachine),
+                })
+                {
+                    if (!existingBrandSlugs.Contains(s))
+                        newBrands.Add(new Brand { Name = n, Slug = s, Categories = cats });
+                }
+            }
+
+            if (trailerCat2 != null)
+            {
+                var trailerOnly = new List<VehicleCategory> { trailerCat2 };
+                foreach (var (n, s) in new (string, string)[] {
+                    ("Humbaur", "humbaur"),
+                    ("Niewiadów", "niewiadow"),
+                    ("Schmitz Cargobull", "schmitz-cargobull"),
+                    ("Krone", "krone-trailer"),
+                    ("Wielton", "wielton"),
+                    ("Fliegl", "fliegl"),
+                    ("Kogel", "kogel"),
+                    ("Schwarzmüller", "schwarzmuller"),
+                    ("Meiller", "meiller"),
+                    ("Nooteboom", "nooteboom"),
+                })
+                {
+                    if (!existingBrandSlugs.Contains(s))
+                        newBrands.Add(new Brand { Name = n, Slug = s, Categories = trailerOnly });
+                }
+            }
+
+            if (newBrands.Count > 0)
+            {
+                db.Brands.AddRange(newBrands);
+                db.SaveChanges();
+                logger.LogInformation("Seeded {Count} additional brands for budowlane/przyczepy/maszyny", newBrands.Count);
+            }
+        }
+
+        // Feature categories for maszyny, czesci, inne (equipment step hidden or minimal)
+        {
+            var allVCats3 = db.VehicleCategories.ToList();
+            var maszId = allVCats3.FirstOrDefault(c => c.Slug == "maszyny")?.Id ?? 0;
+            var czesciId = allVCats3.FirstOrDefault(c => c.Slug == "czesci")?.Id ?? 0;
+
+            if (maszId > 0 && !db.FeatureCategories.Any(fc => fc.VehicleCategoryId == maszId))
+            {
+                db.FeatureCategories.Add(new FeatureCategory
+                {
+                    Name = "Wyposażenie", VehicleCategoryId = maszId,
+                    Features = new List<Feature> {
+                        new Feature { Name = "Klimatyzacja kabiny" }, new Feature { Name = "Ogrzewanie kabiny" },
+                        new Feature { Name = "Kamera cofania" }, new Feature { Name = "Centralny układ smarowania" },
+                        new Feature { Name = "System monitorowania" }, new Feature { Name = "Hydraulika dodatkowa" },
+                        new Feature { Name = "Szybkozłącze" }, new Feature { Name = "GPS" },
+                        new Feature { Name = "Zawieszenie kabiny" }, new Feature { Name = "Radio / Bluetooth" }
+                    }
+                });
+                db.SaveChanges();
+                logger.LogInformation("Seeded feature categories for maszyny");
+            }
+
+            if (czesciId > 0 && !db.FeatureCategories.Any(fc => fc.VehicleCategoryId == czesciId))
+            {
+                db.FeatureCategories.Add(new FeatureCategory
+                {
+                    Name = "Stan i typ", VehicleCategoryId = czesciId,
+                    Features = new List<Feature> {
+                        new Feature { Name = "Nowa" }, new Feature { Name = "Używana" },
+                        new Feature { Name = "Regenerowana" }, new Feature { Name = "Oryginał (OEM)" },
+                        new Feature { Name = "Zamiennik" }, new Feature { Name = "Certyfikowana" },
+                        new Feature { Name = "Gwarancja" }, new Feature { Name = "Z faktury" }
+                    }
+                });
+                db.SaveChanges();
+                logger.LogInformation("Seeded feature categories for czesci");
+            }
+        }
     }
 }
