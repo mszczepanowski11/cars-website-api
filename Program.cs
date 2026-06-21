@@ -240,8 +240,28 @@ internal class Program
                 histLogger.LogWarning("[Migrations] Migration bootstrap failed (non-fatal): {Msg}", ex.Message);
             }
 
+            // Explicit column guards — idempotent fallback for any migration that
+            // may have been silently swallowed (try/catch above) or pre-marked via
+            // the bootstrap path without actually running the DDL.
             var logger = scope.ServiceProvider
                 .GetRequiredService<ILogger<AppDbContext>>();
+
+            // Explicit column guards — idempotent fallback for any migration that
+            // may have been silently swallowed or pre-marked without running the DDL.
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"
+                    ALTER TABLE `engineversions`
+                    ADD COLUMN IF NOT EXISTS `FuelConsumptionCity`     decimal(5,2) NULL,
+                    ADD COLUMN IF NOT EXISTS `FuelConsumptionHighway`  decimal(5,2) NULL,
+                    ADD COLUMN IF NOT EXISTS `FuelConsumptionCombined` decimal(5,2) NULL
+                ");
+                logger.LogInformation("[Schema] FuelConsumption columns ensured on engineversions");
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning("[Schema] Could not ensure FuelConsumption columns: {Msg}", ex.Message);
+            }
 
             // Rename PascalCase tables to lowercase if they were created by a
             // previous deployment before we standardised on lowercase names.
