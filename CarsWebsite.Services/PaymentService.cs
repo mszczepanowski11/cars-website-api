@@ -292,6 +292,10 @@ public class PaymentService : IPaymentService
         var firstName = string.IsNullOrWhiteSpace(user.Name)    ? "Klient" : user.Name;
         var lastName  = string.IsNullOrWhiteSpace(user.Surname) ? "Carizo" : user.Surname;
 
+        var successUrl = payment.AdvertId.HasValue
+            ? $"{siteUrl}/payment/return?status=success&paymentId={payment.Id}&advertId={payment.AdvertId}"
+            : $"{siteUrl}/payment/return?status=success&paymentId={payment.Id}";
+
         var fields = new Dictionary<string, string>
         {
             ["amount"]            = ((int)(payment.Amount * 100)).ToString(),
@@ -300,21 +304,25 @@ public class PaymentService : IPaymentService
             ["customerFirstName"] = firstName,
             ["customerLastName"]  = lastName,
             ["customerEmail"]     = user.Email ?? "",
-            ["urlSuccess"]        = $"{siteUrl}/payment/return?status=success&paymentId={payment.Id}&advertId={payment.AdvertId}",
+            ["urlSuccess"]        = successUrl,
             ["urlFailure"]        = $"{siteUrl}/payment/return?status=failure&paymentId={payment.Id}",
-            ["urlReturn"]         = $"{siteUrl}/payment/return?status=cancel",
+            ["urlReturn"]         = $"{siteUrl}/payment/return?status=cancel&paymentId={payment.Id}",
             ["urlNotification"]   = $"{apiUrl}/api/Payment/webhook",
             ["orderDescription"]  = payment.ServiceDescription,
             ["serviceId"]         = serviceId,
-            ["merchantId"]        = merchantId,
         };
+
+        // merchantId is optional — only include if configured, empty string breaks the signature
+        if (!string.IsNullOrEmpty(merchantId))
+            fields["merchantId"] = merchantId;
 
         fields["signature"] = ComputeImojeSignature(fields, serviceKey);
 
         _logger.LogInformation(
-            "[Imoje/Build] amount={Amount} orderId={OrderId} firstName={First} lastName={Last} email={Email} urlNotification={Notif} sigPrefix={Sig}",
+            "[Imoje/Build] amount={Amount} orderId={OrderId} firstName={First} lastName={Last} email={Email} urlNotification={Notif} fieldKeys={Keys} sigPrefix={Sig}",
             fields["amount"], orderId, firstName, lastName, user.Email,
-            fields["urlNotification"], fields["signature"][..16] + "...");
+            fields["urlNotification"], string.Join(",", fields.Keys.Where(k => k != "signature")),
+            fields["signature"][..16] + "...");
 
         return (actionUrl, fields);
     }
