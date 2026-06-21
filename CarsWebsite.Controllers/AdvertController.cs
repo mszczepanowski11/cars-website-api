@@ -170,6 +170,37 @@ public class AdvertController : ControllerBase
     }
 
     [Authorize]
+    [HttpPost("{id:int}/deactivate")]
+    public async Task<IActionResult> Deactivate(int id)
+    {
+        var userId = GetUserId();
+        if (userId == 0) return Unauthorized();
+        try
+        {
+            await _advertService.DeactivateAsync(id, userId);
+            return NoContent();
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+    }
+
+    [Authorize]
+    [HttpPost("{id:int}/renew")]
+    public async Task<IActionResult> Renew(int id)
+    {
+        var userId = GetUserId();
+        if (userId == 0) return Unauthorized();
+        try
+        {
+            await _advertService.RenewAsync(id, userId);
+            return NoContent();
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    [Authorize]
     [HttpPost("{advertId}/images")]
     public async Task<IActionResult> UploadImage(int advertId, IFormFile file)
     {
@@ -221,8 +252,13 @@ public class AdvertController : ControllerBase
     {
         var userId = GetUserId();
         if (userId == 0) return Unauthorized();
-        await _imageService.SetMainImageAsync(advertId, imageId, userId);
-        return NoContent();
+        try
+        {
+            await _imageService.SetMainImageAsync(advertId, imageId, userId);
+            return NoContent();
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
     }
 
     [Authorize]
@@ -231,7 +267,12 @@ public class AdvertController : ControllerBase
     {
         var userId = GetUserId();
         if (userId == 0) return Unauthorized();
-        await _imageService.DeleteImageAsync(advertId, imageId, userId);
-        return NoContent();
+        try
+        {
+            await _imageService.DeleteImageAsync(advertId, imageId, userId);
+            return NoContent();
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
     }
 }

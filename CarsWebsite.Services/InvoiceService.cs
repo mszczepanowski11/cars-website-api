@@ -44,56 +44,68 @@ public class InvoiceService : IInvoiceService
             return;
         }
 
-        var existingCount = await _context.Invoices
-            .Where(i => i.Month == month && i.Year == year)
-            .CountAsync();
-
-        var seq = existingCount + 1;
-
-        foreach (var group in payments.GroupBy(p => p.UserId))
+        // K-3: Serializable isolation prevents duplicate sequence numbers under concurrent calls
+        using var tx = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+        try
         {
-            var user = group.First().User;
-            var groupPayments = group.ToList();
-            var gross = groupPayments.Sum(p => p.Amount);
-            const decimal vatRate = 0.23m;
-            var net = Math.Round(gross / (1 + vatRate), 2);
+            var existingCount = await _context.Invoices
+                .Where(i => i.Month == month && i.Year == year)
+                .CountAsync();
 
-            var invoice = new Invoice
+            var seq = existingCount + 1;
+
+            foreach (var group in payments.GroupBy(p => p.UserId))
             {
-                UserId = group.Key,
-                InvoiceNumber = $"FZ/{year}/{month:D2}/{seq:D4}",
-                Month = month,
-                Year = year,
-                TotalAmount = gross,
-                NetAmount = net,
-                VatAmount = gross - net,
-                VatRate = vatRate,
-                Status = InvoiceStatus.Generated,
-                GeneratedAt = DateTime.UtcNow
-            };
+                var user = group.First().User;
+                var groupPayments = group.ToList();
+                var gross = groupPayments.Sum(p => p.Amount);
+                const decimal vatRate = 0.23m;
+                var net = Math.Round(gross / (1 + vatRate), 2);
+                var vatAmount = Math.Round(net * vatRate, 2);
 
-            _context.Invoices.Add(invoice);
-            await _context.SaveChangesAsync();
+                var invoice = new Invoice
+                {
+                    UserId = group.Key,
+                    InvoiceNumber = $"FZ/{year}/{month:D2}/{seq:D4}",
+                    Month = month,
+                    Year = year,
+                    TotalAmount = gross,
+                    NetAmount = net,
+                    VatAmount = vatAmount,
+                    VatRate = vatRate,
+                    Status = InvoiceStatus.Generated,
+                    GeneratedAt = DateTime.UtcNow
+                };
 
-            foreach (var p in groupPayments)
-                p.InvoiceId = invoice.Id;
+                _context.Invoices.Add(invoice);
+                await _context.SaveChangesAsync();
 
-            await _context.SaveChangesAsync();
+                foreach (var p in groupPayments)
+                    p.InvoiceId = invoice.Id;
 
-            invoice.User = user;
-            invoice.Payments = groupPayments;
+                await _context.SaveChangesAsync();
 
-            await SendInvoiceEmailAsync(invoice, user);
+                invoice.User = user;
+                invoice.Payments = groupPayments;
 
-            _ = _notifications.NotifyAsync(group.Key, EmailNotificationType.InvoiceGenerated,
-                "Faktura wygenerowana",
-                $"Twoja faktura zbiorcza {invoice.InvoiceNumber} za {monthName} {year} została wygenerowana. Łączna kwota: {invoice.TotalAmount:0.00} PLN.",
-                invoiceId: invoice.Id);
+                await SendInvoiceEmailAsync(invoice, user);
 
-            seq++;
+                _ = _notifications.NotifyAsync(group.Key, EmailNotificationType.InvoiceGenerated,
+                    "Faktura wygenerowana",
+                    $"Twoja faktura zbiorcza {invoice.InvoiceNumber} za {monthName} {year} została wygenerowana. Łączna kwota: {invoice.TotalAmount:0.00} PLN.",
+                    invoiceId: invoice.Id);
+
+                seq++;
+            }
+
+            await tx.CommitAsync();
+            _logger.LogInformation("Wygenerowano faktury za {Month}/{Year}", month, year);
         }
-
-        _logger.LogInformation("Wygenerowano faktury za {Month}/{Year}", month, year);
+        catch
+        {
+            await tx.RollbackAsync();
+            throw;
+        }
     }
 
     public async Task<PagedResult<InvoiceResponseDto>> GetUserInvoicesAsync(int userId, int page, int pageSize)
@@ -322,10 +334,21 @@ public class InvoiceService : IInvoiceService
         var monthName = ci.DateTimeFormat.GetMonthName(inv.Month);
         var user = inv.User;
 
-        var buyerName = user?.AccountType == AccountType.Business
-                        && !string.IsNullOrWhiteSpace(user.CompanyName)
-            ? user.CompanyName
-            : $"{user?.Name} {user?.Surname}";
+        // Determine buyer display data — prefer payment billing snapshot, fall back to user profile
+        var firstPayment = inv.Payments.FirstOrDefault();
+        var buyerName = !string.IsNullOrWhiteSpace(firstPayment?.BillingName)
+            ? firstPayment.BillingName
+            : (user?.AccountType == AccountType.Business && !string.IsNullOrWhiteSpace(user.CompanyName)
+                ? user.CompanyName
+                : $"{user?.Name} {user?.Surname}");
+
+        var buyerNip = !string.IsNullOrWhiteSpace(firstPayment?.BillingNip)
+            ? firstPayment.BillingNip
+            : user?.Nip;
+
+        var buyerAddress = (!string.IsNullOrWhiteSpace(firstPayment?.BillingStreet) || !string.IsNullOrWhiteSpace(firstPayment?.BillingCity))
+            ? $"{firstPayment?.BillingStreet}, {firstPayment?.BillingPostalCode} {firstPayment?.BillingCity}"
+            : null;
 
         var sb = new StringBuilder();
         sb.Append(@"<!DOCTYPE html>
@@ -354,8 +377,10 @@ td{padding:9px 12px;border:1px solid #ddd;font-size:13px}
 
         sb.Append("<div class=\"parties\">");
         sb.Append($"<div class=\"party\"><h4>Nabywca</h4><p><strong>{buyerName}</strong></p>");
-        if (user?.AccountType == AccountType.Business && !string.IsNullOrWhiteSpace(user.Nip))
-            sb.Append($"<p>NIP: {user.Nip}</p>");
+        if (!string.IsNullOrWhiteSpace(buyerNip))
+            sb.Append($"<p>NIP: {buyerNip}</p>");
+        if (!string.IsNullOrWhiteSpace(buyerAddress))
+            sb.Append($"<p>{buyerAddress}</p>");
         sb.Append($"<p>{user?.Email}</p></div>");
         sb.Append($"<div class=\"party\"><h4>Sprzedawca</h4>" +
                   $"<p><strong>CARIZO Wiktor Niezgoda</strong></p>" +

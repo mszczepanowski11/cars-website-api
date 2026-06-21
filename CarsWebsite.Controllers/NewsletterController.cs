@@ -5,8 +5,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace cars_website_api.CarsWebsite.Controllers;
 
-[Route("api/[controller]")]
 [ApiController]
+[Route("api/[controller]")]
 public class NewsletterController : ControllerBase
 {
     private readonly AppDbContext _context;
@@ -20,7 +20,7 @@ public class NewsletterController : ControllerBase
     public async Task<IActionResult> Subscribe([FromBody] NewsletterSubscribeDto dto)
     {
         if (string.IsNullOrWhiteSpace(dto.Email) || !new EmailAddressAttribute().IsValid(dto.Email))
-            return BadRequest(new { message = "Nieprawidłowy adres email." });
+            return BadRequest(new { message = "Podaj prawidłowy adres e-mail." });
 
         var email = dto.Email.Trim().ToLowerInvariant();
         var existing = await _context.NewsletterSubscribers.FirstOrDefaultAsync(n => n.Email == email);
@@ -28,24 +28,24 @@ public class NewsletterController : ControllerBase
         if (existing != null)
         {
             if (existing.IsActive)
-                return Conflict(new { message = "Ten adres email jest już zapisany na newsletter." });
+                return Ok(new { message = "Ten adres e-mail jest już zapisany do newslettera." });
 
             existing.IsActive = true;
-            existing.SubscribedAt = DateTime.UtcNow;
             existing.UnsubscribedAt = null;
-        }
-        else
-        {
-            _context.NewsletterSubscribers.Add(new NewsletterSubscriber
-            {
-                Email = email,
-                IsActive = true,
-                SubscribedAt = DateTime.UtcNow
-            });
+            existing.SubscribedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Zapisano do newslettera." });
         }
 
+        _context.NewsletterSubscribers.Add(new NewsletterSubscriber
+        {
+            Email = email,
+            IsActive = true,
+            SubscribedAt = DateTime.UtcNow
+        });
+
         await _context.SaveChangesAsync();
-        return Ok(new { message = "Zapisano na newsletter. Dziękujemy!" });
+        return Ok(new { message = "Zapisano do newslettera." });
     }
 
     [HttpPost("unsubscribe")]

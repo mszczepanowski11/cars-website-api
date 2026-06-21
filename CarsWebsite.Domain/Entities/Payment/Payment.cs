@@ -29,4 +29,11 @@ public class Payment
     public Invoice? Invoice { get; set; }
 
     public int? DurationDays { get; set; }
+
+    // Billing snapshot for invoice generation
+    public string? BillingName { get; set; }
+    public string? BillingNip { get; set; }
+    public string? BillingStreet { get; set; }
+    public string? BillingPostalCode { get; set; }
+    public string? BillingCity { get; set; }
 }

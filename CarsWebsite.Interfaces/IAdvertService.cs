@@ -13,6 +13,8 @@ public interface IAdvertService
     Task MarkAsSoldAsync(int advertId, int userId);
     Task PublishAsync(int advertId, int userId);
     Task<(int activeCount, int yearCount)> GetPersonalAdCountsAsync(int userId);
+    Task DeactivateAsync(int advertId, int userId);
+    Task RenewAsync(int advertId, int userId);
 }
 
 public class PagedResult<T>

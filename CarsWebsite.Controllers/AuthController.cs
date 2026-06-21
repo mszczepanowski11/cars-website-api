@@ -1,9 +1,11 @@
 using cars_website_api.CarsWebsite.DTOs;
 using cars_website_api.CarsWebsite.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace cars_website_api.CarsWebsite.Controllers;
 
+[EnableRateLimiting("auth")]
 [Route("api/[controller]")]
 [ApiController]
 public class AuthController : ControllerBase
@@ -73,6 +75,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("forgot-password")]
+    [EnableRateLimiting("strict")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
     {
         // Always return 200 to avoid user enumeration
@@ -104,6 +107,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("resend-verification")]
+    [EnableRateLimiting("strict")]
     public async Task<IActionResult> ResendVerification([FromBody] ForgotPasswordDto dto)
     {
         await _authService.ResendVerificationAsync(dto.Email);

@@ -115,6 +115,8 @@ public class AuthService : IAuthService
         if (record == null || record.IsRevoked || record.ExpiresAt <= DateTime.UtcNow)
             return null;
 
+        if (record.User.IsBlocked) return new { error = "blocked" };
+
         record.IsRevoked = true;
         var newPair = await IssueTokenPairAsync(record.User);
         await _context.SaveChangesAsync();
@@ -223,6 +225,7 @@ public class AuthService : IAuthService
         if (payload == null || string.IsNullOrEmpty(payload.Email) || payload.EmailVerified != "true")
             return null;
 
+        // Validate audience — ClientId must be configured, otherwise Google login is disabled
         var clientId = _configuration["Google:ClientId"]
             ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
         if (string.IsNullOrEmpty(clientId))
@@ -230,8 +233,7 @@ public class AuthService : IAuthService
             _logger.LogError("[GoogleLogin] Google:ClientId nie skonfigurowany — logowanie przez Google wyłączone.");
             return null;
         }
-        if (payload.Aud != clientId)
-            return null;
+        if (payload.Aud != clientId) return null;
 
         var user = await _context.Users.FirstOrDefaultAsync(u => u.GoogleId == payload.Sub)
                 ?? await _context.Users.FirstOrDefaultAsync(u => u.Email == payload.Email);
@@ -263,6 +265,9 @@ public class AuthService : IAuthService
         user.LastLoginAt = DateTime.UtcNow;
         return await IssueTokenPairAsync(user);
     }
+
+    private static string GenerateRefreshToken()
+        => Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
 
     private string GenerateToken(User user)
     {

@@ -8,5 +8,6 @@ public class PromoteAdvertDto
     [RegularExpression("^(TOP|PREMIUM|FEATURED|REFRESH|EventFeatured)$",
         ErrorMessage = "Nieprawidłowy typ promocji.")]
     public string Type { get; set; } = string.Empty;
-    public int DurationDays { get; set; }
+
+    [Required] [Range(1, 365)] public int DurationDays { get; set; }
 }

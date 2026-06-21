@@ -170,9 +170,10 @@ public class UserService : IUserService
         var user = await _context.Users.FindAsync(userId)
             ?? throw new KeyNotFoundException("User not found.");
 
+        // RODO: anonymize instead of hard delete to preserve referential integrity
+        user.Email = $"deleted_{userId}_{Guid.NewGuid():N}@carizo.deleted";
         user.Name = "Usunięty";
         user.Surname = "Użytkownik";
-        user.Email = $"deleted_{userId}_{Guid.NewGuid():N}@deleted.carizo.pl";
         user.PhoneNumber = null;
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString());
         user.AvatarUrl = null;
@@ -187,12 +188,13 @@ public class UserService : IUserService
         user.GoogleId = null;
         user.FacebookId = null;
         user.IsBlocked = true;
+        user.BlockedAt = DateTime.UtcNow;
+        user.BlockedReason = "Konto usunięte przez użytkownika";
         user.EmailVerified = false;
         user.EmailVerificationToken = null;
         user.EmailVerificationTokenExpires = null;
         user.PasswordResetToken = null;
         user.PasswordResetTokenExpires = null;
-
         await _context.SaveChangesAsync();
     }
 
