@@ -53,6 +53,20 @@ public class InvoiceController : ControllerBase
         catch (KeyNotFoundException) { return NotFound(); }
     }
 
+    [Authorize]
+    [HttpGet("{id:int}/pdf")]
+    public async Task<IActionResult> DownloadPdf(int id)
+    {
+        var userId = GetUserId();
+        if (userId == 0) return Unauthorized();
+        try
+        {
+            var bytes = await _invoiceService.GenerateInvoicePdfAsync(id, userId, IsAdmin());
+            return File(bytes, "application/pdf", $"faktura-CARIZO-{id}.pdf");
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+    }
+
     [HttpGet("admin/all")]
     [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> AdminGetAll(

@@ -52,6 +52,12 @@ namespace CarsWebsite
         public DbSet<EventAttendee> EventAttendees { get; set; }
         public DbSet<EventFavourite> EventFavourites { get; set; }
 
+        // Auth
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
+
+        // Newsletter
+        public DbSet<NewsletterSubscriber> NewsletterSubscribers { get; set; }
+
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -252,6 +258,14 @@ namespace CarsWebsite
                 .HasIndex(m => new { m.ConversationId, m.IsRead });
             modelBuilder.Entity<AppNotification>()
                 .HasIndex(n => new { n.UserId, n.IsRead });
+
+            modelBuilder.Entity<RefreshToken>().ToTable("refreshtokens").HasKey(t => t.Id);
+            modelBuilder.Entity<RefreshToken>().HasIndex(t => t.Token).IsUnique();
+            modelBuilder.Entity<RefreshToken>().HasIndex(t => t.UserId);
+            modelBuilder.Entity<RefreshToken>().HasOne(t => t.User).WithMany().HasForeignKey(t => t.UserId).OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<NewsletterSubscriber>().ToTable("newslettersubscribers").HasKey(n => n.Id);
+            modelBuilder.Entity<NewsletterSubscriber>().HasIndex(n => n.Email).IsUnique();
 
             // Additional performance indexes (SR-9)
             modelBuilder.Entity<CarAdvert>().HasIndex(a => a.Price);

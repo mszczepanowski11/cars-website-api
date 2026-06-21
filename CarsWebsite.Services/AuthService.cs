@@ -101,14 +101,47 @@ public class AuthService : IAuthService
         if (!user.EmailVerified)
             return new { error = "unverified" };
 
-        return new { token = GenerateToken(user) };
+        user.LastLoginAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        return await IssueTokenPairAsync(user);
     }
 
-    public Task<object?> RefreshAsync(string refreshToken)
-        => Task.FromResult<object?>(null);
+    public async Task<object?> RefreshAsync(string refreshToken)
+    {
+        var record = await _context.RefreshTokens
+            .Include(t => t.User)
+            .FirstOrDefaultAsync(t => t.Token == refreshToken);
 
-    public Task RevokeAsync(string refreshToken)
-        => Task.CompletedTask;
+        if (record == null || record.IsRevoked || record.ExpiresAt <= DateTime.UtcNow)
+            return null;
+
+        record.IsRevoked = true;
+        var newPair = await IssueTokenPairAsync(record.User);
+        await _context.SaveChangesAsync();
+        return newPair;
+    }
+
+    public async Task RevokeAsync(string refreshToken)
+    {
+        var record = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.Token == refreshToken);
+        if (record == null) return;
+        record.IsRevoked = true;
+        await _context.SaveChangesAsync();
+    }
+
+    private async Task<object> IssueTokenPairAsync(User user)
+    {
+        var raw = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
+        _context.RefreshTokens.Add(new RefreshToken
+        {
+            Token = raw,
+            UserId = user.Id,
+            ExpiresAt = DateTime.UtcNow.AddDays(30),
+            CreatedAt = DateTime.UtcNow
+        });
+        await _context.SaveChangesAsync();
+        return new { token = GenerateToken(user), refreshToken = raw };
+    }
 
     public async Task ForgotPasswordAsync(string email)
     {
@@ -227,7 +260,8 @@ public class AuthService : IAuthService
 
         if (user.IsBlocked) return new { error = "blocked" };
 
-        return new { token = GenerateToken(user) };
+        user.LastLoginAt = DateTime.UtcNow;
+        return await IssueTokenPairAsync(user);
     }
 
     private string GenerateToken(User user)
@@ -313,7 +347,8 @@ public class AuthService : IAuthService
 
         if (user.IsBlocked) return new { error = "blocked" };
 
-        return new { token = GenerateToken(user) };
+        user.LastLoginAt = DateTime.UtcNow;
+        return await IssueTokenPairAsync(user);
     }
 
     private sealed class GoogleTokenPayload

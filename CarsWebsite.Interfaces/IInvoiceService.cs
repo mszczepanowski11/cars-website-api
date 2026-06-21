@@ -8,6 +8,7 @@ public interface IInvoiceService
     Task<PagedResult<InvoiceResponseDto>> GetUserInvoicesAsync(int userId, int page, int pageSize);
     Task<InvoiceResponseDto> GetInvoiceAsync(int id, int userId, bool isAdmin = false);
     Task<byte[]> GenerateInvoiceHtmlAsync(int id, int userId, bool isAdmin = false);
+    Task<byte[]> GenerateInvoicePdfAsync(int id, int userId, bool isAdmin = false);
     Task<PagedResult<InvoiceResponseDto>> GetAllInvoicesAsync(int page, int pageSize);
     Task SendInvoiceByEmailAsync(int invoiceId);
 }

@@ -1,6 +1,8 @@
 using cars_website_api.CarsWebsite.DTOs.Event;
 using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using Microsoft.EntityFrameworkCore;
 
 namespace cars_website_api.CarsWebsite.Services;
@@ -8,12 +10,12 @@ namespace cars_website_api.CarsWebsite.Services;
 public class EventService : IEventService
 {
     private readonly AppDbContext _context;
-    private readonly IWebHostEnvironment _env;
+    private readonly Cloudinary _cloudinary;
 
-    public EventService(AppDbContext context, IWebHostEnvironment env)
+    public EventService(AppDbContext context, Cloudinary cloudinary)
     {
         _context = context;
-        _env = env;
+        _cloudinary = cloudinary;
     }
 
     private static readonly string[] AllowedMimeTypes = ["image/jpeg", "image/png", "image/webp"];
@@ -26,24 +28,18 @@ public class EventService : IEventService
         if (file.Length > MaxFileSizeBytes)
             throw new BadHttpRequestException("File too large (max 10 MB).");
 
-        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-        if (ext is not (".jpg" or ".jpeg" or ".png" or ".webp"))
-            throw new BadHttpRequestException("Invalid file extension.");
+        using var stream = file.OpenReadStream();
+        var uploadParams = new ImageUploadParams
+        {
+            File = new FileDescription(file.FileName, stream),
+            Folder = $"carizo/events/{eventId}",
+            Transformation = new Transformation().Quality("auto").FetchFormat("auto")
+        };
+        var result = await _cloudinary.UploadAsync(uploadParams);
+        if (result.Error != null)
+            throw new InvalidOperationException("Błąd przesyłania zdjęcia.");
 
-        var basePath = string.IsNullOrEmpty(_env.WebRootPath)
-            ? Path.Combine(_env.ContentRootPath, "wwwroot")
-            : _env.WebRootPath;
-
-        var folder = Path.Combine(basePath, "uploads", "events", eventId.ToString());
-        Directory.CreateDirectory(folder);
-
-        var fileName = $"{Guid.NewGuid()}{ext}";
-        var filePath = Path.Combine(folder, fileName);
-
-        using var stream = new FileStream(filePath, FileMode.Create);
-        await file.CopyToAsync(stream);
-
-        return $"/uploads/events/{eventId}/{fileName}";
+        return result.SecureUrl.ToString();
     }
 
     private static EventResponseDto MapToDto(global::CarsWebsite.Event e, int attendingCount = 0, int interestedCount = 0, bool isUserInterested = false, bool isUserFavorite = false) => new()
