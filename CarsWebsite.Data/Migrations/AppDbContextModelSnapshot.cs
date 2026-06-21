@@ -1195,11 +1195,26 @@ namespace cars_website_api.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("BrandId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ModelId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<int?>("VehicleCategoryId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("BrandId");
+
+                    b.HasIndex("ModelId");
+
+                    b.HasIndex("VehicleCategoryId");
 
                     b.ToTable("FeatureCategories");
                 });
@@ -2062,7 +2077,27 @@ namespace cars_website_api.Migrations
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.FeatureCategory", b =>
                 {
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.Brand", "Brand")
+                        .WithMany()
+                        .HasForeignKey("BrandId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.Model", "Model")
+                        .WithMany()
+                        .HasForeignKey("ModelId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.VehicleCategory", "VehicleCategory")
+                        .WithMany()
+                        .HasForeignKey("VehicleCategoryId");
+
+                    b.Navigation("Brand");
+
                     b.Navigation("Features");
+
+                    b.Navigation("Model");
+
+                    b.Navigation("VehicleCategory");
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Generation", b =>

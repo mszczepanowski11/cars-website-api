@@ -10,4 +10,6 @@ public class CreateFeatureCategoryDto
 {
     public string Name { get; set; } = string.Empty;
     public int? VehicleCategoryId { get; set; }
+    public int? BrandId { get; set; }
+    public int? ModelId { get; set; }
 }

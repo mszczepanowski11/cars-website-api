@@ -5,5 +5,7 @@ public class FeatureCategoryDto
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public int? VehicleCategoryId { get; set; }
+    public int? BrandId { get; set; }
+    public int? ModelId { get; set; }
     public List<FeatureDto> Features { get; set; } = new();
 }

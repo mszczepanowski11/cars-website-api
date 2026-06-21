@@ -222,7 +222,7 @@ internal class Program
                     // DB was created via EnsureCreated — mark all pre-existing migrations
                     // as applied so MigrateAsync only runs genuinely new ones.
                     var allMigrations = db.Database.GetMigrations().ToList();
-                    var newMigration = "20260621000000_AddMissingIndexesAndConstraints";
+                    var newMigration = "20260621120000_AddBrandModelToFeatureCategory";
                     foreach (var m in allMigrations.Where(m => m != newMigration))
                     {
                         db.Database.ExecuteSqlRaw(
