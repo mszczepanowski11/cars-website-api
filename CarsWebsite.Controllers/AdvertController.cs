@@ -30,6 +30,22 @@ public class AdvertController : ControllerBase
 
     private bool IsAdmin() => User.FindFirstValue("isAdmin") == "true";
 
+    [HttpGet("most-viewed")]
+    public async Task<IActionResult> GetMostViewed([FromQuery] int count = 8)
+        => Ok(await _advertService.GetMostViewedAsync(count));
+
+    [HttpGet("premium-collection")]
+    public async Task<IActionResult> GetPremiumCollection([FromQuery] int count = 8)
+        => Ok(await _advertService.GetPremiumCollectionAsync(count));
+
+    [HttpPost("{id}/view")]
+    public async Task<IActionResult> RecordView(int id)
+    {
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+        await _advertService.RecordViewAsync(id, ip);
+        return Ok();
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
