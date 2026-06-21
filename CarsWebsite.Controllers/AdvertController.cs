@@ -154,7 +154,7 @@ public class AdvertController : ControllerBase
         catch (UnauthorizedAccessException) { return Forbid(); }
     }
 
-    [Authorize]
+    [Authorize(Policy = "AdminOnly")]
     [HttpPost("{id}/promote")]
     public async Task<IActionResult> Promote(int id, [FromBody] PromoteAdvertDto dto)
     {
