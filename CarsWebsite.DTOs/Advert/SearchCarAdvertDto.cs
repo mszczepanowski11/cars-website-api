@@ -46,6 +46,9 @@ public class SearchCarAdvertDto
     public bool? HasRetarder { get; set; }
     public bool? HasTachograph { get; set; }
 
+    // Parts specific
+    public string? CatalogNumber { get; set; }
+
     public string? City { get; set; }
     public string? Region { get; set; }
 

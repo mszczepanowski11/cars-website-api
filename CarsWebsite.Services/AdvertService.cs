@@ -301,6 +301,9 @@ public class AdvertService : IAdvertService
         if (dto.HasTachograph.HasValue)
             query = query.Where(a => a.HasTachograph == dto.HasTachograph);
 
+        if (!string.IsNullOrEmpty(dto.CatalogNumber))
+            query = query.Where(a => a.CatalogNumber != null && a.CatalogNumber.Contains(dto.CatalogNumber));
+
         var prioritized = query.OrderBy(a =>
             a.Badge == "TOP" ? 0 : a.Badge == "PREMIUM" ? 1 : a.Badge == "FEATURED" ? 2 : 3);
 
