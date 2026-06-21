@@ -4,6 +4,8 @@ using cars_website_api.CarsWebsite.DTOs;
 using cars_website_api.CarsWebsite.DTOs.User;
 using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -13,11 +15,13 @@ public class UserService : IUserService
 {
     private readonly AppDbContext _context;
     private readonly ILogger<UserService> _logger;
+    private readonly Cloudinary _cloudinary;
 
-    public UserService(AppDbContext context, ILogger<UserService> logger)
+    public UserService(AppDbContext context, ILogger<UserService> logger, Cloudinary cloudinary)
     {
         _context = context;
         _logger = logger;
+        _cloudinary = cloudinary;
     }
 
     public async Task<User?> GetById(int id)
@@ -201,6 +205,24 @@ public class UserService : IUserService
             .ToListAsync();
         foreach (var t in tokens) t.IsRevoked = true;
 
+        var advertImages = await _context.AdvertImages
+            .Where(img => _context.CarAdverts
+                .Where(a => a.UserId == userId)
+                .Select(a => a.Id)
+                .Contains(img.AdvertId))
+            .ToListAsync();
+
+        foreach (var img in advertImages)
+        {
+            var publicId = ExtractPublicId(img.Url);
+            if (publicId != null)
+            {
+                try { await _cloudinary.DestroyAsync(new DeletionParams(publicId)); }
+                catch { /* best-effort cleanup */ }
+            }
+        }
+        _context.AdvertImages.RemoveRange(advertImages);
+
         await _context.SaveChangesAsync();
     }
 
@@ -263,5 +285,22 @@ public class UserService : IUserService
             favorites,
             sentMessages = messages
         };
+    }
+
+    private static string? ExtractPublicId(string url)
+    {
+        try
+        {
+            var segments = new Uri(url).AbsolutePath.Split('/');
+            var uploadIdx = Array.IndexOf(segments, "upload");
+            if (uploadIdx < 0) return null;
+            var start = uploadIdx + 1;
+            if (start < segments.Length && segments[start].StartsWith('v') && long.TryParse(segments[start][1..], out _))
+                start++;
+            var idWithExt = string.Join("/", segments[start..]);
+            var dot = idWithExt.LastIndexOf('.');
+            return dot > 0 ? idWithExt[..dot] : idWithExt;
+        }
+        catch { return null; }
     }
 }
