@@ -329,7 +329,7 @@ public class AdvertService : IAdvertService
             .Include(a => a.FuelType).Include(a => a.Gearbox)
             .Include(a => a.BodyType).Include(a => a.Images)
             .Include(a => a.AdvertFeatures).ThenInclude(af => af.Feature)
-            .Where(a => a.UserId == userId)
+            .Where(a => a.UserId == userId && !a.IsHidden)
             .OrderByDescending(a => a.CreatedAt);
         
        
