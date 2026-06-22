@@ -155,7 +155,7 @@ public class AdminController : ControllerBase
     public async Task<IActionResult> CreateFeature([FromBody] CreateFeatureDto dto)
     {
         var cat = await _db.FeatureCategories.FindAsync(dto.CategoryId);
-        if (cat == null) return BadRequest("Kategoria wyposażenia nie istnieje.");
+        if (cat == null) return BadRequest(new { message = "Kategoria wyposażenia nie istnieje." });
         var feature = new Feature { Name = dto.Name, CategoryId = dto.CategoryId };
         _db.Features.Add(feature);
         await _db.SaveChangesAsync();

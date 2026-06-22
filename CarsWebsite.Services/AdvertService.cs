@@ -42,10 +42,30 @@ public class AdvertService : IAdvertService
     }
 
     
+    // Strip HTML-like angle-bracket characters from a string to prevent XSS in page titles.
+    private static string StripHtml(string input)
+        => System.Text.RegularExpressions.Regex.Replace(input, @"[<>]", "");
+
     public async Task<int> CreateCarAdvertAsync(CreateCarAdvertDto dto,int userId)
     {
-        if (!string.IsNullOrWhiteSpace(dto.Vin) && dto.Vin.Length != 17)
-            throw new ArgumentException("Numer VIN musi mieć dokładnie 17 znaków.");
+        // Sanitize Title and Description: trim whitespace and strip angle-bracket characters
+        dto.Title = StripHtml(dto.Title.Trim());
+        if (dto.Description != null)
+            dto.Description = StripHtml(dto.Description.Trim());
+
+        // Validate VIN format: exactly 17 alphanumeric chars, no I/O/Q
+        if (!string.IsNullOrWhiteSpace(dto.Vin))
+        {
+            dto.Vin = dto.Vin.Trim().ToUpperInvariant();
+            if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Vin, @"^[A-HJ-NPR-Z0-9]{17}$"))
+                throw new ArgumentException("Numer VIN musi mieć dokładnie 17 znaków alfanumerycznych (bez liter I, O, Q).");
+
+            // Duplicate VIN check: reject if another non-deleted advert with same VIN exists for this user
+            var duplicateVin = await _context.CarAdverts
+                .AnyAsync(a => a.Vin == dto.Vin && a.UserId == userId && a.IsActive && !a.IsHidden);
+            if (duplicateVin)
+                throw new InvalidOperationException("Masz już aktywne ogłoszenie z tym numerem VIN.");
+        }
 
         if (dto.BrandId > 0 && dto.VehicleCategoryId.HasValue)
         {
@@ -93,6 +113,19 @@ public class AdvertService : IAdvertService
     
     public async Task UpdateCarAdvertAsync(int id, UpdateCarAdvertDto dto, int userId)
     {
+        // Sanitize Title and Description: trim whitespace and strip angle-bracket characters
+        dto.Title = StripHtml(dto.Title.Trim());
+        if (dto.Description != null)
+            dto.Description = StripHtml(dto.Description.Trim());
+
+        // Validate VIN format if provided
+        if (!string.IsNullOrWhiteSpace(dto.Vin))
+        {
+            dto.Vin = dto.Vin.Trim().ToUpperInvariant();
+            if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Vin, @"^[A-HJ-NPR-Z0-9]{17}$"))
+                throw new ArgumentException("Numer VIN musi mieć dokładnie 17 znaków alfanumerycznych (bez liter I, O, Q).");
+        }
+
         var advert = await _context.CarAdverts
             .Include(a => a.AdvertFeatures)
             .FirstOrDefaultAsync(a => a.Id == id);
@@ -100,7 +133,7 @@ public class AdvertService : IAdvertService
         if (advert == null)
             throw new KeyNotFoundException("Advert not found");
 
-        if (advert.UserId != userId)    
+        if (advert.UserId != userId)
             throw new UnauthorizedAccessException("You do not own this advert");
 
         _mapper.Map(dto, advert);

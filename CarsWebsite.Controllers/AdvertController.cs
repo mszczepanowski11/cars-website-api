@@ -98,6 +98,16 @@ public class AdvertController : ControllerBase
             _logger.LogInformation("[Advert/Create] Created advertId={AdvertId} userId={UserId}", id, userId);
             return CreatedAtAction(nameof(GetById), new { id }, new { id });
         }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning("[Advert/Create] Validation failed userId={UserId}: {Msg}", userId, ex.Message);
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning("[Advert/Create] Business rule rejected userId={UserId}: {Msg}", userId, ex.Message);
+            return BadRequest(new { message = ex.Message });
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "[Advert/Create] FAILED userId={UserId} msg={Message} inner={Inner}", userId, ex.Message, ex.InnerException?.Message);
@@ -116,6 +126,7 @@ public class AdvertController : ControllerBase
             await _advertService.UpdateCarAdvertAsync(id, dto, userId);
             return NoContent();
         }
+        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
         catch (UnauthorizedAccessException) { return Forbid(); }
         catch (KeyNotFoundException) { return NotFound(); }
     }
