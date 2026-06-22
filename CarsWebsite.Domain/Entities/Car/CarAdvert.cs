@@ -73,6 +73,10 @@ public class CarAdvert : Advert
     public string? Badge { get; set; }
     public DateTime? BadgeExpiresAt { get; set; }
 
+    // FeaturedUntil mirrors BadgeExpiresAt specifically for the "FEATURED" badge type
+    // and provides a dedicated column consistent with the Event.FeaturedUntil pattern.
+    public DateTime? FeaturedUntil { get; set; }
+
     // Commercial vehicle / truck / trailer specific
     public int? AxleCount { get; set; }
     public int? Payload { get; set; }

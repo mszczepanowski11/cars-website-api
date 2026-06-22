@@ -1392,6 +1392,9 @@ namespace cars_website_api.Migrations
                     b.Property<string>("EuroNorm")
                         .HasColumnType("longtext");
 
+                    b.Property<DateTime?>("FeaturedUntil")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime?>("FirstRegistrationDate")
                         .HasColumnType("datetime(6)");
 
