@@ -10,6 +10,7 @@ using System.Text.Json;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting("global")]
 public class PaymentController : ControllerBase
 {
     private readonly IPaymentService _paymentService;

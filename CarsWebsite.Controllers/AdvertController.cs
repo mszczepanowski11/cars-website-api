@@ -3,10 +3,12 @@ using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting("global")]
 public class AdvertController : ControllerBase
 {
     private readonly IAdvertService _advertService;

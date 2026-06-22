@@ -111,6 +111,7 @@ internal class Program
         var cloudinary = new Cloudinary(cloudinaryAccount);
         cloudinary.Api.Secure = true;
         builder.Services.AddSingleton(cloudinary);
+        builder.Services.AddMemoryCache(); // B-27: taxonomy caching
         builder.Services.AddScoped<ITaxonomyService, TaxonomyService>();
         builder.Services.AddScoped<ICategoryService, CategoryService>();
         builder.Services.AddScoped<IFavoriteService, FavoriteService>();
@@ -130,7 +131,19 @@ internal class Program
 
         builder.Services.AddRateLimiter(options =>
         {
-            options.RejectionStatusCode = 429;
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+            // B-26: Global rate limiter — applies to all endpoints via app.UseRateLimiter()
+            // and [EnableRateLimiting("global")] on sensitive controllers.
+            options.AddFixedWindowLimiter("global", o =>
+            {
+                o.PermitLimit = 100;
+                o.Window = TimeSpan.FromMinutes(1);
+                o.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+                o.QueueLimit = 2;
+            });
+
+            // Per-endpoint stricter policies
             options.AddFixedWindowLimiter("auth", o =>
             {
                 o.PermitLimit = 10;
