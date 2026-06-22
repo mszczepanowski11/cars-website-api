@@ -18,9 +18,7 @@ internal class Program
 {
     public static void Main(string[] args)
     {
-        Console.WriteLine("===========================================");
         Console.WriteLine("CARIZO API v1.0.2 STARTING");
-        Console.WriteLine("===========================================");
         var webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
         Directory.CreateDirectory(webRootPath);
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -80,8 +78,6 @@ internal class Program
         var cloudName   = (Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME")   ?? "").Trim();
         var cloudApiKey = (Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY")       ?? "").Trim();
         var cloudSecret = (Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET")    ?? "").Trim();
-
-        Console.WriteLine($"[Cloudinary] cloud={cloudName}, key={(cloudApiKey.Length > 4 ? cloudApiKey[..4] + "****" : "(empty)")}, secret={(cloudSecret.Length > 4 ? cloudSecret[..4] + "****" : "(empty)")}");
 
         // Use placeholder credentials when env vars are missing so the API still starts.
         // Actual uploads will fail at runtime with a clear error rather than crashing the container.
@@ -161,8 +157,8 @@ internal class Program
         builder.Services.AddCors(options => {
             options.AddPolicy("AllowNuxt", policy => {
                 policy.WithOrigins(allowedOrigins)
-                    .AllowAnyHeader()
-                    .AllowAnyMethod();
+                    .WithHeaders("Content-Type", "Authorization", "X-Requested-With", "X-CSRF-Token")
+                    .WithMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS");
             });
         });
         
@@ -199,6 +195,8 @@ internal class Program
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var startLogger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
+            startLogger.LogInformation("[Cloudinary] cloud={Cloud} key={Key}", cloudName.Length > 0 ? cloudName : "(empty)", cloudApiKey.Length > 4 ? cloudApiKey[..4] + "****" : "(empty)");
 
             // Bootstrap EF Core migration history for databases that were created via
             // EnsureCreated before formal migrations were adopted. On a fresh DB,
@@ -650,12 +648,18 @@ internal class Program
                 {
                     logger.LogWarning("Detected numeric brand names — clearing brand tables for re-seed");
                     db.Database.ExecuteSqlRaw("SET FOREIGN_KEY_CHECKS=0");
-                    try { db.Database.ExecuteSqlRaw("DELETE FROM `brandvehiclecategories`"); } catch { }
-                    try { db.Database.ExecuteSqlRaw("DELETE FROM `generations`"); } catch { }
-                    try { db.Database.ExecuteSqlRaw("DELETE FROM `models`"); } catch { }
-                    try { db.Database.ExecuteSqlRaw("DELETE FROM `brands`"); } catch { }
-                    db.Database.ExecuteSqlRaw("UPDATE `caradverts` SET `BrandId` = NULL, `ModelId` = NULL WHERE 1=1");
-                    db.Database.ExecuteSqlRaw("SET FOREIGN_KEY_CHECKS=1");
+                    try
+                    {
+                        try { db.Database.ExecuteSqlRaw("DELETE FROM `brandvehiclecategories`"); } catch { }
+                        try { db.Database.ExecuteSqlRaw("DELETE FROM `generations`"); } catch { }
+                        try { db.Database.ExecuteSqlRaw("DELETE FROM `models`"); } catch { }
+                        try { db.Database.ExecuteSqlRaw("DELETE FROM `brands`"); } catch { }
+                        db.Database.ExecuteSqlRaw("UPDATE `caradverts` SET `BrandId` = NULL, `ModelId` = NULL WHERE 1=1");
+                    }
+                    finally
+                    {
+                        db.Database.ExecuteSqlRaw("SET FOREIGN_KEY_CHECKS=1");
+                    }
                     logger.LogInformation("Brand tables cleared — seeder will re-populate on next call");
                 }
             }
@@ -843,6 +847,16 @@ internal class Program
             ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
                              | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
         });
+        app.Use(async (context, next) =>
+        {
+            context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+            context.Response.Headers["X-Frame-Options"] = "DENY";
+            context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+            context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+            await next();
+        });
+        if (!app.Environment.IsDevelopment())
+            app.UseHsts();
         app.UseStaticFiles();
         app.UseHttpsRedirection();
         app.UseCors("AllowNuxt");

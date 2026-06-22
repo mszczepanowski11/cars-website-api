@@ -116,6 +116,7 @@ public class InvoiceService : IInvoiceService
 
     public async Task<PagedResult<InvoiceResponseDto>> GetUserInvoicesAsync(int userId, int page, int pageSize)
     {
+        pageSize = Math.Clamp(pageSize, 1, 100);
         var query = _context.Invoices
             .Include(i => i.Payments)
             .Include(i => i.User)
@@ -205,9 +206,9 @@ public class InvoiceService : IInvoiceService
                         });
                         row.RelativeItem().Column(c =>
                         {
-                            c.Item().Text("CARIZO Wiktor Niezgoda").Bold().AlignRight();
-                            c.Item().Text("NIP: 9452331007").AlignRight();
-                            c.Item().Text("ul. H. Pachońskiego 7/60, 31-223 Kraków").AlignRight();
+                            c.Item().Text(_config["Invoice:SellerName"] ?? "CARIZO Wiktor Niezgoda").Bold().AlignRight();
+                            c.Item().Text($"NIP: {_config["Invoice:SellerNip"] ?? "9452331007"}").AlignRight();
+                            c.Item().Text(_config["Invoice:SellerAddress"] ?? "ul. H. Pachońskiego 7/60, 31-223 Kraków").AlignRight();
                         });
                     });
 
@@ -398,10 +399,14 @@ td{padding:9px 12px;border:1px solid #ddd;font-size:13px}
         if (!string.IsNullOrWhiteSpace(buyerAddress))
             sb.Append($"<p>{buyerAddress}</p>");
         sb.Append($"<p>{user?.Email}</p></div>");
+        var sellerName = _config["Invoice:SellerName"] ?? "CARIZO Wiktor Niezgoda";
+        var sellerNip = _config["Invoice:SellerNip"] ?? "9452331007";
+        var sellerRegon = _config["Invoice:SellerRegon"] ?? "544870688";
+        var sellerAddress = _config["Invoice:SellerAddress"] ?? "ul. Henryka Pachońskiego 7/60, 31-223 Kraków";
         sb.Append($"<div class=\"party\"><h4>Sprzedawca</h4>" +
-                  $"<p><strong>CARIZO Wiktor Niezgoda</strong></p>" +
-                  $"<p>NIP: 9452331007</p><p>REGON: 544870688</p>" +
-                  $"<p>ul. Henryka Pachońskiego 7/60, 31-223 Kraków</p></div>");
+                  $"<p><strong>{sellerName}</strong></p>" +
+                  $"<p>NIP: {sellerNip}</p><p>REGON: {sellerRegon}</p>" +
+                  $"<p>{sellerAddress}</p></div>");
         sb.Append("</div>");
 
         sb.Append("<table><thead><tr><th>Lp.</th><th>Opis usługi</th><th>Data</th><th style=\"text-align:right\">Kwota brutto</th></tr></thead><tbody>");

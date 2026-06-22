@@ -17,6 +17,7 @@ public class ReviewService : IReviewService
 
     public async Task<ReviewsResultDto> GetSellerReviewsAsync(int sellerId, int page, int pageSize)
     {
+        pageSize = Math.Clamp(pageSize, 1, 100);
         var query = _context.Reviews.Where(r => r.SellerId == sellerId);
         var total = await query.CountAsync();
         var avg = total > 0 ? await query.AverageAsync(r => (double)r.Rating) : 0.0;
@@ -31,6 +32,7 @@ public class ReviewService : IReviewService
 
     public async Task<PagedReviewResultDto> GetMyGivenReviewsAsync(int userId, int page, int pageSize)
     {
+        pageSize = Math.Clamp(pageSize, 1, 100);
         var query = _context.Reviews.Where(r => r.BuyerId == userId);
         var total = await query.CountAsync();
         var reviews = await query.OrderByDescending(r => r.CreatedAt)

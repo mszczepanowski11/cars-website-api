@@ -40,6 +40,7 @@ public class FavoriteService : IFavoriteService
 
     public async Task<PagedResult<CarAdvertResponseDto>> GetUserFavoritesAsync(int userId, int page, int pageSize)
     {
+        pageSize = Math.Clamp(pageSize, 1, 100);
         var favoriteIds = await _context.FavoriteAdverts
             .Where(f => f.UserId == userId)
             .Select(f => f.AdvertId)
