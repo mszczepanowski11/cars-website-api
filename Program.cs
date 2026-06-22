@@ -58,6 +58,24 @@ internal class Program
         if (!double.TryParse(jwtExpiresInMinutes, out _))
             throw new InvalidOperationException("Jwt:ExpiresInMinutes must be a valid number.");
 
+        // B-02: Validate Imoje payment credentials at startup.
+        // Read from environment variables (preferred in production) or appsettings fallback.
+        var imojeMerchantId  = Environment.GetEnvironmentVariable("IMOJE_MERCHANT_ID")     ?? builder.Configuration["Imoje:MerchantId"]    ?? "";
+        var imojeApiKey      = Environment.GetEnvironmentVariable("IMOJE_API_KEY")          ?? builder.Configuration["Imoje:ApiKey"]        ?? "";
+        var imojeWebhookSec  = Environment.GetEnvironmentVariable("IMOJE_WEBHOOK_SECRET")   ?? builder.Configuration["Imoje:WebhookSecret"] ?? "";
+        var imojeServiceId   = Environment.GetEnvironmentVariable("IMOJE_SERVICE_ID")       ?? builder.Configuration["Imoje:ServiceId"]     ?? "";
+        var missingImoje = new List<string>();
+        if (string.IsNullOrWhiteSpace(imojeMerchantId))  missingImoje.Add("IMOJE_MERCHANT_ID / Imoje:MerchantId");
+        if (string.IsNullOrWhiteSpace(imojeApiKey))      missingImoje.Add("IMOJE_API_KEY / Imoje:ApiKey");
+        if (string.IsNullOrWhiteSpace(imojeWebhookSec))  missingImoje.Add("IMOJE_WEBHOOK_SECRET / Imoje:WebhookSecret");
+        if (string.IsNullOrWhiteSpace(imojeServiceId))   missingImoje.Add("IMOJE_SERVICE_ID / Imoje:ServiceId");
+        if (missingImoje.Count > 0 && !builder.Environment.IsDevelopment())
+            throw new InvalidOperationException(
+                $"Imoje payment configuration is missing required values: {string.Join(", ", missingImoje)}. " +
+                "Set the corresponding environment variables or appsettings values before starting the application.");
+        if (missingImoje.Count > 0)
+            Console.WriteLine($"[WARNING] Imoje payment credentials not fully configured (missing: {string.Join(", ", missingImoje)}). Payments will fail at runtime.");
+
         builder.Services.AddControllers()
             .AddJsonOptions(options => {
                 options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;

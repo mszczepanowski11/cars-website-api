@@ -2,6 +2,8 @@ using AutoMapper;
 using cars_website_api.CarsWebsite.Domain.Entities;
 using cars_website_api.CarsWebsite.DTOs.Advert;
 using CarsWebsite;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -10,12 +12,33 @@ public class AdvertService : IAdvertService
     private readonly AppDbContext _context;
     private readonly IMapper _mapper;
     private readonly ILogger<AdvertService> _logger;
+    private readonly Cloudinary _cloudinary;
 
-    public AdvertService(AppDbContext context, IMapper mapper, ILogger<AdvertService> logger)
+    public AdvertService(AppDbContext context, IMapper mapper, ILogger<AdvertService> logger, Cloudinary cloudinary)
     {
         _context = context;
         _mapper = mapper;
         _logger = logger;
+        _cloudinary = cloudinary;
+    }
+
+    // Extracts the Cloudinary public_id from a secure URL.
+    // URL format: https://res.cloudinary.com/{cloud}/image/upload/v{version}/{public_id}.{ext}
+    private static string? ExtractPublicId(string url)
+    {
+        try
+        {
+            var segments = new Uri(url).AbsolutePath.Split('/');
+            var uploadIdx = Array.IndexOf(segments, "upload");
+            if (uploadIdx < 0) return null;
+            var start = uploadIdx + 1;
+            if (start < segments.Length && segments[start].StartsWith('v') && long.TryParse(segments[start][1..], out _))
+                start++;
+            var idWithExt = string.Join("/", segments[start..]);
+            var dot = idWithExt.LastIndexOf('.');
+            return dot > 0 ? idWithExt[..dot] : idWithExt;
+        }
+        catch { return null; }
     }
 
     
@@ -99,10 +122,12 @@ public class AdvertService : IAdvertService
     }
 
 
-   
+
     public async Task DeleteCarAdvertAsync(int id, int userId)
     {
-        var advert = await _context.CarAdverts.FindAsync(id);
+        var advert = await _context.CarAdverts
+            .Include(a => a.Images)
+            .FirstOrDefaultAsync(a => a.Id == id);
         if (advert == null)
             return;
 
@@ -113,6 +138,25 @@ public class AdvertService : IAdvertService
         advert.IsHidden = true;
         advert.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+
+        // Clean up Cloudinary images — wrap in try/catch so Cloudinary failures
+        // do not prevent the soft-delete from being persisted.
+        try
+        {
+            foreach (var image in advert.Images)
+            {
+                var publicId = ExtractPublicId(image.Url);
+                if (publicId != null)
+                {
+                    await _cloudinary.DestroyAsync(new DeletionParams(publicId));
+                    _logger.LogInformation("[AdvertService/Delete] Deleted Cloudinary image publicId={PublicId} for advertId={AdvertId}", publicId, id);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[AdvertService/Delete] Failed to delete Cloudinary images for advertId={AdvertId}", id);
+        }
     }
 
     
