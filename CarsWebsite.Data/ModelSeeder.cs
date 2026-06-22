@@ -7,14 +7,16 @@ public static class ModelSeeder
 {
     public static void SeedModelsGenerationsEngines(AppDbContext db, ILogger logger)
     {
-        if (db.Models.Any()) return;
-
         var brands = db.Brands.ToDictionary(b => b.Name, b => b.Id);
         var fuels  = db.FuelTypes.ToDictionary(f => f.Name, f => f.Id);
         if (!brands.Any() || !fuels.Any()) return;
 
+        // Brands that already have at least one model — skip seeding those
+        var seededBrandIds = db.Models.Select(m => m.BrandId).Distinct().ToHashSet();
+
         int B(string n) => brands.TryGetValue(n, out var id) ? id : 0;
         int F(string n) => fuels.TryGetValue(n, out var id) ? id : 0;
+        bool NeedsSeeding(string n) { var id = B(n); return id > 0 && !seededBrandIds.Contains(id); }
 
         int ben  = F("Benzyna"), die = F("Diesel"), hyb = F("Hybryda"),
             phev = F("Hybryda plug-in"), ev = F("Elektryczny"), mild = F("Hybryda mild");
@@ -30,7 +32,7 @@ public static class ModelSeeder
         var models = new List<Model>();
 
         // ─── VOLKSWAGEN ───────────────────────────────────────────────────────────
-        if (B("Volkswagen") > 0) models.AddRange([
+        if (NeedsSeeding("Volkswagen")) models.AddRange([
             new Model { BrandId = B("Volkswagen"), Name = "Golf", Slug = "vw-golf", Generations = [
                 G("Mk7 (2012–2019)", "vw-golf-mk7", 2012, 2019,
                     E("1.0 TSI 115 KM", 115, 85, 999, ben), E("1.4 TSI 125 KM", 125, 92, 1395, ben),
@@ -72,7 +74,7 @@ public static class ModelSeeder
         ]);
 
         // ─── SKODA ────────────────────────────────────────────────────────────────
-        if (B("Skoda") > 0) models.AddRange([
+        if (NeedsSeeding("Skoda")) models.AddRange([
             new Model { BrandId = B("Skoda"), Name = "Octavia", Slug = "skoda-octavia", Generations = [
                 G("III (2012–2020)", "skoda-octavia-iii", 2012, 2020,
                     E("1.0 TSI 115 KM", 115, 85, 999, ben), E("1.4 TSI 150 KM", 150, 110, 1395, ben),
@@ -111,7 +113,7 @@ public static class ModelSeeder
         ]);
 
         // ─── AUDI ─────────────────────────────────────────────────────────────────
-        if (B("Audi") > 0) models.AddRange([
+        if (NeedsSeeding("Audi")) models.AddRange([
             new Model { BrandId = B("Audi"), Name = "A3", Slug = "audi-a3", Generations = [
                 G("8V (2012–2020)", "audi-a3-8v", 2012, 2020,
                     E("1.0 TFSI 116 KM", 116, 85, 999, ben), E("1.4 TFSI 150 KM", 150, 110, 1395, ben),
@@ -165,7 +167,7 @@ public static class ModelSeeder
         ]);
 
         // ─── BMW ──────────────────────────────────────────────────────────────────
-        if (B("BMW") > 0) models.AddRange([
+        if (NeedsSeeding("BMW")) models.AddRange([
             new Model { BrandId = B("BMW"), Name = "Seria 3", Slug = "bmw-seria-3", Generations = [
                 G("F30 (2011–2018)", "bmw-3-f30", 2011, 2018,
                     E("316i 136 KM", 136, 100, 1598, ben), E("318i 136 KM", 136, 100, 1499, ben),
@@ -220,7 +222,7 @@ public static class ModelSeeder
         ]);
 
         // ─── MERCEDES-BENZ ────────────────────────────────────────────────────────
-        if (B("Mercedes-Benz") > 0) models.AddRange([
+        if (NeedsSeeding("Mercedes-Benz")) models.AddRange([
             new Model { BrandId = B("Mercedes-Benz"), Name = "Klasa C", Slug = "mb-klasa-c", Generations = [
                 G("W204 (2007–2014)", "mb-c-w204", 2007, 2014,
                     E("C180 156 KM", 156, 115, 1796, ben), E("C200 184 KM", 184, 135, 1796, ben),
@@ -281,7 +283,7 @@ public static class ModelSeeder
         ]);
 
         // ─── TOYOTA ───────────────────────────────────────────────────────────────
-        if (B("Toyota") > 0) models.AddRange([
+        if (NeedsSeeding("Toyota")) models.AddRange([
             new Model { BrandId = B("Toyota"), Name = "Corolla", Slug = "toyota-corolla", Generations = [
                 G("E210 (2018–)", "toyota-corolla-e210", 2018, null,
                     E("1.2 T 116 KM", 116, 85, 1197, ben), E("2.0 GR Sport 261 KM", 261, 192, 1987, ben),
@@ -310,7 +312,7 @@ public static class ModelSeeder
         ]);
 
         // ─── FORD ─────────────────────────────────────────────────────────────────
-        if (B("Ford") > 0) models.AddRange([
+        if (NeedsSeeding("Ford")) models.AddRange([
             new Model { BrandId = B("Ford"), Name = "Focus", Slug = "ford-focus", Generations = [
                 G("Mk3 (2011–2018)", "ford-focus-mk3", 2011, 2018,
                     E("1.0 EcoBoost 100 KM", 100, 74, 999, ben), E("1.0 EcoBoost 125 KM", 125, 92, 999, ben),
@@ -345,7 +347,7 @@ public static class ModelSeeder
         ]);
 
         // ─── OPEL ─────────────────────────────────────────────────────────────────
-        if (B("Opel") > 0) models.AddRange([
+        if (NeedsSeeding("Opel")) models.AddRange([
             new Model { BrandId = B("Opel"), Name = "Astra", Slug = "opel-astra", Generations = [
                 G("K (2015–2021)", "opel-astra-k", 2015, 2021,
                     E("1.0 Turbo 105 KM", 105, 77, 999, ben), E("1.4 Turbo 125 KM", 125, 92, 1399, ben),
@@ -371,7 +373,7 @@ public static class ModelSeeder
         ]);
 
         // ─── RENAULT ──────────────────────────────────────────────────────────────
-        if (B("Renault") > 0) models.AddRange([
+        if (NeedsSeeding("Renault")) models.AddRange([
             new Model { BrandId = B("Renault"), Name = "Megane", Slug = "renault-megane", Generations = [
                 G("IV (2015–)", "renault-megane-iv", 2015, null,
                     E("1.3 TCe 115 KM", 115, 85, 1332, ben), E("1.3 TCe 140 KM", 140, 103, 1332, ben),
@@ -397,7 +399,7 @@ public static class ModelSeeder
         ]);
 
         // ─── HYUNDAI ──────────────────────────────────────────────────────────────
-        if (B("Hyundai") > 0) models.AddRange([
+        if (NeedsSeeding("Hyundai")) models.AddRange([
             new Model { BrandId = B("Hyundai"), Name = "i30", Slug = "hyundai-i30", Generations = [
                 G("PD (2016–)", "hyundai-i30-pd", 2016, null,
                     E("1.0 T-GDI 100 KM", 100, 74, 998, ben), E("1.0 T-GDI 120 KM", 120, 88, 998, ben),
@@ -421,7 +423,7 @@ public static class ModelSeeder
         ]);
 
         // ─── KIA ──────────────────────────────────────────────────────────────────
-        if (B("Kia") > 0) models.AddRange([
+        if (NeedsSeeding("Kia")) models.AddRange([
             new Model { BrandId = B("Kia"), Name = "Ceed", Slug = "kia-ceed", Generations = [
                 G("III (2018–)", "kia-ceed-iii", 2018, null,
                     E("1.0 T-GDI 100 KM", 100, 74, 998, mild), E("1.0 T-GDI 120 KM", 120, 88, 998, mild),
@@ -445,7 +447,7 @@ public static class ModelSeeder
         ]);
 
         // ─── DACIA ────────────────────────────────────────────────────────────────
-        if (B("Dacia") > 0) models.AddRange([
+        if (NeedsSeeding("Dacia")) models.AddRange([
             new Model { BrandId = B("Dacia"), Name = "Duster", Slug = "dacia-duster", Generations = [
                 G("II (2017–2023)", "dacia-duster-ii", 2017, 2023,
                     E("1.0 TCe 90 KM", 90, 66, 999, ben), E("1.3 TCe 130 KM", 130, 96, 1332, ben),
@@ -466,7 +468,7 @@ public static class ModelSeeder
         ]);
 
         // ─── FIAT ─────────────────────────────────────────────────────────────────
-        if (B("Fiat") > 0) models.AddRange([
+        if (NeedsSeeding("Fiat")) models.AddRange([
             new Model { BrandId = B("Fiat"), Name = "500", Slug = "fiat-500", Generations = [
                 G("312 (2007–2024)", "fiat-500-312", 2007, 2024,
                     E("0.9 TwinAir 80 KM", 80, 59, 875, ben), E("1.0 Hybrid 70 KM", 70, 51, 999, mild),
@@ -487,7 +489,7 @@ public static class ModelSeeder
         ]);
 
         // ─── SEAT ─────────────────────────────────────────────────────────────────
-        if (B("Seat") > 0) models.AddRange([
+        if (NeedsSeeding("Seat")) models.AddRange([
             new Model { BrandId = B("Seat"), Name = "Leon", Slug = "seat-leon", Generations = [
                 G("5F (2012–2019)", "seat-leon-5f", 2012, 2019,
                     E("1.0 TSI 115 KM", 115, 85, 999, ben), E("1.4 TSI 125 KM", 125, 92, 1395, ben),
@@ -510,7 +512,7 @@ public static class ModelSeeder
         ]);
 
         // ─── NISSAN ───────────────────────────────────────────────────────────────
-        if (B("Nissan") > 0) models.AddRange([
+        if (NeedsSeeding("Nissan")) models.AddRange([
             new Model { BrandId = B("Nissan"), Name = "Qashqai", Slug = "nissan-qashqai", Generations = [
                 G("J11 (2013–2021)", "nissan-qashqai-j11", 2013, 2021,
                     E("1.2 DIG-T 115 KM", 115, 85, 1197, ben), E("1.6 DIG-T 163 KM", 163, 120, 1598, ben),
@@ -529,7 +531,7 @@ public static class ModelSeeder
         ]);
 
         // ─── HONDA ────────────────────────────────────────────────────────────────
-        if (B("Honda") > 0) models.AddRange([
+        if (NeedsSeeding("Honda")) models.AddRange([
             new Model { BrandId = B("Honda"), Name = "Civic", Slug = "honda-civic", Generations = [
                 G("X (2017–2021)", "honda-civic-x", 2017, 2021,
                     E("1.0 VTEC Turbo 126 KM", 126, 93, 988, ben), E("1.5 VTEC Turbo 182 KM", 182, 134, 1498, ben),
@@ -549,7 +551,7 @@ public static class ModelSeeder
         ]);
 
         // ─── VOLVO ────────────────────────────────────────────────────────────────
-        if (B("Volvo") > 0) models.AddRange([
+        if (NeedsSeeding("Volvo")) models.AddRange([
             new Model { BrandId = B("Volvo"), Name = "FH", Slug = "volvo-fh", Generations = [
                 G("IV (2012–2020)", "volvo-fh-iv", 2012, 2020,
                     E("D13 420 KM", 420, 309, 12777, die), E("D13 460 KM", 460, 338, 12777, die),
@@ -564,7 +566,7 @@ public static class ModelSeeder
         ]);
 
         // ─── MAN ──────────────────────────────────────────────────────────────────
-        if (B("MAN") > 0) models.AddRange([
+        if (NeedsSeeding("MAN")) models.AddRange([
             new Model { BrandId = B("MAN"), Name = "TGX", Slug = "man-tgx", Generations = [
                 G("I (2007–2020)", "man-tgx-i", 2007, 2020,
                     E("D2066 400 KM", 400, 294, 10518, die), E("D2066 440 KM", 440, 324, 10518, die),
@@ -582,7 +584,7 @@ public static class ModelSeeder
         ]);
 
         // ─── SCANIA ───────────────────────────────────────────────────────────────
-        if (B("Scania") > 0) models.AddRange([
+        if (NeedsSeeding("Scania")) models.AddRange([
             new Model { BrandId = B("Scania"), Name = "R-Series", Slug = "scania-r-series", Generations = [
                 G("R5 (2009–2016)", "scania-r-r5", 2009, 2016,
                     E("DC09 320 KM", 320, 235, 9290, die), E("DC13 420 KM", 420, 309, 12742, die),
@@ -598,7 +600,7 @@ public static class ModelSeeder
         ]);
 
         // ─── YAMAHA (motocykle) ───────────────────────────────────────────────────
-        if (B("Yamaha") > 0) models.AddRange([
+        if (NeedsSeeding("Yamaha")) models.AddRange([
             new Model { BrandId = B("Yamaha"), Name = "MT-07", Slug = "yamaha-mt07", Generations = [
                 G("RM04 (2013–2020)", "yamaha-mt07-rm04", 2013, 2020,
                     E("689cc CP2 73 KM", 73, 54, 689, ben)),
@@ -621,7 +623,7 @@ public static class ModelSeeder
         ]);
 
         // ─── KAWASAKI ─────────────────────────────────────────────────────────────
-        if (B("Kawasaki") > 0) models.AddRange([
+        if (NeedsSeeding("Kawasaki")) models.AddRange([
             new Model { BrandId = B("Kawasaki"), Name = "Z900", Slug = "kawasaki-z900", Generations = [
                 G("ZR900 (2017–)", "kawasaki-z900-zr900", 2017, null,
                     E("948cc inline-4 125 KM", 125, 92, 948, ben)) ]},
@@ -637,7 +639,7 @@ public static class ModelSeeder
         ]);
 
         // ─── DUCATI ───────────────────────────────────────────────────────────────
-        if (B("Ducati") > 0) models.AddRange([
+        if (NeedsSeeding("Ducati")) models.AddRange([
             new Model { BrandId = B("Ducati"), Name = "Panigale V4", Slug = "ducati-panigale-v4", Generations = [
                 G("2018–", "ducati-panigale-v4-2018", 2018, null,
                     E("Desmosedici Stradale 1103cc 214 KM", 214, 157, 1103, ben),
@@ -656,7 +658,7 @@ public static class ModelSeeder
         ]);
 
         // ─── TRIUMPH ──────────────────────────────────────────────────────────────
-        if (B("Triumph") > 0) models.AddRange([
+        if (NeedsSeeding("Triumph")) models.AddRange([
             new Model { BrandId = B("Triumph"), Name = "Bonneville T120", Slug = "triumph-bonneville-t120", Generations = [
                 G("2016–", "triumph-bonnie-t120-2016", 2016, null,
                     E("1200cc parallel twin 80 KM", 80, 59, 1200, ben)) ]},
@@ -670,7 +672,7 @@ public static class ModelSeeder
         ]);
 
         // ─── HARLEY-DAVIDSON ──────────────────────────────────────────────────────
-        if (B("Harley-Davidson") > 0) models.AddRange([
+        if (NeedsSeeding("Harley-Davidson")) models.AddRange([
             new Model { BrandId = B("Harley-Davidson"), Name = "Sportster S", Slug = "hd-sportster-s", Generations = [
                 G("RH1250S (2021–)", "hd-sportster-s-2021", 2021, null,
                     E("Revolution Max 1250T 121 KM", 121, 89, 1252, ben)) ]},
@@ -685,7 +687,7 @@ public static class ModelSeeder
         ]);
 
         // ─── KTM ──────────────────────────────────────────────────────────────────
-        if (B("KTM") > 0) models.AddRange([
+        if (NeedsSeeding("KTM")) models.AddRange([
             new Model { BrandId = B("KTM"), Name = "390 Duke", Slug = "ktm-390-duke", Generations = [
                 G("2017–", "ktm-390duke-2017", 2017, null,
                     E("373cc single-cylinder 44 KM", 44, 32, 373, ben)) ]},
@@ -697,8 +699,1010 @@ public static class ModelSeeder
                     E("1301cc LC8 V-twin 180 KM", 180, 132, 1301, ben)) ]},
         ]);
 
+        // ─── FERRARI ─────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Ferrari")) models.AddRange([
+            new Model { BrandId = B("Ferrari"), Name = "488", Slug = "ferrari-488", Generations = [
+                G("488 GTB/Spider (2015–2019)", "ferrari-488-gtb", 2015, 2019,
+                    E("3.9 V8 Twin-Turbo 670 KM", 670, 493, 3902, ben)),
+                G("488 Pista (2018–2019)", "ferrari-488-pista", 2018, 2019,
+                    E("3.9 V8 Twin-Turbo 720 KM", 720, 529, 3902, ben)) ]},
+            new Model { BrandId = B("Ferrari"), Name = "F8", Slug = "ferrari-f8", Generations = [
+                G("F8 Tributo/Spider (2019–2022)", "ferrari-f8-tributo", 2019, 2022,
+                    E("3.9 V8 Twin-Turbo 720 KM", 720, 529, 3902, ben)) ]},
+            new Model { BrandId = B("Ferrari"), Name = "Roma", Slug = "ferrari-roma", Generations = [
+                G("Roma/Spider (2019–)", "ferrari-roma-2019", 2019, null,
+                    E("3.9 V8 Twin-Turbo 620 KM", 620, 456, 3855, ben)) ]},
+            new Model { BrandId = B("Ferrari"), Name = "SF90 Stradale", Slug = "ferrari-sf90", Generations = [
+                G("SF90 Stradale/Spider (2019–)", "ferrari-sf90-2019", 2019, null,
+                    E("4.0 V8 + electric PHEV 1000 KM", 1000, 735, 3990, phev)) ]},
+            new Model { BrandId = B("Ferrari"), Name = "Purosangue", Slug = "ferrari-purosangue", Generations = [
+                G("F176 (2022–)", "ferrari-purosangue-2022", 2022, null,
+                    E("6.5 V12 725 KM", 725, 533, 6496, ben)) ]},
+        ]);
+
+        // ─── PORSCHE ─────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Porsche")) models.AddRange([
+            new Model { BrandId = B("Porsche"), Name = "911", Slug = "porsche-911", Generations = [
+                G("991 (2011–2018)", "porsche-911-991", 2011, 2018,
+                    E("3.0 T6 Carrera 370 KM", 370, 272, 2981, ben),
+                    E("3.0 T6 Carrera S 420 KM", 420, 309, 2981, ben),
+                    E("3.8 T6 Turbo S 580 KM", 580, 427, 3800, ben),
+                    E("GT3 4.0 500 KM", 500, 368, 3996, ben)),
+                G("992 (2018–)", "porsche-911-992", 2018, null,
+                    E("3.0 T6 Carrera 385 KM", 385, 283, 2981, ben),
+                    E("3.0 T6 Carrera S 450 KM", 450, 331, 2981, ben),
+                    E("3.8 T6 Turbo S 650 KM", 650, 478, 3745, ben),
+                    E("GT3 4.0 510 KM", 510, 375, 3996, ben)) ]},
+            new Model { BrandId = B("Porsche"), Name = "Cayenne", Slug = "porsche-cayenne", Generations = [
+                G("9YA (2017–)", "porsche-cayenne-9ya", 2017, null,
+                    E("3.0 T6 340 KM", 340, 250, 2995, ben),
+                    E("3.0 T6 S 440 KM", 440, 324, 2995, ben),
+                    E("4.0 V8 Turbo 550 KM", 550, 404, 3996, ben),
+                    E("4.0 V8 Turbo GT 640 KM", 640, 471, 3996, ben),
+                    E("E-Hybrid PHEV 462 KM", 462, 340, 2995, phev)) ]},
+            new Model { BrandId = B("Porsche"), Name = "Macan", Slug = "porsche-macan", Generations = [
+                G("95B (2013–2023)", "porsche-macan-95b", 2013, 2023,
+                    E("2.0T 245 KM", 245, 180, 1984, ben),
+                    E("3.0 T6 GTS 380 KM", 380, 279, 2995, ben),
+                    E("3.0 Turbo 440 KM", 440, 324, 2995, ben),
+                    E("2.0 TDI 211 KM", 211, 155, 1950, die),
+                    E("3.0 TDI S 258 KM", 258, 190, 2967, die)),
+                G("J1 EV (2024–)", "porsche-macan-j1", 2024, null,
+                    E("Electric RWD 408 KM", 408, 300, null, ev),
+                    E("Electric Turbo AWD 639 KM", 639, 470, null, ev)) ]},
+            new Model { BrandId = B("Porsche"), Name = "Taycan", Slug = "porsche-taycan", Generations = [
+                G("Y1A (2019–)", "porsche-taycan-y1a", 2019, null,
+                    E("4S 571 KM", 571, 420, null, ev),
+                    E("GTS 598 KM", 598, 440, null, ev),
+                    E("Turbo 680 KM", 680, 500, null, ev),
+                    E("Turbo S 761 KM", 761, 560, null, ev)) ]},
+            new Model { BrandId = B("Porsche"), Name = "Panamera", Slug = "porsche-panamera", Generations = [
+                G("971 (2016–)", "porsche-panamera-971", 2016, null,
+                    E("3.0 T6 330 KM", 330, 243, 2995, ben),
+                    E("3.0 T6 4S 440 KM", 440, 324, 2995, ben),
+                    E("4.0 V8 Turbo S 630 KM", 630, 463, 3996, ben),
+                    E("E-Hybrid PHEV 462 KM", 462, 340, 2995, phev)) ]},
+        ]);
+
+        // ─── LAMBORGHINI ─────────────────────────────────────────────────────────
+        if (NeedsSeeding("Lamborghini")) models.AddRange([
+            new Model { BrandId = B("Lamborghini"), Name = "Huracán", Slug = "lamborghini-huracan", Generations = [
+                G("LP610-4 (2014–2021)", "lamborghini-huracan-lp610", 2014, 2021,
+                    E("5.2 V10 610 KM", 610, 449, 5204, ben)),
+                G("EVO (2019–2024)", "lamborghini-huracan-evo", 2019, 2024,
+                    E("5.2 V10 640 KM", 640, 471, 5204, ben)) ]},
+            new Model { BrandId = B("Lamborghini"), Name = "Urus", Slug = "lamborghini-urus", Generations = [
+                G("Urus (2018–)", "lamborghini-urus-2018", 2018, null,
+                    E("4.0 V8 Twin-Turbo 650 KM", 650, 478, 3996, ben),
+                    E("S/Performante 4.0 V8 666 KM", 666, 490, 3996, ben)) ]},
+            new Model { BrandId = B("Lamborghini"), Name = "Revuelto", Slug = "lamborghini-revuelto", Generations = [
+                G("LB744 (2023–)", "lamborghini-revuelto-2023", 2023, null,
+                    E("6.5 V12 + electric PHEV 1001 KM", 1001, 736, 6498, phev)) ]},
+        ]);
+
+        // ─── LAND ROVER ──────────────────────────────────────────────────────────
+        if (NeedsSeeding("Land Rover")) models.AddRange([
+            new Model { BrandId = B("Land Rover"), Name = "Defender", Slug = "lr-defender", Generations = [
+                G("L663 (2020–)", "lr-defender-l663", 2020, null,
+                    E("P300 2.0T 300 KM", 300, 221, 1997, ben),
+                    E("P400 3.0T 400 KM", 400, 294, 2996, ben),
+                    E("D200 2.0D 200 KM", 200, 147, 1997, die),
+                    E("D300 3.0D 300 KM", 300, 221, 2997, die),
+                    E("P400e PHEV 404 KM", 404, 297, 1997, phev)) ]},
+            new Model { BrandId = B("Land Rover"), Name = "Discovery", Slug = "lr-discovery", Generations = [
+                G("L462 (2016–)", "lr-discovery-l462", 2016, null,
+                    E("P300 2.0T 300 KM", 300, 221, 1997, ben),
+                    E("D250 3.0D 249 KM", 249, 183, 2997, die),
+                    E("D300 3.0D 300 KM", 300, 221, 2997, die)) ]},
+            new Model { BrandId = B("Land Rover"), Name = "Range Rover Sport", Slug = "lr-rr-sport", Generations = [
+                G("L494 (2013–2022)", "lr-rrs-l494", 2013, 2022,
+                    E("P340 3.0T 340 KM", 340, 250, 2996, ben),
+                    E("SVR 5.0 SC 575 KM", 575, 423, 5000, ben),
+                    E("D300 3.0D 300 KM", 300, 221, 2997, die),
+                    E("P400e PHEV 404 KM", 404, 297, 1997, phev)),
+                G("L461 (2022–)", "lr-rrs-l461", 2022, null,
+                    E("P360 3.0T 360 KM", 360, 265, 2996, ben),
+                    E("P530 4.4 V8 530 KM", 530, 390, 4395, ben),
+                    E("D350 3.0D 350 KM", 350, 257, 2997, die),
+                    E("P510e PHEV 510 KM", 510, 375, 2997, phev)) ]},
+            new Model { BrandId = B("Land Rover"), Name = "Range Rover Evoque", Slug = "lr-rr-evoque", Generations = [
+                G("L538 (2011–2018)", "lr-evoque-l538", 2011, 2018,
+                    E("Si4 2.0T 240 KM", 240, 177, 1998, ben),
+                    E("TD4 2.0D 150 KM", 150, 110, 1999, die), E("TD4 2.0D 180 KM", 180, 132, 1999, die)),
+                G("L551 (2019–)", "lr-evoque-l551", 2019, null,
+                    E("P200 2.0T 200 KM", 200, 147, 1997, ben), E("P250 2.0T 249 KM", 249, 183, 1997, ben),
+                    E("D150 2.0D 150 KM", 150, 110, 1998, die), E("D200 2.0D 204 KM", 204, 150, 1998, die),
+                    E("P300e PHEV 300 KM", 300, 221, 1497, phev)) ]},
+        ]);
+
+        // ─── JAGUAR ───────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Jaguar")) models.AddRange([
+            new Model { BrandId = B("Jaguar"), Name = "XE", Slug = "jaguar-xe", Generations = [
+                G("X760 (2015–)", "jaguar-xe-x760", 2015, null,
+                    E("P200 2.0T 200 KM", 200, 147, 1997, ben), E("P250 2.0T 250 KM", 250, 184, 1997, ben),
+                    E("D150 2.0D 150 KM", 150, 110, 1998, die), E("D180 2.0D 180 KM", 180, 132, 1998, die)) ]},
+            new Model { BrandId = B("Jaguar"), Name = "XF", Slug = "jaguar-xf", Generations = [
+                G("X260 (2015–)", "jaguar-xf-x260", 2015, null,
+                    E("P250 2.0T 250 KM", 250, 184, 1997, ben), E("P300 2.0T 300 KM", 300, 221, 1997, ben),
+                    E("D165 2.0D 165 KM", 165, 121, 1998, die), E("D204 2.0D 204 KM", 204, 150, 1998, die),
+                    E("D300 3.0D 300 KM", 300, 221, 2993, die)) ]},
+            new Model { BrandId = B("Jaguar"), Name = "F-Pace", Slug = "jaguar-f-pace", Generations = [
+                G("X761 (2016–)", "jaguar-fpace-x761", 2016, null,
+                    E("P250 2.0T 250 KM", 250, 184, 1997, ben), E("P400 3.0T 400 KM", 400, 294, 2996, ben),
+                    E("D165 2.0D 165 KM", 165, 121, 1998, die), E("D204 2.0D 204 KM", 204, 150, 1998, die),
+                    E("P400e PHEV 404 KM", 404, 297, 1997, phev)) ]},
+            new Model { BrandId = B("Jaguar"), Name = "I-Pace", Slug = "jaguar-i-pace", Generations = [
+                G("X590 EV (2018–)", "jaguar-ipace-x590", 2018, null,
+                    E("EV400 AWD 400 KM", 400, 294, null, ev)) ]},
+            new Model { BrandId = B("Jaguar"), Name = "F-Type", Slug = "jaguar-f-type", Generations = [
+                G("X152 (2012–)", "jaguar-ftype-x152", 2012, null,
+                    E("2.0T 300 KM", 300, 221, 1997, ben), E("3.0 V6 340 KM", 340, 250, 2995, ben),
+                    E("5.0 V8 R 450 KM", 450, 331, 5000, ben), E("SVR 5.0 V8 575 KM", 575, 423, 5000, ben)) ]},
+        ]);
+
+        // ─── TESLA ────────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Tesla")) models.AddRange([
+            new Model { BrandId = B("Tesla"), Name = "Model 3", Slug = "tesla-model-3", Generations = [
+                G("I (2017–2023)", "tesla-model3-i", 2017, 2023,
+                    E("Standard Range RWD 283 KM", 283, 208, null, ev),
+                    E("Long Range AWD 366 KM", 366, 269, null, ev),
+                    E("Performance AWD 513 KM", 513, 377, null, ev)),
+                G("Highland (2023–)", "tesla-model3-highland", 2023, null,
+                    E("RWD 283 KM", 283, 208, null, ev),
+                    E("Long Range AWD 366 KM", 366, 269, null, ev),
+                    E("Performance AWD 460 KM", 460, 338, null, ev)) ]},
+            new Model { BrandId = B("Tesla"), Name = "Model Y", Slug = "tesla-model-y", Generations = [
+                G("I (2020–)", "tesla-modely-i", 2020, null,
+                    E("RWD 283 KM", 283, 208, null, ev),
+                    E("Long Range AWD 384 KM", 384, 282, null, ev),
+                    E("Performance AWD 534 KM", 534, 393, null, ev)) ]},
+            new Model { BrandId = B("Tesla"), Name = "Model S", Slug = "tesla-model-s", Generations = [
+                G("Plaid (2021–)", "tesla-models-plaid", 2021, null,
+                    E("Long Range AWD 670 KM", 670, 493, null, ev),
+                    E("Plaid AWD 1020 KM", 1020, 750, null, ev)) ]},
+            new Model { BrandId = B("Tesla"), Name = "Model X", Slug = "tesla-model-x", Generations = [
+                G("Plaid (2021–)", "tesla-modelx-plaid", 2021, null,
+                    E("Long Range AWD 670 KM", 670, 493, null, ev),
+                    E("Plaid AWD 1020 KM", 1020, 750, null, ev)) ]},
+        ]);
+
+        // ─── CITROËN ─────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Citroën")) models.AddRange([
+            new Model { BrandId = B("Citroën"), Name = "C3", Slug = "citroen-c3", Generations = [
+                G("III (2016–)", "citroen-c3-iii", 2016, null,
+                    E("1.2 PureTech 83 KM", 83, 61, 1199, ben), E("1.2 PureTech 110 KM", 110, 81, 1199, ben),
+                    E("1.5 BlueHDi 100 KM", 100, 74, 1499, die)) ]},
+            new Model { BrandId = B("Citroën"), Name = "C5 Aircross", Slug = "citroen-c5-aircross", Generations = [
+                G("I (2018–)", "citroen-c5-aircross-i", 2018, null,
+                    E("1.2 PureTech 130 KM", 130, 96, 1199, ben), E("1.6 PureTech 180 KM", 180, 132, 1598, ben),
+                    E("1.5 BlueHDi 130 KM", 130, 96, 1499, die),
+                    E("PHEV 225 KM", 225, 165, 1598, phev)) ]},
+            new Model { BrandId = B("Citroën"), Name = "C4", Slug = "citroen-c4", Generations = [
+                G("IV (2020–)", "citroen-c4-iv", 2020, null,
+                    E("1.2 PureTech 100 KM", 100, 74, 1199, ben), E("1.2 PureTech 130 KM", 130, 96, 1199, ben),
+                    E("1.5 BlueHDi 110 KM", 110, 81, 1499, die),
+                    E("e-C4 EV 136 KM", 136, 100, null, ev)) ]},
+            new Model { BrandId = B("Citroën"), Name = "Berlingo", Slug = "citroen-berlingo", Generations = [
+                G("III (2018–)", "citroen-berlingo-iii", 2018, null,
+                    E("1.2 PureTech 110 KM", 110, 81, 1199, ben), E("1.2 PureTech 130 KM", 130, 96, 1199, ben),
+                    E("1.5 BlueHDi 100 KM", 100, 74, 1499, die), E("1.5 BlueHDi 130 KM", 130, 96, 1499, die),
+                    E("e-Berlingo EV 136 KM", 136, 100, null, ev)) ]},
+        ]);
+
+        // ─── MINI ─────────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Mini")) models.AddRange([
+            new Model { BrandId = B("Mini"), Name = "Cooper", Slug = "mini-cooper", Generations = [
+                G("F55/F56 (2014–2024)", "mini-cooper-f56", 2014, 2024,
+                    E("1.5 TwinPower 136 KM", 136, 100, 1499, ben),
+                    E("2.0 TwinPower S 192 KM", 192, 141, 1998, ben),
+                    E("JCW 2.0 231 KM", 231, 170, 1998, ben),
+                    E("1.5 Cooper D 116 KM", 116, 85, 1496, die)),
+                G("J01 EV (2024–)", "mini-cooper-j01", 2024, null,
+                    E("C EV 184 KM", 184, 135, null, ev), E("SE EV 218 KM", 218, 160, null, ev)) ]},
+            new Model { BrandId = B("Mini"), Name = "Countryman", Slug = "mini-countryman", Generations = [
+                G("F60 (2017–2023)", "mini-countryman-f60", 2017, 2023,
+                    E("1.5 TwinPower 136 KM", 136, 100, 1499, ben), E("2.0 TwinPower S 192 KM", 192, 141, 1998, ben),
+                    E("JCW 2.0 306 KM", 306, 225, 1998, ben),
+                    E("2.0 SD 190 KM", 190, 140, 1995, die),
+                    E("SE PHEV 224 KM", 224, 165, 1499, phev)),
+                G("U25 (2023–)", "mini-countryman-u25", 2023, null,
+                    E("S 2.0T 204 KM", 204, 150, 1998, ben), E("JCW 2.0T 300 KM", 300, 221, 1998, ben),
+                    E("E EV 204 KM", 204, 150, null, ev), E("SE EV AWD 313 KM", 313, 230, null, ev)) ]},
+            new Model { BrandId = B("Mini"), Name = "Clubman", Slug = "mini-clubman", Generations = [
+                G("F54 (2015–2024)", "mini-clubman-f54", 2015, 2024,
+                    E("1.5 TwinPower 136 KM", 136, 100, 1499, ben), E("2.0 TwinPower S 192 KM", 192, 141, 1998, ben),
+                    E("JCW 2.0 306 KM", 306, 225, 1998, ben),
+                    E("2.0 SD 190 KM", 190, 140, 1995, die)) ]},
+        ]);
+
+        // ─── JEEP ─────────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Jeep")) models.AddRange([
+            new Model { BrandId = B("Jeep"), Name = "Compass", Slug = "jeep-compass", Generations = [
+                G("MP (2016–)", "jeep-compass-mp", 2016, null,
+                    E("1.3T 130 KM", 130, 96, 1332, ben), E("1.3T 150 KM", 150, 110, 1332, ben),
+                    E("2.0 Multiair 170 KM", 170, 125, 1956, ben),
+                    E("1.6 Multijet 120 KM", 120, 88, 1598, die),
+                    E("4xe PHEV 240 KM", 240, 177, 1332, phev)) ]},
+            new Model { BrandId = B("Jeep"), Name = "Renegade", Slug = "jeep-renegade", Generations = [
+                G("BU (2014–)", "jeep-renegade-bu", 2014, null,
+                    E("1.0T 120 KM", 120, 88, 999, ben), E("1.3T 150 KM", 150, 110, 1332, ben),
+                    E("1.6 Multijet 120 KM", 120, 88, 1598, die),
+                    E("4xe PHEV 240 KM", 240, 177, 1332, phev)) ]},
+            new Model { BrandId = B("Jeep"), Name = "Wrangler", Slug = "jeep-wrangler", Generations = [
+                G("JL (2018–)", "jeep-wrangler-jl", 2018, null,
+                    E("2.0T 272 KM", 272, 200, 1995, ben), E("3.6 V6 284 KM", 284, 209, 3604, ben),
+                    E("4xe PHEV 380 KM", 380, 279, 1995, phev)) ]},
+            new Model { BrandId = B("Jeep"), Name = "Grand Cherokee", Slug = "jeep-grand-cherokee", Generations = [
+                G("WK2 (2010–2021)", "jeep-gc-wk2", 2010, 2021,
+                    E("3.6 V6 286 KM", 286, 210, 3604, ben), E("5.7 V8 360 KM", 360, 265, 5654, ben),
+                    E("3.0 CRD 250 KM", 250, 184, 2987, die)),
+                G("WL (2021–)", "jeep-gc-wl", 2021, null,
+                    E("3.6 V6 293 KM", 293, 215, 3604, ben),
+                    E("4xe PHEV 380 KM", 380, 279, 1995, phev)) ]},
+        ]);
+
+        // ─── MAZDA ────────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Mazda")) models.AddRange([
+            new Model { BrandId = B("Mazda"), Name = "Mazda3", Slug = "mazda-3", Generations = [
+                G("BP (2018–)", "mazda3-bp", 2018, null,
+                    E("2.0 Skyactiv-G 122 KM", 122, 90, 1998, ben),
+                    E("2.0 e-Skyactiv-X 186 KM", 186, 137, 1998, mild),
+                    E("1.8 Skyactiv-D 116 KM", 116, 85, 1756, die)) ]},
+            new Model { BrandId = B("Mazda"), Name = "Mazda6", Slug = "mazda-6", Generations = [
+                G("GL (2012–)", "mazda6-gl", 2012, null,
+                    E("2.0 Skyactiv-G 165 KM", 165, 121, 1998, ben), E("2.5 Skyactiv-G 194 KM", 194, 143, 2488, ben),
+                    E("2.2 Skyactiv-D 150 KM", 150, 110, 2191, die), E("2.2 Skyactiv-D 184 KM", 184, 135, 2191, die)) ]},
+            new Model { BrandId = B("Mazda"), Name = "CX-5", Slug = "mazda-cx5", Generations = [
+                G("KF (2017–)", "mazda-cx5-kf", 2017, null,
+                    E("2.0 Skyactiv-G 165 KM", 165, 121, 1998, ben), E("2.5 Skyactiv-G 194 KM", 194, 143, 2488, ben),
+                    E("2.5 Skyactiv-G Turbo 231 KM", 231, 170, 2488, ben),
+                    E("2.2 Skyactiv-D 150 KM", 150, 110, 2191, die), E("2.2 Skyactiv-D 184 KM", 184, 135, 2191, die)) ]},
+            new Model { BrandId = B("Mazda"), Name = "CX-30", Slug = "mazda-cx30", Generations = [
+                G("DM (2019–)", "mazda-cx30-dm", 2019, null,
+                    E("2.0 Skyactiv-G 122 KM", 122, 90, 1998, ben),
+                    E("2.0 e-Skyactiv-X 186 KM", 186, 137, 1998, mild),
+                    E("2.0 e-Skyactiv HEV 122 KM", 122, 90, 1998, hyb),
+                    E("1.8 Skyactiv-D 116 KM", 116, 85, 1756, die)) ]},
+            new Model { BrandId = B("Mazda"), Name = "MX-5", Slug = "mazda-mx5", Generations = [
+                G("ND (2015–)", "mazda-mx5-nd", 2015, null,
+                    E("1.5 Skyactiv-G 132 KM", 132, 97, 1496, ben),
+                    E("2.0 Skyactiv-G 184 KM", 184, 135, 1998, ben)) ]},
+        ]);
+
+        // ─── MITSUBISHI ───────────────────────────────────────────────────────────
+        if (NeedsSeeding("Mitsubishi")) models.AddRange([
+            new Model { BrandId = B("Mitsubishi"), Name = "ASX", Slug = "mitsubishi-asx", Generations = [
+                G("I (2010–2022)", "mitsubishi-asx-i", 2010, 2022,
+                    E("1.6 117 KM", 117, 86, 1590, ben), E("2.0 150 KM", 150, 110, 1998, ben),
+                    E("1.8 Di-D 116 KM", 116, 85, 1798, die), E("2.2 Di-D 150 KM", 150, 110, 2268, die)),
+                G("II (2022–)", "mitsubishi-asx-ii", 2022, null,
+                    E("1.0 Mild Hybrid 100 KM", 100, 74, 999, mild),
+                    E("1.3 Mild Hybrid 140 KM", 140, 103, 1332, mild),
+                    E("PHEV 1.6 180 KM", 180, 132, 1598, phev)) ]},
+            new Model { BrandId = B("Mitsubishi"), Name = "Outlander", Slug = "mitsubishi-outlander", Generations = [
+                G("III (2012–2021)", "mitsubishi-outlander-iii", 2012, 2021,
+                    E("2.0 150 KM", 150, 110, 1998, ben), E("2.4 167 KM", 167, 123, 2360, ben),
+                    E("2.2 Di-D 150 KM", 150, 110, 2268, die),
+                    E("PHEV 224 KM", 224, 165, 2360, phev)),
+                G("IV (2021–)", "mitsubishi-outlander-iv", 2021, null,
+                    E("PHEV 2.4 302 KM", 302, 222, 2360, phev)) ]},
+            new Model { BrandId = B("Mitsubishi"), Name = "Eclipse Cross", Slug = "mitsubishi-eclipse-cross", Generations = [
+                G("GK (2017–)", "mitsubishi-eclipse-cross-gk", 2017, null,
+                    E("1.5T 163 KM", 163, 120, 1499, ben),
+                    E("PHEV 2.4 188 KM", 188, 138, 2360, phev)) ]},
+            new Model { BrandId = B("Mitsubishi"), Name = "L200", Slug = "mitsubishi-l200", Generations = [
+                G("V (2014–2019)", "mitsubishi-l200-v", 2014, 2019,
+                    E("2.4 Di-D 154 KM", 154, 113, 2442, die), E("2.4 Di-D 178 KM", 178, 131, 2442, die)),
+                G("VI (2019–)", "mitsubishi-l200-vi", 2019, null,
+                    E("2.2 Di-D 150 KM", 150, 110, 2268, die)) ]},
+        ]);
+
+        // ─── SUBARU ───────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Subaru")) models.AddRange([
+            new Model { BrandId = B("Subaru"), Name = "Forester", Slug = "subaru-forester", Generations = [
+                G("V (2018–)", "subaru-forester-v", 2018, null,
+                    E("2.0i e-BOXER 150 KM", 150, 110, 1995, hyb),
+                    E("2.5i 184 KM", 184, 135, 2498, ben)) ]},
+            new Model { BrandId = B("Subaru"), Name = "Outback", Slug = "subaru-outback", Generations = [
+                G("VI (2020–)", "subaru-outback-vi", 2020, null,
+                    E("2.5i 169 KM", 169, 124, 2498, ben),
+                    E("2.5i e-BOXER 174 KM", 174, 128, 2498, hyb)) ]},
+            new Model { BrandId = B("Subaru"), Name = "Impreza", Slug = "subaru-impreza", Generations = [
+                G("V (2016–)", "subaru-impreza-v", 2016, null,
+                    E("2.0i 156 KM", 156, 115, 1995, ben),
+                    E("2.0i e-BOXER 150 KM", 150, 110, 1995, hyb)) ]},
+            new Model { BrandId = B("Subaru"), Name = "XV", Slug = "subaru-xv", Generations = [
+                G("II (2017–)", "subaru-xv-ii", 2017, null,
+                    E("2.0i 156 KM", 156, 115, 1995, ben),
+                    E("2.0i e-BOXER 150 KM", 150, 110, 1995, hyb)) ]},
+            new Model { BrandId = B("Subaru"), Name = "WRX STI", Slug = "subaru-wrx-sti", Generations = [
+                G("IV (2014–2021)", "subaru-wrx-sti-iv", 2014, 2021,
+                    E("2.0 DIT 268 KM", 268, 197, 1998, ben),
+                    E("STI 2.5T 304 KM", 304, 224, 2457, ben)) ]},
+        ]);
+
+        // ─── GENESIS ──────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Genesis")) models.AddRange([
+            new Model { BrandId = B("Genesis"), Name = "G70", Slug = "genesis-g70", Generations = [
+                G("I (2017–)", "genesis-g70-i", 2017, null,
+                    E("2.0T 252 KM", 252, 185, 1998, ben), E("3.3T Sport 370 KM", 370, 272, 3342, ben),
+                    E("2.2 CRDi 202 KM", 202, 149, 2199, die)) ]},
+            new Model { BrandId = B("Genesis"), Name = "G80", Slug = "genesis-g80", Generations = [
+                G("III (2020–)", "genesis-g80-iii", 2020, null,
+                    E("2.5T 304 KM", 304, 224, 2497, ben), E("3.5T V6 380 KM", 380, 279, 3470, ben),
+                    E("Electrified EV 365 KM", 365, 268, null, ev)) ]},
+            new Model { BrandId = B("Genesis"), Name = "GV70", Slug = "genesis-gv70", Generations = [
+                G("I (2021–)", "genesis-gv70-i", 2021, null,
+                    E("2.5T 304 KM", 304, 224, 2497, ben), E("3.5T V6 380 KM", 380, 279, 3470, ben),
+                    E("Electrified EV 490 KM", 490, 360, null, ev)) ]},
+            new Model { BrandId = B("Genesis"), Name = "GV80", Slug = "genesis-gv80", Generations = [
+                G("I (2020–)", "genesis-gv80-i", 2020, null,
+                    E("2.5T 304 KM", 304, 224, 2497, ben), E("3.5T V6 380 KM", 380, 279, 3470, ben),
+                    E("3.0D 278 KM", 278, 204, 2999, die)) ]},
+        ]);
+
+        // ─── MG ───────────────────────────────────────────────────────────────────
+        if (NeedsSeeding("MG")) models.AddRange([
+            new Model { BrandId = B("MG"), Name = "MG4", Slug = "mg-4", Generations = [
+                G("MG4 EV (2022–)", "mg4-ev-2022", 2022, null,
+                    E("51 kWh RWD 170 KM", 170, 125, null, ev),
+                    E("64 kWh RWD 204 KM", 204, 150, null, ev),
+                    E("77 kWh AWD 435 KM", 435, 320, null, ev)) ]},
+            new Model { BrandId = B("MG"), Name = "ZS EV", Slug = "mg-zs-ev", Generations = [
+                G("I (2019–)", "mg-zs-ev-i", 2019, null,
+                    E("44.5 kWh 143 KM", 143, 105, null, ev),
+                    E("72.6 kWh 156 KM", 156, 115, null, ev)) ]},
+            new Model { BrandId = B("MG"), Name = "MG5", Slug = "mg-5", Generations = [
+                G("I (2020–)", "mg5-ev-i", 2020, null,
+                    E("50.3 kWh 156 KM", 156, 115, null, ev),
+                    E("61 kWh 156 KM", 156, 115, null, ev)) ]},
+            new Model { BrandId = B("MG"), Name = "MG3", Slug = "mg-3", Generations = [
+                G("III Hybrid+ (2023–)", "mg3-hybrid-iii", 2023, null,
+                    E("1.5 Hybrid 194 KM", 194, 143, 1490, hyb)) ]},
+        ]);
+
+        // ─── BYD ──────────────────────────────────────────────────────────────────
+        if (NeedsSeeding("BYD")) models.AddRange([
+            new Model { BrandId = B("BYD"), Name = "Atto 3", Slug = "byd-atto-3", Generations = [
+                G("I (2022–)", "byd-atto3-i", 2022, null,
+                    E("60.5 kWh 204 KM", 204, 150, null, ev),
+                    E("60.5 kWh AWD 313 KM", 313, 230, null, ev)) ]},
+            new Model { BrandId = B("BYD"), Name = "Han", Slug = "byd-han", Generations = [
+                G("I (2020–)", "byd-han-i", 2020, null,
+                    E("85.4 kWh RWD 272 KM", 272, 200, null, ev),
+                    E("85.4 kWh AWD 517 KM", 517, 380, null, ev),
+                    E("DM-i PHEV 245 KM", 245, 180, 1498, phev)) ]},
+            new Model { BrandId = B("BYD"), Name = "Dolphin", Slug = "byd-dolphin", Generations = [
+                G("I (2021–)", "byd-dolphin-i", 2021, null,
+                    E("44.9 kWh 70 KM", 70, 51, null, ev),
+                    E("60.4 kWh 204 KM", 204, 150, null, ev)) ]},
+            new Model { BrandId = B("BYD"), Name = "Seal", Slug = "byd-seal", Generations = [
+                G("I (2022–)", "byd-seal-i", 2022, null,
+                    E("82.5 kWh RWD 313 KM", 313, 230, null, ev),
+                    E("82.5 kWh AWD 530 KM", 530, 390, null, ev)) ]},
+        ]);
+
+        // ─── DODGE ────────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Dodge")) models.AddRange([
+            new Model { BrandId = B("Dodge"), Name = "Charger", Slug = "dodge-charger", Generations = [
+                G("LX (2011–2023)", "dodge-charger-lx", 2011, 2023,
+                    E("3.6 V6 292 KM", 292, 215, 3604, ben), E("5.7 V8 370 KM", 370, 272, 5654, ben),
+                    E("SRT Hellcat 6.2 V8 717 KM", 717, 527, 6166, ben)) ]},
+            new Model { BrandId = B("Dodge"), Name = "Challenger", Slug = "dodge-challenger", Generations = [
+                G("III (2008–2023)", "dodge-challenger-iii", 2008, 2023,
+                    E("3.6 V6 305 KM", 305, 224, 3604, ben), E("5.7 V8 375 KM", 375, 276, 5654, ben),
+                    E("SRT Hellcat 6.2 V8 717 KM", 717, 527, 6166, ben)) ]},
+            new Model { BrandId = B("Dodge"), Name = "Durango", Slug = "dodge-durango", Generations = [
+                G("III (2011–)", "dodge-durango-iii", 2011, null,
+                    E("3.6 V6 295 KM", 295, 217, 3604, ben), E("5.7 V8 360 KM", 360, 265, 5654, ben),
+                    E("SRT Hellcat 6.2 V8 710 KM", 710, 522, 6166, ben)) ]},
+        ]);
+
+        // ─── CHRYSLER ─────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Chrysler")) models.AddRange([
+            new Model { BrandId = B("Chrysler"), Name = "300C", Slug = "chrysler-300c", Generations = [
+                G("II (2011–)", "chrysler-300c-ii", 2011, null,
+                    E("3.6 V6 292 KM", 292, 215, 3604, ben), E("5.7 V8 363 KM", 363, 267, 5654, ben),
+                    E("SRT 6.4 V8 470 KM", 470, 346, 6424, ben),
+                    E("3.0 CRD V6 239 KM", 239, 176, 2987, die)) ]},
+            new Model { BrandId = B("Chrysler"), Name = "Pacifica", Slug = "chrysler-pacifica", Generations = [
+                G("RU (2016–)", "chrysler-pacifica-ru", 2016, null,
+                    E("3.6 V6 287 KM", 287, 211, 3604, ben),
+                    E("Hybrid PHEV 260 KM", 260, 191, 3604, phev)) ]},
+        ]);
+
+        // ─── CHEVROLET ────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Chevrolet")) models.AddRange([
+            new Model { BrandId = B("Chevrolet"), Name = "Camaro", Slug = "chevrolet-camaro", Generations = [
+                G("VI (2015–2023)", "chevrolet-camaro-vi", 2015, 2023,
+                    E("2.0T 275 KM", 275, 202, 1998, ben), E("3.6 V6 335 KM", 335, 246, 3649, ben),
+                    E("SS 6.2 V8 453 KM", 453, 333, 6162, ben),
+                    E("ZL1 6.2 SC V8 650 KM", 650, 478, 6162, ben)) ]},
+            new Model { BrandId = B("Chevrolet"), Name = "Equinox", Slug = "chevrolet-equinox", Generations = [
+                G("III (2017–)", "chevrolet-equinox-iii", 2017, null,
+                    E("1.5T 170 KM", 170, 125, 1490, ben), E("2.0T 252 KM", 252, 185, 1998, ben),
+                    E("1.6 Diesel 136 KM", 136, 100, 1598, die)) ]},
+            new Model { BrandId = B("Chevrolet"), Name = "Corvette", Slug = "chevrolet-corvette", Generations = [
+                G("C7 (2013–2019)", "chevrolet-corvette-c7", 2013, 2019,
+                    E("6.2 V8 466 KM", 466, 343, 6162, ben),
+                    E("Z06 6.2 SC V8 659 KM", 659, 485, 6162, ben)),
+                G("C8 (2019–)", "chevrolet-corvette-c8", 2019, null,
+                    E("6.2 V8 495 KM", 495, 364, 6162, ben),
+                    E("Z06 5.5 V8 670 KM", 670, 493, 5498, ben)) ]},
+        ]);
+
+        // ─── ABARTH ───────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Abarth")) models.AddRange([
+            new Model { BrandId = B("Abarth"), Name = "595", Slug = "abarth-595", Generations = [
+                G("312 (2012–)", "abarth-595-312", 2012, null,
+                    E("1.4 T-Jet 145 KM", 145, 107, 1368, ben),
+                    E("Turismo 1.4 T-Jet 165 KM", 165, 121, 1368, ben),
+                    E("Competizione 1.4 T-Jet 180 KM", 180, 132, 1368, ben)) ]},
+            new Model { BrandId = B("Abarth"), Name = "695", Slug = "abarth-695", Generations = [
+                G("695 (2019–)", "abarth-695-2019", 2019, null,
+                    E("1.4 T-Jet 180 KM", 180, 132, 1368, ben),
+                    E("Tributo Ferrari 1.4 T-Jet 180 KM", 180, 132, 1368, ben)) ]},
+            new Model { BrandId = B("Abarth"), Name = "500e", Slug = "abarth-500e", Generations = [
+                G("332 elettrica (2023–)", "abarth-500e-332", 2023, null,
+                    E("Electric 154 KM", 154, 113, null, ev)) ]},
+        ]);
+
+        // ─── ALFA ROMEO ───────────────────────────────────────────────────────────
+        if (NeedsSeeding("Alfa Romeo")) models.AddRange([
+            new Model { BrandId = B("Alfa Romeo"), Name = "Giulia", Slug = "alfa-romeo-giulia", Generations = [
+                G("952 (2016–)", "alfa-giulia-952", 2016, null,
+                    E("2.0T 200 KM", 200, 147, 1995, ben), E("2.0T 280 KM", 280, 206, 1995, ben),
+                    E("Quadrifoglio 2.9 V6 510 KM", 510, 375, 2891, ben),
+                    E("2.2 JTD 160 KM", 160, 118, 2143, die), E("2.2 JTD 190 KM", 190, 140, 2143, die)) ]},
+            new Model { BrandId = B("Alfa Romeo"), Name = "Stelvio", Slug = "alfa-romeo-stelvio", Generations = [
+                G("949 (2017–)", "alfa-stelvio-949", 2017, null,
+                    E("2.0T 200 KM", 200, 147, 1995, ben), E("2.0T 280 KM", 280, 206, 1995, ben),
+                    E("Quadrifoglio 2.9 V6 510 KM", 510, 375, 2891, ben),
+                    E("2.2 JTD 160 KM", 160, 118, 2143, die), E("2.2 JTD 210 KM", 210, 154, 2143, die)) ]},
+            new Model { BrandId = B("Alfa Romeo"), Name = "Tonale", Slug = "alfa-romeo-tonale", Generations = [
+                G("I (2022–)", "alfa-tonale-i", 2022, null,
+                    E("1.5 MHEV 130 KM", 130, 96, 1469, mild), E("1.5 MHEV 160 KM", 160, 118, 1469, mild),
+                    E("PHEV 280 KM", 280, 206, 1332, phev)) ]},
+            new Model { BrandId = B("Alfa Romeo"), Name = "Giulietta", Slug = "alfa-romeo-giulietta", Generations = [
+                G("940 (2010–2020)", "alfa-giulietta-940", 2010, 2020,
+                    E("1.4T 120 KM", 120, 88, 1368, ben), E("1.4T 170 KM", 170, 125, 1368, ben),
+                    E("1.8T QV 240 KM", 240, 177, 1742, ben),
+                    E("1.6 JTDm 120 KM", 120, 88, 1598, die), E("2.0 JTDm 170 KM", 170, 125, 1956, die)) ]},
+        ]);
+
+        // ─── LEXUS ────────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Lexus")) models.AddRange([
+            new Model { BrandId = B("Lexus"), Name = "IS", Slug = "lexus-is", Generations = [
+                G("III (2013–)", "lexus-is-iii", 2013, null,
+                    E("IS300h 2.5 HEV 223 KM", 223, 164, 2494, hyb),
+                    E("IS200t 2.0T 245 KM", 245, 180, 1998, ben)) ]},
+            new Model { BrandId = B("Lexus"), Name = "NX", Slug = "lexus-nx", Generations = [
+                G("AZ10 (2014–2021)", "lexus-nx-az10", 2014, 2021,
+                    E("NX200t 2.0T 238 KM", 238, 175, 1998, ben),
+                    E("NX300h 2.5 HEV 197 KM", 197, 145, 2494, hyb)),
+                G("AZ20 (2021–)", "lexus-nx-az20", 2021, null,
+                    E("NX250 2.5 203 KM", 203, 149, 2487, ben),
+                    E("NX350 2.4T 279 KM", 279, 205, 2393, ben),
+                    E("NX350h HEV 243 KM", 243, 179, 2487, hyb),
+                    E("NX450h+ PHEV 309 KM", 309, 227, 2487, phev)) ]},
+            new Model { BrandId = B("Lexus"), Name = "RX", Slug = "lexus-rx", Generations = [
+                G("IV (2015–2022)", "lexus-rx-iv", 2015, 2022,
+                    E("RX300 2.0T 238 KM", 238, 175, 1998, ben),
+                    E("RX450h 3.5 HEV 313 KM", 313, 230, 3456, hyb),
+                    E("RX450h+ PHEV 306 KM", 306, 225, 2487, phev)),
+                G("V (2022–)", "lexus-rx-v", 2022, null,
+                    E("RX350 2.4T 279 KM", 279, 205, 2393, ben),
+                    E("RX500h F SPORT 371 KM", 371, 273, 2393, hyb),
+                    E("RX450h+ PHEV 309 KM", 309, 227, 2487, phev)) ]},
+            new Model { BrandId = B("Lexus"), Name = "UX", Slug = "lexus-ux", Generations = [
+                G("ZA10 (2018–)", "lexus-ux-za10", 2018, null,
+                    E("UX250h 2.0 HEV 184 KM", 184, 135, 1987, hyb),
+                    E("UX300e EV 204 KM", 204, 150, null, ev)) ]},
+        ]);
+
+        // ─── MASERATI ─────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Maserati")) models.AddRange([
+            new Model { BrandId = B("Maserati"), Name = "Ghibli", Slug = "maserati-ghibli", Generations = [
+                G("M157 (2013–2023)", "maserati-ghibli-m157", 2013, 2023,
+                    E("3.0 V6 350 KM", 350, 257, 2979, ben), E("GTS 3.0 V6 430 KM", 430, 316, 2979, ben),
+                    E("3.0 V6 D 250 KM", 250, 184, 2987, die), E("3.0 V6 D 275 KM", 275, 202, 2987, die),
+                    E("Hybrid 2.0T 330 KM", 330, 243, 1995, mild)) ]},
+            new Model { BrandId = B("Maserati"), Name = "Levante", Slug = "maserati-levante", Generations = [
+                G("M161 (2016–)", "maserati-levante-m161", 2016, null,
+                    E("3.0 V6 350 KM", 350, 257, 2979, ben), E("GTS 3.0 V6 430 KM", 430, 316, 2979, ben),
+                    E("Trofeo 3.8 V8 580 KM", 580, 427, 3799, ben),
+                    E("3.0 V6 D 250 KM", 250, 184, 2987, die),
+                    E("Hybrid 2.0T 330 KM", 330, 243, 1995, mild)) ]},
+            new Model { BrandId = B("Maserati"), Name = "GranTurismo", Slug = "maserati-granturismo", Generations = [
+                G("M139 (2007–2019)", "maserati-gt-m139", 2007, 2019,
+                    E("4.2 V8 405 KM", 405, 298, 4244, ben), E("4.7 V8 460 KM", 460, 338, 4691, ben)),
+                G("M180 (2023–)", "maserati-gt-m180", 2023, null,
+                    E("Modena 3.0 V6 490 KM", 490, 360, 2979, ben),
+                    E("Trofeo 3.0 V6 550 KM", 550, 404, 2979, ben),
+                    E("Folgore EV 761 KM", 761, 560, null, ev)) ]},
+        ]);
+
+        // ─── PEUGEOT ─────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Peugeot")) models.AddRange([
+            new Model { BrandId = B("Peugeot"), Name = "208", Slug = "peugeot-208", Generations = [
+                G("I (2012–2019)", "peugeot-208-i", 2012, 2019,
+                    E("1.2 PureTech 82 KM", 82, 60, 1199, ben), E("1.2 PureTech 110 KM", 110, 81, 1199, ben),
+                    E("GTi 1.6T 208 KM", 208, 153, 1598, ben),
+                    E("1.4 HDi 70 KM", 70, 51, 1398, die), E("1.6 BlueHDi 100 KM", 100, 74, 1560, die)),
+                G("II (2019–)", "peugeot-208-ii", 2019, null,
+                    E("1.2 PureTech 75 KM", 75, 55, 1199, ben), E("1.2 PureTech 100 KM", 100, 74, 1199, ben),
+                    E("1.2 PureTech 130 KM", 130, 96, 1199, ben),
+                    E("1.5 BlueHDi 100 KM", 100, 74, 1499, die),
+                    E("e-208 EV 136 KM", 136, 100, null, ev)) ]},
+            new Model { BrandId = B("Peugeot"), Name = "308", Slug = "peugeot-308", Generations = [
+                G("II (2013–2021)", "peugeot-308-ii", 2013, 2021,
+                    E("1.2 PureTech 110 KM", 110, 81, 1199, ben), E("1.2 PureTech 130 KM", 130, 96, 1199, ben),
+                    E("1.6 THP GTi 270 KM", 270, 199, 1598, ben),
+                    E("1.5 BlueHDi 100 KM", 100, 74, 1499, die), E("2.0 BlueHDi 150 KM", 150, 110, 1997, die)),
+                G("III (2021–)", "peugeot-308-iii", 2021, null,
+                    E("1.2 PureTech 130 KM", 130, 96, 1199, ben),
+                    E("1.6 Hybrid 180 KM", 180, 132, 1598, hyb),
+                    E("1.5 BlueHDi 130 KM", 130, 96, 1499, die),
+                    E("PHEV 225 KM", 225, 165, 1598, phev)) ]},
+            new Model { BrandId = B("Peugeot"), Name = "2008", Slug = "peugeot-2008", Generations = [
+                G("II (2019–)", "peugeot-2008-ii", 2019, null,
+                    E("1.2 PureTech 100 KM", 100, 74, 1199, ben), E("1.2 PureTech 130 KM", 130, 96, 1199, ben),
+                    E("1.5 BlueHDi 110 KM", 110, 81, 1499, die),
+                    E("e-2008 EV 136 KM", 136, 100, null, ev)) ]},
+            new Model { BrandId = B("Peugeot"), Name = "3008", Slug = "peugeot-3008", Generations = [
+                G("II (2016–2023)", "peugeot-3008-ii", 2016, 2023,
+                    E("1.2 PureTech 130 KM", 130, 96, 1199, ben), E("1.6 THP 165 KM", 165, 121, 1598, ben),
+                    E("1.5 BlueHDi 130 KM", 130, 96, 1499, die), E("2.0 BlueHDi 180 KM", 180, 132, 1997, die),
+                    E("PHEV 225 KM", 225, 165, 1598, phev), E("PHEV4 300 KM AWD", 300, 221, 1598, phev)),
+                G("III (2023–)", "peugeot-3008-iii", 2023, null,
+                    E("PHEV 195 KM", 195, 143, 1199, phev), E("PHEV 300 KM AWD", 300, 221, 1598, phev),
+                    E("e-3008 EV 213 KM", 213, 157, null, ev), E("e-3008 EV Long Range 230 KM", 230, 169, null, ev)) ]},
+            new Model { BrandId = B("Peugeot"), Name = "Boxer", Slug = "peugeot-boxer", Generations = [
+                G("III (2006–)", "peugeot-boxer-iii", 2006, null,
+                    E("2.0 BlueHDi 110 KM", 110, 81, 1997, die), E("2.0 BlueHDi 130 KM", 130, 96, 1997, die),
+                    E("2.2 BlueHDi 140 KM", 140, 103, 2198, die), E("e-Boxer EV 122 KM", 122, 90, null, ev)) ]},
+        ]);
+
+        // ─── SUZUKI ───────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Suzuki")) models.AddRange([
+            new Model { BrandId = B("Suzuki"), Name = "Swift", Slug = "suzuki-swift", Generations = [
+                G("V (2017–)", "suzuki-swift-v", 2017, null,
+                    E("1.0 Boosterjet 111 KM", 111, 82, 998, mild), E("1.2 DualJet 90 KM", 90, 66, 1197, hyb),
+                    E("Sport 1.4 Boosterjet 129 KM", 129, 95, 1373, mild)) ]},
+            new Model { BrandId = B("Suzuki"), Name = "Vitara", Slug = "suzuki-vitara", Generations = [
+                G("IV (2014–)", "suzuki-vitara-iv", 2014, null,
+                    E("1.4 Boosterjet 129 KM", 129, 95, 1373, mild), E("1.5 Smart Hybrid 102 KM", 102, 75, 1462, hyb),
+                    E("1.4 Boosterjet SHEV 129 KM", 129, 95, 1373, mild)) ]},
+            new Model { BrandId = B("Suzuki"), Name = "SX4 S-Cross", Slug = "suzuki-sx4-scross", Generations = [
+                G("II (2013–)", "suzuki-sx4-scross-ii", 2013, null,
+                    E("1.0 Boosterjet 112 KM", 112, 82, 998, ben), E("1.4 Boosterjet 129 KM", 129, 95, 1373, mild),
+                    E("1.5 HEV 102 KM", 102, 75, 1462, hyb)) ]},
+            new Model { BrandId = B("Suzuki"), Name = "Jimny", Slug = "suzuki-jimny", Generations = [
+                G("IV (2018–)", "suzuki-jimny-iv", 2018, null,
+                    E("1.5 102 KM", 102, 75, 1462, ben)) ]},
+        ]);
+
+        // ─── APRILIA (motocykle) ──────────────────────────────────────────────────
+        if (NeedsSeeding("Aprilia")) models.AddRange([
+            new Model { BrandId = B("Aprilia"), Name = "RS 660", Slug = "aprilia-rs660", Generations = [
+                G("2021–", "aprilia-rs660-2021", 2021, null,
+                    E("659cc parallel twin 100 KM", 100, 74, 659, ben)) ]},
+            new Model { BrandId = B("Aprilia"), Name = "Tuono 660", Slug = "aprilia-tuono660", Generations = [
+                G("2021–", "aprilia-tuono660-2021", 2021, null,
+                    E("659cc parallel twin 95 KM", 95, 70, 659, ben)) ]},
+            new Model { BrandId = B("Aprilia"), Name = "RSV4", Slug = "aprilia-rsv4", Generations = [
+                G("2021–", "aprilia-rsv4-2021", 2021, null,
+                    E("1099cc V4 217 KM", 217, 160, 1099, ben)) ]},
+            new Model { BrandId = B("Aprilia"), Name = "Tuono V4", Slug = "aprilia-tuono-v4", Generations = [
+                G("2021–", "aprilia-tuono-v4-2021", 2021, null,
+                    E("1099cc V4 175 KM", 175, 129, 1099, ben)) ]},
+        ]);
+
+        // ─── MV AGUSTA (motocykle) ────────────────────────────────────────────────
+        if (NeedsSeeding("MV Agusta")) models.AddRange([
+            new Model { BrandId = B("MV Agusta"), Name = "Brutale 800", Slug = "mv-agusta-brutale800", Generations = [
+                G("2012–", "mv-brutale800-2012", 2012, null,
+                    E("798cc inline-3 140 KM", 140, 103, 798, ben)) ]},
+            new Model { BrandId = B("MV Agusta"), Name = "F3 800", Slug = "mv-agusta-f3-800", Generations = [
+                G("2013–", "mv-f3-800-2013", 2013, null,
+                    E("798cc inline-3 148 KM", 148, 109, 798, ben)) ]},
+            new Model { BrandId = B("MV Agusta"), Name = "Turismo Veloce 800", Slug = "mv-agusta-turismo-veloce", Generations = [
+                G("2014–", "mv-turismo-veloce-2014", 2014, null,
+                    E("798cc inline-3 110 KM", 110, 81, 798, ben)) ]},
+        ]);
+
+        // ─── ROYAL ENFIELD (motocykle) ────────────────────────────────────────────
+        if (NeedsSeeding("Royal Enfield")) models.AddRange([
+            new Model { BrandId = B("Royal Enfield"), Name = "Meteor 350", Slug = "re-meteor-350", Generations = [
+                G("2020–", "re-meteor350-2020", 2020, null,
+                    E("349cc single 20 KM", 20, 15, 349, ben)) ]},
+            new Model { BrandId = B("Royal Enfield"), Name = "Himalayan", Slug = "re-himalayan", Generations = [
+                G("2016–2023 (411cc)", "re-himalayan-411", 2016, 2023,
+                    E("411cc single 24 KM", 24, 18, 411, ben)),
+                G("2024– (450cc)", "re-himalayan-450", 2024, null,
+                    E("452cc single 40 KM", 40, 29, 452, ben)) ]},
+            new Model { BrandId = B("Royal Enfield"), Name = "Classic 350", Slug = "re-classic-350", Generations = [
+                G("2021–", "re-classic350-2021", 2021, null,
+                    E("349cc single 20 KM", 20, 15, 349, ben)) ]},
+        ]);
+
+        // ─── INDIAN (motocykle) ───────────────────────────────────────────────────
+        if (NeedsSeeding("Indian")) models.AddRange([
+            new Model { BrandId = B("Indian"), Name = "Scout", Slug = "indian-scout", Generations = [
+                G("2015–", "indian-scout-2015", 2015, null,
+                    E("1133cc V-twin 100 KM", 100, 74, 1133, ben)) ]},
+            new Model { BrandId = B("Indian"), Name = "Chief", Slug = "indian-chief", Generations = [
+                G("2021–", "indian-chief-2021", 2021, null,
+                    E("1890cc V-twin 116 KM", 116, 85, 1890, ben)) ]},
+            new Model { BrandId = B("Indian"), Name = "Challenger", Slug = "indian-challenger", Generations = [
+                G("2020–", "indian-challenger-2020", 2020, null,
+                    E("1768cc PowerPlus V-twin 122 KM", 122, 90, 1768, ben)) ]},
+        ]);
+
+        // ─── HUSQVARNA (motocykle) ────────────────────────────────────────────────
+        if (NeedsSeeding("Husqvarna")) models.AddRange([
+            new Model { BrandId = B("Husqvarna"), Name = "Svartpilen 401", Slug = "husqvarna-svartpilen-401", Generations = [
+                G("2017–", "husqvarna-svartpilen401-2017", 2017, null,
+                    E("373cc single 44 KM", 44, 32, 373, ben)) ]},
+            new Model { BrandId = B("Husqvarna"), Name = "Vitpilen 401", Slug = "husqvarna-vitpilen-401", Generations = [
+                G("2018–", "husqvarna-vitpilen401-2018", 2018, null,
+                    E("373cc single 44 KM", 44, 32, 373, ben)) ]},
+            new Model { BrandId = B("Husqvarna"), Name = "Norden 901", Slug = "husqvarna-norden-901", Generations = [
+                G("2021–", "husqvarna-norden901-2021", 2021, null,
+                    E("889cc parallel twin 105 KM", 105, 77, 889, ben)) ]},
+        ]);
+
+        // ─── BMW MOTORRAD (motocykle) ─────────────────────────────────────────────
+        if (NeedsSeeding("BMW")) models.AddRange([
+            new Model { BrandId = B("BMW"), Name = "R 1250 GS", Slug = "bmw-r1250gs", Generations = [
+                G("2018–", "bmw-r1250gs-2018", 2018, null,
+                    E("1254cc Boxer 136 KM", 136, 100, 1254, ben),
+                    E("Adventure 1254cc 136 KM", 136, 100, 1254, ben)) ]},
+            new Model { BrandId = B("BMW"), Name = "S 1000 RR", Slug = "bmw-s1000rr", Generations = [
+                G("2019–", "bmw-s1000rr-2019", 2019, null,
+                    E("999cc inline-4 210 KM", 210, 154, 999, ben)) ]},
+            new Model { BrandId = B("BMW"), Name = "F 900 R", Slug = "bmw-f900r", Generations = [
+                G("2020–", "bmw-f900r-2020", 2020, null,
+                    E("895cc parallel twin 105 KM", 105, 77, 895, ben)) ]},
+        ]);
+
+        // ─── SUZUKI MOTORRAD (motocykle) ──────────────────────────────────────────
+        if (NeedsSeeding("Suzuki")) models.AddRange([
+            new Model { BrandId = B("Suzuki"), Name = "GSX-R1000", Slug = "suzuki-gsx-r1000", Generations = [
+                G("L7 (2017–)", "suzuki-gsx-r1000-l7", 2017, null,
+                    E("999cc inline-4 202 KM", 202, 149, 999, ben)) ]},
+            new Model { BrandId = B("Suzuki"), Name = "V-Strom 1050", Slug = "suzuki-vstrom-1050", Generations = [
+                G("2020–", "suzuki-vstrom1050-2020", 2020, null,
+                    E("1037cc V-twin 107 KM", 107, 79, 1037, ben)) ]},
+        ]);
+
+        // ─── DAF ──────────────────────────────────────────────────────────────────
+        if (NeedsSeeding("DAF")) models.AddRange([
+            new Model { BrandId = B("DAF"), Name = "XF", Slug = "daf-xf", Generations = [
+                G("105 (2005–2017)", "daf-xf-105", 2005, 2017,
+                    E("MX-11 410 KM", 410, 302, 10837, die), E("MX-13 460 KM", 460, 338, 12902, die),
+                    E("MX-13 510 KM", 510, 375, 12902, die)),
+                G("XF (2017–)", "daf-xf-2017", 2017, null,
+                    E("MX-11 370 KM", 370, 272, 10837, die), E("MX-11 410 KM", 410, 302, 10837, die),
+                    E("MX-13 480 KM", 480, 353, 12902, die), E("MX-13 530 KM", 530, 390, 12902, die)) ]},
+            new Model { BrandId = B("DAF"), Name = "XG", Slug = "daf-xg", Generations = [
+                G("XG/XG+ (2021–)", "daf-xg-2021", 2021, null,
+                    E("MX-11 390 KM", 390, 287, 10837, die), E("MX-13 480 KM", 480, 353, 12902, die),
+                    E("MX-13 530 KM", 530, 390, 12902, die)) ]},
+            new Model { BrandId = B("DAF"), Name = "LF", Slug = "daf-lf", Generations = [
+                G("FA/FAR (2013–)", "daf-lf-2013", 2013, null,
+                    E("PX-5 180 KM", 180, 132, 5123, die), E("PX-5 220 KM", 220, 162, 5123, die),
+                    E("PX-7 250 KM", 250, 184, 6728, die), E("PX-7 290 KM", 290, 213, 6728, die)) ]},
+        ]);
+
+        // ─── IVECO ────────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Iveco")) models.AddRange([
+            new Model { BrandId = B("Iveco"), Name = "S-Way", Slug = "iveco-s-way", Generations = [
+                G("S-Way (2019–)", "iveco-s-way-2019", 2019, null,
+                    E("Cursor 9 420 KM", 420, 309, 8710, die), E("Cursor 9 460 KM", 460, 338, 8710, die),
+                    E("Cursor 13 500 KM", 500, 368, 12882, die), E("Cursor 13 570 KM", 570, 419, 12882, die)) ]},
+            new Model { BrandId = B("Iveco"), Name = "Stralis", Slug = "iveco-stralis", Generations = [
+                G("Hi-Way (2012–2019)", "iveco-stralis-hiway", 2012, 2019,
+                    E("Cursor 10 360 KM", 360, 265, 10308, die), E("Cursor 10 430 KM", 430, 316, 10308, die),
+                    E("Cursor 13 460 KM", 460, 338, 12882, die), E("Cursor 13 560 KM", 560, 412, 12882, die)) ]},
+            new Model { BrandId = B("Iveco"), Name = "Daily", Slug = "iveco-daily", Generations = [
+                G("VI (2014–)", "iveco-daily-vi", 2014, null,
+                    E("2.3 HPI 116 KM", 116, 85, 2287, die), E("2.3 HPI 136 KM", 136, 100, 2287, die),
+                    E("3.0 HPI 170 KM", 170, 125, 2998, die), E("3.0 HPI 210 KM", 210, 154, 2998, die),
+                    E("35S e-Daily EV 200 KM", 200, 147, null, ev)) ]},
+        ]);
+
+        // ─── RENAULT TRUCKS ───────────────────────────────────────────────────────
+        if (NeedsSeeding("Renault Trucks")) models.AddRange([
+            new Model { BrandId = B("Renault Trucks"), Name = "T High", Slug = "rt-t-high", Generations = [
+                G("T High (2013–)", "rt-t-high-2013", 2013, null,
+                    E("DTI11 430 KM", 430, 316, 10837, die), E("DTI11 480 KM", 480, 353, 10837, die),
+                    E("DTI13 500 KM", 500, 368, 12800, die), E("DTI13 560 KM", 560, 412, 12800, die)) ]},
+            new Model { BrandId = B("Renault Trucks"), Name = "C", Slug = "rt-c", Generations = [
+                G("C (2013–)", "rt-c-2013", 2013, null,
+                    E("DTI8 320 KM", 320, 235, 7700, die), E("DTI11 430 KM", 430, 316, 10837, die),
+                    E("DTI13 480 KM", 480, 353, 12800, die)) ]},
+            new Model { BrandId = B("Renault Trucks"), Name = "D", Slug = "rt-d", Generations = [
+                G("D Wide (2013–)", "rt-d-wide-2013", 2013, null,
+                    E("DTI5 210 KM", 210, 154, 5100, die), E("DTI7 280 KM", 280, 206, 7700, die)) ]},
+        ]);
+
+        // ─── CASE IH ─────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Case IH")) models.AddRange([
+            new Model { BrandId = B("Case IH"), Name = "Puma", Slug = "case-ih-puma", Generations = [
+                G("CVX (2014–)", "case-ih-puma-cvx", 2014, null,
+                    E("Puma 150 CVX 150 KM", 150, 110, 6728, die), E("Puma 185 CVX 185 KM", 185, 136, 6728, die),
+                    E("Puma 220 CVX 220 KM", 220, 162, 6728, die), E("Puma 240 CVX 240 KM", 240, 177, 6728, die)) ]},
+            new Model { BrandId = B("Case IH"), Name = "Optum", Slug = "case-ih-optum", Generations = [
+                G("AFS Connect (2016–)", "case-ih-optum-afs", 2016, null,
+                    E("Optum 250 CVX 250 KM", 250, 184, 8700, die), E("Optum 270 CVX 270 KM", 270, 199, 8700, die),
+                    E("Optum 300 CVX 300 KM", 300, 221, 8700, die)) ]},
+            new Model { BrandId = B("Case IH"), Name = "Maxxum", Slug = "case-ih-maxxum", Generations = [
+                G("AFS Connect (2017–)", "case-ih-maxxum-afs", 2017, null,
+                    E("Maxxum 115 115 KM", 115, 85, 4485, die), E("Maxxum 135 135 KM", 135, 99, 4485, die),
+                    E("Maxxum 150 150 KM", 150, 110, 6728, die)) ]},
+        ]);
+
+        // ─── CLAAS ────────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Claas")) models.AddRange([
+            new Model { BrandId = B("Claas"), Name = "Axion 900", Slug = "claas-axion-900", Generations = [
+                G("CIS+ (2015–)", "claas-axion900-cis", 2015, null,
+                    E("Axion 920 205 KM", 205, 151, 6800, die), E("Axion 940 245 KM", 245, 180, 6800, die),
+                    E("Axion 960 290 KM", 290, 213, 6800, die)) ]},
+            new Model { BrandId = B("Claas"), Name = "Axion 800", Slug = "claas-axion-800", Generations = [
+                G("CIS+ (2012–)", "claas-axion800-cis", 2012, null,
+                    E("Axion 810 180 KM", 180, 132, 6800, die), E("Axion 840 205 KM", 205, 151, 6800, die)) ]},
+            new Model { BrandId = B("Claas"), Name = "Arion 600", Slug = "claas-arion-600", Generations = [
+                G("CIS (2012–)", "claas-arion600-cis", 2012, null,
+                    E("Arion 610 115 KM", 115, 85, 4485, die), E("Arion 640 155 KM", 155, 114, 4485, die),
+                    E("Arion 660 185 KM", 185, 136, 6728, die)) ]},
+        ]);
+
+        // ─── KUBOTA ───────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Kubota")) models.AddRange([
+            new Model { BrandId = B("Kubota"), Name = "M7", Slug = "kubota-m7", Generations = [
+                G("M7-151 (2014–)", "kubota-m7-2014", 2014, null,
+                    E("V6108 152 KM", 152, 112, 6108, die), E("V6108 172 KM", 172, 126, 6108, die),
+                    E("V6108 192 KM", 192, 141, 6108, die)) ]},
+            new Model { BrandId = B("Kubota"), Name = "M5", Slug = "kubota-m5", Generations = [
+                G("M5-091 (2015–)", "kubota-m5-2015", 2015, null,
+                    E("V3307 91 KM", 91, 67, 3307, die), E("V3307 111 KM", 111, 82, 3307, die)) ]},
+            new Model { BrandId = B("Kubota"), Name = "L Series", Slug = "kubota-l-series", Generations = [
+                G("L2502 (2016–)", "kubota-l2502-2016", 2016, null,
+                    E("D1703 25 KM", 25, 18, 1703, die), E("D2703 47 KM", 47, 35, 2703, die)) ]},
+        ]);
+
+        // ─── MASSEY FERGUSON ──────────────────────────────────────────────────────
+        if (NeedsSeeding("Massey Ferguson")) models.AddRange([
+            new Model { BrandId = B("Massey Ferguson"), Name = "MF 5700 S", Slug = "mf-5700-s", Generations = [
+                G("S (2014–)", "mf-5700s-2014", 2014, null,
+                    E("5710 S 100 KM", 100, 74, 4400, die), E("5713 S 130 KM", 130, 96, 4485, die),
+                    E("5715 S 155 KM", 155, 114, 4485, die)) ]},
+            new Model { BrandId = B("Massey Ferguson"), Name = "MF 7700 S", Slug = "mf-7700-s", Generations = [
+                G("S (2012–)", "mf-7700s-2012", 2012, null,
+                    E("7715 S 155 KM", 155, 114, 6600, die), E("7720 S 205 KM", 205, 151, 6600, die),
+                    E("7726 S 260 KM", 260, 191, 8400, die)) ]},
+            new Model { BrandId = B("Massey Ferguson"), Name = "MF 8700 S", Slug = "mf-8700-s", Generations = [
+                G("S (2017–)", "mf-8700s-2017", 2017, null,
+                    E("8730 S 305 KM", 305, 224, 8400, die), E("8737 S 370 KM", 370, 272, 8400, die)) ]},
+        ]);
+
+        // ─── ZETOR ────────────────────────────────────────────────────────────────
+        if (NeedsSeeding("Zetor")) models.AddRange([
+            new Model { BrandId = B("Zetor"), Name = "Major", Slug = "zetor-major", Generations = [
+                G("CL (2012–)", "zetor-major-cl", 2012, null,
+                    E("Major CL 80 80 KM", 80, 59, 3792, die), E("Major CL 100 100 KM", 100, 74, 3792, die)) ]},
+            new Model { BrandId = B("Zetor"), Name = "Crystal", Slug = "zetor-crystal", Generations = [
+                G("170 HD (2016–)", "zetor-crystal-170", 2016, null,
+                    E("Crystal 160 HD 162 KM", 162, 119, 7700, die)) ]},
+            new Model { BrandId = B("Zetor"), Name = "Forterra", Slug = "zetor-forterra", Generations = [
+                G("HD (2012–)", "zetor-forterra-hd", 2012, null,
+                    E("Forterra 100 HD 100 KM", 100, 74, 4156, die), E("Forterra 130 HD 130 KM", 130, 96, 4156, die)) ]},
+        ]);
+
+        // ─── CATERPILLAR (budowlane/maszyny) ──────────────────────────────────────
+        if (NeedsSeeding("Caterpillar")) models.AddRange([
+            new Model { BrandId = B("Caterpillar"), Name = "CAT 320", Slug = "cat-320", Generations = [
+                G("CAT 320 (2019–)", "cat-320-2019", 2019, null,
+                    E("C7.1 ACERT 148 KM", 148, 109, 7100, die)) ]},
+            new Model { BrandId = B("Caterpillar"), Name = "CAT 950", Slug = "cat-950", Generations = [
+                G("GC/M (2015–)", "cat-950-2015", 2015, null,
+                    E("C7.1 201 KM", 201, 148, 7100, die)) ]},
+            new Model { BrandId = B("Caterpillar"), Name = "CAT D6", Slug = "cat-d6", Generations = [
+                G("XE/XL (2016–)", "cat-d6-2016", 2016, null,
+                    E("C9.3B ACERT 211 KM", 211, 155, 9300, die)) ]},
+            new Model { BrandId = B("Caterpillar"), Name = "CAT 432", Slug = "cat-432", Generations = [
+                G("F2 (2015–)", "cat-432-f2", 2015, null,
+                    E("C3.3B 100 KM", 100, 74, 3300, die)) ]},
+        ]);
+
+        // ─── JCB (budowlane/maszyny) ───────────────────────────────────────────────
+        if (NeedsSeeding("JCB")) models.AddRange([
+            new Model { BrandId = B("JCB"), Name = "3CX", Slug = "jcb-3cx", Generations = [
+                G("4T4 (2013–)", "jcb-3cx-4t4", 2013, null,
+                    E("JCB EcoMAX 100 KM", 100, 74, 4400, die)) ]},
+            new Model { BrandId = B("JCB"), Name = "JS220", Slug = "jcb-js220", Generations = [
+                G("LC (2014–)", "jcb-js220-lc", 2014, null,
+                    E("JCB DieselMAX 156 KM", 156, 115, 6700, die)) ]},
+            new Model { BrandId = B("JCB"), Name = "525-60", Slug = "jcb-525-60", Generations = [
+                G("T4 (2015–)", "jcb-525-60-t4", 2015, null,
+                    E("JCB EcoMAX 55 KM", 55, 40, 2200, die)) ]},
+            new Model { BrandId = B("JCB"), Name = "Fastrac 4000", Slug = "jcb-fastrac-4000", Generations = [
+                G("4220 (2016–)", "jcb-fastrac-4220", 2016, null,
+                    E("JCB EcoMAX 220 KM", 220, 162, 6700, die)) ]},
+        ]);
+
+        // ─── KOMATSU (budowlane/maszyny) ──────────────────────────────────────────
+        if (NeedsSeeding("Komatsu")) models.AddRange([
+            new Model { BrandId = B("Komatsu"), Name = "PC210", Slug = "komatsu-pc210", Generations = [
+                G("LC-11 (2017–)", "komatsu-pc210-lc11", 2017, null,
+                    E("SAA6D107E-3 148 KM", 148, 109, 6690, die)) ]},
+            new Model { BrandId = B("Komatsu"), Name = "WA320", Slug = "komatsu-wa320", Generations = [
+                G("8 (2019–)", "komatsu-wa320-8", 2019, null,
+                    E("SAA6D107E-3 155 KM", 155, 114, 6690, die)) ]},
+            new Model { BrandId = B("Komatsu"), Name = "D65", Slug = "komatsu-d65", Generations = [
+                G("PX-18 (2018–)", "komatsu-d65-px18", 2018, null,
+                    E("SAA6D114E-6 215 KM", 215, 158, 8280, die)) ]},
+        ]);
+
+        // ─── LIEBHERR (budowlane/maszyny) ─────────────────────────────────────────
+        if (NeedsSeeding("Liebherr")) models.AddRange([
+            new Model { BrandId = B("Liebherr"), Name = "LTM 1060", Slug = "liebherr-ltm-1060", Generations = [
+                G("4.2 (2018–)", "liebherr-ltm1060-4-2", 2018, null,
+                    E("OM 471 340 KM", 340, 250, 12800, die)) ]},
+            new Model { BrandId = B("Liebherr"), Name = "PR 736", Slug = "liebherr-pr-736", Generations = [
+                G("Litronic (2017–)", "liebherr-pr736-litronic", 2017, null,
+                    E("D9512 244 KM", 244, 179, 9512, die)) ]},
+            new Model { BrandId = B("Liebherr"), Name = "LB 28", Slug = "liebherr-lb-28", Generations = [
+                G("LB28 (2014–)", "liebherr-lb28-2014", 2014, null,
+                    E("D916 170 KM", 170, 125, 5680, die)) ]},
+        ]);
+
+        // ─── BOBCAT (budowlane) ────────────────────────────────────────────────────
+        if (NeedsSeeding("Bobcat")) models.AddRange([
+            new Model { BrandId = B("Bobcat"), Name = "E85", Slug = "bobcat-e85", Generations = [
+                G("E85 (2016–)", "bobcat-e85-2016", 2016, null,
+                    E("D34 73 KM", 73, 54, 3400, die)) ]},
+            new Model { BrandId = B("Bobcat"), Name = "T650", Slug = "bobcat-t650", Generations = [
+                G("T650 (2014–)", "bobcat-t650-2014", 2014, null,
+                    E("D34 74 KM", 74, 54, 3400, die)) ]},
+            new Model { BrandId = B("Bobcat"), Name = "S850", Slug = "bobcat-s850", Generations = [
+                G("S850 (2019–)", "bobcat-s850-2019", 2019, null,
+                    E("D34 96 KM", 96, 71, 3400, die)) ]},
+        ]);
+
+        // ─── TAKEUCHI (budowlane) ──────────────────────────────────────────────────
+        if (NeedsSeeding("Takeuchi")) models.AddRange([
+            new Model { BrandId = B("Takeuchi"), Name = "TB216", Slug = "takeuchi-tb216", Generations = [
+                G("TB216 (2020–)", "takeuchi-tb216-2020", 2020, null,
+                    E("Yanmar 3TNV70 15 KM", 15, 11, 854, die)) ]},
+            new Model { BrandId = B("Takeuchi"), Name = "TB260", Slug = "takeuchi-tb260", Generations = [
+                G("TB260 (2017–)", "takeuchi-tb260-2017", 2017, null,
+                    E("Yanmar 4TNV106 56 KM", 56, 41, 3318, die)) ]},
+        ]);
+
+        // ─── WACKER NEUSON (budowlane) ────────────────────────────────────────────
+        if (NeedsSeeding("Wacker Neuson")) models.AddRange([
+            new Model { BrandId = B("Wacker Neuson"), Name = "EW100", Slug = "wacker-neuson-ew100", Generations = [
+                G("EW100 (2017–)", "wacker-neuson-ew100-2017", 2017, null,
+                    E("Perkins 74.5 KM", 75, 55, 3400, die)) ]},
+            new Model { BrandId = B("Wacker Neuson"), Name = "EZ80", Slug = "wacker-neuson-ez80", Generations = [
+                G("EZ80 (2017–)", "wacker-neuson-ez80-2017", 2017, null,
+                    E("Kubota 64 KM", 64, 47, 2434, die)) ]},
+        ]);
+
+        // ─── DOOSAN (budowlane/maszyny) ───────────────────────────────────────────
+        if (NeedsSeeding("Doosan")) models.AddRange([
+            new Model { BrandId = B("Doosan"), Name = "DX225LC", Slug = "doosan-dx225lc", Generations = [
+                G("DX225LC-5 (2014–)", "doosan-dx225lc-5", 2014, null,
+                    E("DL06P 149 KM", 149, 110, 5890, die)) ]},
+            new Model { BrandId = B("Doosan"), Name = "DX530LC", Slug = "doosan-dx530lc", Generations = [
+                G("DX530LC-5 (2015–)", "doosan-dx530lc-5", 2015, null,
+                    E("DL12 380 KM", 380, 279, 11100, die)) ]},
+        ]);
+
+        // ─── HITACHI CONSTRUCTION (budowlane/maszyny) ─────────────────────────────
+        if (NeedsSeeding("Hitachi Construction")) models.AddRange([
+            new Model { BrandId = B("Hitachi Construction"), Name = "ZX210LC", Slug = "hitachi-zx210lc", Generations = [
+                G("ZX210LC-6 (2014–)", "hitachi-zx210lc-6", 2014, null,
+                    E("Hino J05E 148 KM", 148, 109, 4964, die)) ]},
+            new Model { BrandId = B("Hitachi Construction"), Name = "ZX470LC", Slug = "hitachi-zx470lc", Generations = [
+                G("ZX470LC-6 (2015–)", "hitachi-zx470lc-6", 2015, null,
+                    E("Isuzu 6HK1 322 KM", 322, 237, 7790, die)) ]},
+        ]);
+
+        // ─── TEREX (budowlane/maszyny) ────────────────────────────────────────────
+        if (NeedsSeeding("Terex")) models.AddRange([
+            new Model { BrandId = B("Terex"), Name = "TC50", Slug = "terex-tc50", Generations = [
+                G("TC50 (2014–)", "terex-tc50-2014", 2014, null,
+                    E("Perkins 35.6 KM", 36, 26, 1496, die)) ]},
+            new Model { BrandId = B("Terex"), Name = "AC 100-4", Slug = "terex-ac100-4", Generations = [
+                G("AC 100-4 (2016–)", "terex-ac100-4-2016", 2016, null,
+                    E("Mercedes OM936 354 KM", 354, 260, 7700, die)) ]},
+        ]);
+
+        // ─── HUMBAUR (przyczepy) ──────────────────────────────────────────────────
+        if (NeedsSeeding("Humbaur")) models.AddRange([
+            new Model { BrandId = B("Humbaur"), Name = "Przyczepa jednoosiowa", Slug = "humbaur-1os", Generations = [
+                G("HUK (2015–)", "humbaur-huk-2015", 2015, null) ]},
+            new Model { BrandId = B("Humbaur"), Name = "Przyczepa dwuosiowa", Slug = "humbaur-2os", Generations = [
+                G("HTK (2015–)", "humbaur-htk-2015", 2015, null) ]},
+            new Model { BrandId = B("Humbaur"), Name = "Laweta", Slug = "humbaur-laweta", Generations = [
+                G("HBT (2015–)", "humbaur-hbt-2015", 2015, null) ]},
+        ]);
+
+        // ─── NIEWIADÓW (przyczepy) ────────────────────────────────────────────────
+        if (NeedsSeeding("Niewiadów")) models.AddRange([
+            new Model { BrandId = B("Niewiadów"), Name = "N126", Slug = "niewiadow-n126", Generations = [
+                G("N126 (2010–)", "niewiadow-n126-2010", 2010, null) ]},
+            new Model { BrandId = B("Niewiadów"), Name = "N750", Slug = "niewiadow-n750", Generations = [
+                G("N750 (2010–)", "niewiadow-n750-2010", 2010, null) ]},
+        ]);
+
+        // ─── SCHMITZ CARGOBULL (przyczepy) ───────────────────────────────────────
+        if (NeedsSeeding("Schmitz Cargobull")) models.AddRange([
+            new Model { BrandId = B("Schmitz Cargobull"), Name = "Naczepa chłodnicza", Slug = "schmitz-chl", Generations = [
+                G("SKO (2015–)", "schmitz-sko-2015", 2015, null) ]},
+            new Model { BrandId = B("Schmitz Cargobull"), Name = "Naczepa plandeka", Slug = "schmitz-plandeka", Generations = [
+                G("SCS (2015–)", "schmitz-scs-2015", 2015, null) ]},
+            new Model { BrandId = B("Schmitz Cargobull"), Name = "Naczepa skrzyniowa", Slug = "schmitz-skrzyniowa", Generations = [
+                G("SCB (2015–)", "schmitz-scb-2015", 2015, null) ]},
+        ]);
+
+        // ─── KRONE (przyczepy) ────────────────────────────────────────────────────
+        if (NeedsSeeding("Krone")) models.AddRange([
+            new Model { BrandId = B("Krone"), Name = "Profi Liner", Slug = "krone-profi-liner", Generations = [
+                G("SD (2015–)", "krone-sd-2015", 2015, null) ]},
+            new Model { BrandId = B("Krone"), Name = "Cool Liner", Slug = "krone-cool-liner", Generations = [
+                G("SDR (2015–)", "krone-sdr-2015", 2015, null) ]},
+        ]);
+
+        // ─── WIELTON (przyczepy) ──────────────────────────────────────────────────
+        if (NeedsSeeding("Wielton")) models.AddRange([
+            new Model { BrandId = B("Wielton"), Name = "Platforma", Slug = "wielton-platforma", Generations = [
+                G("NS-3 (2015–)", "wielton-ns3-2015", 2015, null) ]},
+            new Model { BrandId = B("Wielton"), Name = "Plandeka", Slug = "wielton-plandeka", Generations = [
+                G("NW-3 (2015–)", "wielton-nw3-2015", 2015, null) ]},
+        ]);
+
+        // ─── FLIEGL (przyczepy) ───────────────────────────────────────────────────
+        if (NeedsSeeding("Fliegl")) models.AddRange([
+            new Model { BrandId = B("Fliegl"), Name = "Przyczepa rolnicza", Slug = "fliegl-rolnicza", Generations = [
+                G("DK (2015–)", "fliegl-dk-2015", 2015, null) ]},
+            new Model { BrandId = B("Fliegl"), Name = "Naczepa", Slug = "fliegl-naczepa", Generations = [
+                G("SDS (2015–)", "fliegl-sds-2015", 2015, null) ]},
+        ]);
+
+        // ─── KOGEL (przyczepy) ────────────────────────────────────────────────────
+        if (NeedsSeeding("Kogel")) models.AddRange([
+            new Model { BrandId = B("Kogel"), Name = "Cargo", Slug = "kogel-cargo", Generations = [
+                G("S 24 (2015–)", "kogel-s24-2015", 2015, null) ]},
+            new Model { BrandId = B("Kogel"), Name = "Overland", Slug = "kogel-overland", Generations = [
+                G("PN 24 (2015–)", "kogel-pn24-2015", 2015, null) ]},
+        ]);
+
+        // ─── SCHWARZMÜLLER (przyczepy) ────────────────────────────────────────────
+        if (NeedsSeeding("Schwarzmüller")) models.AddRange([
+            new Model { BrandId = B("Schwarzmüller"), Name = "Naczepa skrzyniowa", Slug = "schwarzmuller-skrzyniowa", Generations = [
+                G("RH200 (2015–)", "schwarzmuller-rh200-2015", 2015, null) ]},
+        ]);
+
+        // ─── MEILLER (przyczepy) ──────────────────────────────────────────────────
+        if (NeedsSeeding("Meiller")) models.AddRange([
+            new Model { BrandId = B("Meiller"), Name = "Wywrotka", Slug = "meiller-wywrotka", Generations = [
+                G("D3K (2015–)", "meiller-d3k-2015", 2015, null) ]},
+        ]);
+
+        // ─── NOOTEBOOM (przyczepy) ────────────────────────────────────────────────
+        if (NeedsSeeding("Nooteboom")) models.AddRange([
+            new Model { BrandId = B("Nooteboom"), Name = "Megamax", Slug = "nooteboom-megamax", Generations = [
+                G("OSD-73-04V (2015–)", "nooteboom-osd73-2015", 2015, null) ]},
+            new Model { BrandId = B("Nooteboom"), Name = "Semi Lowloader", Slug = "nooteboom-lowloader", Generations = [
+                G("OSDS (2015–)", "nooteboom-osds-2015", 2015, null) ]},
+        ]);
+
         // ─── JOHN DEERE ───────────────────────────────────────────────────────────
-        if (B("John Deere") > 0) models.AddRange([
+        if (NeedsSeeding("John Deere")) models.AddRange([
             new Model { BrandId = B("John Deere"), Name = "Seria 6", Slug = "jd-seria-6", Generations = [
                 G("6M/6R (2014–)", "jd-seria6-2014", 2014, null,
                     E("6110R 110 KM", 110, 81, 4530, die), E("6130R 130 KM", 130, 96, 4530, die),
@@ -710,7 +1714,7 @@ public static class ModelSeeder
         ]);
 
         // ─── FENDT ────────────────────────────────────────────────────────────────
-        if (B("Fendt") > 0) models.AddRange([
+        if (NeedsSeeding("Fendt")) models.AddRange([
             new Model { BrandId = B("Fendt"), Name = "Vario 700", Slug = "fendt-vario-700", Generations = [
                 G("Gen6 (2014–)", "fendt-700-gen6", 2014, null,
                     E("718 Vario 177 KM", 177, 130, 6057, die), E("720 Vario 200 KM", 200, 147, 6057, die),
@@ -722,7 +1726,7 @@ public static class ModelSeeder
         ]);
 
         // ─── NEW HOLLAND ──────────────────────────────────────────────────────────
-        if (B("New Holland") > 0) models.AddRange([
+        if (NeedsSeeding("New Holland")) models.AddRange([
             new Model { BrandId = B("New Holland"), Name = "T6", Slug = "nh-t6", Generations = [
                 G("T6.xxx (2014–)", "nh-t6-2014", 2014, null,
                     E("T6.140 140 KM", 140, 103, 4485, die), E("T6.160 160 KM", 160, 118, 4485, die),

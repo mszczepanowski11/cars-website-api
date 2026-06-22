@@ -1213,6 +1213,241 @@ internal class Program
             }
         }
 
+        // Expanded feature categories for dostawcze (additional categories)
+        {
+            var allVCats4 = db.VehicleCategories.ToList();
+            int vanId4 = allVCats4.FirstOrDefault(c => c.Slug == "dostawcze")?.Id ?? 0;
+            if (vanId4 > 0)
+            {
+                var existingVanCatNames = db.FeatureCategories
+                    .Where(fc => fc.VehicleCategoryId == vanId4)
+                    .Select(fc => fc.Name).ToHashSet();
+
+                if (!existingVanCatNames.Contains("Bezpieczeństwo"))
+                    db.FeatureCategories.Add(new FeatureCategory {
+                        Name = "Bezpieczeństwo", VehicleCategoryId = vanId4,
+                        Features = new List<Feature> {
+                            new Feature { Name = "ABS" }, new Feature { Name = "ESP" },
+                            new Feature { Name = "Poduszka powietrzna kierowcy" }, new Feature { Name = "Kamera cofania" },
+                            new Feature { Name = "Czujniki parkowania" }, new Feature { Name = "Alarm" },
+                            new Feature { Name = "Immobilizer" }, new Feature { Name = "Hamowanie awaryjne (AEB)" }
+                        }
+                    });
+
+                if (!existingVanCatNames.Contains("Komfort kabiny"))
+                    db.FeatureCategories.Add(new FeatureCategory {
+                        Name = "Komfort kabiny", VehicleCategoryId = vanId4,
+                        Features = new List<Feature> {
+                            new Feature { Name = "Klimatyzacja" }, new Feature { Name = "Klimatyzacja automatyczna" },
+                            new Feature { Name = "Podgrzewane fotele" }, new Feature { Name = "Elektrycznie regulowane lusterka" },
+                            new Feature { Name = "Tempomat" }, new Feature { Name = "Ogrzewanie postojowe" },
+                            new Feature { Name = "Radio / Bluetooth" }, new Feature { Name = "Nawigacja GPS" },
+                            new Feature { Name = "Ekran dotykowy" }, new Feature { Name = "USB" }
+                        }
+                    });
+
+                if (!existingVanCatNames.Contains("Zabudowa i ładunek"))
+                    db.FeatureCategories.Add(new FeatureCategory {
+                        Name = "Zabudowa i ładunek", VehicleCategoryId = vanId4,
+                        Features = new List<Feature> {
+                            new Feature { Name = "Przegroda ładunkowa" }, new Feature { Name = "Regały ładunkowe" },
+                            new Feature { Name = "Zabudowa chłodnicza" }, new Feature { Name = "Zabudowa izoterma" },
+                            new Feature { Name = "Platforma/skrzynia" }, new Feature { Name = "Winda załadowcza" },
+                            new Feature { Name = "Hak holowniczy" }, new Feature { Name = "Drzwi boczne przesuwne" },
+                            new Feature { Name = "Podłoga antypoślizgowa" }, new Feature { Name = "Mocowania cargo" }
+                        }
+                    });
+
+                if (!existingVanCatNames.Contains("Flota i telematyka"))
+                    db.FeatureCategories.Add(new FeatureCategory {
+                        Name = "Flota i telematyka", VehicleCategoryId = vanId4,
+                        Features = new List<Feature> {
+                            new Feature { Name = "GPS / Lokalizator" }, new Feature { Name = "System telematyczny" },
+                            new Feature { Name = "Tachograf cyfrowy" }, new Feature { Name = "Kamera rejestrująca" },
+                            new Feature { Name = "Automatyczne raportowanie trasy" }
+                        }
+                    });
+
+                db.SaveChanges();
+            }
+        }
+
+        // Expanded feature categories for ciężarowe (additional categories)
+        {
+            var allVCats5 = db.VehicleCategories.ToList();
+            int truckId5 = allVCats5.FirstOrDefault(c => c.Slug == "ciezarowe")?.Id ?? 0;
+            if (truckId5 > 0)
+            {
+                var existingTruckCatNames = db.FeatureCategories
+                    .Where(fc => fc.VehicleCategoryId == truckId5)
+                    .Select(fc => fc.Name).ToHashSet();
+
+                if (!existingTruckCatNames.Contains("Kabina i komfort"))
+                    db.FeatureCategories.Add(new FeatureCategory {
+                        Name = "Kabina i komfort", VehicleCategoryId = truckId5,
+                        Features = new List<Feature> {
+                            new Feature { Name = "Klimatyzacja kabiny" }, new Feature { Name = "Leżanka / łóżko w kabinie" },
+                            new Feature { Name = "Lodówka / Chłodziarka" }, new Feature { Name = "Podgrzewane fotele" },
+                            new Feature { Name = "Ogrzewanie postojowe" }, new Feature { Name = "Fotel z zawieszeniem pneumatycznym" },
+                            new Feature { Name = "Radio / Bluetooth" }, new Feature { Name = "Nawigacja GPS" }
+                        }
+                    });
+
+                if (!existingTruckCatNames.Contains("Bezpieczeństwo i systemy"))
+                    db.FeatureCategories.Add(new FeatureCategory {
+                        Name = "Bezpieczeństwo i systemy", VehicleCategoryId = truckId5,
+                        Features = new List<Feature> {
+                            new Feature { Name = "ABS" }, new Feature { Name = "ESP" },
+                            new Feature { Name = "Tachograf cyfrowy" }, new Feature { Name = "Retarder" },
+                            new Feature { Name = "Kamera cofania" }, new Feature { Name = "Hamowanie awaryjne (AEB)" },
+                            new Feature { Name = "Asystent pasa ruchu (LKA)" }, new Feature { Name = "Asystent parkowania" },
+                            new Feature { Name = "System telematyczny" }, new Feature { Name = "ADR (transport niebezp.)" }
+                        }
+                    });
+
+                if (!existingTruckCatNames.Contains("Silnik i napęd"))
+                    db.FeatureCategories.Add(new FeatureCategory {
+                        Name = "Silnik i napęd", VehicleCategoryId = truckId5,
+                        Features = new List<Feature> {
+                            new Feature { Name = "Norma emisji EURO 6" }, new Feature { Name = "Norma emisji EURO 5" },
+                            new Feature { Name = "Pomocniczy układ hamulcowy" }, new Feature { Name = "Blokada dyferencjału" },
+                            new Feature { Name = "Skrzynia automatyczna" }, new Feature { Name = "PTO (odbiór mocy)" },
+                            new Feature { Name = "Opony super-single" }, new Feature { Name = "Dodatkowe zbiorniki paliwa" }
+                        }
+                    });
+
+                if (!existingTruckCatNames.Contains("Zabudowa i osprzęt"))
+                    db.FeatureCategories.Add(new FeatureCategory {
+                        Name = "Zabudowa i osprzęt", VehicleCategoryId = truckId5,
+                        Features = new List<Feature> {
+                            new Feature { Name = "Plandeka" }, new Feature { Name = "Skrzynia chłodnicza" },
+                            new Feature { Name = "Wywrotka" }, new Feature { Name = "Platforma / flatbed" },
+                            new Feature { Name = "Dźwig HDS" }, new Feature { Name = "Naczepa" },
+                            new Feature { Name = "Spojlery aerodynamiczne" }, new Feature { Name = "Podnośnik kabiny" },
+                            new Feature { Name = "Zbiornik AdBlue" }
+                        }
+                    });
+
+                db.SaveChanges();
+            }
+        }
+
+        // Expanded feature categories for rolnicze (additional categories)
+        {
+            var allVCats6 = db.VehicleCategories.ToList();
+            int agriId6 = allVCats6.FirstOrDefault(c => c.Slug == "rolnicze")?.Id ?? 0;
+            if (agriId6 > 0)
+            {
+                var existingAgriCatNames = db.FeatureCategories
+                    .Where(fc => fc.VehicleCategoryId == agriId6)
+                    .Select(fc => fc.Name).ToHashSet();
+
+                if (!existingAgriCatNames.Contains("Układy hydrauliczne i WOM"))
+                    db.FeatureCategories.Add(new FeatureCategory {
+                        Name = "Układy hydrauliczne i WOM", VehicleCategoryId = agriId6,
+                        Features = new List<Feature> {
+                            new Feature { Name = "Tylny WOM" }, new Feature { Name = "Przedni WOM" },
+                            new Feature { Name = "Hydraulika tylna" }, new Feature { Name = "Hydraulika przednia" },
+                            new Feature { Name = "Hydraulika dodatkowa (wyjścia)" }, new Feature { Name = "Automatyczne zaczepienie TUZ" },
+                            new Feature { Name = "Blokada mechanizmu różnicowego" }, new Feature { Name = "4WD" }
+                        }
+                    });
+
+                if (!existingAgriCatNames.Contains("Bezpieczeństwo i ochrona"))
+                    db.FeatureCategories.Add(new FeatureCategory {
+                        Name = "Bezpieczeństwo i ochrona", VehicleCategoryId = agriId6,
+                        Features = new List<Feature> {
+                            new Feature { Name = "Belka ochronna ROPS" }, new Feature { Name = "Kabina bezpieczeństwa (FOPS)" },
+                            new Feature { Name = "Światła robocze LED" }, new Feature { Name = "Sygnalizacja świetlna drogowa" },
+                            new Feature { Name = "Hamulce hydrauliczne" }
+                        }
+                    });
+
+                db.SaveChanges();
+            }
+        }
+
+        // Expanded feature categories for motocykle (additional categories)
+        {
+            var allVCats7 = db.VehicleCategories.ToList();
+            int motoId7 = allVCats7.FirstOrDefault(c => c.Slug == "motocykle")?.Id ?? 0;
+            if (motoId7 > 0)
+            {
+                var existingMotoCatNames = db.FeatureCategories
+                    .Where(fc => fc.VehicleCategoryId == motoId7)
+                    .Select(fc => fc.Name).ToHashSet();
+
+                if (!existingMotoCatNames.Contains("Elektronika i tryby jazdy"))
+                    db.FeatureCategories.Add(new FeatureCategory {
+                        Name = "Elektronika i tryby jazdy", VehicleCategoryId = motoId7,
+                        Features = new List<Feature> {
+                            new Feature { Name = "Tryby jazdy (Rain/Sport/Track)" }, new Feature { Name = "Kontrola wheelie" },
+                            new Feature { Name = "Launch control" }, new Feature { Name = "Cornering ABS" },
+                            new Feature { Name = "Cornering TCS" }, new Feature { Name = "IMU (6-axis)" },
+                            new Feature { Name = "Wyświetlacz TFT / kolorowy" }, new Feature { Name = "Bluetooth / łączność" }
+                        }
+                    });
+
+                if (!existingMotoCatNames.Contains("Zawieszenie i hamulce"))
+                    db.FeatureCategories.Add(new FeatureCategory {
+                        Name = "Zawieszenie i hamulce", VehicleCategoryId = motoId7,
+                        Features = new List<Feature> {
+                            new Feature { Name = "Zawieszenie regulowane" }, new Feature { Name = "Zawieszenie elektroniczne (EESA)" },
+                            new Feature { Name = "Monoszok tylny" }, new Feature { Name = "Hamulce Brembo" },
+                            new Feature { Name = "Tarcze pływające" }, new Feature { Name = "Radialne zaciski hamulcowe" }
+                        }
+                    });
+
+                db.SaveChanges();
+            }
+        }
+
+        // Expanded feature categories for przyczepy (additional categories)
+        {
+            var allVCats8 = db.VehicleCategories.ToList();
+            int trailerIdX = allVCats8.FirstOrDefault(c => c.Slug == "przyczepy")?.Id ?? 0;
+            if (trailerIdX > 0)
+            {
+                var existingTrailerCatNames = db.FeatureCategories
+                    .Where(fc => fc.VehicleCategoryId == trailerIdX)
+                    .Select(fc => fc.Name).ToHashSet();
+
+                if (!existingTrailerCatNames.Contains("Wyposażenie techniczne"))
+                    db.FeatureCategories.Add(new FeatureCategory {
+                        Name = "Wyposażenie techniczne", VehicleCategoryId = trailerIdX,
+                        Features = new List<Feature> {
+                            new Feature { Name = "Hamulec najazdowy" }, new Feature { Name = "Koło podporowe" },
+                            new Feature { Name = "Podpory tylne" }, new Feature { Name = "Burtownica aluminiowa" },
+                            new Feature { Name = "Plandeka" }, new Feature { Name = "Rampa załadowcza" },
+                            new Feature { Name = "Oświetlenie LED" }, new Feature { Name = "Blokada kuli" }
+                        }
+                    });
+
+                if (!existingTrailerCatNames.Contains("Typ zabudowy"))
+                    db.FeatureCategories.Add(new FeatureCategory {
+                        Name = "Typ zabudowy", VehicleCategoryId = trailerIdX,
+                        Features = new List<Feature> {
+                            new Feature { Name = "Skrzynia otwarta" }, new Feature { Name = "Plandeka boczna" },
+                            new Feature { Name = "Zabudowa chłodnicza" }, new Feature { Name = "Zabudowa izoterma" },
+                            new Feature { Name = "Platforma niskopodłogowa" }, new Feature { Name = "Wywrotka" },
+                            new Feature { Name = "Silos" }, new Feature { Name = "Cysterna" }
+                        }
+                    });
+
+                if (!existingTrailerCatNames.Contains("Osie i podwozie"))
+                    db.FeatureCategories.Add(new FeatureCategory {
+                        Name = "Osie i podwozie", VehicleCategoryId = trailerIdX,
+                        Features = new List<Feature> {
+                            new Feature { Name = "Oś podnoszona" }, new Feature { Name = "Zawieszenie pneumatyczne" },
+                            new Feature { Name = "Zawieszenie mechaniczne" }, new Feature { Name = "EBS (elektroniczny układ hamulcowy)" },
+                            new Feature { Name = "Poszerzenie burtnic" }, new Feature { Name = "Koła aluminiowe" }
+                        }
+                    });
+
+                db.SaveChanges();
+            }
+        }
+
         // Feature categories for maszyny, czesci, inne (equipment step hidden or minimal)
         {
             var allVCats3 = db.VehicleCategories.ToList();
