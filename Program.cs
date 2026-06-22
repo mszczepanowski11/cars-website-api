@@ -95,6 +95,7 @@ internal class Program
         builder.Services.AddScoped<IMessageService, MessageService>();
         builder.Services.AddScoped<IReportService, ReportService>();
         builder.Services.AddScoped<IAdminService, AdminService>();
+        builder.Services.AddScoped<IStatsService, StatsService>();
         builder.Services.AddScoped<IEventService, EventService>();
         builder.Services.AddHttpClient();
         builder.Services.AddScoped<IEmailService, EmailService>();
@@ -226,6 +227,7 @@ internal class Program
                         "20260621120000_AddBrandModelToFeatureCategory",
                         "20260621150000_AddFuelConsumptionToEngineVersion",
                         "20260622100000_AddMissingIndexes2",
+                        "20260622120000_AddRefreshTokenRevokedAt",
                     };
                     foreach (var m in allMigrations.Where(m => !newMigrations.Contains(m)))
                     {

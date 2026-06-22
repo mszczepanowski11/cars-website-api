@@ -126,6 +126,7 @@ public class AuthService : IAuthService
         if (record.User.IsBlocked) return new { error = "blocked" };
 
         record.IsRevoked = true;
+        record.RevokedAt = DateTime.UtcNow;
         var newPair = await IssueTokenPairAsync(record.User);
         await _context.SaveChangesAsync();
         return newPair;
@@ -136,6 +137,7 @@ public class AuthService : IAuthService
         var record = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.Token == refreshToken);
         if (record == null) return;
         record.IsRevoked = true;
+        record.RevokedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
     }
 

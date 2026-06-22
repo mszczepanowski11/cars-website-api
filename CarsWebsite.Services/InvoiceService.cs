@@ -1,5 +1,3 @@
-using System.Net;
-using System.Net.Mail;
 using System.Text;
 using CarsWebsite;
 using cars_website_api.CarsWebsite.DTOs.Invoice;
@@ -15,13 +13,15 @@ public class InvoiceService : IInvoiceService
     private readonly AppDbContext _context;
     private readonly IConfiguration _config;
     private readonly INotificationService _notifications;
+    private readonly IEmailService _email;
     private readonly ILogger<InvoiceService> _logger;
 
-    public InvoiceService(AppDbContext context, IConfiguration config, INotificationService notifications, ILogger<InvoiceService> logger)
+    public InvoiceService(AppDbContext context, IConfiguration config, INotificationService notifications, IEmailService email, ILogger<InvoiceService> logger)
     {
         _context = context;
         _config = config;
         _notifications = notifications;
+        _email = email;
         _logger = logger;
     }
 
@@ -300,35 +300,16 @@ public class InvoiceService : IInvoiceService
 
     private async Task SendInvoiceEmailAsync(Invoice invoice, User user)
     {
-        var smtpSection = _config.GetSection("Smtp");
-        var host = smtpSection["Host"];
-
-        if (string.IsNullOrEmpty(host))
-        {
-            _logger.LogWarning("SMTP nie skonfigurowany – pominięto wysyłkę faktury {Number}", invoice.InvoiceNumber);
-            return;
-        }
-
         var html = BuildInvoiceHtml(invoice);
-        var from = smtpSection["From"] ?? "faktury@carizo.pl";
         var adminEmail = _config["Admin:Email"] ?? "admin@carizo.pl";
-        var port = int.TryParse(smtpSection["Port"], out var p) ? p : 587;
 
         try
         {
-            using var smtpClient = new SmtpClient(host, port)
-            {
-                EnableSsl = true,
-                Credentials = new NetworkCredential(smtpSection["User"], smtpSection["Password"])
-            };
+            await _email.SendAsync(user.Email,
+                $"Faktura zbiorcza CARIZO – {invoice.InvoiceNumber}", html);
 
-            await smtpClient.SendMailAsync(new MailMessage(from, user.Email,
-                $"Faktura zbiorcza CARIZO – {invoice.InvoiceNumber}", html)
-                { IsBodyHtml = true });
-
-            await smtpClient.SendMailAsync(new MailMessage(from, adminEmail,
-                $"[KOPIA] Faktura {invoice.InvoiceNumber} – {user.Email}", html)
-                { IsBodyHtml = true });
+            await _email.SendAsync(adminEmail,
+                $"[KOPIA] Faktura {invoice.InvoiceNumber} – {user.Email}", html);
 
             invoice.Status = InvoiceStatus.Sent;
             invoice.SentAt = DateTime.UtcNow;

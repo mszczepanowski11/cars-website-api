@@ -26,6 +26,7 @@
         <PackageReference Include="CloudinaryDotNet" Version="1.26.2" />
         <PackageReference Include="QuestPDF" Version="2025.2.2" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+        <PackageReference Include="MailKit" Version="4.8.0" />
     </ItemGroup>
 
     <ItemGroup>

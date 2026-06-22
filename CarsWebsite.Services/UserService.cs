@@ -165,6 +165,17 @@ public class UserService : IUserService
         user.NewMessageAlerts = dto.NewMessageAlerts;
         user.NewsletterSubscribed = dto.NewsletterSubscribed;
 
+        // Keep NewsletterSubscribers table in sync when user opts out
+        if (!dto.NewsletterSubscribed)
+        {
+            var sub = await _context.NewsletterSubscribers.FirstOrDefaultAsync(s => s.Email == user.Email && s.IsActive);
+            if (sub != null)
+            {
+                sub.IsActive = false;
+                sub.UnsubscribedAt = DateTime.UtcNow;
+            }
+        }
+
         await _context.SaveChangesAsync();
         return dto;
     }
