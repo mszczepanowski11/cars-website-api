@@ -48,7 +48,8 @@ internal class Program
         if (string.IsNullOrEmpty(connectionString))
             throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
 
-        var jwtKey = builder.Configuration["Jwt:Key"];
+        // JWT_SECRET_KEY env var takes precedence over appsettings (required in production)
+        var jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? builder.Configuration["Jwt:Key"];
         var jwtIssuer = builder.Configuration["Jwt:Issuer"];
         var jwtAudience = builder.Configuration["Jwt:Audience"];
         var jwtExpiresInMinutes = builder.Configuration["Jwt:ExpiresInMinutes"];
