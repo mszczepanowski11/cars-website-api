@@ -123,7 +123,11 @@ public class AdvertImageService : IAdvertImageService
 
         var publicId = ExtractPublicId(image.Url);
         if (publicId != null)
-            await _cloudinary.DestroyAsync(new DeletionParams(publicId));
+        {
+            var result = await _cloudinary.DestroyAsync(new DeletionParams(publicId));
+            if (result.Error != null)
+                _logger.LogWarning("Cloudinary delete failed for {PublicId}: {Error}", publicId, result.Error.Message);
+        }
 
         _context.AdvertImages.Remove(image);
         await _context.SaveChangesAsync();

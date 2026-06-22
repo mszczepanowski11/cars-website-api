@@ -102,6 +102,14 @@ public class AuthService : IAuthService
             return new { error = "unverified" };
 
         user.LastLoginAt = DateTime.UtcNow;
+
+        // Clean up expired/revoked tokens for this user to prevent unbounded table growth
+        var staleTokens = await _context.RefreshTokens
+            .Where(t => t.UserId == user.Id && (t.IsRevoked || t.ExpiresAt <= DateTime.UtcNow))
+            .ToListAsync();
+        if (staleTokens.Count > 0)
+            _context.RefreshTokens.RemoveRange(staleTokens);
+
         await _context.SaveChangesAsync();
         return await IssueTokenPairAsync(user);
     }

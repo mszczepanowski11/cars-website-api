@@ -2,6 +2,7 @@ using cars_website_api.CarsWebsite.Domain.Entities;
 using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using DriveType = cars_website_api.CarsWebsite.Domain.Entities.DriveType;
 
 namespace cars_website_api.CarsWebsite.Services;
@@ -9,10 +10,13 @@ namespace cars_website_api.CarsWebsite.Services;
 public class TaxonomyService : ITaxonomyService
 {
     private readonly AppDbContext _context;
+    private readonly IMemoryCache _cache;
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(30);
 
-    public TaxonomyService(AppDbContext context)
+    public TaxonomyService(AppDbContext context, IMemoryCache cache)
     {
         _context = context;
+        _cache = cache;
     }
 
     public async Task<IEnumerable<Brand>> GetFullTaxonomyAsync()
@@ -27,9 +31,11 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<Brand>> GetBrandsAsync()
     {
-        return await _context.Brands
-            .OrderBy(b => b.Name)
-            .ToListAsync();
+        return await _cache.GetOrCreateAsync("taxonomy:brands", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheTtl;
+            return await _context.Brands.OrderBy(b => b.Name).ToListAsync();
+        }) ?? [];
     }
 
     public async Task<IEnumerable<Brand>> GetBrandsByCategoryAsync(int categoryId)
@@ -71,37 +77,47 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<FuelType>> GetFuelTypesAsync()
     {
-        return await _context.FuelTypes
-            .OrderBy(f => f.Name)
-            .ToListAsync();
+        return await _cache.GetOrCreateAsync("taxonomy:fueltypes", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheTtl;
+            return await _context.FuelTypes.OrderBy(f => f.Name).ToListAsync();
+        }) ?? [];
     }
 
     public async Task<IEnumerable<Gearbox>> GetGearboxesAsync()
     {
-        return await _context.Gearboxes
-            .OrderBy(g => g.Name)
-            .ToListAsync();
+        return await _cache.GetOrCreateAsync("taxonomy:gearboxes", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheTtl;
+            return await _context.Gearboxes.OrderBy(g => g.Name).ToListAsync();
+        }) ?? [];
     }
 
     public async Task<IEnumerable<BodyType>> GetBodyTypesAsync()
     {
-        return await _context.BodyTypes
-            .OrderBy(b => b.Name)
-            .ToListAsync();
+        return await _cache.GetOrCreateAsync("taxonomy:bodytypes", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheTtl;
+            return await _context.BodyTypes.OrderBy(b => b.Name).ToListAsync();
+        }) ?? [];
     }
 
     public async Task<IEnumerable<DriveType>> GetDriveTypesAsync()
     {
-        return await _context.DriveTypes
-            .OrderBy(d => d.Id)
-            .ToListAsync();
+        return await _cache.GetOrCreateAsync("taxonomy:drivetypes", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheTtl;
+            return await _context.DriveTypes.OrderBy(d => d.Id).ToListAsync();
+        }) ?? [];
     }
 
     public async Task<IEnumerable<CarColor>> GetColorsAsync()
     {
-        return await _context.CarColors
-            .OrderBy(c => c.Name)
-            .ToListAsync();
+        return await _cache.GetOrCreateAsync("taxonomy:colors", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheTtl;
+            return await _context.CarColors.OrderBy(c => c.Name).ToListAsync();
+        }) ?? [];
     }
 
     public async Task<IEnumerable<Feature>> GetFeaturesAsync()
@@ -114,9 +130,11 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<VehicleCategory>> GetVehicleCategoriesAsync()
     {
-        return await _context.VehicleCategories
-            .OrderBy(c => c.SortOrder)
-            .ToListAsync();
+        return await _cache.GetOrCreateAsync("taxonomy:vehiclecategories", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheTtl;
+            return await _context.VehicleCategories.OrderBy(c => c.SortOrder).ToListAsync();
+        }) ?? [];
     }
 
     public async Task<IEnumerable<FeatureCategory>> GetFeatureCategoriesAsync()

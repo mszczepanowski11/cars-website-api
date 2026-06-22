@@ -129,6 +129,7 @@ internal class Program
             });
         });
 
+        builder.Services.AddMemoryCache();
         builder.Services.AddAutoMapper(typeof(AdvertMappingProfile));
 
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -222,13 +223,18 @@ internal class Program
                     // DB was created via EnsureCreated — mark all pre-existing migrations
                     // as applied so MigrateAsync only runs genuinely new ones.
                     var allMigrations = db.Database.GetMigrations().ToList();
-                    var newMigration = "20260621120000_AddBrandModelToFeatureCategory";
-                    foreach (var m in allMigrations.Where(m => m != newMigration))
+                    var newMigrations = new HashSet<string>
+                    {
+                        "20260621120000_AddBrandModelToFeatureCategory",
+                        "20260621150000_AddFuelConsumptionToEngineVersion",
+                        "20260622100000_AddMissingIndexes2",
+                    };
+                    foreach (var m in allMigrations.Where(m => !newMigrations.Contains(m)))
                     {
                         db.Database.ExecuteSqlRaw(
                             $"INSERT IGNORE INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) VALUES ('{m}', '9.0.0')");
                     }
-                    histLogger.LogInformation("[Migrations] Bootstrapped migration history with {Count} pre-existing migrations", allMigrations.Count - 1);
+                    histLogger.LogInformation("[Migrations] Bootstrapped migration history with {Count} pre-existing migrations", allMigrations.Count - newMigrations.Count);
                 }
 
                 db.Database.Migrate();

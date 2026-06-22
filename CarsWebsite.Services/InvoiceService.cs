@@ -48,11 +48,17 @@ public class InvoiceService : IInvoiceService
         using var tx = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
         try
         {
-            var existingCount = await _context.Invoices
+            var existingNums = await _context.Invoices
                 .Where(i => i.Month == month && i.Year == year)
-                .CountAsync();
+                .Select(i => i.InvoiceNumber)
+                .ToListAsync();
 
-            var seq = existingCount + 1;
+            var maxSeq = existingNums.Count == 0 ? 0 :
+                existingNums
+                    .Select(n => { var p = n.Split('/'); return p.Length == 4 && int.TryParse(p[3], out var s) ? s : 0; })
+                    .DefaultIfEmpty(0)
+                    .Max();
+            var seq = maxSeq + 1;
 
             foreach (var group in payments.GroupBy(p => p.UserId))
             {
@@ -167,8 +173,16 @@ public class InvoiceService : IInvoiceService
         var ci = new System.Globalization.CultureInfo("pl-PL");
         var monthName = ci.DateTimeFormat.GetMonthName(invoice.Month);
         var user = invoice.User;
-        var buyerName = user?.AccountType == AccountType.Business && !string.IsNullOrWhiteSpace(user.CompanyName)
-            ? user.CompanyName : $"{user?.Name} {user?.Surname}";
+        var firstPayment = invoice.Payments.FirstOrDefault();
+        var buyerName = !string.IsNullOrWhiteSpace(firstPayment?.BillingName)
+            ? firstPayment.BillingName
+            : (user?.AccountType == AccountType.Business && !string.IsNullOrWhiteSpace(user.CompanyName)
+                ? user.CompanyName : $"{user?.Name} {user?.Surname}");
+        var buyerNip = !string.IsNullOrWhiteSpace(firstPayment?.BillingNip)
+            ? firstPayment.BillingNip : user?.Nip;
+        var buyerAddress = (!string.IsNullOrWhiteSpace(firstPayment?.BillingStreet) || !string.IsNullOrWhiteSpace(firstPayment?.BillingCity))
+            ? $"{firstPayment?.BillingStreet}, {firstPayment?.BillingPostalCode} {firstPayment?.BillingCity}".Trim().TrimStart(',').Trim()
+            : null;
 
         return Document.Create(container =>
         {
@@ -205,8 +219,10 @@ public class InvoiceService : IInvoiceService
                         {
                             c.Item().Text("NABYWCA").FontSize(8).FontColor(Colors.Grey.Medium);
                             c.Item().Text(buyerName).Bold();
-                            if (user?.AccountType == AccountType.Business && !string.IsNullOrWhiteSpace(user.Nip))
-                                c.Item().Text($"NIP: {user.Nip}");
+                            if (!string.IsNullOrWhiteSpace(buyerNip))
+                                c.Item().Text($"NIP: {buyerNip}");
+                            if (!string.IsNullOrWhiteSpace(buyerAddress))
+                                c.Item().Text(buyerAddress);
                             c.Item().Text(user?.Email ?? "");
                         });
                     });
