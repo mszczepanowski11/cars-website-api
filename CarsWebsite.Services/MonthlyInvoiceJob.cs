@@ -1,4 +1,6 @@
 using cars_website_api.CarsWebsite.Interfaces;
+using CarsWebsite;
+using Microsoft.EntityFrameworkCore;
 
 /// <summary>
 /// BackgroundService uruchamiający generowanie faktur zbiorczych
@@ -24,7 +26,6 @@ public class MonthlyInvoiceJob : BackgroundService
 
             if (now.Day == 1 && now.Hour >= 2 && DateOnly.FromDateTime(now) != _lastRunDate)
             {
-                _lastRunDate = DateOnly.FromDateTime(now);
                 var (invoiceMonth, invoiceYear) = now.Month == 1
                     ? (12, now.Year - 1)
                     : (now.Month - 1, now.Year);
@@ -36,8 +37,23 @@ public class MonthlyInvoiceJob : BackgroundService
                 try
                 {
                     using var scope = _scopeFactory.CreateScope();
+                    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                    var alreadyGenerated = await context.Invoices
+                        .AnyAsync(i => i.Month == invoiceMonth && i.Year == invoiceYear);
+                    if (alreadyGenerated)
+                    {
+                        _logger.LogInformation(
+                            "[MonthlyInvoiceJob] Faktury za {Month}/{Year} już zostały wygenerowane. Pomijam.",
+                            invoiceMonth, invoiceYear);
+                        _lastRunDate = DateOnly.FromDateTime(now);
+                        await Task.Delay(TimeSpan.FromMinutes(30), stoppingToken);
+                        continue;
+                    }
+
                     var service = scope.ServiceProvider.GetRequiredService<IInvoiceService>();
                     await service.GenerateMonthlyInvoicesAsync(invoiceMonth, invoiceYear);
+                    _lastRunDate = DateOnly.FromDateTime(now);
                     _logger.LogInformation(
                         "[MonthlyInvoiceJob] Zakończono generowanie faktur za {Month}/{Year}",
                         invoiceMonth, invoiceYear);

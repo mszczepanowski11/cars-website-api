@@ -114,8 +114,13 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet("users")]
-    public async Task<IActionResult> GetUsers([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-        => Ok(await _adminService.GetUsersAsync(search, page, pageSize));
+    public async Task<IActionResult> GetUsers(
+        [FromQuery] string? search,
+        [FromQuery] string? accountType,
+        [FromQuery] bool? isBlocked,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+        => Ok(await _adminService.GetUsersAsync(search, accountType, isBlocked, page, pageSize));
 
     [HttpGet("adverts")]
     public async Task<IActionResult> GetAdverts(

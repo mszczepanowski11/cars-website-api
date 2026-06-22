@@ -195,14 +195,13 @@ public class PaymentService : IPaymentService
                 payment.PaidAt = DateTime.UtcNow;
                 payment.ImojeTransactionId = dto.ResolvedTransactionId;
                 await _context.SaveChangesAsync();
+                await ActivateServiceAsync(payment);
                 await tx.CommitAsync();
 
                 _ = _notifications.NotifyAsync(payment.UserId, EmailNotificationType.PaymentConfirmed,
                     "Płatność potwierdzona",
                     $"Twoja płatność za usługę \"{payment.ServiceDescription}\" w kwocie {payment.Amount:0.00} PLN została pomyślnie zrealizowana.",
                     advertId: payment.AdvertId, paymentId: payment.Id);
-
-                await ActivateServiceAsync(payment);
             }
             else if (dto.ResolvedStatus is "rejected" or "cancelled" or "error" or "Failed" or "Cancelled" or "Refunded")
             {

@@ -305,7 +305,9 @@ public class AdvertService : IAdvertService
             query = query.Where(a => a.CatalogNumber != null && a.CatalogNumber.Contains(dto.CatalogNumber));
 
         var prioritized = query.OrderBy(a =>
-            a.Badge == "TOP" ? 0 : a.Badge == "PREMIUM" ? 1 : a.Badge == "FEATURED" ? 2 : 3);
+            (a.Badge == "TOP"      && (a.BadgeExpiresAt == null || a.BadgeExpiresAt > DateTime.UtcNow)) ? 0 :
+            (a.Badge == "PREMIUM"  && (a.BadgeExpiresAt == null || a.BadgeExpiresAt > DateTime.UtcNow)) ? 1 :
+            (a.Badge == "FEATURED" && (a.BadgeExpiresAt == null || a.BadgeExpiresAt > DateTime.UtcNow)) ? 2 : 3);
 
         query = dto.SortBy switch
         {
@@ -355,12 +357,12 @@ public class AdvertService : IAdvertService
         };
     }
 
-    public async Task PromoteAdvertAsync(int advertId, int userId, string type, int durationDays)
+    public async Task PromoteAdvertAsync(int advertId, int userId, string type, int durationDays, bool isAdmin = false)
     {
         var advert = await _context.CarAdverts.FindAsync(advertId)
             ?? throw new KeyNotFoundException("Advert not found.");
 
-        if (advert.UserId != userId)
+        if (!isAdmin && advert.UserId != userId)
             throw new UnauthorizedAccessException("You do not own this advert.");
 
         var allowedBadges = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "TOP", "PREMIUM", "FEATURED" };
@@ -448,6 +450,8 @@ public class AdvertService : IAdvertService
             ?? throw new KeyNotFoundException("Advert not found.");
         if (advert.UserId != userId)
             throw new UnauthorizedAccessException("You do not own this advert.");
+        if (advert.IsHidden)
+            throw new InvalidOperationException("Nie można odnowić ogłoszenia ukrytego przez administratora.");
         if (advert.SoldAt != null)
             throw new InvalidOperationException("Nie można odnowić sprzedanego ogłoszenia.");
         advert.IsActive = true;

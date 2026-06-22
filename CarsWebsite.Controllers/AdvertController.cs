@@ -170,7 +170,8 @@ public class AdvertController : ControllerBase
         if (userId == 0) return Unauthorized();
         try
         {
-            await _advertService.PromoteAdvertAsync(id, userId, dto.Type, dto.DurationDays);
+            var isAdmin = IsAdmin();
+            await _advertService.PromoteAdvertAsync(id, userId, dto.Type, dto.DurationDays, isAdmin);
             return NoContent();
         }
         catch (KeyNotFoundException) { return NotFound(); }
