@@ -264,6 +264,7 @@ internal class Program
                         "20260623100000_AddTrimVehicleSubtypePartCategories",
                         "20260623105000_AddVehicleCategoryIdToFeatureCategory",
                         "20260623110000_AddCustomCategoryRequests",
+                        "20260623130000_AddVehicleSubtypeSlugAndSubtypeFields",
                     };
                     foreach (var m in allMigrations.Where(m => !newMigrations.Contains(m)))
                     {
@@ -360,6 +361,21 @@ internal class Program
             {
                 logger.LogWarning("[Schema] Could not ensure CarAdverts extra columns: {Msg}", ex.Message);
             }
+
+            // VehicleSubtype slug
+            try {
+                db.Database.ExecuteSqlRaw("ALTER TABLE `vehiclesubtypes` ADD COLUMN IF NOT EXISTS `Slug` varchar(100) NULL");
+            } catch (Exception ex) { logger.LogWarning("ALTER vehiclesubtypes.Slug skipped: {Message}", ex.Message); }
+
+            // CarAdvert subtype-specific fields
+            try {
+                db.Database.ExecuteSqlRaw(@"ALTER TABLE `caradverts`
+        ADD COLUMN IF NOT EXISTS `OperatingWeightKg` int NULL,
+        ADD COLUMN IF NOT EXISTS `WorkingWidthCm` int NULL,
+        ADD COLUMN IF NOT EXISTS `MaxDiggingDepthM` decimal(5,2) NULL,
+        ADD COLUMN IF NOT EXISTS `BucketCapacityL` int NULL,
+        ADD COLUMN IF NOT EXISTS `TankCapacityL` int NULL");
+            } catch (Exception ex) { logger.LogWarning("ALTER caradverts subtype fields skipped: {Message}", ex.Message); }
 
             // Rename PascalCase tables to lowercase if they were created by a
             // previous deployment before we standardised on lowercase names.
@@ -1817,55 +1833,94 @@ internal class Program
         {
             var allVCatsForSubtypes = db.VehicleCategories.ToList();
 
-            var osoboweId   = allVCatsForSubtypes.FirstOrDefault(c => c.Slug == "auta-osobowe")?.Id ?? 0;
-            var dostawczeId = allVCatsForSubtypes.FirstOrDefault(c => c.Slug == "dostawcze")?.Id ?? 0;
-            var ciezaroweId = allVCatsForSubtypes.FirstOrDefault(c => c.Slug == "ciezarowe")?.Id ?? 0;
-            var przyczepyId = allVCatsForSubtypes.FirstOrDefault(c => c.Slug == "przyczepy")?.Id ?? 0;
-            var rolniczeId  = allVCatsForSubtypes.FirstOrDefault(c => c.Slug == "rolnicze")?.Id ?? 0;
-            var budowlaneId = allVCatsForSubtypes.FirstOrDefault(c => c.Slug == "budowlane")?.Id ?? 0;
+            int CatId(string slug) => allVCatsForSubtypes.FirstOrDefault(c => c.Slug == slug)?.Id ?? 0;
+
+            var subtypeDefs = new List<(string catSlug, string name, string slug)>
+            {
+                // auta-osobowe
+                ("auta-osobowe", "Sedan",      "sedan"),
+                ("auta-osobowe", "Kombi",      "kombi"),
+                ("auta-osobowe", "Hatchback",  "hatchback"),
+                ("auta-osobowe", "SUV",        "suv"),
+                ("auta-osobowe", "Coupe",      "coupe"),
+                ("auta-osobowe", "Kabriolet",  "kabriolet"),
+                ("auta-osobowe", "Minivan",    "minivan"),
+                ("auta-osobowe", "Pickup",     "pickup"),
+
+                // dostawcze
+                ("dostawcze", "Furgon",     "furgon"),
+                ("dostawcze", "Brygadówka", "brygadowka"),
+                ("dostawcze", "Chłodnia",   "chlodnia"),
+                ("dostawcze", "Izoterma",   "izoterma"),
+                ("dostawcze", "Platforma",  "platforma"),
+                ("dostawcze", "Kontener",   "kontener"),
+
+                // ciezarowe
+                ("ciezarowe", "Ciągnik siodłowy", "ciagnik-siodlowy"),
+                ("ciezarowe", "Wywrotka",         "wywrotka"),
+                ("ciezarowe", "Chłodnia",         "chlodnia-ciezarowa"),
+                ("ciezarowe", "Firanka",          "firanka"),
+                ("ciezarowe", "Platforma",        "platforma-ciezarowa"),
+                ("ciezarowe", "Kontener",         "kontener-ciezarowy"),
+                ("ciezarowe", "Beczka/Cysterna",  "cysterna"),
+                ("ciezarowe", "Hakowiec",         "hakowiec"),
+                ("ciezarowe", "Śmieciarka",       "smieciarka"),
+
+                // przyczepy
+                ("przyczepy", "Naczepa firanka",      "naczepa-firanka"),
+                ("przyczepy", "Naczepa chłodnia",     "naczepa-chlodnia"),
+                ("przyczepy", "Naczepa platforma",    "naczepa-platforma"),
+                ("przyczepy", "Laweta",               "laweta"),
+                ("przyczepy", "Przyczepa towarowa",   "przyczepa-towarowa"),
+                ("przyczepy", "Przyczepa rolnicza",   "przyczepa-rolnicza"),
+                ("przyczepy", "Przyczepa kempingowa", "przyczepa-kempingowa"),
+
+                // rolnicze
+                ("rolnicze", "Ciągnik",           "ciagnik"),
+                ("rolnicze", "Kombajn",           "kombajn"),
+                ("rolnicze", "Opryskiwacz",       "opryskiwacz"),
+                ("rolnicze", "Pług",              "plug"),
+                ("rolnicze", "Glebogryzarka",     "glebogryzarka"),
+                ("rolnicze", "Prasa",             "prasa"),
+                ("rolnicze", "Siewnik",           "siewnik"),
+                ("rolnicze", "Ładowarka rolnicza","ladowarka-rolnicza"),
+
+                // budowlane
+                ("budowlane", "Koparka",      "koparka"),
+                ("budowlane", "Minikopiarka", "minikopiarka"),
+                ("budowlane", "Ładowarka",    "ladowarka"),
+                ("budowlane", "Spycharka",    "spycharka"),
+                ("budowlane", "Walec",        "walec"),
+                ("budowlane", "Żuraw",        "zuraw"),
+                ("budowlane", "Rusztowanie",  "rusztowanie"),
+                ("budowlane", "Wibrator",     "wibrator"),
+
+                // maszyny
+                ("maszyny", "Agregat prądotwórczy", "agregat"),
+                ("maszyny", "Kompresor",            "kompresor"),
+                ("maszyny", "Wózek widłowy",        "wozek-widlowy"),
+                ("maszyny", "Podnośnik",            "podnośnik"),
+                ("maszyny", "Myjnia",               "myjnia"),
+
+                // motocykle
+                ("motocykle", "Motocykl sportowy", "sport"),
+                ("motocykle", "Naked",             "naked"),
+                ("motocykle", "Turystyczny",       "turystyczny"),
+                ("motocykle", "Enduro/Cross",      "enduro"),
+                ("motocykle", "Skuter",            "skuter"),
+                ("motocykle", "Chopper",           "chopper"),
+                ("motocykle", "Quad",              "quad"),
+            };
 
             var subtypes = new List<VehicleSubtype>();
-
-            if (osoboweId > 0)
+            int order = 1;
+            string lastCat = "";
+            foreach (var (catSlug, name, slug) in subtypeDefs)
             {
-                var names = new[] { "Sedan", "Kombi", "Hatchback", "SUV", "Coupe", "Kabriolet", "Minivan", "Pickup" };
-                for (int i = 0; i < names.Length; i++)
-                    subtypes.Add(new VehicleSubtype { VehicleCategoryId = osoboweId, Name = names[i], SortOrder = i + 1 });
-            }
-
-            if (dostawczeId > 0)
-            {
-                var names = new[] { "Furgon", "Brygadówka", "Chłodnia", "Izoterma", "Platforma", "Kontener" };
-                for (int i = 0; i < names.Length; i++)
-                    subtypes.Add(new VehicleSubtype { VehicleCategoryId = dostawczeId, Name = names[i], SortOrder = i + 1 });
-            }
-
-            if (ciezaroweId > 0)
-            {
-                var names = new[] { "Ciągnik siodłowy", "Wywrotka", "Chłodnia", "Firanka", "Platforma", "Kontener", "Beczka", "Hakowiec", "Śmieciarka" };
-                for (int i = 0; i < names.Length; i++)
-                    subtypes.Add(new VehicleSubtype { VehicleCategoryId = ciezaroweId, Name = names[i], SortOrder = i + 1 });
-            }
-
-            if (przyczepyId > 0)
-            {
-                var names = new[] { "Naczepa firanka", "Naczepa chłodnia", "Naczepa platforma", "Laweta", "Przyczepa towarowa", "Przyczepa rolnicza", "Przyczepa kempingowa" };
-                for (int i = 0; i < names.Length; i++)
-                    subtypes.Add(new VehicleSubtype { VehicleCategoryId = przyczepyId, Name = names[i], SortOrder = i + 1 });
-            }
-
-            if (rolniczeId > 0)
-            {
-                var names = new[] { "Ciągnik", "Kombajn", "Opryskiwacz", "Pług", "Glebogryzarka", "Prasa", "Siewnik", "Ładowarka rolnicza" };
-                for (int i = 0; i < names.Length; i++)
-                    subtypes.Add(new VehicleSubtype { VehicleCategoryId = rolniczeId, Name = names[i], SortOrder = i + 1 });
-            }
-
-            if (budowlaneId > 0)
-            {
-                var names = new[] { "Koparka", "Minikopiarka", "Ładowarka", "Spycharka", "Walec", "Żuraw", "Rusztowanie", "Wibrator" };
-                for (int i = 0; i < names.Length; i++)
-                    subtypes.Add(new VehicleSubtype { VehicleCategoryId = budowlaneId, Name = names[i], SortOrder = i + 1 });
+                int catId = CatId(catSlug);
+                if (catId == 0) continue;
+                if (catSlug != lastCat) { order = 1; lastCat = catSlug; }
+                subtypes.Add(new VehicleSubtype { VehicleCategoryId = catId, Name = name, Slug = slug, SortOrder = order++ });
             }
 
             if (subtypes.Count > 0)
