@@ -264,7 +264,6 @@ internal class Program
                         "20260623100000_AddTrimVehicleSubtypePartCategories",
                         "20260623105000_AddVehicleCategoryIdToFeatureCategory",
                         "20260623110000_AddCustomCategoryRequests",
-                        "20260623130000_AddVehicleSubtypeSlugAndSubtypeFields",
                     };
                     foreach (var m in allMigrations.Where(m => !newMigrations.Contains(m)))
                     {
