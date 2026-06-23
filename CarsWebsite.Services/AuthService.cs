@@ -170,7 +170,7 @@ public class AuthService : IAuthService
             EmailService.BuildHtml("Resetowanie hasła",
                 "Kliknij poniższy przycisk, aby ustawić nowe hasło. Link jest ważny przez 1 godzinę.",
                 null,
-                $"{siteUrl}/reset-hasla?token={token}",
+                $"{siteUrl}/reset-password?token={token}",
                 "Resetuj hasło"));
     }
 

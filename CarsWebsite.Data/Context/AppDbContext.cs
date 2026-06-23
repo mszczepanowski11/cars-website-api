@@ -219,6 +219,7 @@ namespace CarsWebsite
             modelBuilder.Entity<CarAdvert>().HasOne(a => a.CarColor).WithMany().HasForeignKey(a => a.ColorId).IsRequired(false);
 
             modelBuilder.Entity<AdvertView>().ToTable("AdvertViews").HasKey(v => v.Id);
+            modelBuilder.Entity<AdvertView>().HasOne<CarAdvert>().WithMany().HasForeignKey(v => v.AdvertId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<UserFollow>().ToTable("UserFollows").HasKey(f => f.Id);
             modelBuilder.Entity<UserFollow>().HasIndex(f => new { f.FollowerId, f.FollowedId }).IsUnique();
             modelBuilder.Entity<Review>().ToTable("Reviews").HasKey(r => r.Id);

@@ -46,6 +46,20 @@ internal class Program
         if (string.IsNullOrEmpty(connectionString))
             throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
 
+        // SMTP_ env vars (single underscore) take precedence over appsettings Smtp:* section
+        // ASP.NET Core normally uses double-underscore (Smtp__Host), but we map explicitly
+        // so operators can use the more natural SMTP_HOST convention.
+        var smtpHost = Environment.GetEnvironmentVariable("SMTP_HOST");
+        var smtpPort = Environment.GetEnvironmentVariable("SMTP_PORT");
+        var smtpUser = Environment.GetEnvironmentVariable("SMTP_USER");
+        var smtpPass = Environment.GetEnvironmentVariable("SMTP_PASS") ?? Environment.GetEnvironmentVariable("SMTP_PASSWORD");
+        var smtpFrom = Environment.GetEnvironmentVariable("SMTP_FROM");
+        if (!string.IsNullOrEmpty(smtpHost)) builder.Configuration["Smtp:Host"] = smtpHost;
+        if (!string.IsNullOrEmpty(smtpPort)) builder.Configuration["Smtp:Port"] = smtpPort;
+        if (!string.IsNullOrEmpty(smtpUser)) builder.Configuration["Smtp:User"] = smtpUser;
+        if (!string.IsNullOrEmpty(smtpPass)) builder.Configuration["Smtp:Password"] = smtpPass;
+        if (!string.IsNullOrEmpty(smtpFrom)) builder.Configuration["Smtp:From"] = smtpFrom;
+
         // JWT_SECRET_KEY env var takes precedence over appsettings (required in production)
         var jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? builder.Configuration["Jwt:Key"];
         var jwtIssuer = builder.Configuration["Jwt:Issuer"];

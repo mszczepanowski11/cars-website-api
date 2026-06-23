@@ -144,24 +144,17 @@ public class PaymentService : IPaymentService
         };
     }
 
-    public async Task HandleWebhookAsync(ImojeWebhookDto dto, string rawBody, string signature, string? internalSecret = null)
+    public async Task HandleWebhookAsync(ImojeWebhookDto dto, string rawBody, string signature)
     {
-        var configuredInternalSecret = _config["InternalServiceSecret"]
-            ?? Environment.GetEnvironmentVariable("INTERNAL_SERVICE_SECRET")
-            ?? "";
-        bool isInternalCall = !string.IsNullOrEmpty(configuredInternalSecret)
-            && configuredInternalSecret == internalSecret;
-
         _logger.LogInformation(
-            "[Webhook] orderId={OrderId} status={Status} isInternalCall={IsInternal} hasInternalSecret={HasSecret} rawBodyLen={RawLen} hasTransaction={HasTx}",
-            dto.ResolvedOrderId, dto.ResolvedStatus, isInternalCall, !string.IsNullOrEmpty(configuredInternalSecret),
-            rawBody.Length, dto.Transaction != null);
+            "[Webhook] orderId={OrderId} status={Status} rawBodyLen={RawLen} hasTransaction={HasTx}",
+            dto.ResolvedOrderId, dto.ResolvedStatus, rawBody.Length, dto.Transaction != null);
 
-        if (!isInternalCall && !VerifySignature(rawBody, signature))
+        if (!VerifySignature(rawBody, signature))
         {
             _logger.LogWarning(
-                "[Webhook] Odrzucono - brak dopasowania podpisu lub sekretu wewnętrznego. orderId={OrderId} sigLen={SigLen} secretConfigured={SecretConfigured}",
-                dto.ResolvedOrderId, signature?.Length ?? 0, !string.IsNullOrEmpty(configuredInternalSecret));
+                "[Webhook] Odrzucono - nieprawidłowy podpis HMAC. orderId={OrderId} sigLen={SigLen}",
+                dto.ResolvedOrderId, signature?.Length ?? 0);
             throw new UnauthorizedAccessException("Nieprawidłowy podpis webhooka.");
         }
 

@@ -72,7 +72,6 @@ public class PaymentController : ControllerBase
         using var reader = new StreamReader(Request.Body, Encoding.UTF8);
         var rawBody = await reader.ReadToEndAsync();
         var signature = Request.Headers["X-Imoje-Signature"].FirstOrDefault() ?? string.Empty;
-        var internalSecret = Request.Headers["X-Internal-Secret"].FirstOrDefault();
 
         ImojeWebhookDto? dto;
         try
@@ -86,7 +85,7 @@ public class PaymentController : ControllerBase
 
         try
         {
-            await _paymentService.HandleWebhookAsync(dto, rawBody, signature, internalSecret);
+            await _paymentService.HandleWebhookAsync(dto, rawBody, signature);
             return Ok();
         }
         catch (UnauthorizedAccessException) { return Unauthorized(); }
