@@ -261,7 +261,9 @@ internal class Program
                         "20260621150000_AddFuelConsumptionToEngineVersion",
                         "20260622100000_AddMissingIndexes2",
                         "20260622120000_AddRefreshTokenRevokedAt",
-                        "20260623100000_AddVehicleCategoryIdToFeatureCategory",
+                        "20260623100000_AddTrimVehicleSubtypePartCategories",
+                        "20260623105000_AddVehicleCategoryIdToFeatureCategory",
+                        "20260623110000_AddCustomCategoryRequests",
                     };
                     foreach (var m in allMigrations.Where(m => !newMigrations.Contains(m)))
                     {
@@ -316,6 +318,47 @@ internal class Program
             catch (Exception ex)
             {
                 logger.LogWarning("[Schema] Could not ensure FeatureCategories columns: {Msg}", ex.Message);
+            }
+
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"
+                    ALTER TABLE `engineversions`
+                    ADD COLUMN IF NOT EXISTS `TrimId`           int NULL,
+                    ADD COLUMN IF NOT EXISTS `TorqueNm`         int NULL,
+                    ADD COLUMN IF NOT EXISTS `Co2EmissionGkm`   int NULL,
+                    ADD COLUMN IF NOT EXISTS `EuroNorm`         varchar(20) NULL,
+                    ADD COLUMN IF NOT EXISTS `AvgConsumptionL`  decimal(4,1) NULL,
+                    ADD COLUMN IF NOT EXISTS `Acceleration0100` decimal(4,1) NULL,
+                    ADD COLUMN IF NOT EXISTS `TopSpeedKmh`      int NULL,
+                    ADD COLUMN IF NOT EXISTS `DriveType`        varchar(10) NULL,
+                    ADD COLUMN IF NOT EXISTS `GearboxType`      varchar(20) NULL,
+                    ADD COLUMN IF NOT EXISTS `Cylinders`        int NULL
+                ");
+                logger.LogInformation("[Schema] EngineVersions extra columns ensured");
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning("[Schema] Could not ensure EngineVersions extra columns: {Msg}", ex.Message);
+            }
+
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"
+                    ALTER TABLE `caradverts`
+                    ADD COLUMN IF NOT EXISTS `TrimId`                  int NULL,
+                    ADD COLUMN IF NOT EXISTS `VehicleSubtypeId`        int NULL,
+                    ADD COLUMN IF NOT EXISTS `PartCategoryId`          int NULL,
+                    ADD COLUMN IF NOT EXISTS `PartSubcategoryId`       int NULL,
+                    ADD COLUMN IF NOT EXISTS `OemNumber`               varchar(100) NULL,
+                    ADD COLUMN IF NOT EXISTS `ManufacturerPartNumber`  varchar(100) NULL,
+                    ADD COLUMN IF NOT EXISTS `PartManufacturer`        varchar(100) NULL
+                ");
+                logger.LogInformation("[Schema] CarAdverts extra columns ensured");
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning("[Schema] Could not ensure CarAdverts extra columns: {Msg}", ex.Message);
             }
 
             // Rename PascalCase tables to lowercase if they were created by a
@@ -579,6 +622,76 @@ internal class Program
 
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `advertimages` ADD COLUMN `IsMain` tinyint(1) NOT NULL DEFAULT 0"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN advertimages.IsMain skipped: {Message}", ex.Message); }
+
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS `trims` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `GenerationId` int NOT NULL,
+  `Name` varchar(100) NOT NULL,
+  `Description` varchar(500) NULL,
+  PRIMARY KEY (`Id`),
+  KEY `IX_trims_GenerationId` (`GenerationId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            }
+            catch (Exception ex) { logger.LogWarning("CREATE TABLE trims skipped: {Message}", ex.Message); }
+
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS `vehiclesubtypes` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `VehicleCategoryId` int NOT NULL,
+  `Name` varchar(100) NOT NULL,
+  `NamePl` varchar(100) NULL,
+  `SortOrder` int NOT NULL DEFAULT 0,
+  PRIMARY KEY (`Id`),
+  KEY `IX_vehiclesubtypes_VehicleCategoryId` (`VehicleCategoryId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            }
+            catch (Exception ex) { logger.LogWarning("CREATE TABLE vehiclesubtypes skipped: {Message}", ex.Message); }
+
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS `partcategories` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `Name` varchar(100) NOT NULL,
+  `NamePl` varchar(100) NULL,
+  `SortOrder` int NOT NULL DEFAULT 0,
+  PRIMARY KEY (`Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            }
+            catch (Exception ex) { logger.LogWarning("CREATE TABLE partcategories skipped: {Message}", ex.Message); }
+
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS `partsubcategories` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `PartCategoryId` int NOT NULL,
+  `Name` varchar(100) NOT NULL,
+  `NamePl` varchar(100) NULL,
+  `SortOrder` int NOT NULL DEFAULT 0,
+  PRIMARY KEY (`Id`),
+  KEY `IX_partsubcategories_PartCategoryId` (`PartCategoryId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            }
+            catch (Exception ex) { logger.LogWarning("CREATE TABLE partsubcategories skipped: {Message}", ex.Message); }
+
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS `customcategoryrequests` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `UserId` int NOT NULL,
+  `CategoryName` varchar(255) NOT NULL,
+  `Description` longtext NULL,
+  `Status` varchar(50) NOT NULL DEFAULT 'Pending',
+  `CreatedAt` datetime(6) NOT NULL,
+  `ReviewedAt` datetime(6) NULL,
+  `ReviewNote` longtext NULL,
+  PRIMARY KEY (`Id`),
+  KEY `IX_customcategoryrequests_UserId` (`UserId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            }
+            catch (Exception ex) { logger.LogWarning("CREATE TABLE customcategoryrequests skipped: {Message}", ex.Message); }
 
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `advertviews` ADD COLUMN `UserId` int NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN advertviews.UserId skipped: {Message}", ex.Message); }
@@ -1805,5 +1918,6 @@ internal class Program
 
         ModelSeeder.SeedModelsGenerationsEngines(db, logger);
         VehicleDataSeeder.SeedVehicleData(db, logger);
+        TrimSeeder.SeedTrims(db, logger);
     }
 }
