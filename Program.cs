@@ -376,6 +376,12 @@ internal class Program
         ADD COLUMN IF NOT EXISTS `TankCapacityL` int NULL");
             } catch (Exception ex) { logger.LogWarning("ALTER caradverts subtype fields skipped: {Message}", ex.Message); }
 
+            // RefreshToken.RevokedAt — added in migration 20260622120000 but may be
+            // missing on existing DBs where that migration was bootstrapped without running.
+            try {
+                db.Database.ExecuteSqlRaw("ALTER TABLE `refreshtokens` ADD COLUMN IF NOT EXISTS `RevokedAt` datetime(6) NULL");
+            } catch (Exception ex) { logger.LogWarning("ALTER refreshtokens.RevokedAt skipped: {Message}", ex.Message); }
+
             // Rename PascalCase tables to lowercase if they were created by a
             // previous deployment before we standardised on lowercase names.
             var renameSql = new[]
