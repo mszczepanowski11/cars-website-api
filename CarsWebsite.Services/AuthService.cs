@@ -281,7 +281,14 @@ public class AuthService : IAuthService
 
     private string GenerateToken(User user)
     {
-        var jwtKey = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is not configured.");
+        // JWT_SECRET_KEY env var takes precedence over appsettings Jwt:Key (which may be empty).
+        // This mirrors the same lookup used at startup in Program.cs.
+        var jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
+            ?? _configuration["Jwt:Key"]
+            ?? throw new InvalidOperationException("JWT key is not configured (set JWT_SECRET_KEY or Jwt:Key).");
+        if (string.IsNullOrEmpty(jwtKey))
+            throw new InvalidOperationException("JWT key is empty — set JWT_SECRET_KEY environment variable.");
+
         var jwtIssuer = _configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("Jwt:Issuer is not configured.");
         var jwtAudience = _configuration["Jwt:Audience"] ?? throw new InvalidOperationException("Jwt:Audience is not configured.");
         var expiresInMinutes = double.Parse(_configuration["Jwt:ExpiresInMinutes"] ?? throw new InvalidOperationException("Jwt:ExpiresInMinutes is not configured."));

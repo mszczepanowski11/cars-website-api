@@ -11,10 +11,12 @@ namespace cars_website_api.CarsWebsite.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, ILogger<AuthController> logger)
     {
         _authService = authService;
+        _logger = logger;
     }
 
     [HttpPost("register")]
@@ -36,7 +38,17 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDto dto)
     {
-        var result = await _authService.Login(dto);
+        object? result;
+        try
+        {
+            result = await _authService.Login(dto);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[Auth/Login] Unhandled exception: {Message}", ex.ToString());
+            return StatusCode(500, new { message = "Błąd serwera podczas logowania." });
+        }
+
         if (result == null)
             return Unauthorized("Błędne dane logowania.");
 
