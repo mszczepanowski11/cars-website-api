@@ -2,10 +2,12 @@ using cars_website_api.CarsWebsite.DTOs.Event;
 using cars_website_api.CarsWebsite.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting("global")]
 public class EventController : ControllerBase
 {
     private readonly IEventService _eventService;

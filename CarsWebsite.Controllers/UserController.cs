@@ -2,6 +2,7 @@ using cars_website_api.CarsWebsite.DTOs.User;
 using cars_website_api.CarsWebsite.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 
@@ -9,6 +10,7 @@ namespace cars_website_api.CarsWebsite.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[EnableRateLimiting("global")]
 public class UserController : ControllerBase
 {
     private readonly IUserService _userService;

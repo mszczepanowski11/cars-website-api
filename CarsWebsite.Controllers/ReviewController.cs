@@ -2,12 +2,14 @@ using cars_website_api.CarsWebsite.DTOs.Review;
 using cars_website_api.CarsWebsite.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 
 namespace cars_website_api.CarsWebsite.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting("global")]
 public class ReviewController : ControllerBase
 {
     private readonly IReviewService _reviewService;

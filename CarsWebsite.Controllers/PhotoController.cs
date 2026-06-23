@@ -1,8 +1,11 @@
 using cars_website_api.CarsWebsite.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 [ApiController]
 [Route("api/photos")]
+[EnableRateLimiting("global")]
 public class PhotoController : ControllerBase
 {
     private readonly IPhotoAnalysisService _photoAnalysisService;
@@ -13,6 +16,7 @@ public class PhotoController : ControllerBase
     }
 
     [HttpPost("analyze")]
+    [Authorize]
     public async Task<IActionResult> AnalyzePhoto([FromBody] AnalyzePhotoRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.ImageUrl))

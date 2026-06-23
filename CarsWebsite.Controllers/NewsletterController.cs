@@ -1,6 +1,7 @@
 using CarsWebsite;
 using cars_website_api.CarsWebsite.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography;
@@ -9,6 +10,7 @@ namespace cars_website_api.CarsWebsite.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting("global")]
 public class NewsletterController : ControllerBase
 {
     private readonly AppDbContext _context;
