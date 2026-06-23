@@ -307,13 +307,15 @@ internal class Program
             {
                 db.Database.ExecuteSqlRaw(@"
                     ALTER TABLE `FeatureCategories`
-                    ADD COLUMN IF NOT EXISTS `VehicleCategoryId` int NULL
+                    ADD COLUMN IF NOT EXISTS `VehicleCategoryId` int NULL,
+                    ADD COLUMN IF NOT EXISTS `BrandId` int NULL,
+                    ADD COLUMN IF NOT EXISTS `ModelId` int NULL
                 ");
-                logger.LogInformation("[Schema] VehicleCategoryId column ensured on FeatureCategories");
+                logger.LogInformation("[Schema] FeatureCategories columns ensured (VehicleCategoryId, BrandId, ModelId)");
             }
             catch (Exception ex)
             {
-                logger.LogWarning("[Schema] Could not ensure VehicleCategoryId on FeatureCategories: {Msg}", ex.Message);
+                logger.LogWarning("[Schema] Could not ensure FeatureCategories columns: {Msg}", ex.Message);
             }
 
             // Rename PascalCase tables to lowercase if they were created by a
