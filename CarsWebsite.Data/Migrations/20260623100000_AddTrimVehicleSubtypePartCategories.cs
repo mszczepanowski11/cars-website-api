@@ -72,12 +72,7 @@ namespace cars_website_api.Migrations
             migrationBuilder.Sql("ALTER TABLE `engineversions` ADD COLUMN IF NOT EXISTS `GearboxType` varchar(20) NULL");
             migrationBuilder.Sql("ALTER TABLE `engineversions` ADD COLUMN IF NOT EXISTS `Cylinders` int NULL");
 
-            // Add FK index for TrimId on engineversions
-            migrationBuilder.Sql(@"
-                ALTER TABLE `engineversions`
-                ADD CONSTRAINT IF NOT EXISTS `FK_engineversions_trims_TrimId`
-                FOREIGN KEY (`TrimId`) REFERENCES `trims` (`Id`) ON DELETE SET NULL;
-            ");
+            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS `IX_engineversions_TrimId` ON `engineversions` (`TrimId`)");
 
             // Add new columns to caradverts
             migrationBuilder.Sql("ALTER TABLE `caradverts` ADD COLUMN IF NOT EXISTS `TrimId` int NULL");
