@@ -13,11 +13,7 @@ namespace cars_website_api.Migrations
                     ADD COLUMN IF NOT EXISTS `VehicleCategoryId` int NULL;
             ");
 
-            migrationBuilder.Sql(@"
-                ALTER TABLE `FeatureCategories`
-                    ADD CONSTRAINT IF NOT EXISTS `FK_FeatureCategories_VehicleCategories_VehicleCategoryId`
-                        FOREIGN KEY (`VehicleCategoryId`) REFERENCES `VehicleCategories`(`Id`) ON DELETE SET NULL;
-            ");
+            // FK added idempotently in Program.cs startup guards (MySQL 8.0 does not support ADD CONSTRAINT IF NOT EXISTS).
 
             migrationBuilder.Sql(@"
                 CREATE INDEX IF NOT EXISTS `IX_FeatureCategories_VehicleCategoryId` ON `FeatureCategories` (`VehicleCategoryId`);

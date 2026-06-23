@@ -1017,6 +1017,32 @@ internal class Program
                 logger.LogWarning("[Equipment] Equipment expansion skipped: {Msg}", ex.Message);
             }
 
+            // FK constraint guards — MySQL 8.0 does not support ADD CONSTRAINT IF NOT EXISTS,
+            // so each constraint is added individually with try/catch (duplicate = skip).
+            // This covers the FKs that migration 20260623200000 could not add safely.
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `advertviews` ADD CONSTRAINT `FK_advertviews_caradverts_AdvertId` FOREIGN KEY (`AdvertId`) REFERENCES `caradverts`(`Id`) ON DELETE CASCADE"); }
+            catch (Exception ex) { logger.LogDebug("FK advertviews.AdvertId skipped: {Message}", ex.Message); }
+
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `caradverts` ADD CONSTRAINT `FK_caradverts_trims_TrimId` FOREIGN KEY (`TrimId`) REFERENCES `trims`(`Id`) ON DELETE SET NULL"); }
+            catch (Exception ex) { logger.LogDebug("FK caradverts.TrimId skipped: {Message}", ex.Message); }
+
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `caradverts` ADD CONSTRAINT `FK_caradverts_vehiclesubtypes_VehicleSubtypeId` FOREIGN KEY (`VehicleSubtypeId`) REFERENCES `vehiclesubtypes`(`Id`) ON DELETE SET NULL"); }
+            catch (Exception ex) { logger.LogDebug("FK caradverts.VehicleSubtypeId skipped: {Message}", ex.Message); }
+
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `caradverts` ADD CONSTRAINT `FK_caradverts_partcategories_PartCategoryId` FOREIGN KEY (`PartCategoryId`) REFERENCES `partcategories`(`Id`) ON DELETE SET NULL"); }
+            catch (Exception ex) { logger.LogDebug("FK caradverts.PartCategoryId skipped: {Message}", ex.Message); }
+
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `caradverts` ADD CONSTRAINT `FK_caradverts_partsubcategories_PartSubcategoryId` FOREIGN KEY (`PartSubcategoryId`) REFERENCES `partsubcategories`(`Id`) ON DELETE SET NULL"); }
+            catch (Exception ex) { logger.LogDebug("FK caradverts.PartSubcategoryId skipped: {Message}", ex.Message); }
+
+            // Also guard FKs from migrations 20260623100000 and 20260623105000 which used
+            // the unsupported ADD CONSTRAINT IF NOT EXISTS syntax on MySQL 8.0.
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `engineversions` ADD CONSTRAINT `FK_engineversions_trims_TrimId` FOREIGN KEY (`TrimId`) REFERENCES `trims`(`Id`) ON DELETE SET NULL"); }
+            catch (Exception ex) { logger.LogDebug("FK engineversions.TrimId skipped: {Message}", ex.Message); }
+
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `FeatureCategories` ADD CONSTRAINT `FK_FeatureCategories_VehicleCategories_VehicleCategoryId` FOREIGN KEY (`VehicleCategoryId`) REFERENCES `VehicleCategories`(`Id`) ON DELETE SET NULL"); }
+            catch (Exception ex) { logger.LogDebug("FK FeatureCategories.VehicleCategoryId skipped: {Message}", ex.Message); }
+
             try
             {
                 SeedDataIfEmpty(db, logger);
