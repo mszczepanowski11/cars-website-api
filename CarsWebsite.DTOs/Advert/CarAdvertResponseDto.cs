@@ -75,9 +75,20 @@ public class CarAdvertResponseDto
     public bool? HasTachograph { get; set; }
     public string? BodySubtype { get; set; }
 
+    // Subtype-specific machine fields
+    public int? OperatingWeightKg { get; set; }
+    public int? WorkingWidthCm { get; set; }
+    public decimal? MaxDiggingDepthM { get; set; }
+    public int? BucketCapacityL { get; set; }
+    public int? TankCapacityL { get; set; }
+
     // Parts specific
     public string? CatalogNumber { get; set; }
     public string? Compatibility { get; set; }
+
+    // Vehicle subtype
+    public int? VehicleSubtypeId { get; set; }
+    public string? VehicleSubtypeName { get; set; }
 
     // Taxonomy
     public BrandDto Brand { get; set; } = null!;

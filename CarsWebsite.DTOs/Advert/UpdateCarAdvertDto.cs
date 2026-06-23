@@ -5,10 +5,12 @@ namespace cars_website_api.CarsWebsite.DTOs.Advert;
 public class UpdateCarAdvertDto
 {
     public int? VehicleCategoryId { get; set; }
+    public int? VehicleSubtypeId { get; set; }
     public int BrandId { get; set; }
     public int ModelId { get; set; }
     public int? GenerationId { get; set; }
     public int? EngineVersionId { get; set; }
+    public int? TrimId { get; set; }
 
     public int FuelTypeId { get; set; }
     public int? GearboxId { get; set; }
@@ -90,6 +92,13 @@ public class UpdateCarAdvertDto
     // Parts specific
     public string? CatalogNumber { get; set; }
     public string? Compatibility { get; set; }
+
+    // Subtype-specific machine fields
+    public int? OperatingWeightKg { get; set; }
+    public int? WorkingWidthCm { get; set; }
+    public decimal? MaxDiggingDepthM { get; set; }
+    public int? BucketCapacityL { get; set; }
+    public int? TankCapacityL { get; set; }
 
     public List<int>? FeatureIds { get; set; }
 }
