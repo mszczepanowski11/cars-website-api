@@ -516,6 +516,501 @@ public static class VehicleDataSeeder
         logger.LogInformation("[VehicleDataSeeder] Completed seeding enriched engine versions with factory specs.");
     }
 
+    public static void SeedTrimData(AppDbContext db, ILogger logger)
+    {
+        if (db.Trims.Any())
+        {
+            logger.LogInformation("[VehicleDataSeeder] SeedTrimData — trims already seeded, skipping.");
+            return;
+        }
+
+        var fuelDict = db.FuelTypes.ToDictionary(f => f.Name, f => f.Id);
+        if (!fuelDict.Any())
+        {
+            logger.LogWarning("[VehicleDataSeeder] SeedTrimData — FuelTypes not yet seeded, skipping.");
+            return;
+        }
+
+        int GetFuel(string name) => fuelDict.TryGetValue(name, out var id) ? id : 0;
+        int ben  = GetFuel("Benzyna");
+        int die  = GetFuel("Diesel");
+        int phev = GetFuel("Hybryda PHEV");
+
+        int GetOrCreateModel(int brandId, string name, string slug)
+        {
+            var m = db.Models.FirstOrDefault(x => x.BrandId == brandId && x.Name == name);
+            if (m != null) return m.Id;
+            m = new Model { BrandId = brandId, Name = name, Slug = slug };
+            db.Models.Add(m);
+            db.SaveChanges();
+            return m.Id;
+        }
+
+        int GetOrCreateGeneration(int modelId, string name, string slug, int yearFrom, int? yearTo)
+        {
+            var g = db.Generations.FirstOrDefault(x => x.ModelId == modelId && x.Name == name);
+            if (g != null) return g.Id;
+            g = new Generation { ModelId = modelId, Name = name, Slug = slug, YearFrom = yearFrom, YearTo = yearTo };
+            db.Generations.Add(g);
+            db.SaveChanges();
+            return g.Id;
+        }
+
+        // Helper: create EV with generationId and optional trimId already set
+        EngineVersion EVT(int genId, int? trimId,
+            string name, int hp, int kw, int? disp,
+            int torque, int co2, string euro,
+            decimal consumption, decimal accel, int topSpeed,
+            string drive, string gearbox, int cylinders, int fuelTypeId)
+        {
+            var e = EV(name, hp, kw, disp, torque, co2, euro, consumption, accel, topSpeed, drive, gearbox, cylinders, fuelTypeId);
+            e.GenerationId = genId;
+            e.TrimId = trimId;
+            return e;
+        }
+
+        // ── 1. Octavia III (new generation) ─────────────────────────────────────
+        {
+            var skodaId = db.Brands.FirstOrDefault(b => b.Name == "Skoda")?.Id ?? 0;
+            if (skodaId > 0)
+            {
+                int octaviaId  = GetOrCreateModel(skodaId, "Octavia", "skoda-octavia");
+                int octaviaIII = GetOrCreateGeneration(octaviaId, "Octavia III", "skoda-octavia-iii", 2012, 2019);
+
+                // Plain trims (no special engines)
+                var plainTrims = new[] { "Ambition", "Style" };
+                foreach (var trimName in plainTrims)
+                {
+                    var trim = new Trim { GenerationId = octaviaIII, Name = trimName };
+                    db.Trims.Add(trim);
+                    db.SaveChanges();
+                    db.EngineVersions.AddRange(
+                        EVT(octaviaIII, trim.Id, "1.0 TSI 115 KM",  115, 85,  999,  200, 0, "Euro 6",  5.1m, 10.5m, 199, "FWD", "manual", 3, ben),
+                        EVT(octaviaIII, trim.Id, "1.4 TSI 150 KM",  150, 110, 1395, 250, 0, "Euro 6",  5.7m,  8.5m, 220, "FWD", "dsg",    4, ben),
+                        EVT(octaviaIII, trim.Id, "2.0 TDI 110 KM",  110, 81,  1968, 250, 0, "Euro 6",  4.1m, 10.8m, 197, "FWD", "manual", 4, die),
+                        EVT(octaviaIII, trim.Id, "1.6 TDI 105 KM",  105, 77,  1598, 250, 0, "Euro 6",  3.8m, 11.4m, 192, "FWD", "manual", 4, die)
+                    );
+                    db.SaveChanges();
+                }
+
+                // RS trim with special engines
+                {
+                    var rsTrim = new Trim { GenerationId = octaviaIII, Name = "RS" };
+                    db.Trims.Add(rsTrim);
+                    db.SaveChanges();
+                    db.EngineVersions.AddRange(
+                        EVT(octaviaIII, rsTrim.Id, "2.0 TSI RS 245 KM",     245, 180, 1984, 380, 155, "Euro 6", 5.7m, 6.6m, 250, "FWD", "dsg", 4, ben),
+                        EVT(octaviaIII, rsTrim.Id, "2.0 TDI RS 184 KM",     184, 135, 1968, 380, 129, "Euro 6", 4.8m, 7.9m, 231, "FWD", "dsg", 4, die),
+                        EVT(octaviaIII, rsTrim.Id, "2.0 TSI RS 230 KM 4x4", 230, 169, 1984, 350, 149, "Euro 6", 8.1m, 7.0m, 245, "4WD", "dsg", 4, ben)
+                    );
+                    db.SaveChanges();
+                }
+            }
+        }
+
+        // ── 2. Golf 8 trims ──────────────────────────────────────────────────────
+        {
+            var golf8Id = db.Generations
+                .Include(g => g.Model).ThenInclude(m => m.Brand)
+                .FirstOrDefault(g => g.Model.Brand.Name == "Volkswagen" && g.Model.Name == "Golf" && g.Name == "Golf 8")?.Id ?? 0;
+            if (golf8Id > 0)
+            {
+                foreach (var trimName in new[] { "Life", "Move", "Style", "R-Line", "GTE", "R" })
+                {
+                    db.Trims.Add(new Trim { GenerationId = golf8Id, Name = trimName });
+                }
+                db.SaveChanges();
+
+                // GTI trim with engines
+                var gtiTrim = new Trim { GenerationId = golf8Id, Name = "GTI" };
+                db.Trims.Add(gtiTrim);
+                db.SaveChanges();
+                db.EngineVersions.AddRange(
+                    EVT(golf8Id, gtiTrim.Id, "2.0 TSI GTI 245 KM",           245, 180, 1984, 370, 145, "Euro 6d", 7.3m, 6.3m, 250, "FWD", "dsg", 4, ben),
+                    EVT(golf8Id, gtiTrim.Id, "2.0 TSI GTI Clubsport 300 KM", 300, 221, 1984, 400, 156, "Euro 6d", 7.9m, 5.6m, 250, "FWD", "dsg", 4, ben)
+                );
+                db.SaveChanges();
+            }
+        }
+
+        // ── 3. BMW G20 trims ─────────────────────────────────────────────────────
+        {
+            var g20Id = db.Generations
+                .Include(g => g.Model).ThenInclude(m => m.Brand)
+                .FirstOrDefault(g => g.Model.Brand.Name == "BMW" && g.Model.Name == "Seria 3" && g.Name == "G20")?.Id ?? 0;
+            if (g20Id > 0)
+            {
+                foreach (var trimName in new[] { "Sport", "M Sport" })
+                {
+                    db.Trims.Add(new Trim { GenerationId = g20Id, Name = trimName });
+                }
+                db.SaveChanges();
+
+                // M340i trim
+                var m340iTrim = new Trim { GenerationId = g20Id, Name = "M340i" };
+                db.Trims.Add(m340iTrim);
+                db.SaveChanges();
+                db.EngineVersions.Add(
+                    EVT(g20Id, m340iTrim.Id, "M340i xDrive 374 KM", 374, 275, 2998, 500, 179, "Euro 6d", 8.7m, 4.4m, 250, "AWD", "automatic", 6, ben)
+                );
+                db.SaveChanges();
+
+                // M340d trim
+                var m340dTrim = new Trim { GenerationId = g20Id, Name = "M340d" };
+                db.Trims.Add(m340dTrim);
+                db.SaveChanges();
+                db.EngineVersions.Add(
+                    EVT(g20Id, m340dTrim.Id, "M340d xDrive 340 KM", 340, 250, 2993, 700, 163, "Euro 6d", 6.4m, 4.6m, 250, "AWD", "automatic", 6, die)
+                );
+                db.SaveChanges();
+            }
+        }
+
+        // ── 4. Skoda Octavia IV trims ────────────────────────────────────────────
+        {
+            var octaviaIVId = db.Generations
+                .Include(g => g.Model).ThenInclude(m => m.Brand)
+                .FirstOrDefault(g => g.Model.Brand.Name == "Skoda" && g.Model.Name == "Octavia" && g.Name == "Octavia IV")?.Id ?? 0;
+            if (octaviaIVId > 0)
+            {
+                foreach (var trimName in new[] { "Active", "Ambition", "Style" })
+                {
+                    db.Trims.Add(new Trim { GenerationId = octaviaIVId, Name = trimName });
+                }
+                db.SaveChanges();
+
+                // RS trim
+                var rsTrim = new Trim { GenerationId = octaviaIVId, Name = "RS" };
+                db.Trims.Add(rsTrim);
+                db.SaveChanges();
+                db.EngineVersions.AddRange(
+                    EVT(octaviaIVId, rsTrim.Id, "2.0 TSI RS 245 KM", 245, 180, 1984, 370, 138, "Euro 6d", 5.9m, 6.7m, 250, "FWD", "dsg", 4, ben),
+                    EVT(octaviaIVId, rsTrim.Id, "2.0 TDI RS 200 KM", 200, 147, 1968, 400, 139, "Euro 6d", 5.0m, 7.4m, 240, "FWD", "dsg", 4, die)
+                );
+                db.SaveChanges();
+            }
+        }
+
+        // ── 5. Audi A4 B9 trims ──────────────────────────────────────────────────
+        {
+            var a4B9Id = db.Generations
+                .Include(g => g.Model).ThenInclude(m => m.Brand)
+                .FirstOrDefault(g => g.Model.Brand.Name == "Audi" && g.Model.Name == "A4" && g.Name == "B9")?.Id ?? 0;
+            if (a4B9Id > 0)
+            {
+                foreach (var trimName in new[] { "Design", "Sport", "S line" })
+                {
+                    db.Trims.Add(new Trim { GenerationId = a4B9Id, Name = trimName });
+                }
+                db.SaveChanges();
+
+                // S4 trim
+                var s4Trim = new Trim { GenerationId = a4B9Id, Name = "S4" };
+                db.Trims.Add(s4Trim);
+                db.SaveChanges();
+                db.EngineVersions.AddRange(
+                    EVT(a4B9Id, s4Trim.Id, "S4 3.0 TFSI 341 KM", 341, 251, 2995, 500, 186, "Euro 6d", 9.3m, 4.7m, 250, "AWD", "automatic", 6, ben),
+                    EVT(a4B9Id, s4Trim.Id, "S4 3.0 TDI 347 KM",  347, 255, 2967, 700, 171, "Euro 6d", 6.5m, 4.8m, 250, "AWD", "automatic", 6, die)
+                );
+                db.SaveChanges();
+            }
+        }
+
+        // ── 6. Mercedes W206 trims ───────────────────────────────────────────────
+        {
+            var w206Id = db.Generations
+                .Include(g => g.Model).ThenInclude(m => m.Brand)
+                .FirstOrDefault(g => g.Model.Brand.Name == "Mercedes-Benz" && g.Model.Name == "Klasa C" && g.Name == "W206")?.Id ?? 0;
+            if (w206Id > 0)
+            {
+                foreach (var trimName in new[] { "Avantgarde", "Sport", "AMG Line" })
+                {
+                    db.Trims.Add(new Trim { GenerationId = w206Id, Name = trimName });
+                }
+                db.SaveChanges();
+
+                // AMG C 43 trim
+                var amgC43Trim = new Trim { GenerationId = w206Id, Name = "AMG C 43" };
+                db.Trims.Add(amgC43Trim);
+                db.SaveChanges();
+                db.EngineVersions.Add(
+                    EVT(w206Id, amgC43Trim.Id, "AMG C 43 4MATIC+ 408 KM", 408, 300, 1999, 500, 189, "Euro 6d", 8.9m, 4.6m, 250, "AWD", "automatic", 4, ben)
+                );
+                db.SaveChanges();
+
+                // AMG C 63 trim
+                var amgC63Trim = new Trim { GenerationId = w206Id, Name = "AMG C 63" };
+                db.Trims.Add(amgC63Trim);
+                db.SaveChanges();
+                db.EngineVersions.Add(
+                    EVT(w206Id, amgC63Trim.Id, "AMG C 63 S E Performance 680 KM", 680, 500, 1499, 1020, 34, "Euro 6d", 1.5m, 3.4m, 250, "AWD", "automatic", 4, phev)
+                );
+                db.SaveChanges();
+            }
+        }
+
+        logger.LogInformation("[VehicleDataSeeder] SeedTrimData completed.");
+    }
+
+    public static void SeedMotorcycleData(AppDbContext db, ILogger logger)
+    {
+        if (db.Models.Any(m => m.Brand.Name == "Yamaha"))
+        {
+            logger.LogInformation("[VehicleDataSeeder] SeedMotorcycleData — Yamaha already seeded, skipping.");
+            return;
+        }
+
+        var fuelDict = db.FuelTypes.ToDictionary(f => f.Name, f => f.Id);
+        if (!fuelDict.Any())
+        {
+            logger.LogWarning("[VehicleDataSeeder] SeedMotorcycleData — FuelTypes not yet seeded, skipping.");
+            return;
+        }
+
+        int GetFuel(string name) => fuelDict.TryGetValue(name, out var id) ? id : 0;
+        int ben = GetFuel("Benzyna");
+
+        int GetOrCreateBrand(string name, string slug)
+        {
+            var b = db.Brands.FirstOrDefault(x => x.Name == name);
+            if (b != null) return b.Id;
+            b = new Brand { Name = name, Slug = slug };
+            db.Brands.Add(b);
+            db.SaveChanges();
+            return b.Id;
+        }
+
+        int GetOrCreateModel(int brandId, string name, string slug)
+        {
+            var m = db.Models.FirstOrDefault(x => x.BrandId == brandId && x.Name == name);
+            if (m != null) return m.Id;
+            m = new Model { BrandId = brandId, Name = name, Slug = slug };
+            db.Models.Add(m);
+            db.SaveChanges();
+            return m.Id;
+        }
+
+        int GetOrCreateGeneration(int modelId, string name, string slug, int yearFrom, int? yearTo)
+        {
+            var g = db.Generations.FirstOrDefault(x => x.ModelId == modelId && x.Name == name);
+            if (g != null) return g.Id;
+            g = new Generation { ModelId = modelId, Name = name, Slug = slug, YearFrom = yearFrom, YearTo = yearTo };
+            db.Generations.Add(g);
+            db.SaveChanges();
+            return g.Id;
+        }
+
+        void AddGen(int genId, EngineVersion ev)
+        {
+            ev.GenerationId = genId;
+            db.EngineVersions.Add(ev);
+            db.SaveChanges();
+        }
+
+        // ── YAMAHA ───────────────────────────────────────────────────────────────
+        {
+            int yamaha = GetOrCreateBrand("Yamaha", "yamaha");
+
+            int mt07    = GetOrCreateModel(yamaha, "MT-07", "yamaha-mt-07");
+            int mt07g1  = GetOrCreateGeneration(mt07, "Gen1", "yamaha-mt-07-gen1", 2014, 2020);
+            AddGen(mt07g1, EV("689cc 74 KM", 74, 55, 689, 68, 0, "Euro5", 3.5m, 2.9m, 180, "RWD", "manual", 2, ben));
+
+            int mt09    = GetOrCreateModel(yamaha, "MT-09", "yamaha-mt-09");
+            int mt09g3  = GetOrCreateGeneration(mt09, "Gen3", "yamaha-mt-09-gen3", 2021, null);
+            AddGen(mt09g3, EV("890cc 119 KM", 119, 88, 890, 93, 0, "Euro5", 5.0m, 3.0m, 180, "RWD", "manual", 3, ben));
+
+            int r1      = GetOrCreateModel(yamaha, "R1", "yamaha-r1");
+            int r1g5    = GetOrCreateGeneration(r1, "Gen5", "yamaha-r1-gen5", 2015, null);
+            AddGen(r1g5, EV("998cc 200 KM", 200, 147, 998, 113, 0, "Euro5", 7.0m, 2.9m, 299, "RWD", "manual", 4, ben));
+
+            int tenere  = GetOrCreateModel(yamaha, "Ténéré 700", "yamaha-tenere-700");
+            int tenereG1 = GetOrCreateGeneration(tenere, "Gen1", "yamaha-tenere-700-gen1", 2019, null);
+            AddGen(tenereG1, EV("689cc 74 KM", 74, 55, 689, 68, 0, "Euro5", 4.0m, 3.0m, 170, "RWD", "manual", 2, ben));
+
+            int xmax    = GetOrCreateModel(yamaha, "XMAX 300", "yamaha-xmax-300");
+            int xmaxG1  = GetOrCreateGeneration(xmax, "Gen1", "yamaha-xmax-300-gen1", 2017, null);
+            AddGen(xmaxG1, EV("292cc 29 KM", 29, 21, 292, 29, 0, "Euro5", 2.5m, 10.0m, 140, "RWD", "automatic", 1, ben));
+        }
+
+        // ── KAWASAKI ─────────────────────────────────────────────────────────────
+        {
+            int kawasaki = GetOrCreateBrand("Kawasaki", "kawasaki");
+
+            int z650    = GetOrCreateModel(kawasaki, "Z650", "kawasaki-z650");
+            int z650g1  = GetOrCreateGeneration(z650, "Gen1", "kawasaki-z650-gen1", 2017, null);
+            AddGen(z650g1, EV("649cc 68 KM", 68, 50, 649, 64, 0, "Euro5", 3.7m, 3.2m, 187, "RWD", "manual", 2, ben));
+
+            int z900    = GetOrCreateModel(kawasaki, "Z900", "kawasaki-z900");
+            int z900g1  = GetOrCreateGeneration(z900, "Gen1", "kawasaki-z900-gen1", 2017, null);
+            AddGen(z900g1, EV("948cc 125 KM", 125, 92, 948, 99, 0, "Euro5", 5.2m, 3.1m, 200, "RWD", "manual", 4, ben));
+
+            int ninja650   = GetOrCreateModel(kawasaki, "Ninja 650", "kawasaki-ninja-650");
+            int ninja650g1 = GetOrCreateGeneration(ninja650, "Gen1", "kawasaki-ninja-650-gen1", 2017, null);
+            AddGen(ninja650g1, EV("649cc 68 KM", 68, 50, 649, 64, 0, "Euro5", 3.7m, 3.3m, 187, "RWD", "manual", 2, ben));
+
+            int nzx10r  = GetOrCreateModel(kawasaki, "Ninja ZX-10R", "kawasaki-ninja-zx-10r");
+            int nzx10rg = GetOrCreateGeneration(nzx10r, "Gen1", "kawasaki-ninja-zx-10r-gen1", 2021, null);
+            AddGen(nzx10rg, EV("998cc 203 KM", 203, 149, 998, 115, 0, "Euro5", 7.0m, 2.8m, 299, "RWD", "manual", 4, ben));
+
+            int versys  = GetOrCreateModel(kawasaki, "Versys 650", "kawasaki-versys-650");
+            int versysG = GetOrCreateGeneration(versys, "Gen1", "kawasaki-versys-650-gen1", 2015, null);
+            AddGen(versysG, EV("649cc 68 KM", 68, 50, 649, 64, 0, "Euro5", 4.2m, 3.2m, 185, "RWD", "manual", 2, ben));
+
+            int zh2     = GetOrCreateModel(kawasaki, "Z H2", "kawasaki-z-h2");
+            int zh2g1   = GetOrCreateGeneration(zh2, "Gen1", "kawasaki-z-h2-gen1", 2020, null);
+            AddGen(zh2g1, EV("998cc 200 KM Supercharged", 200, 147, 998, 137, 0, "Euro5", 6.5m, 3.0m, 250, "RWD", "manual", 4, ben));
+        }
+
+        // ── KTM ──────────────────────────────────────────────────────────────────
+        {
+            int ktm = GetOrCreateBrand("KTM", "ktm");
+
+            int d390  = GetOrCreateModel(ktm, "Duke 390", "ktm-duke-390");
+            int d390g = GetOrCreateGeneration(d390, "Gen1", "ktm-duke-390-gen1", 2023, null);
+            AddGen(d390g, EV("373cc 44 KM", 44, 32, 373, 37, 0, "Euro5", 2.3m, 5.9m, 167, "RWD", "manual", 1, ben));
+
+            int d790  = GetOrCreateModel(ktm, "Duke 790", "ktm-duke-790");
+            int d790g = GetOrCreateGeneration(d790, "Gen1", "ktm-duke-790-gen1", 2018, null);
+            AddGen(d790g, EV("799cc 105 KM", 105, 77, 799, 87, 0, "Euro5", 4.5m, 3.2m, 200, "RWD", "manual", 2, ben));
+
+            int d890  = GetOrCreateModel(ktm, "Duke 890", "ktm-duke-890");
+            int d890g = GetOrCreateGeneration(d890, "Gen1", "ktm-duke-890-gen1", 2021, null);
+            AddGen(d890g, EV("889cc 121 KM", 121, 89, 889, 99, 0, "Euro5", 5.0m, 3.1m, 200, "RWD", "manual", 2, ben));
+
+            int sdr   = GetOrCreateModel(ktm, "1290 Super Duke R", "ktm-1290-super-duke-r");
+            int sdrg  = GetOrCreateGeneration(sdr, "Gen1", "ktm-1290-super-duke-r-gen1", 2020, null);
+            AddGen(sdrg, EV("1301cc 180 KM", 180, 132, 1301, 140, 0, "Euro5", 6.5m, 2.9m, 282, "RWD", "manual", 2, ben));
+
+            int adv790  = GetOrCreateModel(ktm, "790 Adventure", "ktm-790-adventure");
+            int adv790g = GetOrCreateGeneration(adv790, "Gen1", "ktm-790-adventure-gen1", 2019, null);
+            AddGen(adv790g, EV("799cc 95 KM", 95, 70, 799, 87, 0, "Euro5", 4.8m, 3.4m, 200, "RWD", "manual", 2, ben));
+
+            int adv1290  = GetOrCreateModel(ktm, "1290 Super Adventure S", "ktm-1290-super-adventure-s");
+            int adv1290g = GetOrCreateGeneration(adv1290, "Gen1", "ktm-1290-super-adventure-s-gen1", 2021, null);
+            AddGen(adv1290g, EV("1301cc 160 KM", 160, 118, 1301, 138, 0, "Euro5", 6.5m, 3.1m, 250, "RWD", "manual", 2, ben));
+        }
+
+        // ── DUCATI ───────────────────────────────────────────────────────────────
+        {
+            int ducati = GetOrCreateBrand("Ducati", "ducati");
+
+            int monster  = GetOrCreateModel(ducati, "Monster", "ducati-monster");
+            int monsterG3 = GetOrCreateGeneration(monster, "Gen3", "ducati-monster-gen3", 2021, null);
+            AddGen(monsterG3, EV("937cc 111 KM", 111, 82, 937, 93, 0, "Euro5", 5.8m, 3.2m, 245, "RWD", "manual", 2, ben));
+
+            int panV2  = GetOrCreateModel(ducati, "Panigale V2", "ducati-panigale-v2");
+            int panV2g = GetOrCreateGeneration(panV2, "Gen1", "ducati-panigale-v2-gen1", 2020, null);
+            AddGen(panV2g, EV("955cc 155 KM", 155, 114, 955, 104, 0, "Euro5", 6.5m, 3.0m, 270, "RWD", "manual", 2, ben));
+
+            int panV4  = GetOrCreateModel(ducati, "Panigale V4", "ducati-panigale-v4");
+            int panV4g = GetOrCreateGeneration(panV4, "Gen1", "ducati-panigale-v4-gen1", 2018, null);
+            AddGen(panV4g, EV("1103cc 214 KM", 214, 157, 1103, 124, 0, "Euro5", 9.5m, 2.8m, 299, "RWD", "manual", 4, ben));
+
+            int multV4  = GetOrCreateModel(ducati, "Multistrada V4", "ducati-multistrada-v4");
+            int multV4g = GetOrCreateGeneration(multV4, "Gen1", "ducati-multistrada-v4-gen1", 2021, null);
+            AddGen(multV4g, EV("1158cc 170 KM", 170, 125, 1158, 125, 0, "Euro5", 7.5m, 3.1m, 260, "RWD", "manual", 4, ben));
+
+            int scr  = GetOrCreateModel(ducati, "Scrambler Icon", "ducati-scrambler-icon");
+            int scrG = GetOrCreateGeneration(scr, "Gen1", "ducati-scrambler-icon-gen1", 2019, null);
+            AddGen(scrG, EV("803cc 73 KM", 73, 54, 803, 67, 0, "Euro5", 4.5m, 3.3m, 230, "RWD", "manual", 2, ben));
+
+            int sfv4  = GetOrCreateModel(ducati, "Streetfighter V4", "ducati-streetfighter-v4");
+            int sfv4g = GetOrCreateGeneration(sfv4, "Gen1", "ducati-streetfighter-v4-gen1", 2020, null);
+            AddGen(sfv4g, EV("1103cc 208 KM", 208, 153, 1103, 123, 0, "Euro5", 9.5m, 2.9m, 299, "RWD", "manual", 4, ben));
+        }
+
+        // ── SUZUKI (motorcycle models) ────────────────────────────────────────────
+        {
+            int suzuki = db.Brands.FirstOrDefault(b => b.Name == "Suzuki")?.Id ?? 0;
+            if (suzuki == 0) suzuki = GetOrCreateBrand("Suzuki", "suzuki");
+
+            int gsxr600  = GetOrCreateModel(suzuki, "GSX-R600", "suzuki-gsx-r600");
+            int gsxr600g = GetOrCreateGeneration(gsxr600, "Gen1", "suzuki-gsx-r600-gen1", 2011, null);
+            AddGen(gsxr600g, EV("599cc 125 KM", 125, 92, 599, 66, 0, "Euro5", 6.0m, 3.2m, 250, "RWD", "manual", 4, ben));
+
+            int gsxr1000  = GetOrCreateModel(suzuki, "GSX-R1000", "suzuki-gsx-r1000");
+            int gsxr1000g = GetOrCreateGeneration(gsxr1000, "Gen1", "suzuki-gsx-r1000-gen1", 2017, null);
+            AddGen(gsxr1000g, EV("999cc 202 KM", 202, 149, 999, 118, 0, "Euro5", 7.5m, 2.9m, 299, "RWD", "manual", 4, ben));
+
+            int vstrom650  = GetOrCreateModel(suzuki, "V-Strom 650", "suzuki-v-strom-650");
+            int vstrom650g = GetOrCreateGeneration(vstrom650, "Gen1", "suzuki-v-strom-650-gen1", 2017, null);
+            AddGen(vstrom650g, EV("645cc 71 KM", 71, 52, 645, 62, 0, "Euro5", 4.5m, 3.5m, 200, "RWD", "manual", 2, ben));
+
+            int vstrom1050  = GetOrCreateModel(suzuki, "V-Strom 1050", "suzuki-v-strom-1050");
+            int vstrom1050g = GetOrCreateGeneration(vstrom1050, "Gen1", "suzuki-v-strom-1050-gen1", 2020, null);
+            AddGen(vstrom1050g, EV("1037cc 107 KM", 107, 79, 1037, 100, 0, "Euro5", 5.5m, 3.2m, 220, "RWD", "manual", 2, ben));
+
+            int sv650  = GetOrCreateModel(suzuki, "SV650", "suzuki-sv650");
+            int sv650g = GetOrCreateGeneration(sv650, "Gen1", "suzuki-sv650-gen1", 2016, null);
+            AddGen(sv650g, EV("645cc 73 KM", 73, 54, 645, 64, 0, "Euro5", 4.2m, 3.4m, 196, "RWD", "manual", 2, ben));
+        }
+
+        // ── HARLEY-DAVIDSON ──────────────────────────────────────────────────────
+        {
+            int hd = GetOrCreateBrand("Harley-Davidson", "harley-davidson");
+
+            int sportsterS  = GetOrCreateModel(hd, "Sportster S", "hd-sportster-s");
+            int sportsterSg = GetOrCreateGeneration(sportsterS, "Gen1", "hd-sportster-s-gen1", 2021, null);
+            AddGen(sportsterSg, EV("1252cc 121 KM", 121, 89, 1252, 128, 0, "Euro5", 8.0m, 4.0m, 180, "RWD", "automatic", 2, ben));
+
+            int streetGlide  = GetOrCreateModel(hd, "Street Glide", "hd-street-glide");
+            int streetGlideG = GetOrCreateGeneration(streetGlide, "Gen1", "hd-street-glide-gen1", 2021, null);
+            AddGen(streetGlideG, EV("1923cc 102 KM Milwaukee-Eight 114", 102, 75, 1923, 162, 0, "Euro5", 8.5m, 5.0m, 170, "RWD", "manual", 2, ben));
+
+            int fatBoy  = GetOrCreateModel(hd, "Fat Boy", "hd-fat-boy");
+            int fatBoyG = GetOrCreateGeneration(fatBoy, "Gen1", "hd-fat-boy-gen1", 2018, null);
+            AddGen(fatBoyG, EV("1745cc 90 KM Milwaukee-Eight 107", 90, 66, 1745, 145, 0, "Euro5", 8.0m, 5.2m, 160, "RWD", "manual", 2, ben));
+
+            int panAm  = GetOrCreateModel(hd, "Pan America 1250", "hd-pan-america-1250");
+            int panAmG = GetOrCreateGeneration(panAm, "Gen1", "hd-pan-america-1250-gen1", 2021, null);
+            AddGen(panAmG, EV("1252cc 150 KM", 150, 110, 1252, 128, 0, "Euro5", 8.5m, 3.8m, 210, "RWD", "manual", 2, ben));
+        }
+
+        // ── APRILIA ──────────────────────────────────────────────────────────────
+        {
+            int aprilia = GetOrCreateBrand("Aprilia", "aprilia");
+
+            int rs660  = GetOrCreateModel(aprilia, "RS 660", "aprilia-rs-660");
+            int rs660g = GetOrCreateGeneration(rs660, "Gen1", "aprilia-rs-660-gen1", 2020, null);
+            AddGen(rs660g, EV("659cc 100 KM", 100, 74, 659, 67, 0, "Euro5", 5.5m, 3.2m, 240, "RWD", "manual", 2, ben));
+
+            int tuonoV4  = GetOrCreateModel(aprilia, "Tuono V4", "aprilia-tuono-v4");
+            int tuonoV4g = GetOrCreateGeneration(tuonoV4, "Gen1", "aprilia-tuono-v4-gen1", 2021, null);
+            AddGen(tuonoV4g, EV("1077cc 175 KM", 175, 129, 1077, 121, 0, "Euro5", 7.5m, 3.0m, 270, "RWD", "manual", 4, ben));
+
+            int shiver  = GetOrCreateModel(aprilia, "Shiver 900", "aprilia-shiver-900");
+            int shiverG = GetOrCreateGeneration(shiver, "Gen1", "aprilia-shiver-900-gen1", 2017, null);
+            AddGen(shiverG, EV("896cc 95 KM", 95, 70, 896, 90, 0, "Euro5", 5.5m, 3.3m, 245, "RWD", "manual", 2, ben));
+        }
+
+        // ── TRIUMPH ──────────────────────────────────────────────────────────────
+        {
+            int triumph = GetOrCreateBrand("Triumph", "triumph");
+
+            int stR  = GetOrCreateModel(triumph, "Street Triple R", "triumph-street-triple-r");
+            int stRg = GetOrCreateGeneration(stR, "Gen1", "triumph-street-triple-r-gen1", 2020, null);
+            AddGen(stRg, EV("765cc 121 KM", 121, 89, 765, 79, 0, "Euro5", 5.5m, 3.2m, 225, "RWD", "manual", 3, ben));
+
+            int tiger900  = GetOrCreateModel(triumph, "Tiger 900", "triumph-tiger-900");
+            int tiger900g = GetOrCreateGeneration(tiger900, "Gen1", "triumph-tiger-900-gen1", 2020, null);
+            AddGen(tiger900g, EV("888cc 95 KM", 95, 70, 888, 87, 0, "Euro5", 5.5m, 3.4m, 200, "RWD", "manual", 3, ben));
+
+            int sp1200  = GetOrCreateModel(triumph, "Speed Triple 1200 RS", "triumph-speed-triple-1200-rs");
+            int sp1200g = GetOrCreateGeneration(sp1200, "Gen1", "triumph-speed-triple-1200-rs-gen1", 2021, null);
+            AddGen(sp1200g, EV("1160cc 180 KM", 180, 132, 1160, 125, 0, "Euro5", 8.0m, 3.0m, 270, "RWD", "manual", 3, ben));
+
+            int bonT120  = GetOrCreateModel(triumph, "Bonneville T120", "triumph-bonneville-t120");
+            int bonT120g = GetOrCreateGeneration(bonT120, "Gen1", "triumph-bonneville-t120-gen1", 2016, null);
+            AddGen(bonT120g, EV("1200cc 80 KM", 80, 59, 1200, 105, 0, "Euro5", 5.5m, 4.0m, 193, "RWD", "manual", 2, ben));
+
+            int scr1200  = GetOrCreateModel(triumph, "Scrambler 1200", "triumph-scrambler-1200");
+            int scr1200g = GetOrCreateGeneration(scr1200, "Gen1", "triumph-scrambler-1200-gen1", 2019, null);
+            AddGen(scr1200g, EV("1200cc 90 KM", 90, 66, 1200, 110, 0, "Euro5", 5.5m, 3.8m, 200, "RWD", "manual", 2, ben));
+        }
+
+        logger.LogInformation("[VehicleDataSeeder] SeedMotorcycleData completed.");
+    }
+
     /// <summary>Creates an EngineVersion with full spec fields.</summary>
     private static EngineVersion EV(
         string name, int hp, int kw, int? disp,
