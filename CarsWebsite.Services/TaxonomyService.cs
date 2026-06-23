@@ -11,7 +11,9 @@ public class TaxonomyService : ITaxonomyService
 {
     private readonly AppDbContext _context;
     private readonly IMemoryCache _cache;
-    private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(30);
+
+    // B-27: Taxonomy data changes rarely — cache for 1 hour to avoid repeated DB queries.
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(1);
 
     public TaxonomyService(AppDbContext context, IMemoryCache cache)
     {
@@ -21,66 +23,90 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<Brand>> GetFullTaxonomyAsync()
     {
-        return await _context.Brands
-            .Include(b => b.Models)
-            .ThenInclude(m => m.Generations)
-            .ThenInclude(g => g.EngineVersions)
-            .OrderBy(b => b.Name)
-            .ToListAsync();
+        return await _cache.GetOrCreateAsync("taxonomy:full", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await _context.Brands
+                .Include(b => b.Models)
+                .ThenInclude(m => m.Generations)
+                .ThenInclude(g => g.EngineVersions)
+                .OrderBy(b => b.Name)
+                .ToListAsync();
+        }) ?? [];
     }
 
     public async Task<IEnumerable<Brand>> GetBrandsAsync()
     {
         return await _cache.GetOrCreateAsync("taxonomy:brands", async entry =>
         {
-            entry.AbsoluteExpirationRelativeToNow = CacheTtl;
-            return await _context.Brands.OrderBy(b => b.Name).ToListAsync();
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await _context.Brands
+                .OrderBy(b => b.Name)
+                .ToListAsync();
         }) ?? [];
     }
 
     public async Task<IEnumerable<Brand>> GetBrandsByCategoryAsync(int categoryId)
     {
-        return await _context.Brands
-            .FromSqlRaw(@"
-                SELECT b.* FROM brands b
-                INNER JOIN brandvehiclecategories bvc ON bvc.BrandsId = b.Id
-                WHERE bvc.CategoriesId = {0}
-                ORDER BY b.Name", categoryId)
-            .AsNoTracking()
-            .ToListAsync();
+        return await _cache.GetOrCreateAsync($"taxonomy:brands:category:{categoryId}", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await _context.Brands
+                .FromSqlRaw(@"
+                    SELECT b.* FROM brands b
+                    INNER JOIN brandvehiclecategories bvc ON bvc.BrandsId = b.Id
+                    WHERE bvc.CategoriesId = {0}
+                    ORDER BY b.Name", categoryId)
+                .AsNoTracking()
+                .ToListAsync();
+        }) ?? [];
     }
 
     public async Task<IEnumerable<Model>> GetModelsByBrandAsync(int brandId)
     {
-        return await _context.Models
-            .Where(m => m.BrandId == brandId)
-            .OrderBy(m => m.Name)
-            .ToListAsync();
+        return await _cache.GetOrCreateAsync($"taxonomy:models:brand:{brandId}", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await _context.Models
+                .Where(m => m.BrandId == brandId)
+                .OrderBy(m => m.Name)
+                .ToListAsync();
+        }) ?? [];
     }
 
     public async Task<IEnumerable<Generation>> GetGenerationsByModelAsync(int modelId)
     {
-        return await _context.Generations
-            .Where(g => g.ModelId == modelId)
-            .OrderBy(g => g.YearFrom)
-            .ToListAsync();
+        return await _cache.GetOrCreateAsync($"taxonomy:generations:model:{modelId}", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await _context.Generations
+                .Where(g => g.ModelId == modelId)
+                .OrderBy(g => g.YearFrom)
+                .ToListAsync();
+        }) ?? [];
     }
 
     public async Task<IEnumerable<EngineVersion>> GetEnginesByGenerationAsync(int generationId)
     {
-        return await _context.EngineVersions
-            .Include(e => e.FuelType)
-            .Where(e => e.GenerationId == generationId)
-            .OrderBy(e => e.EngineName)
-            .ToListAsync();
+        return await _cache.GetOrCreateAsync($"taxonomy:engines:generation:{generationId}", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await _context.EngineVersions
+                .Include(e => e.FuelType)
+                .Where(e => e.GenerationId == generationId)
+                .OrderBy(e => e.EngineName)
+                .ToListAsync();
+        }) ?? [];
     }
 
     public async Task<IEnumerable<FuelType>> GetFuelTypesAsync()
     {
         return await _cache.GetOrCreateAsync("taxonomy:fueltypes", async entry =>
         {
-            entry.AbsoluteExpirationRelativeToNow = CacheTtl;
-            return await _context.FuelTypes.OrderBy(f => f.Name).ToListAsync();
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await _context.FuelTypes
+                .OrderBy(f => f.Name)
+                .ToListAsync();
         }) ?? [];
     }
 
@@ -88,8 +114,10 @@ public class TaxonomyService : ITaxonomyService
     {
         return await _cache.GetOrCreateAsync("taxonomy:gearboxes", async entry =>
         {
-            entry.AbsoluteExpirationRelativeToNow = CacheTtl;
-            return await _context.Gearboxes.OrderBy(g => g.Name).ToListAsync();
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await _context.Gearboxes
+                .OrderBy(g => g.Name)
+                .ToListAsync();
         }) ?? [];
     }
 
@@ -97,8 +125,10 @@ public class TaxonomyService : ITaxonomyService
     {
         return await _cache.GetOrCreateAsync("taxonomy:bodytypes", async entry =>
         {
-            entry.AbsoluteExpirationRelativeToNow = CacheTtl;
-            return await _context.BodyTypes.OrderBy(b => b.Name).ToListAsync();
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await _context.BodyTypes
+                .OrderBy(b => b.Name)
+                .ToListAsync();
         }) ?? [];
     }
 
@@ -106,8 +136,10 @@ public class TaxonomyService : ITaxonomyService
     {
         return await _cache.GetOrCreateAsync("taxonomy:drivetypes", async entry =>
         {
-            entry.AbsoluteExpirationRelativeToNow = CacheTtl;
-            return await _context.DriveTypes.OrderBy(d => d.Id).ToListAsync();
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await _context.DriveTypes
+                .OrderBy(d => d.Id)
+                .ToListAsync();
         }) ?? [];
     }
 
@@ -115,54 +147,150 @@ public class TaxonomyService : ITaxonomyService
     {
         return await _cache.GetOrCreateAsync("taxonomy:colors", async entry =>
         {
-            entry.AbsoluteExpirationRelativeToNow = CacheTtl;
-            return await _context.CarColors.OrderBy(c => c.Name).ToListAsync();
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await _context.CarColors
+                .OrderBy(c => c.Name)
+                .ToListAsync();
         }) ?? [];
     }
 
     public async Task<IEnumerable<Feature>> GetFeaturesAsync()
     {
-        return await _context.Features
-            .Include(f => f.Category)
-            .OrderBy(f => f.Name)
-            .ToListAsync();
+        return await _cache.GetOrCreateAsync("taxonomy:features", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await _context.Features
+                .Include(f => f.Category)
+                .OrderBy(f => f.Name)
+                .ToListAsync();
+        }) ?? [];
     }
 
     public async Task<IEnumerable<VehicleCategory>> GetVehicleCategoriesAsync()
     {
         return await _cache.GetOrCreateAsync("taxonomy:vehiclecategories", async entry =>
         {
-            entry.AbsoluteExpirationRelativeToNow = CacheTtl;
-            return await _context.VehicleCategories.OrderBy(c => c.SortOrder).ToListAsync();
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await _context.VehicleCategories
+                .OrderBy(c => c.SortOrder)
+                .ToListAsync();
         }) ?? [];
     }
 
     public async Task<IEnumerable<FeatureCategory>> GetFeatureCategoriesAsync()
     {
-        return await _context.FeatureCategories
-            .Include(fc => fc.Features)
-            .OrderBy(fc => fc.Name)
-            .ToListAsync();
+        return await _cache.GetOrCreateAsync("taxonomy:featurecategories", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await _context.FeatureCategories
+                .Include(fc => fc.Features)
+                .OrderBy(fc => fc.Name)
+                .ToListAsync();
+        }) ?? [];
     }
 
     public async Task<IEnumerable<FeatureCategory>> GetFeatureCategoriesByVehicleCategoryAsync(int vehicleCategoryId)
     {
-        return await _context.FeatureCategories
-            .Include(fc => fc.Features)
-            .Where(fc => fc.VehicleCategoryId == vehicleCategoryId || fc.VehicleCategoryId == null)
-            .OrderBy(fc => fc.Name)
-            .ToListAsync();
+        return await _cache.GetOrCreateAsync($"taxonomy:featurecategories:vehicle:{vehicleCategoryId}", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await _context.FeatureCategories
+                .Include(fc => fc.Features)
+                .Where(fc => fc.VehicleCategoryId == vehicleCategoryId || fc.VehicleCategoryId == null)
+                .OrderBy(fc => fc.Name)
+                .ToListAsync();
+        }) ?? [];
     }
 
     public async Task<IEnumerable<FeatureCategory>> GetFeatureCategoriesByContextAsync(int? vehicleCategoryId, int? brandId, int? modelId)
     {
-        return await _context.FeatureCategories
-            .Include(fc => fc.Features)
-            .Where(fc =>
-                (fc.VehicleCategoryId == null || fc.VehicleCategoryId == vehicleCategoryId) &&
-                (fc.BrandId == null || fc.BrandId == brandId) &&
-                (fc.ModelId == null || fc.ModelId == modelId))
-            .OrderBy(fc => fc.Name)
-            .ToListAsync();
+        var cacheKey = $"taxonomy:featurecategories:context:{vehicleCategoryId}:{brandId}:{modelId}";
+        return await _cache.GetOrCreateAsync(cacheKey, async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await _context.FeatureCategories
+                .Include(fc => fc.Features)
+                .Where(fc =>
+                    (fc.VehicleCategoryId == null || fc.VehicleCategoryId == vehicleCategoryId) &&
+                    (fc.BrandId == null || fc.BrandId == brandId) &&
+                    (fc.ModelId == null || fc.ModelId == modelId))
+                .OrderBy(fc => fc.Name)
+                .ToListAsync();
+        }) ?? [];
+    }
+
+    public async Task<IEnumerable<Trim>> GetTrimsByGenerationAsync(int generationId)
+    {
+        return await _cache.GetOrCreateAsync($"taxonomy:trims:generation:{generationId}", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await _context.Trims
+                .Where(t => t.GenerationId == generationId)
+                .OrderBy(t => t.Name)
+                .ToListAsync();
+        }) ?? [];
+    }
+
+    public async Task<IEnumerable<EngineVersion>> GetEnginesByTrimAsync(int trimId)
+    {
+        return await _cache.GetOrCreateAsync($"taxonomy:engines:trim:{trimId}", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await _context.EngineVersions
+                .Include(e => e.FuelType)
+                .Where(e => e.TrimId == trimId)
+                .OrderBy(e => e.EngineName)
+                .ToListAsync();
+        }) ?? [];
+    }
+
+    public async Task<EngineVersion?> GetEngineSpecsAsync(int engineVersionId)
+    {
+        return await _cache.GetOrCreateAsync($"taxonomy:enginespecs:{engineVersionId}", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await _context.EngineVersions
+                .Include(e => e.FuelType)
+                .FirstOrDefaultAsync(e => e.Id == engineVersionId);
+        });
+    }
+
+    public async Task<IEnumerable<VehicleSubtype>> GetVehicleSubtypesByCategoryAsync(int vehicleCategoryId)
+    {
+        return await _cache.GetOrCreateAsync($"taxonomy:vehiclesubtypes:category:{vehicleCategoryId}", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await _context.VehicleSubtypes
+                .Where(vs => vs.VehicleCategoryId == vehicleCategoryId)
+                .OrderBy(vs => vs.SortOrder)
+                .ThenBy(vs => vs.Name)
+                .ToListAsync();
+        }) ?? [];
+    }
+
+    public async Task<IEnumerable<PartCategory>> GetPartCategoriesAsync()
+    {
+        return await _cache.GetOrCreateAsync("taxonomy:partcategories", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await _context.PartCategories
+                .Include(pc => pc.Subcategories)
+                .OrderBy(pc => pc.SortOrder)
+                .ThenBy(pc => pc.Name)
+                .ToListAsync();
+        }) ?? [];
+    }
+
+    public async Task<IEnumerable<PartSubcategory>> GetPartSubcategoriesByCategoryAsync(int partCategoryId)
+    {
+        return await _cache.GetOrCreateAsync($"taxonomy:partsubcategories:category:{partCategoryId}", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return await _context.PartSubcategories
+                .Where(ps => ps.PartCategoryId == partCategoryId)
+                .OrderBy(ps => ps.SortOrder)
+                .ThenBy(ps => ps.Name)
+                .ToListAsync();
+        }) ?? [];
     }
 }

@@ -2,6 +2,8 @@ using AutoMapper;
 using cars_website_api.CarsWebsite.Domain.Entities;
 using cars_website_api.CarsWebsite.DTOs.Advert;
 using CarsWebsite;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -10,19 +12,60 @@ public class AdvertService : IAdvertService
     private readonly AppDbContext _context;
     private readonly IMapper _mapper;
     private readonly ILogger<AdvertService> _logger;
+    private readonly Cloudinary _cloudinary;
 
-    public AdvertService(AppDbContext context, IMapper mapper, ILogger<AdvertService> logger)
+    public AdvertService(AppDbContext context, IMapper mapper, ILogger<AdvertService> logger, Cloudinary cloudinary)
     {
         _context = context;
         _mapper = mapper;
         _logger = logger;
+        _cloudinary = cloudinary;
+    }
+
+    // Extracts the Cloudinary public_id from a secure URL.
+    // URL format: https://res.cloudinary.com/{cloud}/image/upload/v{version}/{public_id}.{ext}
+    private static string? ExtractPublicId(string url)
+    {
+        try
+        {
+            var segments = new Uri(url).AbsolutePath.Split('/');
+            var uploadIdx = Array.IndexOf(segments, "upload");
+            if (uploadIdx < 0) return null;
+            var start = uploadIdx + 1;
+            if (start < segments.Length && segments[start].StartsWith('v') && long.TryParse(segments[start][1..], out _))
+                start++;
+            var idWithExt = string.Join("/", segments[start..]);
+            var dot = idWithExt.LastIndexOf('.');
+            return dot > 0 ? idWithExt[..dot] : idWithExt;
+        }
+        catch { return null; }
     }
 
     
+    // Strip HTML-like angle-bracket characters from a string to prevent XSS in page titles.
+    private static string StripHtml(string input)
+        => System.Text.RegularExpressions.Regex.Replace(input, @"[<>]", "");
+
     public async Task<int> CreateCarAdvertAsync(CreateCarAdvertDto dto,int userId)
     {
-        if (!string.IsNullOrWhiteSpace(dto.Vin) && dto.Vin.Length != 17)
-            throw new ArgumentException("Numer VIN musi mieć dokładnie 17 znaków.");
+        // Sanitize Title and Description: trim whitespace and strip angle-bracket characters
+        dto.Title = StripHtml(dto.Title.Trim());
+        if (dto.Description != null)
+            dto.Description = StripHtml(dto.Description.Trim());
+
+        // Validate VIN format: exactly 17 alphanumeric chars, no I/O/Q
+        if (!string.IsNullOrWhiteSpace(dto.Vin))
+        {
+            dto.Vin = dto.Vin.Trim().ToUpperInvariant();
+            if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Vin, @"^[A-HJ-NPR-Z0-9]{17}$"))
+                throw new ArgumentException("Numer VIN musi mieć dokładnie 17 znaków alfanumerycznych (bez liter I, O, Q).");
+
+            // Duplicate VIN check: reject if another non-deleted advert with same VIN exists for this user
+            var duplicateVin = await _context.CarAdverts
+                .AnyAsync(a => a.Vin == dto.Vin && a.UserId == userId && a.IsActive && !a.IsHidden);
+            if (duplicateVin)
+                throw new InvalidOperationException("Masz już aktywne ogłoszenie z tym numerem VIN.");
+        }
 
         if (dto.BrandId > 0 && dto.VehicleCategoryId.HasValue)
         {
@@ -70,6 +113,19 @@ public class AdvertService : IAdvertService
     
     public async Task UpdateCarAdvertAsync(int id, UpdateCarAdvertDto dto, int userId)
     {
+        // Sanitize Title and Description: trim whitespace and strip angle-bracket characters
+        dto.Title = StripHtml(dto.Title.Trim());
+        if (dto.Description != null)
+            dto.Description = StripHtml(dto.Description.Trim());
+
+        // Validate VIN format if provided
+        if (!string.IsNullOrWhiteSpace(dto.Vin))
+        {
+            dto.Vin = dto.Vin.Trim().ToUpperInvariant();
+            if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Vin, @"^[A-HJ-NPR-Z0-9]{17}$"))
+                throw new ArgumentException("Numer VIN musi mieć dokładnie 17 znaków alfanumerycznych (bez liter I, O, Q).");
+        }
+
         var advert = await _context.CarAdverts
             .Include(a => a.AdvertFeatures)
             .FirstOrDefaultAsync(a => a.Id == id);
@@ -77,7 +133,7 @@ public class AdvertService : IAdvertService
         if (advert == null)
             throw new KeyNotFoundException("Advert not found");
 
-        if (advert.UserId != userId)    
+        if (advert.UserId != userId)
             throw new UnauthorizedAccessException("You do not own this advert");
 
         _mapper.Map(dto, advert);
@@ -99,10 +155,12 @@ public class AdvertService : IAdvertService
     }
 
 
-   
+
     public async Task DeleteCarAdvertAsync(int id, int userId)
     {
-        var advert = await _context.CarAdverts.FindAsync(id);
+        var advert = await _context.CarAdverts
+            .Include(a => a.Images)
+            .FirstOrDefaultAsync(a => a.Id == id);
         if (advert == null)
             return;
 
@@ -113,6 +171,25 @@ public class AdvertService : IAdvertService
         advert.IsHidden = true;
         advert.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+
+        // Clean up Cloudinary images — wrap in try/catch so Cloudinary failures
+        // do not prevent the soft-delete from being persisted.
+        try
+        {
+            foreach (var image in advert.Images)
+            {
+                var publicId = ExtractPublicId(image.Url);
+                if (publicId != null)
+                {
+                    await _cloudinary.DestroyAsync(new DeletionParams(publicId));
+                    _logger.LogInformation("[AdvertService/Delete] Deleted Cloudinary image publicId={PublicId} for advertId={AdvertId}", publicId, id);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[AdvertService/Delete] Failed to delete Cloudinary images for advertId={AdvertId}", id);
+        }
     }
 
     
@@ -301,8 +378,13 @@ public class AdvertService : IAdvertService
         if (dto.HasTachograph.HasValue)
             query = query.Where(a => a.HasTachograph == dto.HasTachograph);
 
+        if (!string.IsNullOrEmpty(dto.CatalogNumber))
+            query = query.Where(a => a.CatalogNumber != null && a.CatalogNumber.Contains(dto.CatalogNumber));
+
         var prioritized = query.OrderBy(a =>
-            a.Badge == "TOP" ? 0 : a.Badge == "PREMIUM" ? 1 : a.Badge == "FEATURED" ? 2 : 3);
+            (a.Badge == "TOP"      && (a.BadgeExpiresAt == null || a.BadgeExpiresAt > DateTime.UtcNow)) ? 0 :
+            (a.Badge == "PREMIUM"  && (a.BadgeExpiresAt == null || a.BadgeExpiresAt > DateTime.UtcNow)) ? 1 :
+            (a.Badge == "FEATURED" && (a.BadgeExpiresAt == null || a.BadgeExpiresAt > DateTime.UtcNow)) ? 2 : 3);
 
         query = dto.SortBy switch
         {
@@ -352,12 +434,12 @@ public class AdvertService : IAdvertService
         };
     }
 
-    public async Task PromoteAdvertAsync(int advertId, int userId, string type, int durationDays)
+    public async Task PromoteAdvertAsync(int advertId, int userId, string type, int durationDays, bool isAdmin = false)
     {
         var advert = await _context.CarAdverts.FindAsync(advertId)
             ?? throw new KeyNotFoundException("Advert not found.");
 
-        if (advert.UserId != userId)
+        if (!isAdmin && advert.UserId != userId)
             throw new UnauthorizedAccessException("You do not own this advert.");
 
         var allowedBadges = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "TOP", "PREMIUM", "FEATURED" };
@@ -445,6 +527,8 @@ public class AdvertService : IAdvertService
             ?? throw new KeyNotFoundException("Advert not found.");
         if (advert.UserId != userId)
             throw new UnauthorizedAccessException("You do not own this advert.");
+        if (advert.IsHidden)
+            throw new InvalidOperationException("Nie można odnowić ogłoszenia ukrytego przez administratora.");
         if (advert.SoldAt != null)
             throw new InvalidOperationException("Nie można odnowić sprzedanego ogłoszenia.");
         advert.IsActive = true;

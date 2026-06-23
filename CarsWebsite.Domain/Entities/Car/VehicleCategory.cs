@@ -10,4 +10,5 @@ public class VehicleCategory
     public int SortOrder { get; set; }
 
     public ICollection<Brand> Brands { get; set; }
+    public ICollection<VehicleSubtype> Subtypes { get; set; } = new List<VehicleSubtype>();
 }

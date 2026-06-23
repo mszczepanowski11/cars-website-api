@@ -8,7 +8,7 @@ public interface IAdvertService
     Task<CarAdvertResponseDto> GetCarAdvertByIdAsync(int id, int? requestingUserId = null, bool isAdmin = false);
     Task<PagedResult<CarAdvertResponseDto>> SearchCarAdvertsAsync(SearchCarAdvertDto dto);
     Task<PagedResult<CarAdvertResponseDto>> GetUserAdvertsAsync(int userId, int page = 1, int pageSize = 20);
-    Task PromoteAdvertAsync(int advertId, int userId, string type, int durationDays);
+    Task PromoteAdvertAsync(int advertId, int userId, string type, int durationDays, bool isAdmin = false);
     Task<CarAdvertResponseDto?> GetByVinAsync(string vin);
     Task MarkAsSoldAsync(int advertId, int userId);
     Task PublishAsync(int advertId, int userId);

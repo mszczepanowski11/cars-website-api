@@ -27,7 +27,9 @@ public class CreateCarAdvertDto
     [MaxLength(5000)] public string? Description { get; set; }
     [MaxLength(100)] public string? City { get; set; }
     [MaxLength(100)] public string? Region { get; set; }
-    [MaxLength(17)] public string? Vin { get; set; }
+    [MaxLength(17)]
+    [RegularExpression(@"^[A-HJ-NPR-Z0-9]{17}$", ErrorMessage = "VIN musi mieć dokładnie 17 znaków alfanumerycznych (bez liter I, O, Q).")]
+    public string? Vin { get; set; }
     public int? DoorCount { get; set; }
     public int? SeatsCount { get; set; }
 

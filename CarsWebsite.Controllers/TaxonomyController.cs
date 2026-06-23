@@ -103,5 +103,48 @@ namespace cars_website_api.CarsWebsite.Controllers
             var categories = await _taxonomyService.GetFeatureCategoriesByContextAsync(vehicleCategoryId, brandId, modelId);
             return Ok(_mapper.Map<IEnumerable<FeatureCategoryDto>>(categories));
         }
+
+        [HttpGet("trims/generation/{generationId}")]
+        public async Task<IActionResult> GetTrimsByGeneration(int generationId)
+        {
+            var trims = await _taxonomyService.GetTrimsByGenerationAsync(generationId);
+            return Ok(trims);
+        }
+
+        [HttpGet("engines/trim/{trimId}")]
+        public async Task<IActionResult> GetEnginesByTrim(int trimId)
+        {
+            var engines = await _taxonomyService.GetEnginesByTrimAsync(trimId);
+            return Ok(engines);
+        }
+
+        [HttpGet("engines/{engineVersionId}/specs")]
+        public async Task<IActionResult> GetEngineSpecs(int engineVersionId)
+        {
+            var specs = await _taxonomyService.GetEngineSpecsAsync(engineVersionId);
+            if (specs == null) return NotFound();
+            return Ok(specs);
+        }
+
+        [HttpGet("vehicle-subtypes/category/{vehicleCategoryId}")]
+        public async Task<IActionResult> GetVehicleSubtypesByCategory(int vehicleCategoryId)
+        {
+            var subtypes = await _taxonomyService.GetVehicleSubtypesByCategoryAsync(vehicleCategoryId);
+            return Ok(subtypes);
+        }
+
+        [HttpGet("part-categories")]
+        public async Task<IActionResult> GetPartCategories()
+        {
+            var categories = await _taxonomyService.GetPartCategoriesAsync();
+            return Ok(categories);
+        }
+
+        [HttpGet("part-subcategories/category/{partCategoryId}")]
+        public async Task<IActionResult> GetPartSubcategoriesByCategory(int partCategoryId)
+        {
+            var subcategories = await _taxonomyService.GetPartSubcategoriesByCategoryAsync(partCategoryId);
+            return Ok(subcategories);
+        }
     }
 }

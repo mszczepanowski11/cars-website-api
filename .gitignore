@@ -45,6 +45,11 @@ bld/
 *.log
 .sass-cache/
 
+## Secrets — never commit local overrides with real credentials
+appsettings.*.local.json
+appsettings.Production.json
+secrets.json
+
 ## OS
 .DS_Store
 Thumbs.db

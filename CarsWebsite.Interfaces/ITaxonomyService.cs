@@ -21,4 +21,10 @@ public interface ITaxonomyService
     Task<IEnumerable<FeatureCategory>> GetFeatureCategoriesAsync();
     Task<IEnumerable<FeatureCategory>> GetFeatureCategoriesByVehicleCategoryAsync(int vehicleCategoryId);
     Task<IEnumerable<FeatureCategory>> GetFeatureCategoriesByContextAsync(int? vehicleCategoryId, int? brandId, int? modelId);
+    Task<IEnumerable<Trim>> GetTrimsByGenerationAsync(int generationId);
+    Task<IEnumerable<EngineVersion>> GetEnginesByTrimAsync(int trimId);
+    Task<EngineVersion?> GetEngineSpecsAsync(int engineVersionId);
+    Task<IEnumerable<VehicleSubtype>> GetVehicleSubtypesByCategoryAsync(int vehicleCategoryId);
+    Task<IEnumerable<PartCategory>> GetPartCategoriesAsync();
+    Task<IEnumerable<PartSubcategory>> GetPartSubcategoriesByCategoryAsync(int partCategoryId);
 }

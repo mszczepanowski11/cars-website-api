@@ -222,12 +222,20 @@ namespace cars_website_api.CarsWebsite.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task<PagedResult<AdminUserDto>> GetUsersAsync(string? search, int page, int pageSize)
+        public async Task<PagedResult<AdminUserDto>> GetUsersAsync(string? search, string? accountType, bool? isBlocked, int page, int pageSize)
         {
             pageSize = Math.Clamp(pageSize, 1, 100);
             var query = _context.Users.Include(u => u.Adverts).AsQueryable();
+
             if (!string.IsNullOrWhiteSpace(search))
-                query = query.Where(u => u.Email.Contains(search) || (u.Name + " " + u.Surname).Contains(search));
+                query = query.Where(u => u.Email.Contains(search) || u.Name.Contains(search) || u.Surname.Contains(search));
+
+            if (!string.IsNullOrWhiteSpace(accountType) && Enum.TryParse<AccountType>(accountType, true, out var at))
+                query = query.Where(u => u.AccountType == at);
+
+            if (isBlocked.HasValue)
+                query = query.Where(u => u.IsBlocked == isBlocked.Value);
+
             query = query.OrderBy(u => u.Id);
             var totalCount = await query.CountAsync();
             var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
@@ -237,8 +245,11 @@ namespace cars_website_api.CarsWebsite.Services
                 Items = items.Select(u => new AdminUserDto
                 {
                     Id = u.Id, Name = u.Name, Surname = u.Surname, Email = u.Email,
-                    PhoneNumber = u.PhoneNumber, IsAdmin = u.IsAdmin, IsBlocked = u.IsBlocked,
-                    BlockedAt = u.BlockedAt, BlockedReason = u.BlockedReason, AdvertCount = u.Adverts.Count
+                    IsAdmin = u.IsAdmin, IsBlocked = u.IsBlocked,
+                    BlockedAt = u.BlockedAt, BlockedReason = u.BlockedReason, AdvertCount = u.Adverts.Count,
+                    AccountType = u.AccountType.ToString(),
+                    CompanyName = u.CompanyName,
+                    CreatedAt = u.CreatedAt
                 }).ToList()
             };
         }

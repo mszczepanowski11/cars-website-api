@@ -114,8 +114,13 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet("users")]
-    public async Task<IActionResult> GetUsers([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-        => Ok(await _adminService.GetUsersAsync(search, page, pageSize));
+    public async Task<IActionResult> GetUsers(
+        [FromQuery] string? search,
+        [FromQuery] string? accountType,
+        [FromQuery] bool? isBlocked,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+        => Ok(await _adminService.GetUsersAsync(search, accountType, isBlocked, page, pageSize));
 
     [HttpGet("adverts")]
     public async Task<IActionResult> GetAdverts(
@@ -150,7 +155,7 @@ public class AdminController : ControllerBase
     public async Task<IActionResult> CreateFeature([FromBody] CreateFeatureDto dto)
     {
         var cat = await _db.FeatureCategories.FindAsync(dto.CategoryId);
-        if (cat == null) return BadRequest("Kategoria wyposażenia nie istnieje.");
+        if (cat == null) return BadRequest(new { message = "Kategoria wyposażenia nie istnieje." });
         var feature = new Feature { Name = dto.Name, CategoryId = dto.CategoryId };
         _db.Features.Add(feature);
         await _db.SaveChangesAsync();
@@ -207,6 +212,165 @@ public class AdminController : ControllerBase
         _db.FeatureCategories.Remove(cat);
         await _db.SaveChangesAsync();
         return NoContent();
+    }
+
+    // ── Custom category requests ──────────────────────────────────────────────
+
+    [HttpGet("custom-categories")]
+    public async Task<IActionResult> GetCustomCategories([FromQuery] string? status = null)
+    {
+        var query = _db.CustomCategoryRequests.AsQueryable();
+        if (!string.IsNullOrEmpty(status))
+            query = query.Where(r => r.Status == status);
+        var results = await query.OrderByDescending(r => r.CreatedAt).ToListAsync();
+        return Ok(results);
+    }
+
+    [HttpPut("custom-categories/{id}/approve")]
+    public async Task<IActionResult> ApproveCustomCategory(int id, [FromBody] AdminReviewCustomCategoryDto dto)
+    {
+        var request = await _db.CustomCategoryRequests.FindAsync(id);
+        if (request == null) return NotFound();
+        request.Status = "Approved";
+        request.AdminNotes = dto.Notes;
+        request.ReviewedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return Ok(request);
+    }
+
+    [HttpPut("custom-categories/{id}/reject")]
+    public async Task<IActionResult> RejectCustomCategory(int id, [FromBody] AdminReviewCustomCategoryDto dto)
+    {
+        var request = await _db.CustomCategoryRequests.FindAsync(id);
+        if (request == null) return NotFound();
+        request.Status = "Rejected";
+        request.AdminNotes = dto.Notes;
+        request.ReviewedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return Ok(request);
+    }
+
+    // ── DB cleanup endpoints ───────────────────────────────────────────────────
+
+    [HttpGet("suspicious-records")]
+    public async Task<IActionResult> GetSuspiciousRecords()
+    {
+        var testPatterns = new[] { "test", "asdf", "qwer", "aaaa", "bbbb", "xxx", "sample", "lorem" };
+        var suspicious = await _db.CarAdverts
+            .Where(a => testPatterns.Any(p => a.Title != null && a.Title.ToLower().Contains(p)))
+            .Select(a => new { a.Id, a.Title, a.CreatedAt })
+            .OrderByDescending(a => a.CreatedAt)
+            .Take(100)
+            .ToListAsync();
+        return Ok(suspicious);
+    }
+
+    [HttpDelete("suspicious-records/{id}")]
+    public async Task<IActionResult> DeleteSuspiciousRecord(int id)
+    {
+        var advert = await _db.CarAdverts.FindAsync(id);
+        if (advert == null) return NotFound();
+        _db.CarAdverts.Remove(advert);
+        await _db.SaveChangesAsync();
+        return Ok(new { message = "Deleted", id });
+    }
+
+    // ── Quality report ────────────────────────────────────────────────────────
+
+    [HttpGet("quality-report")]
+    public async Task<IActionResult> GetQualityReport()
+    {
+        var brandsWithoutModels = await _db.Brands
+            .Where(b => !b.Models.Any())
+            .Select(b => new { b.Id, b.Name })
+            .OrderBy(b => b.Name)
+            .ToListAsync();
+
+        var modelsWithoutGenerations = await _db.Models
+            .Include(m => m.Brand)
+            .Where(m => !m.Generations.Any())
+            .Select(m => new { m.Id, m.Name, BrandName = m.Brand.Name })
+            .OrderBy(m => m.Brand.Name).ThenBy(m => m.Name)
+            .ToListAsync();
+
+        var brandsWithoutAdverts = await _db.Brands
+            .Where(b => !_db.CarAdverts.Any(ca => ca.BrandId == b.Id))
+            .Select(b => new { b.Id, b.Name })
+            .OrderBy(b => b.Name)
+            .ToListAsync();
+
+        var modelsWithoutAdverts = await _db.Models
+            .Include(m => m.Brand)
+            .Where(m => !_db.CarAdverts.Any(ca => ca.ModelId == m.Id))
+            .Select(m => new { m.Id, m.Name, BrandName = m.Brand.Name })
+            .OrderBy(m => m.Brand.Name).ThenBy(m => m.Name)
+            .ToListAsync();
+
+        var featureCategoriesEmpty = await _db.FeatureCategories
+            .Where(fc => !fc.Features.Any())
+            .Select(fc => new { fc.Id, fc.Name, fc.VehicleCategoryId })
+            .OrderBy(fc => fc.Name)
+            .ToListAsync();
+
+        var generationsEmpty = await _db.Generations
+            .Include(g => g.Model).ThenInclude(m => m.Brand)
+            .Where(g => !g.EngineVersions.Any())
+            .Select(g => new { g.Id, g.Name, ModelName = g.Model.Name, BrandName = g.Model.Brand.Name, g.YearFrom, g.YearTo })
+            .OrderBy(g => g.BrandName).ThenBy(g => g.ModelName).ThenBy(g => g.YearFrom)
+            .ToListAsync();
+
+        var duplicateBrands = await _db.Brands
+            .GroupBy(b => b.Name.ToLower())
+            .Where(g => g.Count() > 1)
+            .Select(g => new { Name = g.Key, Count = g.Count(), Ids = g.Select(b => b.Id).ToList() })
+            .ToListAsync();
+
+        var duplicateModels = await _db.Models
+            .GroupBy(m => new { m.BrandId, NameLower = m.Name.ToLower() })
+            .Where(g => g.Count() > 1)
+            .Select(g => new { g.Key.BrandId, NameLower = g.Key.NameLower, Count = g.Count(), Ids = g.Select(m => m.Id).ToList() })
+            .ToListAsync();
+
+        var advertsWithBlankTitle = await _db.Adverts
+            .Where(a => string.IsNullOrEmpty(a.Title))
+            .Select(a => new { a.Id, a.Title, a.CreatedAt })
+            .OrderByDescending(a => a.CreatedAt)
+            .Take(50)
+            .ToListAsync();
+
+        var advertsNoImages = await _db.CarAdverts
+            .Where(ca => ca.IsActive && !ca.IsHidden && !ca.Images.Any())
+            .Select(ca => new { ca.Id, ca.Title, ca.CreatedAt })
+            .OrderByDescending(ca => ca.CreatedAt)
+            .Take(50)
+            .ToListAsync();
+
+        return Ok(new
+        {
+            summary = new
+            {
+                brandsWithoutModelsCount      = brandsWithoutModels.Count,
+                modelsWithoutGenerationsCount = modelsWithoutGenerations.Count,
+                brandsWithoutAdvertsCount     = brandsWithoutAdverts.Count,
+                modelsWithoutAdvertsCount     = modelsWithoutAdverts.Count,
+                emptyFeatureCategoriesCount   = featureCategoriesEmpty.Count,
+                emptyGenerationsCount         = generationsEmpty.Count,
+                duplicateBrandsCount          = duplicateBrands.Count,
+                duplicateModelsCount          = duplicateModels.Count,
+                advertsBlankTitleCount        = advertsWithBlankTitle.Count,
+                advertsNoImagesCount          = advertsNoImages.Count,
+            },
+            brandsWithoutModels,
+            modelsWithoutGenerations,
+            brandsWithoutAdverts,
+            modelsWithoutAdverts,
+            featureCategoriesEmpty,
+            generationsEmpty,
+            duplicateBrands,
+            duplicateModels,
+            advertsWithBlankTitle,
+            advertsNoImages,
+        });
     }
 
     // ── Brand CRUD ─────────────────────────────────────────────────────────────

@@ -44,6 +44,13 @@ public class ReviewService : IReviewService
     public async Task<bool> CanReviewAsync(int buyerId, int sellerId)
     {
         if (buyerId == sellerId) return false;
+
+        // Sprawdź czy kupujący miał konwersację ze sprzedającym
+        var hadContact = await _context.Conversations
+            .AnyAsync(c => (c.BuyerId == buyerId && c.SellerId == sellerId) ||
+                           (c.BuyerId == sellerId && c.SellerId == buyerId));
+        if (!hadContact) return false;
+
         return !await _context.Reviews.AnyAsync(r => r.BuyerId == buyerId && r.SellerId == sellerId);
     }
 

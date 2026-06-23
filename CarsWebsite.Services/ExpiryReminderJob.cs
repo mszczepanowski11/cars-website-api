@@ -22,8 +22,8 @@ public class ExpiryReminderJob : BackgroundService
             var today = DateOnly.FromDateTime(now);
             if (now.Hour == 8 && _lastRunDate != today)
             {
-                _lastRunDate = today;
                 await RunAsync(today, stoppingToken);
+                _lastRunDate = today;
             }
             await Task.Delay(TimeSpan.FromMinutes(30), stoppingToken);
         }

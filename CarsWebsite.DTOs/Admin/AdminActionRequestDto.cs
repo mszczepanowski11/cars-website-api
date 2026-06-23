@@ -14,4 +14,9 @@
     {
         public string? Note { get; set; }
     }
+
+    public class AdminReviewCustomCategoryDto
+    {
+        public string? Notes { get; set; }
+    }
 }

@@ -73,6 +73,10 @@ public class CarAdvert : Advert
     public string? Badge { get; set; }
     public DateTime? BadgeExpiresAt { get; set; }
 
+    // FeaturedUntil mirrors BadgeExpiresAt specifically for the "FEATURED" badge type
+    // and provides a dedicated column consistent with the Event.FeaturedUntil pattern.
+    public DateTime? FeaturedUntil { get; set; }
+
     // Commercial vehicle / truck / trailer specific
     public int? AxleCount { get; set; }
     public int? Payload { get; set; }
@@ -86,6 +90,19 @@ public class CarAdvert : Advert
     // Parts specific
     public string? CatalogNumber { get; set; }
     public string? Compatibility { get; set; }
+
+    // Extended taxonomy FKs
+    public int? TrimId { get; set; }
+    public Trim? Trim { get; set; }
+    public int? VehicleSubtypeId { get; set; }
+    public VehicleSubtype? VehicleSubtype { get; set; }
+    public int? PartCategoryId { get; set; }
+    public PartCategory? PartCategory { get; set; }
+    public int? PartSubcategoryId { get; set; }
+    public PartSubcategory? PartSubcategory { get; set; }
+    public string? OemNumber { get; set; }
+    public string? ManufacturerPartNumber { get; set; }
+    public string? PartManufacturer { get; set; }
 
     public ICollection<AdvertFeature> AdvertFeatures { get; set; } = new List<AdvertFeature>();
 }

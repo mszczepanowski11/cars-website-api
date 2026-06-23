@@ -211,6 +211,15 @@ public class UserService : IUserService
         user.PasswordResetToken = null;
         user.PasswordResetTokenExpires = null;
 
+        // Soft-delete all adverts belonging to this user (cascade when user self-deletes account)
+        var userAdverts = await _context.CarAdverts.Where(a => a.UserId == userId).ToListAsync();
+        foreach (var advert in userAdverts)
+        {
+            advert.IsActive = false;
+            advert.IsHidden = true;
+            advert.UpdatedAt = DateTime.UtcNow;
+        }
+
         var tokens = await _context.RefreshTokens
             .Where(t => t.UserId == userId && !t.IsRevoked)
             .ToListAsync();

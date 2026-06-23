@@ -38,6 +38,10 @@ namespace CarsWebsite
         // Taxonomy extensions
         public DbSet<DriveType> DriveTypes { get; set; }
         public DbSet<CarColor> CarColors { get; set; }
+        public DbSet<Trim> Trims { get; set; }
+        public DbSet<VehicleSubtype> VehicleSubtypes { get; set; }
+        public DbSet<PartCategory> PartCategories { get; set; }
+        public DbSet<PartSubcategory> PartSubcategories { get; set; }
 
         // Social / stats
         public DbSet<AdvertView> AdvertViews { get; set; }
@@ -57,6 +61,9 @@ namespace CarsWebsite
 
         // Newsletter
         public DbSet<NewsletterSubscriber> NewsletterSubscribers { get; set; }
+
+        // Custom category requests
+        public DbSet<CustomCategoryRequest> CustomCategoryRequests { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -257,6 +264,61 @@ namespace CarsWebsite
                 .OnDelete(DeleteBehavior.SetNull)
                 .IsRequired(false);
 
+            // Trim
+            modelBuilder.Entity<Trim>()
+                .HasOne(t => t.Generation)
+                .WithMany(g => g.Trims)
+                .HasForeignKey(t => t.GenerationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // EngineVersion → Trim (optional)
+            modelBuilder.Entity<EngineVersion>()
+                .HasOne(e => e.Trim)
+                .WithMany(t => t.EngineVersions)
+                .HasForeignKey(e => e.TrimId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
+            // VehicleSubtype
+            modelBuilder.Entity<VehicleSubtype>()
+                .HasOne(vs => vs.VehicleCategory)
+                .WithMany(vc => vc.Subtypes)
+                .HasForeignKey(vs => vs.VehicleCategoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // PartSubcategory
+            modelBuilder.Entity<PartSubcategory>()
+                .HasOne(ps => ps.PartCategory)
+                .WithMany(pc => pc.Subcategories)
+                .HasForeignKey(ps => ps.PartCategoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // CarAdvert nullable FKs for new taxonomy
+            modelBuilder.Entity<CarAdvert>()
+                .HasOne(a => a.Trim)
+                .WithMany()
+                .HasForeignKey(a => a.TrimId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+            modelBuilder.Entity<CarAdvert>()
+                .HasOne(a => a.VehicleSubtype)
+                .WithMany()
+                .HasForeignKey(a => a.VehicleSubtypeId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+            modelBuilder.Entity<CarAdvert>()
+                .HasOne(a => a.PartCategory)
+                .WithMany()
+                .HasForeignKey(a => a.PartCategoryId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+            modelBuilder.Entity<CarAdvert>()
+                .HasOne(a => a.PartSubcategory)
+                .WithMany()
+                .HasForeignKey(a => a.PartSubcategoryId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
             // Performance indexes for common query patterns
             modelBuilder.Entity<Advert>()
                 .HasIndex(a => new { a.IsActive, a.IsHidden });
@@ -282,6 +344,9 @@ namespace CarsWebsite
 
             modelBuilder.Entity<NewsletterSubscriber>().ToTable("newslettersubscribers").HasKey(n => n.Id);
             modelBuilder.Entity<NewsletterSubscriber>().HasIndex(n => n.Email).IsUnique();
+
+            modelBuilder.Entity<CustomCategoryRequest>().ToTable("customcategoryrequests").HasKey(r => r.Id);
+            modelBuilder.Entity<CustomCategoryRequest>().HasIndex(r => r.Status);
 
             // Additional performance indexes (SR-9)
             modelBuilder.Entity<CarAdvert>().HasIndex(a => a.Price);
