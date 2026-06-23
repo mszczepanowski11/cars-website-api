@@ -60,7 +60,7 @@ internal class Program
         // B-02: Validate Imoje payment credentials at startup.
         // Read from environment variables (preferred in production) or appsettings fallback.
         var imojeMerchantId  = Environment.GetEnvironmentVariable("IMOJE_MERCHANT_ID")     ?? builder.Configuration["Imoje:MerchantId"]    ?? "";
-        var imojeApiKey      = Environment.GetEnvironmentVariable("IMOJE_API_KEY")          ?? builder.Configuration["Imoje:ApiKey"]        ?? "";
+        var imojeApiKey      = Environment.GetEnvironmentVariable("IMOJE_API_KEY")          ?? builder.Configuration["Imoje:ApiKey"]        ?? builder.Configuration["Imoje:ServiceKey"] ?? "";
         var imojeWebhookSec  = Environment.GetEnvironmentVariable("IMOJE_WEBHOOK_SECRET")   ?? builder.Configuration["Imoje:WebhookSecret"] ?? "";
         var imojeServiceId   = Environment.GetEnvironmentVariable("IMOJE_SERVICE_ID")       ?? builder.Configuration["Imoje:ServiceId"]     ?? "";
         var missingImoje = new List<string>();
