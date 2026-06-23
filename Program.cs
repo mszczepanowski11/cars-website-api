@@ -1767,5 +1767,7 @@ internal class Program
 
         ModelSeeder.SeedModelsGenerationsEngines(db, logger);
         VehicleDataSeeder.SeedVehicleData(db, logger);
+        VehicleDataSeeder.SeedTrimData(db, logger);
+        VehicleDataSeeder.SeedMotorcycleData(db, logger);
     }
 }
