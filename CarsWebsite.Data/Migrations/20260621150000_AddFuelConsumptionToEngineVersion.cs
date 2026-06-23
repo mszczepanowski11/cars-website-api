@@ -10,37 +10,23 @@ namespace cars_website_api.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<decimal>(
-                name: "FuelConsumptionCity",
-                table: "engineversions",
-                type: "decimal(5,2)",
-                precision: 5,
-                scale: 2,
-                nullable: true);
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "FuelConsumptionHighway",
-                table: "engineversions",
-                type: "decimal(5,2)",
-                precision: 5,
-                scale: 2,
-                nullable: true);
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "FuelConsumptionCombined",
-                table: "engineversions",
-                type: "decimal(5,2)",
-                precision: 5,
-                scale: 2,
-                nullable: true);
+            migrationBuilder.Sql(@"
+                ALTER TABLE `engineversions`
+                    ADD COLUMN IF NOT EXISTS `FuelConsumptionCity`     decimal(5,2) NULL,
+                    ADD COLUMN IF NOT EXISTS `FuelConsumptionHighway`  decimal(5,2) NULL,
+                    ADD COLUMN IF NOT EXISTS `FuelConsumptionCombined` decimal(5,2) NULL;
+            ");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(name: "FuelConsumptionCity", table: "engineversions");
-            migrationBuilder.DropColumn(name: "FuelConsumptionHighway", table: "engineversions");
-            migrationBuilder.DropColumn(name: "FuelConsumptionCombined", table: "engineversions");
+            migrationBuilder.Sql(@"
+                ALTER TABLE `engineversions`
+                    DROP COLUMN IF EXISTS `FuelConsumptionCity`,
+                    DROP COLUMN IF EXISTS `FuelConsumptionHighway`,
+                    DROP COLUMN IF EXISTS `FuelConsumptionCombined`;
+            ");
         }
     }
 }
