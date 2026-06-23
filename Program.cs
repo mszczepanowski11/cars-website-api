@@ -228,6 +228,7 @@ internal class Program
                         "20260621150000_AddFuelConsumptionToEngineVersion",
                         "20260622100000_AddMissingIndexes2",
                         "20260622120000_AddRefreshTokenRevokedAt",
+                        "20260623100000_AddVehicleCategoryIdToFeatureCategory",
                     };
                     foreach (var m in allMigrations.Where(m => !newMigrations.Contains(m)))
                     {
@@ -267,6 +268,19 @@ internal class Program
             catch (Exception ex)
             {
                 logger.LogWarning("[Schema] Could not ensure FuelConsumption columns: {Msg}", ex.Message);
+            }
+
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"
+                    ALTER TABLE `FeatureCategories`
+                    ADD COLUMN IF NOT EXISTS `VehicleCategoryId` int NULL
+                ");
+                logger.LogInformation("[Schema] VehicleCategoryId column ensured on FeatureCategories");
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning("[Schema] Could not ensure VehicleCategoryId on FeatureCategories: {Msg}", ex.Message);
             }
 
             // Rename PascalCase tables to lowercase if they were created by a
