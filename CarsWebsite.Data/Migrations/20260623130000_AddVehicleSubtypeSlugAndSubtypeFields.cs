@@ -8,52 +8,32 @@ namespace cars_website_api.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "Slug",
-                table: "vehiclesubtypes",
-                type: "varchar(100)",
-                maxLength: 100,
-                nullable: true);
+            migrationBuilder.Sql(
+                "ALTER TABLE `vehiclesubtypes` ADD COLUMN IF NOT EXISTS `Slug` varchar(100) NULL;");
 
-            migrationBuilder.AddColumn<int>(
-                name: "OperatingWeightKg",
-                table: "caradverts",
-                type: "int",
-                nullable: true);
-
-            migrationBuilder.AddColumn<int>(
-                name: "WorkingWidthCm",
-                table: "caradverts",
-                type: "int",
-                nullable: true);
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "MaxDiggingDepthM",
-                table: "caradverts",
-                type: "decimal(5,2)",
-                nullable: true);
-
-            migrationBuilder.AddColumn<int>(
-                name: "BucketCapacityL",
-                table: "caradverts",
-                type: "int",
-                nullable: true);
-
-            migrationBuilder.AddColumn<int>(
-                name: "TankCapacityL",
-                table: "caradverts",
-                type: "int",
-                nullable: true);
+            migrationBuilder.Sql(@"
+                ALTER TABLE `caradverts`
+                    ADD COLUMN IF NOT EXISTS `OperatingWeightKg`  int NULL,
+                    ADD COLUMN IF NOT EXISTS `WorkingWidthCm`     int NULL,
+                    ADD COLUMN IF NOT EXISTS `MaxDiggingDepthM`   decimal(5,2) NULL,
+                    ADD COLUMN IF NOT EXISTS `BucketCapacityL`    int NULL,
+                    ADD COLUMN IF NOT EXISTS `TankCapacityL`      int NULL;
+            ");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(name: "Slug", table: "vehiclesubtypes");
-            migrationBuilder.DropColumn(name: "OperatingWeightKg", table: "caradverts");
-            migrationBuilder.DropColumn(name: "WorkingWidthCm", table: "caradverts");
-            migrationBuilder.DropColumn(name: "MaxDiggingDepthM", table: "caradverts");
-            migrationBuilder.DropColumn(name: "BucketCapacityL", table: "caradverts");
-            migrationBuilder.DropColumn(name: "TankCapacityL", table: "caradverts");
+            migrationBuilder.Sql(
+                "ALTER TABLE `vehiclesubtypes` DROP COLUMN IF EXISTS `Slug`;");
+
+            migrationBuilder.Sql(@"
+                ALTER TABLE `caradverts`
+                    DROP COLUMN IF EXISTS `OperatingWeightKg`,
+                    DROP COLUMN IF EXISTS `WorkingWidthCm`,
+                    DROP COLUMN IF EXISTS `MaxDiggingDepthM`,
+                    DROP COLUMN IF EXISTS `BucketCapacityL`,
+                    DROP COLUMN IF EXISTS `TankCapacityL`;
+            ");
         }
     }
 }

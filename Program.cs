@@ -361,6 +361,11 @@ internal class Program
                 logger.LogWarning("[Schema] Could not ensure CarAdverts extra columns: {Msg}", ex.Message);
             }
 
+            // RefreshToken.RevokedAt — safety net in case migration 20260622120000 hasn't run yet
+            try {
+                db.Database.ExecuteSqlRaw("ALTER TABLE `refreshtokens` ADD COLUMN IF NOT EXISTS `RevokedAt` datetime(6) NULL");
+            } catch (Exception ex) { logger.LogWarning("ALTER refreshtokens.RevokedAt skipped: {Message}", ex.Message); }
+
             // VehicleSubtype slug
             try {
                 db.Database.ExecuteSqlRaw("ALTER TABLE `vehiclesubtypes` ADD COLUMN IF NOT EXISTS `Slug` varchar(100) NULL");
