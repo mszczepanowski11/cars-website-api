@@ -999,7 +999,14 @@ internal class Program
                 logger.LogWarning("[Equipment] Equipment expansion skipped: {Msg}", ex.Message);
             }
 
-            SeedDataIfEmpty(db, logger);
+            try
+            {
+                SeedDataIfEmpty(db, logger);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "[Seeder] SeedDataIfEmpty failed — app will start without complete seed data: {Msg}", ex.Message);
+            }
 
             // Startup config diagnostics
             var imojeMid    = Environment.GetEnvironmentVariable("IMOJE_MERCHANT_ID") ?? "";
