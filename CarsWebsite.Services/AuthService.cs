@@ -103,12 +103,12 @@ public class AuthService : IAuthService
 
         user.LastLoginAt = DateTime.UtcNow;
 
-        // Clean up expired/revoked tokens for this user to prevent unbounded table growth
-        var staleTokens = await _context.RefreshTokens
+        // Clean up expired/revoked tokens for this user to prevent unbounded table growth.
+        // ExecuteDeleteAsync generates a direct DELETE without SELECTing the full entity,
+        // so it is resilient to missing nullable columns (e.g. RevokedAt during migration).
+        await _context.RefreshTokens
             .Where(t => t.UserId == user.Id && (t.IsRevoked || t.ExpiresAt <= DateTime.UtcNow))
-            .ToListAsync();
-        if (staleTokens.Count > 0)
-            _context.RefreshTokens.RemoveRange(staleTokens);
+            .ExecuteDeleteAsync();
 
         await _context.SaveChangesAsync();
         return await IssueTokenPairAsync(user);
