@@ -1164,6 +1164,18 @@ namespace cars_website_api.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
 
+                    b.Property<decimal?>("FuelConsumptionCity")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<decimal?>("FuelConsumptionCombined")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<decimal?>("FuelConsumptionHighway")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
                     b.Property<int>("FuelTypeId")
                         .HasColumnType("int");
 

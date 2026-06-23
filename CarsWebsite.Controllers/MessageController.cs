@@ -72,6 +72,10 @@ public class MessageController : ControllerBase
             var message = await _messageService.SendMessageAsync(conversationId, userId, dto.Content);
             return Ok(message);
         }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
         catch (UnauthorizedAccessException)
         {
             return Forbid();

@@ -537,4 +537,83 @@ public class AdvertService : IAdvertService
         advert.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
     }
+
+    public async Task<List<CarAdvertResponseDto>> GetMostViewedAsync(int count = 8)
+    {
+        var topAdvertIds = await _context.AdvertViews
+            .GroupBy(v => v.AdvertId)
+            .Select(g => new { AdvertId = g.Key, ViewCount = g.Count() })
+            .OrderByDescending(x => x.ViewCount)
+            .Take(count * 3)
+            .ToListAsync();
+
+        var advertIds = topAdvertIds.Select(x => x.AdvertId).ToList();
+
+        var adverts = await _context.CarAdverts
+            .AsNoTracking()
+            .Include(a => a.Brand)
+            .Include(a => a.Model)
+            .Include(a => a.Generation)
+            .Include(a => a.EngineVersion)
+            .Include(a => a.FuelType)
+            .Include(a => a.Gearbox)
+            .Include(a => a.BodyType)
+            .Include(a => a.Images)
+            .Include(a => a.AdvertFeatures)
+                .ThenInclude(af => af.Feature)
+            .Where(a => advertIds.Contains(a.Id) && a.IsActive && !a.IsHidden && (a.ExpiresAt == null || a.ExpiresAt > DateTime.UtcNow))
+            .ToListAsync();
+
+        var viewCountMap = topAdvertIds.ToDictionary(x => x.AdvertId, x => x.ViewCount);
+
+        var ordered = adverts
+            .OrderByDescending(a => viewCountMap.GetValueOrDefault(a.Id, 0))
+            .Take(count)
+            .ToList();
+
+        var mapped = _mapper.Map<List<CarAdvertResponseDto>>(ordered);
+        for (int i = 0; i < mapped.Count; i++)
+            mapped[i].ViewCount = viewCountMap.GetValueOrDefault(ordered[i].Id, 0);
+
+        return mapped;
+    }
+
+    public async Task<List<CarAdvertResponseDto>> GetPremiumCollectionAsync(int count = 8)
+    {
+        var premiumBrands = new[] { "Ferrari", "Lamborghini", "Porsche", "Bentley", "Rolls-Royce", "Aston Martin", "McLaren" };
+
+        var adverts = await _context.CarAdverts
+            .AsNoTracking()
+            .Include(a => a.Brand)
+            .Include(a => a.Model)
+            .Include(a => a.Generation)
+            .Include(a => a.EngineVersion)
+            .Include(a => a.FuelType)
+            .Include(a => a.Gearbox)
+            .Include(a => a.BodyType)
+            .Include(a => a.Images)
+            .Include(a => a.AdvertFeatures)
+                .ThenInclude(af => af.Feature)
+            .Where(a => a.IsActive && !a.IsHidden && (a.ExpiresAt == null || a.ExpiresAt > DateTime.UtcNow)
+                && (a.Brand != null && premiumBrands.Contains(a.Brand.Name) || a.Badge == "PREMIUM"))
+            .OrderByDescending(a => a.CreatedAt)
+            .Take(count)
+            .ToListAsync();
+
+        return _mapper.Map<List<CarAdvertResponseDto>>(adverts);
+    }
+
+    public async Task RecordViewAsync(int advertId, string? ipAddress)
+    {
+        var exists = await _context.CarAdverts.AnyAsync(a => a.Id == advertId && a.IsActive);
+        if (!exists) return;
+
+        _context.AdvertViews.Add(new cars_website_api.CarsWebsite.Domain.Entities.AdvertView
+        {
+            AdvertId = advertId,
+            IpAddress = ipAddress,
+            ViewedAt = DateTime.UtcNow
+        });
+        await _context.SaveChangesAsync();
+    }
 }

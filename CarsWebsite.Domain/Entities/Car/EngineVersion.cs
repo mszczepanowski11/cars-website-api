@@ -10,6 +10,9 @@ public class EngineVersion
     public int? PowerHP { get; set; }
     public int? PowerKW { get; set; }
     public int? Displacement { get; set; }
+    public decimal? FuelConsumptionCity { get; set; }
+    public decimal? FuelConsumptionHighway { get; set; }
+    public decimal? FuelConsumptionCombined { get; set; }
 
     public int? TrimId { get; set; }
     public Trim? Trim { get; set; }

@@ -15,6 +15,9 @@ public interface IAdvertService
     Task<(int activeCount, int yearCount)> GetPersonalAdCountsAsync(int userId);
     Task DeactivateAsync(int advertId, int userId);
     Task RenewAsync(int advertId, int userId);
+    Task<List<CarAdvertResponseDto>> GetMostViewedAsync(int count = 8);
+    Task<List<CarAdvertResponseDto>> GetPremiumCollectionAsync(int count = 8);
+    Task RecordViewAsync(int advertId, string? ipAddress);
 }
 
 public class PagedResult<T>

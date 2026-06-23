@@ -293,4 +293,16 @@ public class TaxonomyService : ITaxonomyService
                 .ToListAsync();
         }) ?? [];
     }
+
+    public async Task<IEnumerable<FeatureCategory>> GetFeatureCategoriesByContextAsync(int? vehicleCategoryId, int? brandId, int? modelId)
+    {
+        return await _context.FeatureCategories
+            .Include(fc => fc.Features)
+            .Where(fc =>
+                (fc.VehicleCategoryId == null || fc.VehicleCategoryId == vehicleCategoryId) &&
+                (fc.BrandId == null || fc.BrandId == brandId) &&
+                (fc.ModelId == null || fc.ModelId == modelId))
+            .OrderBy(fc => fc.Name)
+            .ToListAsync();
+    }
 }
