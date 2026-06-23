@@ -394,6 +394,29 @@ internal class Program
                 db.Database.ExecuteSqlRaw("ALTER TABLE `refreshtokens` ADD COLUMN IF NOT EXISTS `RevokedAt` datetime(6) NULL");
             } catch (Exception ex) { logger.LogWarning("ALTER refreshtokens.RevokedAt skipped: {Message}", ex.Message); }
 
+            // CarAdvert taxonomy FK columns — added in migration 20260623100000 but that migration
+            // may not have run if an earlier migration in the chain failed first (e.g. 20260621120000).
+            // Without these columns every EF query on CarAdverts throws "Unknown column 'TrimId'".
+            try {
+                db.Database.ExecuteSqlRaw(@"ALTER TABLE `caradverts`
+                    ADD COLUMN IF NOT EXISTS `TrimId` int NULL,
+                    ADD COLUMN IF NOT EXISTS `VehicleSubtypeId` int NULL,
+                    ADD COLUMN IF NOT EXISTS `PartCategoryId` int NULL,
+                    ADD COLUMN IF NOT EXISTS `PartSubcategoryId` int NULL,
+                    ADD COLUMN IF NOT EXISTS `OemNumber` varchar(100) NULL,
+                    ADD COLUMN IF NOT EXISTS `ManufacturerPartNumber` varchar(100) NULL,
+                    ADD COLUMN IF NOT EXISTS `PartManufacturer` varchar(100) NULL");
+                logger.LogInformation("[Schema] CarAdvert taxonomy columns ensured");
+            } catch (Exception ex) { logger.LogWarning("ALTER caradverts taxonomy columns skipped: {Message}", ex.Message); }
+
+            // AdvertViews.IpAddress — column was renamed from IpHash to IpAddress in the entity
+            // but no migration was created. CHANGE COLUMN renames the existing IpHash column;
+            // the ADD COLUMN IF NOT EXISTS below is a fallback for DBs that already have IpAddress.
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `advertviews` CHANGE COLUMN `IpHash` `IpAddress` longtext NULL"); }
+            catch (Exception ex) { logger.LogDebug("RENAME advertviews.IpHash→IpAddress skipped: {Message}", ex.Message); }
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `advertviews` ADD COLUMN IF NOT EXISTS `IpAddress` longtext NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN advertviews.IpAddress skipped: {Message}", ex.Message); }
+
             // Rename PascalCase tables to lowercase if they were created by a
             // previous deployment before we standardised on lowercase names.
             var renameSql = new[]
@@ -1042,6 +1065,12 @@ internal class Program
 
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `FeatureCategories` ADD CONSTRAINT `FK_FeatureCategories_VehicleCategories_VehicleCategoryId` FOREIGN KEY (`VehicleCategoryId`) REFERENCES `VehicleCategories`(`Id`) ON DELETE SET NULL"); }
             catch (Exception ex) { logger.LogDebug("FK FeatureCategories.VehicleCategoryId skipped: {Message}", ex.Message); }
+
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `FeatureCategories` ADD CONSTRAINT `FK_FeatureCategories_Brands_BrandId` FOREIGN KEY (`BrandId`) REFERENCES `Brands`(`Id`) ON DELETE SET NULL"); }
+            catch (Exception ex) { logger.LogDebug("FK FeatureCategories.BrandId skipped: {Message}", ex.Message); }
+
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `FeatureCategories` ADD CONSTRAINT `FK_FeatureCategories_Models_ModelId` FOREIGN KEY (`ModelId`) REFERENCES `Models`(`Id`) ON DELETE SET NULL"); }
+            catch (Exception ex) { logger.LogDebug("FK FeatureCategories.ModelId skipped: {Message}", ex.Message); }
 
             try
             {

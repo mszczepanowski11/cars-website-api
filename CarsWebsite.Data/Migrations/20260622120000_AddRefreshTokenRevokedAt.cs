@@ -8,18 +8,15 @@ namespace cars_website_api.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<DateTime>(
-                name: "RevokedAt",
-                table: "refreshtokens",
-                type: "datetime(6)",
-                nullable: true);
+            // Use raw SQL with IF NOT EXISTS — migrationBuilder.AddColumn() is not idempotent
+            // and fails with "Duplicate column name" if the column already exists (Program.cs guard
+            // or a previous partial run may have added it).
+            migrationBuilder.Sql("ALTER TABLE `refreshtokens` ADD COLUMN IF NOT EXISTS `RevokedAt` datetime(6) NULL");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "RevokedAt",
-                table: "refreshtokens");
+            migrationBuilder.Sql("ALTER TABLE `refreshtokens` DROP COLUMN IF EXISTS `RevokedAt`");
         }
     }
 }

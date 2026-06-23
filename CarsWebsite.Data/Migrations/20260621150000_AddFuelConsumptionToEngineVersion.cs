@@ -10,37 +10,19 @@ namespace cars_website_api.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<decimal>(
-                name: "FuelConsumptionCity",
-                table: "EngineVersions",
-                type: "decimal(5,2)",
-                precision: 5,
-                scale: 2,
-                nullable: true);
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "FuelConsumptionHighway",
-                table: "EngineVersions",
-                type: "decimal(5,2)",
-                precision: 5,
-                scale: 2,
-                nullable: true);
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "FuelConsumptionCombined",
-                table: "EngineVersions",
-                type: "decimal(5,2)",
-                precision: 5,
-                scale: 2,
-                nullable: true);
+            // Use raw SQL with IF NOT EXISTS — migrationBuilder.AddColumn() is not idempotent
+            // and fails with "Duplicate column name" if EnsureCreated already created the columns.
+            migrationBuilder.Sql("ALTER TABLE `engineversions` ADD COLUMN IF NOT EXISTS `FuelConsumptionCity` decimal(5,2) NULL");
+            migrationBuilder.Sql("ALTER TABLE `engineversions` ADD COLUMN IF NOT EXISTS `FuelConsumptionHighway` decimal(5,2) NULL");
+            migrationBuilder.Sql("ALTER TABLE `engineversions` ADD COLUMN IF NOT EXISTS `FuelConsumptionCombined` decimal(5,2) NULL");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(name: "FuelConsumptionCity", table: "EngineVersions");
-            migrationBuilder.DropColumn(name: "FuelConsumptionHighway", table: "EngineVersions");
-            migrationBuilder.DropColumn(name: "FuelConsumptionCombined", table: "EngineVersions");
+            migrationBuilder.Sql("ALTER TABLE `engineversions` DROP COLUMN IF EXISTS `FuelConsumptionCity`");
+            migrationBuilder.Sql("ALTER TABLE `engineversions` DROP COLUMN IF EXISTS `FuelConsumptionHighway`");
+            migrationBuilder.Sql("ALTER TABLE `engineversions` DROP COLUMN IF EXISTS `FuelConsumptionCombined`");
         }
     }
 }
