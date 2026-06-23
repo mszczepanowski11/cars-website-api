@@ -17,17 +17,25 @@ public class EmailService : IEmailService
     public async Task SendAsync(string to, string subject, string htmlBody)
     {
         var section = _config.GetSection("Smtp");
-        var host = section["Host"];
-        if (string.IsNullOrEmpty(host))
+        var rawHost = (section["Host"] ?? "").Trim();
+        if (string.IsNullOrEmpty(rawHost))
         {
             _logger.LogWarning("SMTP nie skonfigurowany – pominięto e-mail do {To}", to);
             return;
         }
 
+        // Strip accidentally included protocol prefix (e.g. "smtp://smtp.host.com")
+        var host = rawHost.Contains("://") ? rawHost.Split("://", 2)[1].TrimEnd('/') : rawHost;
+        // Strip accidentally included port in host (e.g. "smtp.host.com:587")
+        if (!host.StartsWith("[") && host.Contains(':'))
+            host = host.Split(':')[0];
+
         var port = int.TryParse(section["Port"], out var p) ? p : 587;
-        var from = section["From"] ?? "powiadomienia@carizo.pl";
+        var from = (section["From"] ?? "powiadomienia@carizo.pl").Trim();
         var user = section["User"];
         var password = section["Password"];
+
+        _logger.LogInformation("[Email] Sending to {To} via {Host}:{Port}", to, host, port);
 
         try
         {
@@ -43,6 +51,7 @@ public class EmailService : IEmailService
                 await client.AuthenticateAsync(user, password);
             await client.SendAsync(message);
             await client.DisconnectAsync(true);
+            _logger.LogInformation("[Email] Sent successfully to {To}", to);
         }
         catch (Exception ex)
         {
