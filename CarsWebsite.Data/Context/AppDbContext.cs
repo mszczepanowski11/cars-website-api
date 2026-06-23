@@ -38,6 +38,10 @@ namespace CarsWebsite
         // Taxonomy extensions
         public DbSet<DriveType> DriveTypes { get; set; }
         public DbSet<CarColor> CarColors { get; set; }
+        public DbSet<Trim> Trims { get; set; }
+        public DbSet<VehicleSubtype> VehicleSubtypes { get; set; }
+        public DbSet<PartCategory> PartCategories { get; set; }
+        public DbSet<PartSubcategory> PartSubcategories { get; set; }
 
         // Social / stats
         public DbSet<AdvertView> AdvertViews { get; set; }
@@ -254,6 +258,61 @@ namespace CarsWebsite
                 .HasOne(fc => fc.Model)
                 .WithMany()
                 .HasForeignKey(fc => fc.ModelId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
+            // Trim
+            modelBuilder.Entity<Trim>()
+                .HasOne(t => t.Generation)
+                .WithMany(g => g.Trims)
+                .HasForeignKey(t => t.GenerationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // EngineVersion → Trim (optional)
+            modelBuilder.Entity<EngineVersion>()
+                .HasOne(e => e.Trim)
+                .WithMany(t => t.EngineVersions)
+                .HasForeignKey(e => e.TrimId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
+            // VehicleSubtype
+            modelBuilder.Entity<VehicleSubtype>()
+                .HasOne(vs => vs.VehicleCategory)
+                .WithMany(vc => vc.Subtypes)
+                .HasForeignKey(vs => vs.VehicleCategoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // PartSubcategory
+            modelBuilder.Entity<PartSubcategory>()
+                .HasOne(ps => ps.PartCategory)
+                .WithMany(pc => pc.Subcategories)
+                .HasForeignKey(ps => ps.PartCategoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // CarAdvert nullable FKs for new taxonomy
+            modelBuilder.Entity<CarAdvert>()
+                .HasOne(a => a.Trim)
+                .WithMany()
+                .HasForeignKey(a => a.TrimId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+            modelBuilder.Entity<CarAdvert>()
+                .HasOne(a => a.VehicleSubtype)
+                .WithMany()
+                .HasForeignKey(a => a.VehicleSubtypeId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+            modelBuilder.Entity<CarAdvert>()
+                .HasOne(a => a.PartCategory)
+                .WithMany()
+                .HasForeignKey(a => a.PartCategoryId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+            modelBuilder.Entity<CarAdvert>()
+                .HasOne(a => a.PartSubcategory)
+                .WithMany()
+                .HasForeignKey(a => a.PartSubcategoryId)
                 .OnDelete(DeleteBehavior.SetNull)
                 .IsRequired(false);
 

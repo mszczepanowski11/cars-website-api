@@ -91,5 +91,18 @@ public class CarAdvert : Advert
     public string? CatalogNumber { get; set; }
     public string? Compatibility { get; set; }
 
+    // Extended taxonomy FKs
+    public int? TrimId { get; set; }
+    public Trim? Trim { get; set; }
+    public int? VehicleSubtypeId { get; set; }
+    public VehicleSubtype? VehicleSubtype { get; set; }
+    public int? PartCategoryId { get; set; }
+    public PartCategory? PartCategory { get; set; }
+    public int? PartSubcategoryId { get; set; }
+    public PartSubcategory? PartSubcategory { get; set; }
+    public string? OemNumber { get; set; }
+    public string? ManufacturerPartNumber { get; set; }
+    public string? PartManufacturer { get; set; }
+
     public ICollection<AdvertFeature> AdvertFeatures { get; set; } = new List<AdvertFeature>();
 }

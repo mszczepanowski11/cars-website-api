@@ -1488,6 +1488,110 @@ internal class Program
             }
         }
 
+        // VehicleSubtype seeds
+        if (!db.VehicleSubtypes.Any())
+        {
+            var allVCatsForSubtypes = db.VehicleCategories.ToList();
+
+            var osoboweId   = allVCatsForSubtypes.FirstOrDefault(c => c.Slug == "auta-osobowe")?.Id ?? 0;
+            var dostawczeId = allVCatsForSubtypes.FirstOrDefault(c => c.Slug == "dostawcze")?.Id ?? 0;
+            var ciezaroweId = allVCatsForSubtypes.FirstOrDefault(c => c.Slug == "ciezarowe")?.Id ?? 0;
+            var przyczepyId = allVCatsForSubtypes.FirstOrDefault(c => c.Slug == "przyczepy")?.Id ?? 0;
+            var rolniczeId  = allVCatsForSubtypes.FirstOrDefault(c => c.Slug == "rolnicze")?.Id ?? 0;
+            var budowlaneId = allVCatsForSubtypes.FirstOrDefault(c => c.Slug == "budowlane")?.Id ?? 0;
+
+            var subtypes = new List<VehicleSubtype>();
+
+            if (osoboweId > 0)
+            {
+                var names = new[] { "Sedan", "Kombi", "Hatchback", "SUV", "Coupe", "Kabriolet", "Minivan", "Pickup" };
+                for (int i = 0; i < names.Length; i++)
+                    subtypes.Add(new VehicleSubtype { VehicleCategoryId = osoboweId, Name = names[i], SortOrder = i + 1 });
+            }
+
+            if (dostawczeId > 0)
+            {
+                var names = new[] { "Furgon", "Brygadówka", "Chłodnia", "Izoterma", "Platforma", "Kontener" };
+                for (int i = 0; i < names.Length; i++)
+                    subtypes.Add(new VehicleSubtype { VehicleCategoryId = dostawczeId, Name = names[i], SortOrder = i + 1 });
+            }
+
+            if (ciezaroweId > 0)
+            {
+                var names = new[] { "Ciągnik siodłowy", "Wywrotka", "Chłodnia", "Firanka", "Platforma", "Kontener", "Beczka", "Hakowiec", "Śmieciarka" };
+                for (int i = 0; i < names.Length; i++)
+                    subtypes.Add(new VehicleSubtype { VehicleCategoryId = ciezaroweId, Name = names[i], SortOrder = i + 1 });
+            }
+
+            if (przyczepyId > 0)
+            {
+                var names = new[] { "Naczepa firanka", "Naczepa chłodnia", "Naczepa platforma", "Laweta", "Przyczepa towarowa", "Przyczepa rolnicza", "Przyczepa kempingowa" };
+                for (int i = 0; i < names.Length; i++)
+                    subtypes.Add(new VehicleSubtype { VehicleCategoryId = przyczepyId, Name = names[i], SortOrder = i + 1 });
+            }
+
+            if (rolniczeId > 0)
+            {
+                var names = new[] { "Ciągnik", "Kombajn", "Opryskiwacz", "Pług", "Glebogryzarka", "Prasa", "Siewnik", "Ładowarka rolnicza" };
+                for (int i = 0; i < names.Length; i++)
+                    subtypes.Add(new VehicleSubtype { VehicleCategoryId = rolniczeId, Name = names[i], SortOrder = i + 1 });
+            }
+
+            if (budowlaneId > 0)
+            {
+                var names = new[] { "Koparka", "Minikopiarka", "Ładowarka", "Spycharka", "Walec", "Żuraw", "Rusztowanie", "Wibrator" };
+                for (int i = 0; i < names.Length; i++)
+                    subtypes.Add(new VehicleSubtype { VehicleCategoryId = budowlaneId, Name = names[i], SortOrder = i + 1 });
+            }
+
+            if (subtypes.Count > 0)
+            {
+                db.VehicleSubtypes.AddRange(subtypes);
+                db.SaveChanges();
+                logger.LogInformation("Seeded {Count} vehicle subtypes", subtypes.Count);
+            }
+        }
+
+        // PartCategory + PartSubcategory seeds
+        if (!db.PartCategories.Any())
+        {
+            var partCategoriesData = new List<(string Name, int SortOrder, string[] Subcategories)>
+            {
+                ("Silnik i napęd", 1, new[] { "Blok silnika", "Głowica", "Tłoki i pierścienie", "Wały korbowe", "Rozrząd", "Turbosprężarka", "Intercooler" }),
+                ("Układ chłodzenia", 2, new[] { "Chłodnica", "Pompa wody", "Termostat", "Wentylator", "Zbiornik wyrównawczy", "Korek chłodnicy" }),
+                ("Układ paliwowy", 3, new[] { "Pompa paliwa", "Wtryskiwacze", "Filtr paliwa", "Zbiornik paliwa", "Przepustnica", "Kolektor ssący" }),
+                ("Układ wydechowy", 4, new[] { "Katalizator", "Filtr DPF/FAP", "Tłumik", "Rura wydechowa", "Czujnik lambda", "EGR" }),
+                ("Układ hamulcowy", 5, new[] { "Tarcze hamulcowe", "Klocki hamulcowe", "Zaciski", "Pompa hamulcowa", "Przewody hamulcowe", "ABS" }),
+                ("Układ kierowniczy", 6, new[] { "Maglownica", "Pompa wspomagania", "Drążki kierownicze", "Kolumna kierownicy", "Końcówki drążków" }),
+                ("Zawieszenie", 7, new[] { "Amortyzatory", "Sprężyny", "Wahacze", "Łączniki stabilizatora", "Tuleje", "Łożyska kół" }),
+                ("Skrzynia biegów", 8, new[] { "Skrzynia manualna", "Skrzynia automatyczna", "Sprzęgło", "Koło dwumasowe", "Wałek napędowy" }),
+                ("Karoseria i nadwozie", 9, new[] { "Drzwi", "Maski", "Błotniki", "Zderzaki", "Szyby", "Lusterka", "Progi" }),
+                ("Oświetlenie", 10, new[] { "Reflektory", "Lampy tylne", "Kierunkowskazy", "Żarówki", "Moduły LED", "Przetwory ksenonowe" }),
+                ("Elektryka i elektronika", 11, new[] { "Alternator", "Rozrusznik", "Akumulator", "Sterowniki ECU", "Czujniki", "Wiązki elektryczne" }),
+                ("Wnętrze", 12, new[] { "Fotele", "Tapicerka", "Deski rozdzielcze", "Dywaniki", "Kierownica", "Pasy bezpieczeństwa" }),
+                ("Klimatyzacja", 13, new[] { "Sprężarka", "Skraplacz", "Parownik", "Filtr kabinowy", "Wentylator", "Zawór rozprężny" }),
+                ("Koła i opony", 14, new[] { "Opony letnie", "Opony zimowe", "Felgi stalowe", "Felgi aluminiowe", "Śruby i nakrętki", "Czujniki TPMS" }),
+                ("Akcesoria i tuning", 15, new[] { "Spoilery", "Dysze wydechowe", "Folie i oklejanie", "Systemy audio", "Haki holownicze", "Bagażniki dachowe" }),
+            };
+
+            foreach (var (catName, sortOrder, subcats) in partCategoriesData)
+            {
+                var cat = new PartCategory
+                {
+                    Name = catName,
+                    SortOrder = sortOrder,
+                    Subcategories = subcats.Select((s, idx) => new PartSubcategory
+                    {
+                        Name = s,
+                        SortOrder = idx + 1
+                    }).ToList()
+                };
+                db.PartCategories.Add(cat);
+            }
+            db.SaveChanges();
+            logger.LogInformation("Seeded {Count} part categories with subcategories", partCategoriesData.Count);
+        }
+
         ModelSeeder.SeedModelsGenerationsEngines(db, logger);
     }
 }

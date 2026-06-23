@@ -1137,15 +1137,39 @@ namespace cars_website_api.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal?>("Acceleration0100")
+                        .HasColumnType("decimal(4,1)");
+
+                    b.Property<decimal?>("AvgConsumptionL")
+                        .HasColumnType("decimal(4,1)");
+
+                    b.Property<int?>("Co2EmissionGkm")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("Cylinders")
+                        .HasColumnType("int");
+
                     b.Property<int?>("Displacement")
                         .HasColumnType("int");
+
+                    b.Property<string>("DriveType")
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
 
                     b.Property<string>("EngineName")
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<string>("EuroNorm")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
                     b.Property<int>("FuelTypeId")
                         .HasColumnType("int");
+
+                    b.Property<string>("GearboxType")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<int>("GenerationId")
                         .HasColumnType("int");
@@ -1156,11 +1180,22 @@ namespace cars_website_api.Migrations
                     b.Property<int?>("PowerKW")
                         .HasColumnType("int");
 
+                    b.Property<int?>("TopSpeedKmh")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TorqueNm")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TrimId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("FuelTypeId");
 
                     b.HasIndex("GenerationId");
+
+                    b.HasIndex("TrimId");
 
                     b.ToTable("EngineVersions");
                 });
@@ -1470,7 +1505,31 @@ namespace cars_website_api.Migrations
                     b.Property<int?>("Torque")
                         .HasColumnType("int");
 
+                    b.Property<string>("ManufacturerPartNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("OemNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<int?>("PartCategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PartManufacturer")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<int?>("PartSubcategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TrimId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("VehicleCategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("VehicleSubtypeId")
                         .HasColumnType("int");
 
                     b.Property<string>("Vin")
@@ -1500,9 +1559,129 @@ namespace cars_website_api.Migrations
 
                     b.HasIndex("ModelId");
 
+                    b.HasIndex("PartCategoryId");
+
+                    b.HasIndex("PartSubcategoryId");
+
+                    b.HasIndex("TrimId");
+
                     b.HasIndex("VehicleCategoryId");
 
+                    b.HasIndex("VehicleSubtypeId");
+
                     b.ToTable("CarAdverts", (string)null);
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Trim", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<int>("GenerationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GenerationId");
+
+                    b.ToTable("trims");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.VehicleSubtype", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("NamePl")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int>("VehicleCategoryId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VehicleCategoryId");
+
+                    b.ToTable("vehiclesubtypes");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.PartCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("NamePl")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("partcategories");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.PartSubcategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("NamePl")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<int>("PartCategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PartCategoryId");
+
+                    b.ToTable("partsubcategories");
                 });
 
             modelBuilder.Entity("BrandVehicleCategories", b =>
@@ -1904,6 +2083,39 @@ namespace cars_website_api.Migrations
                     b.Navigation("Follower");
                 });
 
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Trim", b =>
+                {
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.Generation", "Generation")
+                        .WithMany("Trims")
+                        .HasForeignKey("GenerationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Generation");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.VehicleSubtype", b =>
+                {
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.VehicleCategory", "VehicleCategory")
+                        .WithMany("Subtypes")
+                        .HasForeignKey("VehicleCategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("VehicleCategory");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.PartSubcategory", b =>
+                {
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.PartCategory", "PartCategory")
+                        .WithMany("Subcategories")
+                        .HasForeignKey("PartCategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PartCategory");
+                });
+
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.EngineVersion", b =>
                 {
                     b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.FuelType", "FuelType")
@@ -1918,9 +2130,16 @@ namespace cars_website_api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.Trim", "Trim")
+                        .WithMany("EngineVersions")
+                        .HasForeignKey("TrimId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("FuelType");
 
                     b.Navigation("Generation");
+
+                    b.Navigation("Trim");
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Feature", b =>
@@ -2010,6 +2229,26 @@ namespace cars_website_api.Migrations
                         .WithMany()
                         .HasForeignKey("VehicleCategoryId");
 
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.Trim", "Trim")
+                        .WithMany()
+                        .HasForeignKey("TrimId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.VehicleSubtype", "VehicleSubtype")
+                        .WithMany()
+                        .HasForeignKey("VehicleSubtypeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.PartCategory", "PartCategory")
+                        .WithMany()
+                        .HasForeignKey("PartCategoryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.PartSubcategory", "PartSubcategory")
+                        .WithMany()
+                        .HasForeignKey("PartSubcategoryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("BodyType");
 
                     b.Navigation("Brand");
@@ -2028,7 +2267,15 @@ namespace cars_website_api.Migrations
 
                     b.Navigation("Model");
 
+                    b.Navigation("PartCategory");
+
+                    b.Navigation("PartSubcategory");
+
+                    b.Navigation("Trim");
+
                     b.Navigation("VehicleCategory");
+
+                    b.Navigation("VehicleSubtype");
                 });
 
             modelBuilder.Entity("CarsWebsite.Advert", b =>
@@ -2106,11 +2353,28 @@ namespace cars_website_api.Migrations
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Generation", b =>
                 {
                     b.Navigation("EngineVersions");
+
+                    b.Navigation("Trims");
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Model", b =>
                 {
                     b.Navigation("Generations");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Trim", b =>
+                {
+                    b.Navigation("EngineVersions");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.VehicleCategory", b =>
+                {
+                    b.Navigation("Subtypes");
+                });
+
+            modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.PartCategory", b =>
+                {
+                    b.Navigation("Subcategories");
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.CarAdvert", b =>

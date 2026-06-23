@@ -11,4 +11,5 @@ public class Generation
 
     public Model Model { get; set; }
     public ICollection<EngineVersion> EngineVersions { get; set; }
+    public ICollection<Trim> Trims { get; set; } = new List<Trim>();
 }
