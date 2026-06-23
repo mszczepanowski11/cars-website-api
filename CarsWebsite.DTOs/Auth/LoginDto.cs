@@ -12,6 +12,4 @@ public class LoginDto
     [Required(ErrorMessage = "Hasło jest wymagane.")]
     [MaxLength(128)]
     public string Password { get; set; } = string.Empty;
-
-    public string? TurnstileToken { get; set; }
 }

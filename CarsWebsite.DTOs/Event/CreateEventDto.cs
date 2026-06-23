@@ -1,16 +1,18 @@
-﻿namespace cars_website_api.CarsWebsite.DTOs.Event;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace cars_website_api.CarsWebsite.DTOs.Event;
 
 public class CreateEventDto
 {
-    public string Name { get; set; }
-    public string Description { get; set; }
-    public DateTime StartDate { get; set; }
-    public DateTime EndDate { get; set; }
-    public string City { get; set; }
-    public string Address { get; set; }
-    public string? WebsiteUrl { get; set; }
-    public string? TicketsUrl { get; set; }
-    public string? OrganizerName { get; set; }
-    public string? OrganizerEmail { get; set; }
-    public string? OrganizerPhone { get; set; }
+    [Required][MaxLength(200)] public string Name { get; set; } = string.Empty;
+    [Required][MaxLength(10000)] public string Description { get; set; } = string.Empty;
+    [Required] public DateTime StartDate { get; set; }
+    [Required] public DateTime EndDate { get; set; }
+    [Required][MaxLength(100)] public string City { get; set; } = string.Empty;
+    [Required][MaxLength(300)] public string Address { get; set; } = string.Empty;
+    [MaxLength(500)] public string? WebsiteUrl { get; set; }
+    [MaxLength(500)] public string? TicketsUrl { get; set; }
+    [MaxLength(200)] public string? OrganizerName { get; set; }
+    [EmailAddress][MaxLength(256)] public string? OrganizerEmail { get; set; }
+    [MaxLength(20)] public string? OrganizerPhone { get; set; }
 }

@@ -21,6 +21,24 @@ public class AdvertImageService : IAdvertImageService
         _logger = logger;
     }
 
+    private static void ValidateMagicBytes(IFormFile file, string declaredMime)
+    {
+        Span<byte> header = stackalloc byte[12];
+        using var s = file.OpenReadStream();
+        var read = s.Read(header);
+        if (read < 3) throw new BadHttpRequestException("Plik jest uszkodzony lub pusty.");
+        bool valid = declaredMime switch
+        {
+            "image/jpeg" => header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF,
+            "image/png"  => read >= 4 && header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47,
+            "image/webp" => read >= 12 && header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46
+                            && header[8] == 0x57 && header[9] == 0x45 && header[10] == 0x42 && header[11] == 0x50,
+            _ => false
+        };
+        if (!valid)
+            throw new BadHttpRequestException($"Zawartość pliku nie zgadza się z deklarowanym typem ({declaredMime}).");
+    }
+
     public async Task<string> UploadAdvertImageAsync(int advertId, IFormFile file, int userId)
     {
         _logger.LogInformation("[ImgSvc] Start: advertId={AdvertId} userId={UserId} file={File} size={Size}B mime={Mime}",
@@ -37,6 +55,7 @@ public class AdvertImageService : IAdvertImageService
             _logger.LogWarning("[ImgSvc] Rejected size={Size}B", file.Length);
             throw new BadHttpRequestException("Plik przekracza limit 10 MB.");
         }
+        ValidateMagicBytes(file, mime);
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (string.IsNullOrEmpty(extension) || !AllowedExtensions.Contains(extension))
         {

@@ -236,10 +236,7 @@ public class UserService : IUserService
         {
             var publicId = ExtractPublicId(img.Url);
             if (publicId != null)
-            {
-                try { await _cloudinary.DestroyAsync(new DeletionParams(publicId)); }
-                catch { /* best-effort cleanup */ }
-            }
+                await DeleteCloudinaryWithRetryAsync(publicId);
         }
         _context.AdvertImages.RemoveRange(advertImages);
 
@@ -305,6 +302,28 @@ public class UserService : IUserService
             favorites,
             sentMessages = messages
         };
+    }
+
+    private async Task DeleteCloudinaryWithRetryAsync(string publicId)
+    {
+        for (int attempt = 0; attempt < 3; attempt++)
+        {
+            try
+            {
+                var result = await _cloudinary.DestroyAsync(new DeletionParams(publicId));
+                if (result.Error == null) return;
+                _logger.LogWarning("[UserSvc] Cloudinary delete attempt {Attempt} failed for {PublicId}: {Error}",
+                    attempt + 1, publicId, result.Error.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("[UserSvc] Cloudinary delete attempt {Attempt} threw for {PublicId}: {Msg}",
+                    attempt + 1, publicId, ex.Message);
+            }
+            if (attempt < 2)
+                await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)));
+        }
+        _logger.LogError("[UserSvc] Cloudinary delete failed after 3 attempts for {PublicId}", publicId);
     }
 
     private static string? ExtractPublicId(string url)
