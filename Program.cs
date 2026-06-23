@@ -381,6 +381,12 @@ internal class Program
         ADD COLUMN IF NOT EXISTS `TankCapacityL` int NULL");
             } catch (Exception ex) { logger.LogWarning("ALTER caradverts subtype fields skipped: {Message}", ex.Message); }
 
+            // FeaturedUntil on caradverts — added by migration 20260622110000 which may have been
+            // blocked by a prior cascade failure; this guard ensures the column always exists.
+            try {
+                db.Database.ExecuteSqlRaw("ALTER TABLE `caradverts` ADD COLUMN IF NOT EXISTS `FeaturedUntil` datetime(6) NULL");
+            } catch (Exception ex) { logger.LogWarning("ALTER caradverts.FeaturedUntil skipped: {Message}", ex.Message); }
+
             // Rename PascalCase tables to lowercase if they were created by a
             // previous deployment before we standardised on lowercase names.
             var renameSql = new[]
