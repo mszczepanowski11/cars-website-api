@@ -37,6 +37,7 @@ namespace cars_website_api.CarsWebsite.Services
 
         public async Task<PagedResult<ReportResponseDto>> GetReportsAsync(AdminReportFilterDto filter)
         {
+            filter.PageSize = Math.Clamp(filter.PageSize, 1, 100);
             var query = _context.Reports
                 .Include(r => r.ReportedBy)
                 .Include(r => r.TargetAdvert)
@@ -223,6 +224,7 @@ namespace cars_website_api.CarsWebsite.Services
 
         public async Task<PagedResult<AdminUserDto>> GetUsersAsync(string? search, string? accountType, bool? isBlocked, int page, int pageSize)
         {
+            pageSize = Math.Clamp(pageSize, 1, 100);
             var query = _context.Users.Include(u => u.Adverts).AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
@@ -254,6 +256,7 @@ namespace cars_website_api.CarsWebsite.Services
 
         public async Task<PagedResult<AdminAdvertDto>> GetAdvertsAsync(string? search, bool? isHidden, bool? isActive, int page, int pageSize)
         {
+            pageSize = Math.Clamp(pageSize, 1, 100);
             var query = _context.CarAdverts
                 .Include(a => a.createdBy)
                 .Include(a => a.Brand)
@@ -293,6 +296,7 @@ namespace cars_website_api.CarsWebsite.Services
 
         public async Task<List<AdminActionLogDto>> GetActionLogsAsync(int page, int pageSize)
         {
+            pageSize = Math.Clamp(pageSize, 1, 100);
             var logs = await _context.AdminActionLogs
                 .Include(l => l.Admin)
                 .OrderByDescending(l => l.PerformedAt)

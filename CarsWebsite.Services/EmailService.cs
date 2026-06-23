@@ -1,6 +1,7 @@
-using System.Net;
-using System.Net.Mail;
 using cars_website_api.CarsWebsite.Interfaces;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using MimeKit;
 
 public class EmailService : IEmailService
 {
@@ -25,16 +26,23 @@ public class EmailService : IEmailService
 
         var port = int.TryParse(section["Port"], out var p) ? p : 587;
         var from = section["From"] ?? "powiadomienia@carizo.pl";
+        var user = section["User"];
+        var password = section["Password"];
 
         try
         {
-            using var client = new SmtpClient(host, port)
-            {
-                EnableSsl = true,
-                Credentials = new NetworkCredential(section["User"], section["Password"])
-            };
-            await client.SendMailAsync(
-                new MailMessage(from, to, subject, htmlBody) { IsBodyHtml = true });
+            var message = new MimeMessage();
+            message.From.Add(MailboxAddress.Parse(from));
+            message.To.Add(MailboxAddress.Parse(to));
+            message.Subject = subject;
+            message.Body = new TextPart("html") { Text = htmlBody };
+
+            using var client = new SmtpClient();
+            await client.ConnectAsync(host, port, SecureSocketOptions.StartTls);
+            if (!string.IsNullOrEmpty(user))
+                await client.AuthenticateAsync(user, password);
+            await client.SendAsync(message);
+            await client.DisconnectAsync(true);
         }
         catch (Exception ex)
         {

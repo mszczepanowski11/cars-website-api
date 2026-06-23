@@ -102,6 +102,14 @@ public class AuthService : IAuthService
             return new { error = "unverified" };
 
         user.LastLoginAt = DateTime.UtcNow;
+
+        // Clean up expired/revoked tokens for this user to prevent unbounded table growth
+        var staleTokens = await _context.RefreshTokens
+            .Where(t => t.UserId == user.Id && (t.IsRevoked || t.ExpiresAt <= DateTime.UtcNow))
+            .ToListAsync();
+        if (staleTokens.Count > 0)
+            _context.RefreshTokens.RemoveRange(staleTokens);
+
         await _context.SaveChangesAsync();
         return await IssueTokenPairAsync(user);
     }
@@ -118,6 +126,7 @@ public class AuthService : IAuthService
         if (record.User.IsBlocked) return new { error = "blocked" };
 
         record.IsRevoked = true;
+        record.RevokedAt = DateTime.UtcNow;
         var newPair = await IssueTokenPairAsync(record.User);
         await _context.SaveChangesAsync();
         return newPair;
@@ -128,6 +137,7 @@ public class AuthService : IAuthService
         var record = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.Token == refreshToken);
         if (record == null) return;
         record.IsRevoked = true;
+        record.RevokedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
     }
 

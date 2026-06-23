@@ -716,6 +716,9 @@ namespace cars_website_api.Migrations
                     b.Property<bool>("IsRevoked")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("Token")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
