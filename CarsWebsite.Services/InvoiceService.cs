@@ -1,5 +1,3 @@
-using System.Net;
-using System.Net.Mail;
 using System.Text;
 using CarsWebsite;
 using cars_website_api.CarsWebsite.DTOs.Invoice;
@@ -15,13 +13,15 @@ public class InvoiceService : IInvoiceService
     private readonly AppDbContext _context;
     private readonly IConfiguration _config;
     private readonly INotificationService _notifications;
+    private readonly IEmailService _email;
     private readonly ILogger<InvoiceService> _logger;
 
-    public InvoiceService(AppDbContext context, IConfiguration config, INotificationService notifications, ILogger<InvoiceService> logger)
+    public InvoiceService(AppDbContext context, IConfiguration config, INotificationService notifications, IEmailService email, ILogger<InvoiceService> logger)
     {
         _context = context;
         _config = config;
         _notifications = notifications;
+        _email = email;
         _logger = logger;
     }
 
@@ -48,11 +48,17 @@ public class InvoiceService : IInvoiceService
         using var tx = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
         try
         {
-            var existingCount = await _context.Invoices
+            var existingNums = await _context.Invoices
                 .Where(i => i.Month == month && i.Year == year)
-                .CountAsync();
+                .Select(i => i.InvoiceNumber)
+                .ToListAsync();
 
-            var seq = existingCount + 1;
+            var maxSeq = existingNums.Count == 0 ? 0 :
+                existingNums
+                    .Select(n => { var p = n.Split('/'); return p.Length == 4 && int.TryParse(p[3], out var s) ? s : 0; })
+                    .DefaultIfEmpty(0)
+                    .Max();
+            var seq = maxSeq + 1;
 
             foreach (var group in payments.GroupBy(p => p.UserId))
             {
@@ -110,6 +116,7 @@ public class InvoiceService : IInvoiceService
 
     public async Task<PagedResult<InvoiceResponseDto>> GetUserInvoicesAsync(int userId, int page, int pageSize)
     {
+        pageSize = Math.Clamp(pageSize, 1, 100);
         var query = _context.Invoices
             .Include(i => i.Payments)
             .Include(i => i.User)
@@ -167,8 +174,16 @@ public class InvoiceService : IInvoiceService
         var ci = new System.Globalization.CultureInfo("pl-PL");
         var monthName = ci.DateTimeFormat.GetMonthName(invoice.Month);
         var user = invoice.User;
-        var buyerName = user?.AccountType == AccountType.Business && !string.IsNullOrWhiteSpace(user.CompanyName)
-            ? user.CompanyName : $"{user?.Name} {user?.Surname}";
+        var firstPayment = invoice.Payments.FirstOrDefault();
+        var buyerName = !string.IsNullOrWhiteSpace(firstPayment?.BillingName)
+            ? firstPayment.BillingName
+            : (user?.AccountType == AccountType.Business && !string.IsNullOrWhiteSpace(user.CompanyName)
+                ? user.CompanyName : $"{user?.Name} {user?.Surname}");
+        var buyerNip = !string.IsNullOrWhiteSpace(firstPayment?.BillingNip)
+            ? firstPayment.BillingNip : user?.Nip;
+        var buyerAddress = (!string.IsNullOrWhiteSpace(firstPayment?.BillingStreet) || !string.IsNullOrWhiteSpace(firstPayment?.BillingCity))
+            ? $"{firstPayment?.BillingStreet}, {firstPayment?.BillingPostalCode} {firstPayment?.BillingCity}".Trim().TrimStart(',').Trim()
+            : null;
 
         return Document.Create(container =>
         {
@@ -191,9 +206,9 @@ public class InvoiceService : IInvoiceService
                         });
                         row.RelativeItem().Column(c =>
                         {
-                            c.Item().Text("CARIZO Wiktor Niezgoda").Bold().AlignRight();
-                            c.Item().Text("NIP: 9452331007").AlignRight();
-                            c.Item().Text("ul. H. Pachońskiego 7/60, 31-223 Kraków").AlignRight();
+                            c.Item().Text(_config["Invoice:SellerName"] ?? "CARIZO Wiktor Niezgoda").Bold().AlignRight();
+                            c.Item().Text($"NIP: {_config["Invoice:SellerNip"] ?? "9452331007"}").AlignRight();
+                            c.Item().Text(_config["Invoice:SellerAddress"] ?? "ul. H. Pachońskiego 7/60, 31-223 Kraków").AlignRight();
                         });
                     });
 
@@ -205,8 +220,10 @@ public class InvoiceService : IInvoiceService
                         {
                             c.Item().Text("NABYWCA").FontSize(8).FontColor(Colors.Grey.Medium);
                             c.Item().Text(buyerName).Bold();
-                            if (user?.AccountType == AccountType.Business && !string.IsNullOrWhiteSpace(user.Nip))
-                                c.Item().Text($"NIP: {user.Nip}");
+                            if (!string.IsNullOrWhiteSpace(buyerNip))
+                                c.Item().Text($"NIP: {buyerNip}");
+                            if (!string.IsNullOrWhiteSpace(buyerAddress))
+                                c.Item().Text(buyerAddress);
                             c.Item().Text(user?.Email ?? "");
                         });
                     });
@@ -283,35 +300,16 @@ public class InvoiceService : IInvoiceService
 
     private async Task SendInvoiceEmailAsync(Invoice invoice, User user)
     {
-        var smtpSection = _config.GetSection("Smtp");
-        var host = smtpSection["Host"];
-
-        if (string.IsNullOrEmpty(host))
-        {
-            _logger.LogWarning("SMTP nie skonfigurowany – pominięto wysyłkę faktury {Number}", invoice.InvoiceNumber);
-            return;
-        }
-
         var html = BuildInvoiceHtml(invoice);
-        var from = smtpSection["From"] ?? "faktury@carizo.pl";
         var adminEmail = _config["Admin:Email"] ?? "admin@carizo.pl";
-        var port = int.TryParse(smtpSection["Port"], out var p) ? p : 587;
 
         try
         {
-            using var smtpClient = new SmtpClient(host, port)
-            {
-                EnableSsl = true,
-                Credentials = new NetworkCredential(smtpSection["User"], smtpSection["Password"])
-            };
+            await _email.SendAsync(user.Email,
+                $"Faktura zbiorcza CARIZO – {invoice.InvoiceNumber}", html);
 
-            await smtpClient.SendMailAsync(new MailMessage(from, user.Email,
-                $"Faktura zbiorcza CARIZO – {invoice.InvoiceNumber}", html)
-                { IsBodyHtml = true });
-
-            await smtpClient.SendMailAsync(new MailMessage(from, adminEmail,
-                $"[KOPIA] Faktura {invoice.InvoiceNumber} – {user.Email}", html)
-                { IsBodyHtml = true });
+            await _email.SendAsync(adminEmail,
+                $"[KOPIA] Faktura {invoice.InvoiceNumber} – {user.Email}", html);
 
             invoice.Status = InvoiceStatus.Sent;
             invoice.SentAt = DateTime.UtcNow;
@@ -382,10 +380,14 @@ td{padding:9px 12px;border:1px solid #ddd;font-size:13px}
         if (!string.IsNullOrWhiteSpace(buyerAddress))
             sb.Append($"<p>{buyerAddress}</p>");
         sb.Append($"<p>{user?.Email}</p></div>");
+        var sellerName = _config["Invoice:SellerName"] ?? "CARIZO Wiktor Niezgoda";
+        var sellerNip = _config["Invoice:SellerNip"] ?? "9452331007";
+        var sellerRegon = _config["Invoice:SellerRegon"] ?? "544870688";
+        var sellerAddress = _config["Invoice:SellerAddress"] ?? "ul. Henryka Pachońskiego 7/60, 31-223 Kraków";
         sb.Append($"<div class=\"party\"><h4>Sprzedawca</h4>" +
-                  $"<p><strong>CARIZO Wiktor Niezgoda</strong></p>" +
-                  $"<p>NIP: 9452331007</p><p>REGON: 544870688</p>" +
-                  $"<p>ul. Henryka Pachońskiego 7/60, 31-223 Kraków</p></div>");
+                  $"<p><strong>{sellerName}</strong></p>" +
+                  $"<p>NIP: {sellerNip}</p><p>REGON: {sellerRegon}</p>" +
+                  $"<p>{sellerAddress}</p></div>");
         sb.Append("</div>");
 
         sb.Append("<table><thead><tr><th>Lp.</th><th>Opis usługi</th><th>Data</th><th style=\"text-align:right\">Kwota brutto</th></tr></thead><tbody>");

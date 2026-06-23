@@ -115,7 +115,7 @@ namespace cars_website_api.CarsWebsite.Controllers
         public async Task<IActionResult> GetEnginesByTrim(int trimId)
         {
             var engines = await _taxonomyService.GetEnginesByTrimAsync(trimId);
-            return Ok(engines);
+            return Ok(_mapper.Map<IEnumerable<EngineVersionDto>>(engines));
         }
 
         [HttpGet("engines/{engineVersionId}/specs")]

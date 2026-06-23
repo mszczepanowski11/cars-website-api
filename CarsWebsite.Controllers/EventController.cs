@@ -32,7 +32,7 @@ public class EventController : ControllerBase
 
     [HttpGet("upcoming")]
     public async Task<IActionResult> GetUpcoming([FromQuery] int count = 4)
-        => Ok(await _eventService.GetUpcomingEventsAsync(count));
+        => Ok(await _eventService.GetUpcomingEventsAsync(Math.Clamp(count, 1, 50)));
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetEvent(int id)

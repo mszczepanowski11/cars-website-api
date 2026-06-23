@@ -38,6 +38,7 @@ public class NotificationController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
+        pageSize = Math.Clamp(pageSize, 1, 100);
         var uid = UserId;
         var query = _context.AppNotifications.Where(n => n.UserId == uid).OrderByDescending(n => n.CreatedAt);
         var total = await query.CountAsync();

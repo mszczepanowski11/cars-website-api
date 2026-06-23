@@ -18,9 +18,7 @@ internal class Program
 {
     public static void Main(string[] args)
     {
-        Console.WriteLine("===========================================");
         Console.WriteLine("CARIZO API v1.0.2 STARTING");
-        Console.WriteLine("===========================================");
         var webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
         Directory.CreateDirectory(webRootPath);
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -62,7 +60,7 @@ internal class Program
         // B-02: Validate Imoje payment credentials at startup.
         // Read from environment variables (preferred in production) or appsettings fallback.
         var imojeMerchantId  = Environment.GetEnvironmentVariable("IMOJE_MERCHANT_ID")     ?? builder.Configuration["Imoje:MerchantId"]    ?? "";
-        var imojeApiKey      = Environment.GetEnvironmentVariable("IMOJE_API_KEY")          ?? builder.Configuration["Imoje:ApiKey"]        ?? "";
+        var imojeApiKey      = Environment.GetEnvironmentVariable("IMOJE_API_KEY")          ?? builder.Configuration["Imoje:ApiKey"]        ?? builder.Configuration["Imoje:ServiceKey"] ?? "";
         var imojeWebhookSec  = Environment.GetEnvironmentVariable("IMOJE_WEBHOOK_SECRET")   ?? builder.Configuration["Imoje:WebhookSecret"] ?? "";
         var imojeServiceId   = Environment.GetEnvironmentVariable("IMOJE_SERVICE_ID")       ?? builder.Configuration["Imoje:ServiceId"]     ?? "";
         var missingImoje = new List<string>();
@@ -70,10 +68,6 @@ internal class Program
         if (string.IsNullOrWhiteSpace(imojeApiKey))      missingImoje.Add("IMOJE_API_KEY / Imoje:ApiKey");
         if (string.IsNullOrWhiteSpace(imojeWebhookSec))  missingImoje.Add("IMOJE_WEBHOOK_SECRET / Imoje:WebhookSecret");
         if (string.IsNullOrWhiteSpace(imojeServiceId))   missingImoje.Add("IMOJE_SERVICE_ID / Imoje:ServiceId");
-        if (missingImoje.Count > 0 && !builder.Environment.IsDevelopment())
-            throw new InvalidOperationException(
-                $"Imoje payment configuration is missing required values: {string.Join(", ", missingImoje)}. " +
-                "Set the corresponding environment variables or appsettings values before starting the application.");
         if (missingImoje.Count > 0)
             Console.WriteLine($"[WARNING] Imoje payment credentials not fully configured (missing: {string.Join(", ", missingImoje)}). Payments will fail at runtime.");
 
@@ -85,7 +79,9 @@ internal class Program
                 options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
             });
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddDbContext<AppDbContext>(options => options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 21))));
+        builder.Services.AddDbContext<AppDbContext>(options => options
+            .UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 21)))
+            .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
         
         builder.Services.AddScoped<UserService>();
         builder.Services.AddScoped<IUserService, UserService>();
@@ -99,8 +95,6 @@ internal class Program
         var cloudName   = (Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME")   ?? "").Trim();
         var cloudApiKey = (Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY")       ?? "").Trim();
         var cloudSecret = (Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET")    ?? "").Trim();
-
-        Console.WriteLine($"[Cloudinary] cloud={cloudName}, key={(cloudApiKey.Length > 4 ? cloudApiKey[..4] + "****" : "(empty)")}, secret={(cloudSecret.Length > 4 ? cloudSecret[..4] + "****" : "(empty)")}");
 
         // Use placeholder credentials when env vars are missing so the API still starts.
         // Actual uploads will fail at runtime with a clear error rather than crashing the container.
@@ -119,6 +113,7 @@ internal class Program
         builder.Services.AddScoped<IMessageService, MessageService>();
         builder.Services.AddScoped<IReportService, ReportService>();
         builder.Services.AddScoped<IAdminService, AdminService>();
+        builder.Services.AddScoped<IStatsService, StatsService>();
         builder.Services.AddScoped<IEventService, EventService>();
         builder.Services.AddHttpClient();
         builder.Services.AddHttpClient<IPhotoAnalysisService, PhotoAnalysisService>();
@@ -162,6 +157,7 @@ internal class Program
             });
         });
 
+        builder.Services.AddMemoryCache();
         builder.Services.AddAutoMapper(typeof(AdvertMappingProfile));
 
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -193,8 +189,8 @@ internal class Program
         builder.Services.AddCors(options => {
             options.AddPolicy("AllowNuxt", policy => {
                 policy.WithOrigins(allowedOrigins)
-                    .AllowAnyHeader()
-                    .AllowAnyMethod();
+                    .WithHeaders("Content-Type", "Authorization", "X-Requested-With", "X-CSRF-Token")
+                    .WithMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS");
             });
         });
         
@@ -231,6 +227,8 @@ internal class Program
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var startLogger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
+            startLogger.LogInformation("[Cloudinary] cloud={Cloud} key={Key}", cloudName.Length > 0 ? cloudName : "(empty)", cloudApiKey.Length > 4 ? cloudApiKey[..4] + "****" : "(empty)");
 
             // Bootstrap EF Core migration history for databases that were created via
             // EnsureCreated before formal migrations were adopted. On a fresh DB,
@@ -255,13 +253,22 @@ internal class Program
                     // DB was created via EnsureCreated — mark all pre-existing migrations
                     // as applied so MigrateAsync only runs genuinely new ones.
                     var allMigrations = db.Database.GetMigrations().ToList();
-                    var newMigration = "20260621120000_AddBrandModelToFeatureCategory";
-                    foreach (var m in allMigrations.Where(m => m != newMigration))
+                    var newMigrations = new HashSet<string>
+                    {
+                        "20260621120000_AddBrandModelToFeatureCategory",
+                        "20260621150000_AddFuelConsumptionToEngineVersion",
+                        "20260622100000_AddMissingIndexes2",
+                        "20260622120000_AddRefreshTokenRevokedAt",
+                        "20260623100000_AddTrimVehicleSubtypePartCategories",
+                        "20260623105000_AddVehicleCategoryIdToFeatureCategory",
+                        "20260623110000_AddCustomCategoryRequests",
+                    };
+                    foreach (var m in allMigrations.Where(m => !newMigrations.Contains(m)))
                     {
                         db.Database.ExecuteSqlRaw(
                             $"INSERT IGNORE INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) VALUES ('{m}', '9.0.0')");
                     }
-                    histLogger.LogInformation("[Migrations] Bootstrapped migration history with {Count} pre-existing migrations", allMigrations.Count - 1);
+                    histLogger.LogInformation("[Migrations] Bootstrapped migration history with {Count} pre-existing migrations", allMigrations.Count - newMigrations.Count);
                 }
 
                 db.Database.Migrate();
@@ -295,6 +302,77 @@ internal class Program
             {
                 logger.LogWarning("[Schema] Could not ensure FuelConsumption columns: {Msg}", ex.Message);
             }
+
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"
+                    ALTER TABLE `FeatureCategories`
+                    ADD COLUMN IF NOT EXISTS `VehicleCategoryId` int NULL,
+                    ADD COLUMN IF NOT EXISTS `BrandId` int NULL,
+                    ADD COLUMN IF NOT EXISTS `ModelId` int NULL
+                ");
+                logger.LogInformation("[Schema] FeatureCategories columns ensured (VehicleCategoryId, BrandId, ModelId)");
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning("[Schema] Could not ensure FeatureCategories columns: {Msg}", ex.Message);
+            }
+
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"
+                    ALTER TABLE `engineversions`
+                    ADD COLUMN IF NOT EXISTS `TrimId`           int NULL,
+                    ADD COLUMN IF NOT EXISTS `TorqueNm`         int NULL,
+                    ADD COLUMN IF NOT EXISTS `Co2EmissionGkm`   int NULL,
+                    ADD COLUMN IF NOT EXISTS `EuroNorm`         varchar(20) NULL,
+                    ADD COLUMN IF NOT EXISTS `AvgConsumptionL`  decimal(4,1) NULL,
+                    ADD COLUMN IF NOT EXISTS `Acceleration0100` decimal(4,1) NULL,
+                    ADD COLUMN IF NOT EXISTS `TopSpeedKmh`      int NULL,
+                    ADD COLUMN IF NOT EXISTS `DriveType`        varchar(10) NULL,
+                    ADD COLUMN IF NOT EXISTS `GearboxType`      varchar(20) NULL,
+                    ADD COLUMN IF NOT EXISTS `Cylinders`        int NULL
+                ");
+                logger.LogInformation("[Schema] EngineVersions extra columns ensured");
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning("[Schema] Could not ensure EngineVersions extra columns: {Msg}", ex.Message);
+            }
+
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"
+                    ALTER TABLE `caradverts`
+                    ADD COLUMN IF NOT EXISTS `TrimId`                  int NULL,
+                    ADD COLUMN IF NOT EXISTS `VehicleSubtypeId`        int NULL,
+                    ADD COLUMN IF NOT EXISTS `PartCategoryId`          int NULL,
+                    ADD COLUMN IF NOT EXISTS `PartSubcategoryId`       int NULL,
+                    ADD COLUMN IF NOT EXISTS `OemNumber`               varchar(100) NULL,
+                    ADD COLUMN IF NOT EXISTS `ManufacturerPartNumber`  varchar(100) NULL,
+                    ADD COLUMN IF NOT EXISTS `PartManufacturer`        varchar(100) NULL
+                ");
+                logger.LogInformation("[Schema] CarAdverts extra columns ensured");
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning("[Schema] Could not ensure CarAdverts extra columns: {Msg}", ex.Message);
+            }
+
+            // VehicleSubtype slug
+            try {
+                db.Database.ExecuteSqlRaw("ALTER TABLE `vehiclesubtypes` ADD COLUMN IF NOT EXISTS `Slug` varchar(100) NULL");
+            } catch (Exception ex) { logger.LogWarning("ALTER vehiclesubtypes.Slug skipped: {Message}", ex.Message); }
+
+            // CarAdvert subtype-specific fields
+            try {
+                db.Database.ExecuteSqlRaw(@"ALTER TABLE `caradverts`
+        ADD COLUMN IF NOT EXISTS `OperatingWeightKg` int NULL,
+        ADD COLUMN IF NOT EXISTS `WorkingWidthCm` int NULL,
+        ADD COLUMN IF NOT EXISTS `MaxDiggingDepthM` decimal(5,2) NULL,
+        ADD COLUMN IF NOT EXISTS `BucketCapacityL` int NULL,
+        ADD COLUMN IF NOT EXISTS `TankCapacityL` int NULL");
+            } catch (Exception ex) { logger.LogWarning("ALTER caradverts subtype fields skipped: {Message}", ex.Message); }
 
             // Rename PascalCase tables to lowercase if they were created by a
             // previous deployment before we standardised on lowercase names.
@@ -558,6 +636,76 @@ internal class Program
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `advertimages` ADD COLUMN `IsMain` tinyint(1) NOT NULL DEFAULT 0"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN advertimages.IsMain skipped: {Message}", ex.Message); }
 
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS `trims` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `GenerationId` int NOT NULL,
+  `Name` varchar(100) NOT NULL,
+  `Description` varchar(500) NULL,
+  PRIMARY KEY (`Id`),
+  KEY `IX_trims_GenerationId` (`GenerationId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            }
+            catch (Exception ex) { logger.LogWarning("CREATE TABLE trims skipped: {Message}", ex.Message); }
+
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS `vehiclesubtypes` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `VehicleCategoryId` int NOT NULL,
+  `Name` varchar(100) NOT NULL,
+  `NamePl` varchar(100) NULL,
+  `SortOrder` int NOT NULL DEFAULT 0,
+  PRIMARY KEY (`Id`),
+  KEY `IX_vehiclesubtypes_VehicleCategoryId` (`VehicleCategoryId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            }
+            catch (Exception ex) { logger.LogWarning("CREATE TABLE vehiclesubtypes skipped: {Message}", ex.Message); }
+
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS `partcategories` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `Name` varchar(100) NOT NULL,
+  `NamePl` varchar(100) NULL,
+  `SortOrder` int NOT NULL DEFAULT 0,
+  PRIMARY KEY (`Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            }
+            catch (Exception ex) { logger.LogWarning("CREATE TABLE partcategories skipped: {Message}", ex.Message); }
+
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS `partsubcategories` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `PartCategoryId` int NOT NULL,
+  `Name` varchar(100) NOT NULL,
+  `NamePl` varchar(100) NULL,
+  `SortOrder` int NOT NULL DEFAULT 0,
+  PRIMARY KEY (`Id`),
+  KEY `IX_partsubcategories_PartCategoryId` (`PartCategoryId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            }
+            catch (Exception ex) { logger.LogWarning("CREATE TABLE partsubcategories skipped: {Message}", ex.Message); }
+
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS `customcategoryrequests` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `UserId` int NOT NULL,
+  `CategoryName` varchar(255) NOT NULL,
+  `Description` longtext NULL,
+  `Status` varchar(50) NOT NULL DEFAULT 'Pending',
+  `CreatedAt` datetime(6) NOT NULL,
+  `ReviewedAt` datetime(6) NULL,
+  `ReviewNote` longtext NULL,
+  PRIMARY KEY (`Id`),
+  KEY `IX_customcategoryrequests_UserId` (`UserId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            }
+            catch (Exception ex) { logger.LogWarning("CREATE TABLE customcategoryrequests skipped: {Message}", ex.Message); }
+
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `advertviews` ADD COLUMN `UserId` int NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN advertviews.UserId skipped: {Message}", ex.Message); }
 
@@ -691,12 +839,18 @@ internal class Program
                 {
                     logger.LogWarning("Detected numeric brand names — clearing brand tables for re-seed");
                     db.Database.ExecuteSqlRaw("SET FOREIGN_KEY_CHECKS=0");
-                    try { db.Database.ExecuteSqlRaw("DELETE FROM `brandvehiclecategories`"); } catch { }
-                    try { db.Database.ExecuteSqlRaw("DELETE FROM `generations`"); } catch { }
-                    try { db.Database.ExecuteSqlRaw("DELETE FROM `models`"); } catch { }
-                    try { db.Database.ExecuteSqlRaw("DELETE FROM `brands`"); } catch { }
-                    db.Database.ExecuteSqlRaw("UPDATE `caradverts` SET `BrandId` = NULL, `ModelId` = NULL WHERE 1=1");
-                    db.Database.ExecuteSqlRaw("SET FOREIGN_KEY_CHECKS=1");
+                    try
+                    {
+                        try { db.Database.ExecuteSqlRaw("DELETE FROM `brandvehiclecategories`"); } catch { }
+                        try { db.Database.ExecuteSqlRaw("DELETE FROM `generations`"); } catch { }
+                        try { db.Database.ExecuteSqlRaw("DELETE FROM `models`"); } catch { }
+                        try { db.Database.ExecuteSqlRaw("DELETE FROM `brands`"); } catch { }
+                        db.Database.ExecuteSqlRaw("UPDATE `caradverts` SET `BrandId` = NULL, `ModelId` = NULL WHERE 1=1");
+                    }
+                    finally
+                    {
+                        db.Database.ExecuteSqlRaw("SET FOREIGN_KEY_CHECKS=1");
+                    }
                     logger.LogInformation("Brand tables cleared — seeder will re-populate on next call");
                 }
             }
@@ -843,7 +997,14 @@ internal class Program
                 logger.LogWarning("[Equipment] Equipment expansion skipped: {Msg}", ex.Message);
             }
 
-            SeedDataIfEmpty(db, logger);
+            try
+            {
+                SeedDataIfEmpty(db, logger);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "[Seeder] SeedDataIfEmpty failed — app will start without complete seed data: {Msg}", ex.Message);
+            }
 
             // Startup config diagnostics
             var imojeMid    = Environment.GetEnvironmentVariable("IMOJE_MERCHANT_ID") ?? "";
@@ -884,6 +1045,16 @@ internal class Program
             ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
                              | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
         });
+        app.Use(async (context, next) =>
+        {
+            context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+            context.Response.Headers["X-Frame-Options"] = "DENY";
+            context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+            context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+            await next();
+        });
+        if (!app.Environment.IsDevelopment())
+            app.UseHsts();
         app.UseStaticFiles();
         app.UseHttpsRedirection();
         app.UseCors("AllowNuxt");
@@ -1666,55 +1837,94 @@ internal class Program
         {
             var allVCatsForSubtypes = db.VehicleCategories.ToList();
 
-            var osoboweId   = allVCatsForSubtypes.FirstOrDefault(c => c.Slug == "auta-osobowe")?.Id ?? 0;
-            var dostawczeId = allVCatsForSubtypes.FirstOrDefault(c => c.Slug == "dostawcze")?.Id ?? 0;
-            var ciezaroweId = allVCatsForSubtypes.FirstOrDefault(c => c.Slug == "ciezarowe")?.Id ?? 0;
-            var przyczepyId = allVCatsForSubtypes.FirstOrDefault(c => c.Slug == "przyczepy")?.Id ?? 0;
-            var rolniczeId  = allVCatsForSubtypes.FirstOrDefault(c => c.Slug == "rolnicze")?.Id ?? 0;
-            var budowlaneId = allVCatsForSubtypes.FirstOrDefault(c => c.Slug == "budowlane")?.Id ?? 0;
+            int CatId(string slug) => allVCatsForSubtypes.FirstOrDefault(c => c.Slug == slug)?.Id ?? 0;
+
+            var subtypeDefs = new List<(string catSlug, string name, string slug)>
+            {
+                // auta-osobowe
+                ("auta-osobowe", "Sedan",      "sedan"),
+                ("auta-osobowe", "Kombi",      "kombi"),
+                ("auta-osobowe", "Hatchback",  "hatchback"),
+                ("auta-osobowe", "SUV",        "suv"),
+                ("auta-osobowe", "Coupe",      "coupe"),
+                ("auta-osobowe", "Kabriolet",  "kabriolet"),
+                ("auta-osobowe", "Minivan",    "minivan"),
+                ("auta-osobowe", "Pickup",     "pickup"),
+
+                // dostawcze
+                ("dostawcze", "Furgon",     "furgon"),
+                ("dostawcze", "Brygadówka", "brygadowka"),
+                ("dostawcze", "Chłodnia",   "chlodnia"),
+                ("dostawcze", "Izoterma",   "izoterma"),
+                ("dostawcze", "Platforma",  "platforma"),
+                ("dostawcze", "Kontener",   "kontener"),
+
+                // ciezarowe
+                ("ciezarowe", "Ciągnik siodłowy", "ciagnik-siodlowy"),
+                ("ciezarowe", "Wywrotka",         "wywrotka"),
+                ("ciezarowe", "Chłodnia",         "chlodnia-ciezarowa"),
+                ("ciezarowe", "Firanka",          "firanka"),
+                ("ciezarowe", "Platforma",        "platforma-ciezarowa"),
+                ("ciezarowe", "Kontener",         "kontener-ciezarowy"),
+                ("ciezarowe", "Beczka/Cysterna",  "cysterna"),
+                ("ciezarowe", "Hakowiec",         "hakowiec"),
+                ("ciezarowe", "Śmieciarka",       "smieciarka"),
+
+                // przyczepy
+                ("przyczepy", "Naczepa firanka",      "naczepa-firanka"),
+                ("przyczepy", "Naczepa chłodnia",     "naczepa-chlodnia"),
+                ("przyczepy", "Naczepa platforma",    "naczepa-platforma"),
+                ("przyczepy", "Laweta",               "laweta"),
+                ("przyczepy", "Przyczepa towarowa",   "przyczepa-towarowa"),
+                ("przyczepy", "Przyczepa rolnicza",   "przyczepa-rolnicza"),
+                ("przyczepy", "Przyczepa kempingowa", "przyczepa-kempingowa"),
+
+                // rolnicze
+                ("rolnicze", "Ciągnik",           "ciagnik"),
+                ("rolnicze", "Kombajn",           "kombajn"),
+                ("rolnicze", "Opryskiwacz",       "opryskiwacz"),
+                ("rolnicze", "Pług",              "plug"),
+                ("rolnicze", "Glebogryzarka",     "glebogryzarka"),
+                ("rolnicze", "Prasa",             "prasa"),
+                ("rolnicze", "Siewnik",           "siewnik"),
+                ("rolnicze", "Ładowarka rolnicza","ladowarka-rolnicza"),
+
+                // budowlane
+                ("budowlane", "Koparka",      "koparka"),
+                ("budowlane", "Minikopiarka", "minikopiarka"),
+                ("budowlane", "Ładowarka",    "ladowarka"),
+                ("budowlane", "Spycharka",    "spycharka"),
+                ("budowlane", "Walec",        "walec"),
+                ("budowlane", "Żuraw",        "zuraw"),
+                ("budowlane", "Rusztowanie",  "rusztowanie"),
+                ("budowlane", "Wibrator",     "wibrator"),
+
+                // maszyny
+                ("maszyny", "Agregat prądotwórczy", "agregat"),
+                ("maszyny", "Kompresor",            "kompresor"),
+                ("maszyny", "Wózek widłowy",        "wozek-widlowy"),
+                ("maszyny", "Podnośnik",            "podnośnik"),
+                ("maszyny", "Myjnia",               "myjnia"),
+
+                // motocykle
+                ("motocykle", "Motocykl sportowy", "sport"),
+                ("motocykle", "Naked",             "naked"),
+                ("motocykle", "Turystyczny",       "turystyczny"),
+                ("motocykle", "Enduro/Cross",      "enduro"),
+                ("motocykle", "Skuter",            "skuter"),
+                ("motocykle", "Chopper",           "chopper"),
+                ("motocykle", "Quad",              "quad"),
+            };
 
             var subtypes = new List<VehicleSubtype>();
-
-            if (osoboweId > 0)
+            int order = 1;
+            string lastCat = "";
+            foreach (var (catSlug, name, slug) in subtypeDefs)
             {
-                var names = new[] { "Sedan", "Kombi", "Hatchback", "SUV", "Coupe", "Kabriolet", "Minivan", "Pickup" };
-                for (int i = 0; i < names.Length; i++)
-                    subtypes.Add(new VehicleSubtype { VehicleCategoryId = osoboweId, Name = names[i], SortOrder = i + 1 });
-            }
-
-            if (dostawczeId > 0)
-            {
-                var names = new[] { "Furgon", "Brygadówka", "Chłodnia", "Izoterma", "Platforma", "Kontener" };
-                for (int i = 0; i < names.Length; i++)
-                    subtypes.Add(new VehicleSubtype { VehicleCategoryId = dostawczeId, Name = names[i], SortOrder = i + 1 });
-            }
-
-            if (ciezaroweId > 0)
-            {
-                var names = new[] { "Ciągnik siodłowy", "Wywrotka", "Chłodnia", "Firanka", "Platforma", "Kontener", "Beczka", "Hakowiec", "Śmieciarka" };
-                for (int i = 0; i < names.Length; i++)
-                    subtypes.Add(new VehicleSubtype { VehicleCategoryId = ciezaroweId, Name = names[i], SortOrder = i + 1 });
-            }
-
-            if (przyczepyId > 0)
-            {
-                var names = new[] { "Naczepa firanka", "Naczepa chłodnia", "Naczepa platforma", "Laweta", "Przyczepa towarowa", "Przyczepa rolnicza", "Przyczepa kempingowa" };
-                for (int i = 0; i < names.Length; i++)
-                    subtypes.Add(new VehicleSubtype { VehicleCategoryId = przyczepyId, Name = names[i], SortOrder = i + 1 });
-            }
-
-            if (rolniczeId > 0)
-            {
-                var names = new[] { "Ciągnik", "Kombajn", "Opryskiwacz", "Pług", "Glebogryzarka", "Prasa", "Siewnik", "Ładowarka rolnicza" };
-                for (int i = 0; i < names.Length; i++)
-                    subtypes.Add(new VehicleSubtype { VehicleCategoryId = rolniczeId, Name = names[i], SortOrder = i + 1 });
-            }
-
-            if (budowlaneId > 0)
-            {
-                var names = new[] { "Koparka", "Minikopiarka", "Ładowarka", "Spycharka", "Walec", "Żuraw", "Rusztowanie", "Wibrator" };
-                for (int i = 0; i < names.Length; i++)
-                    subtypes.Add(new VehicleSubtype { VehicleCategoryId = budowlaneId, Name = names[i], SortOrder = i + 1 });
+                int catId = CatId(catSlug);
+                if (catId == 0) continue;
+                if (catSlug != lastCat) { order = 1; lastCat = catSlug; }
+                subtypes.Add(new VehicleSubtype { VehicleCategoryId = catId, Name = name, Slug = slug, SortOrder = order++ });
             }
 
             if (subtypes.Count > 0)
@@ -1767,6 +1977,7 @@ internal class Program
 
         ModelSeeder.SeedModelsGenerationsEngines(db, logger);
         VehicleDataSeeder.SeedVehicleData(db, logger);
+        TrimSeeder.SeedTrims(db, logger);
         VehicleDataSeeder.SeedTrimData(db, logger);
         VehicleDataSeeder.SeedMotorcycleData(db, logger);
     }

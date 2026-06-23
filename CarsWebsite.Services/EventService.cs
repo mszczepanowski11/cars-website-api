@@ -106,6 +106,7 @@ public class EventService : IEventService
 
     public async Task<PagedResult<EventResponseDto>> GetPublishedEventsAsync(string? search, int page, int pageSize)
     {
+        pageSize = Math.Clamp(pageSize, 1, 100);
         var query = _context.Events
             .Include(e => e.Images)
             .Include(e => e.CreatedBy)

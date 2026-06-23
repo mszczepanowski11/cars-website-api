@@ -45,6 +45,8 @@ public class AdvertMappingProfile : Profile
             .ForMember(dest => dest.CarColor, opt => opt.Ignore())
             .ForMember(dest => dest.DriveType, opt => opt.Ignore())
             .ForMember(dest => dest.VehicleCategory, opt => opt.Ignore())
+            .ForMember(dest => dest.VehicleSubtype, opt => opt.Ignore())
+            .ForMember(dest => dest.Trim, opt => opt.Ignore())
             .ForMember(dest => dest.Brand, opt => opt.Ignore())
             .ForMember(dest => dest.Model, opt => opt.Ignore())
             .ForMember(dest => dest.Generation, opt => opt.Ignore())
