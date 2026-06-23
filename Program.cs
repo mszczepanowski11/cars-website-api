@@ -121,6 +121,7 @@ internal class Program
         builder.Services.AddScoped<IAdminService, AdminService>();
         builder.Services.AddScoped<IEventService, EventService>();
         builder.Services.AddHttpClient();
+        builder.Services.AddHttpClient<IPhotoAnalysisService, PhotoAnalysisService>();
         builder.Services.AddScoped<IEmailService, EmailService>();
         builder.Services.AddScoped<INotificationService, NotificationService>();
         builder.Services.AddScoped<IPaymentService, PaymentService>();
@@ -409,6 +410,20 @@ internal class Program
   `Comment` longtext NULL,
   `CreatedAt` datetime(6) NOT NULL,
   PRIMARY KEY (`Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+                @"CREATE TABLE IF NOT EXISTS `customcategoryrequests` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `UserId` varchar(255) NULL,
+  `CategoryName` varchar(200) NOT NULL,
+  `Description` text NULL,
+  `ParametersJson` text NULL,
+  `Status` varchar(20) NOT NULL DEFAULT 'Pending',
+  `AdminNotes` text NULL,
+  `CreatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `ReviewedAt` datetime(6) NULL,
+  PRIMARY KEY (`Id`),
+  KEY `IX_customcategoryrequests_Status` (`Status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
             };
 
@@ -1593,5 +1608,6 @@ internal class Program
         }
 
         ModelSeeder.SeedModelsGenerationsEngines(db, logger);
+        VehicleDataSeeder.SeedVehicleData(db, logger);
     }
 }

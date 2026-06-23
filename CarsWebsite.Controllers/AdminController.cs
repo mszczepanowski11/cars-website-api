@@ -214,6 +214,67 @@ public class AdminController : ControllerBase
         return NoContent();
     }
 
+    // ── Custom category requests ──────────────────────────────────────────────
+
+    [HttpGet("custom-categories")]
+    public async Task<IActionResult> GetCustomCategories([FromQuery] string? status = null)
+    {
+        var query = _db.CustomCategoryRequests.AsQueryable();
+        if (!string.IsNullOrEmpty(status))
+            query = query.Where(r => r.Status == status);
+        var results = await query.OrderByDescending(r => r.CreatedAt).ToListAsync();
+        return Ok(results);
+    }
+
+    [HttpPut("custom-categories/{id}/approve")]
+    public async Task<IActionResult> ApproveCustomCategory(int id, [FromBody] AdminReviewCustomCategoryDto dto)
+    {
+        var request = await _db.CustomCategoryRequests.FindAsync(id);
+        if (request == null) return NotFound();
+        request.Status = "Approved";
+        request.AdminNotes = dto.Notes;
+        request.ReviewedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return Ok(request);
+    }
+
+    [HttpPut("custom-categories/{id}/reject")]
+    public async Task<IActionResult> RejectCustomCategory(int id, [FromBody] AdminReviewCustomCategoryDto dto)
+    {
+        var request = await _db.CustomCategoryRequests.FindAsync(id);
+        if (request == null) return NotFound();
+        request.Status = "Rejected";
+        request.AdminNotes = dto.Notes;
+        request.ReviewedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return Ok(request);
+    }
+
+    // ── DB cleanup endpoints ───────────────────────────────────────────────────
+
+    [HttpGet("suspicious-records")]
+    public async Task<IActionResult> GetSuspiciousRecords()
+    {
+        var testPatterns = new[] { "test", "asdf", "qwer", "aaaa", "bbbb", "xxx", "sample", "lorem" };
+        var suspicious = await _db.CarAdverts
+            .Where(a => testPatterns.Any(p => a.Title != null && a.Title.ToLower().Contains(p)))
+            .Select(a => new { a.Id, a.Title, a.CreatedAt })
+            .OrderByDescending(a => a.CreatedAt)
+            .Take(100)
+            .ToListAsync();
+        return Ok(suspicious);
+    }
+
+    [HttpDelete("suspicious-records/{id}")]
+    public async Task<IActionResult> DeleteSuspiciousRecord(int id)
+    {
+        var advert = await _db.CarAdverts.FindAsync(id);
+        if (advert == null) return NotFound();
+        _db.CarAdverts.Remove(advert);
+        await _db.SaveChangesAsync();
+        return Ok(new { message = "Deleted", id });
+    }
+
     // ── Quality report ────────────────────────────────────────────────────────
 
     [HttpGet("quality-report")]

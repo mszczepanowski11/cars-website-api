@@ -62,6 +62,9 @@ namespace CarsWebsite
         // Newsletter
         public DbSet<NewsletterSubscriber> NewsletterSubscribers { get; set; }
 
+        // Custom category requests
+        public DbSet<CustomCategoryRequest> CustomCategoryRequests { get; set; }
+
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -341,6 +344,9 @@ namespace CarsWebsite
 
             modelBuilder.Entity<NewsletterSubscriber>().ToTable("newslettersubscribers").HasKey(n => n.Id);
             modelBuilder.Entity<NewsletterSubscriber>().HasIndex(n => n.Email).IsUnique();
+
+            modelBuilder.Entity<CustomCategoryRequest>().ToTable("customcategoryrequests").HasKey(r => r.Id);
+            modelBuilder.Entity<CustomCategoryRequest>().HasIndex(r => r.Status);
 
             // Additional performance indexes (SR-9)
             modelBuilder.Entity<CarAdvert>().HasIndex(a => a.Price);
