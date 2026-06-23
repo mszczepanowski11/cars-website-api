@@ -308,7 +308,7 @@ internal class Program
             try
             {
                 db.Database.ExecuteSqlRaw(@"
-                    ALTER TABLE `FeatureCategories`
+                    ALTER TABLE `featurecategories`
                     ADD COLUMN IF NOT EXISTS `VehicleCategoryId` int NULL,
                     ADD COLUMN IF NOT EXISTS `BrandId` int NULL,
                     ADD COLUMN IF NOT EXISTS `ModelId` int NULL

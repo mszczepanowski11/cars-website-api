@@ -12,7 +12,7 @@ namespace cars_website_api.Migrations
         {
             migrationBuilder.AddColumn<decimal>(
                 name: "FuelConsumptionCity",
-                table: "EngineVersions",
+                table: "engineversions",
                 type: "decimal(5,2)",
                 precision: 5,
                 scale: 2,
@@ -20,7 +20,7 @@ namespace cars_website_api.Migrations
 
             migrationBuilder.AddColumn<decimal>(
                 name: "FuelConsumptionHighway",
-                table: "EngineVersions",
+                table: "engineversions",
                 type: "decimal(5,2)",
                 precision: 5,
                 scale: 2,
@@ -28,7 +28,7 @@ namespace cars_website_api.Migrations
 
             migrationBuilder.AddColumn<decimal>(
                 name: "FuelConsumptionCombined",
-                table: "EngineVersions",
+                table: "engineversions",
                 type: "decimal(5,2)",
                 precision: 5,
                 scale: 2,
@@ -38,9 +38,9 @@ namespace cars_website_api.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(name: "FuelConsumptionCity", table: "EngineVersions");
-            migrationBuilder.DropColumn(name: "FuelConsumptionHighway", table: "EngineVersions");
-            migrationBuilder.DropColumn(name: "FuelConsumptionCombined", table: "EngineVersions");
+            migrationBuilder.DropColumn(name: "FuelConsumptionCity", table: "engineversions");
+            migrationBuilder.DropColumn(name: "FuelConsumptionHighway", table: "engineversions");
+            migrationBuilder.DropColumn(name: "FuelConsumptionCombined", table: "engineversions");
         }
     }
 }
