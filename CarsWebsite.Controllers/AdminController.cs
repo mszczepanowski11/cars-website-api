@@ -290,7 +290,7 @@ public class AdminController : ControllerBase
             .Include(m => m.Brand)
             .Where(m => !m.Generations.Any())
             .Select(m => new { m.Id, m.Name, BrandName = m.Brand.Name })
-            .OrderBy(m => m.Brand.Name).ThenBy(m => m.Name)
+            .OrderBy(m => m.BrandName).ThenBy(m => m.Name)
             .ToListAsync();
 
         var brandsWithoutAdverts = await _db.Brands
@@ -303,7 +303,7 @@ public class AdminController : ControllerBase
             .Include(m => m.Brand)
             .Where(m => !_db.CarAdverts.Any(ca => ca.ModelId == m.Id))
             .Select(m => new { m.Id, m.Name, BrandName = m.Brand.Name })
-            .OrderBy(m => m.Brand.Name).ThenBy(m => m.Name)
+            .OrderBy(m => m.BrandName).ThenBy(m => m.Name)
             .ToListAsync();
 
         var featureCategoriesEmpty = await _db.FeatureCategories
