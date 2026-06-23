@@ -9,6 +9,7 @@ public class UpdateCarAdvertDto
     public int ModelId { get; set; }
     public int? GenerationId { get; set; }
     public int? EngineVersionId { get; set; }
+    public int? TrimId { get; set; }
 
     public int FuelTypeId { get; set; }
     public int? GearboxId { get; set; }
