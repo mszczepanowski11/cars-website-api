@@ -301,128 +301,65 @@ internal class Program
             var logger = scope.ServiceProvider
                 .GetRequiredService<ILogger<AppDbContext>>();
 
-            // Explicit column guards — idempotent fallback for any migration that
-            // may have been silently swallowed or pre-marked without running the DDL.
-            try
-            {
-                db.Database.ExecuteSqlRaw(@"
-                    ALTER TABLE `engineversions`
-                    ADD COLUMN IF NOT EXISTS `FuelConsumptionCity`     decimal(5,2) NULL,
-                    ADD COLUMN IF NOT EXISTS `FuelConsumptionHighway`  decimal(5,2) NULL,
-                    ADD COLUMN IF NOT EXISTS `FuelConsumptionCombined` decimal(5,2) NULL
-                ");
-                logger.LogInformation("[Schema] FuelConsumption columns ensured on engineversions");
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning("[Schema] Could not ensure FuelConsumption columns: {Msg}", ex.Message);
-            }
+            // Explicit column guards — idempotent fallback for migrations that may have been
+            // silently swallowed or pre-marked without running the DDL.
+            // IMPORTANT: Each statement is plain ADD COLUMN (no IF NOT EXISTS) in its own
+            // try/catch. MySQL throws "Duplicate column name" when the column already exists —
+            // that error is caught and logged at Debug level to avoid log spam.
+            // Using IF NOT EXISTS requires MySQL 8.0.29+; plain ADD COLUMN works everywhere.
 
-            try
-            {
-                db.Database.ExecuteSqlRaw(@"
-                    ALTER TABLE `featurecategories`
-                    ADD COLUMN IF NOT EXISTS `VehicleCategoryId` int NULL,
-                    ADD COLUMN IF NOT EXISTS `BrandId` int NULL,
-                    ADD COLUMN IF NOT EXISTS `ModelId` int NULL
-                ");
-                logger.LogInformation("[Schema] FeatureCategories columns ensured (VehicleCategoryId, BrandId, ModelId)");
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning("[Schema] Could not ensure FeatureCategories columns: {Msg}", ex.Message);
-            }
+            foreach (var colDef in new[] {
+                "`FuelConsumptionCity` decimal(5,2) NULL",
+                "`FuelConsumptionHighway` decimal(5,2) NULL",
+                "`FuelConsumptionCombined` decimal(5,2) NULL" })
+            { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `engineversions` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] engineversions.{Col}: {Msg}", colDef, ex.Message); } }
 
-            try
-            {
-                db.Database.ExecuteSqlRaw(@"
-                    ALTER TABLE `engineversions`
-                    ADD COLUMN IF NOT EXISTS `TrimId`           int NULL,
-                    ADD COLUMN IF NOT EXISTS `TorqueNm`         int NULL,
-                    ADD COLUMN IF NOT EXISTS `Co2EmissionGkm`   int NULL,
-                    ADD COLUMN IF NOT EXISTS `EuroNorm`         varchar(20) NULL,
-                    ADD COLUMN IF NOT EXISTS `AvgConsumptionL`  decimal(4,1) NULL,
-                    ADD COLUMN IF NOT EXISTS `Acceleration0100` decimal(4,1) NULL,
-                    ADD COLUMN IF NOT EXISTS `TopSpeedKmh`      int NULL,
-                    ADD COLUMN IF NOT EXISTS `DriveType`        varchar(10) NULL,
-                    ADD COLUMN IF NOT EXISTS `GearboxType`      varchar(20) NULL,
-                    ADD COLUMN IF NOT EXISTS `Cylinders`        int NULL
-                ");
-                logger.LogInformation("[Schema] EngineVersions extra columns ensured");
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning("[Schema] Could not ensure EngineVersions extra columns: {Msg}", ex.Message);
-            }
+            foreach (var colDef in new[] {
+                "`VehicleCategoryId` int NULL",
+                "`BrandId` int NULL",
+                "`ModelId` int NULL" })
+            { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `featurecategories` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] featurecategories.{Col}: {Msg}", colDef, ex.Message); } }
 
-            try
-            {
-                db.Database.ExecuteSqlRaw(@"
-                    ALTER TABLE `caradverts`
-                    ADD COLUMN IF NOT EXISTS `TrimId`                  int NULL,
-                    ADD COLUMN IF NOT EXISTS `VehicleSubtypeId`        int NULL,
-                    ADD COLUMN IF NOT EXISTS `PartCategoryId`          int NULL,
-                    ADD COLUMN IF NOT EXISTS `PartSubcategoryId`       int NULL,
-                    ADD COLUMN IF NOT EXISTS `OemNumber`               varchar(100) NULL,
-                    ADD COLUMN IF NOT EXISTS `ManufacturerPartNumber`  varchar(100) NULL,
-                    ADD COLUMN IF NOT EXISTS `PartManufacturer`        varchar(100) NULL
-                ");
-                logger.LogInformation("[Schema] CarAdverts extra columns ensured");
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning("[Schema] Could not ensure CarAdverts extra columns: {Msg}", ex.Message);
-            }
+            foreach (var colDef in new[] {
+                "`TrimId` int NULL",
+                "`TorqueNm` int NULL",
+                "`Co2EmissionGkm` int NULL",
+                "`EuroNorm` varchar(20) NULL",
+                "`AvgConsumptionL` decimal(4,1) NULL",
+                "`Acceleration0100` decimal(4,1) NULL",
+                "`TopSpeedKmh` int NULL",
+                "`DriveType` varchar(10) NULL",
+                "`GearboxType` varchar(20) NULL",
+                "`Cylinders` int NULL" })
+            { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `engineversions` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] engineversions.{Col}: {Msg}", colDef, ex.Message); } }
 
+            foreach (var colDef in new[] {
+                "`TrimId` int NULL",
+                "`VehicleSubtypeId` int NULL",
+                "`PartCategoryId` int NULL",
+                "`PartSubcategoryId` int NULL",
+                "`OemNumber` varchar(100) NULL",
+                "`ManufacturerPartNumber` varchar(100) NULL",
+                "`PartManufacturer` varchar(100) NULL",
+                "`FeaturedUntil` datetime(6) NULL",
+                "`OperatingWeightKg` int NULL",
+                "`WorkingWidthCm` int NULL",
+                "`MaxDiggingDepthM` decimal(5,2) NULL",
+                "`BucketCapacityL` int NULL",
+                "`TankCapacityL` int NULL" })
+            { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `caradverts` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] caradverts.{Col}: {Msg}", colDef, ex.Message); } }
 
-            // VehicleSubtype slug
-            try {
-                db.Database.ExecuteSqlRaw("ALTER TABLE `vehiclesubtypes` ADD COLUMN IF NOT EXISTS `Slug` varchar(100) NULL");
-            } catch (Exception ex) { logger.LogWarning("ALTER vehiclesubtypes.Slug skipped: {Message}", ex.Message); }
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `vehiclesubtypes` ADD COLUMN `Slug` varchar(100) NULL"); }
+            catch (Exception ex) { logger.LogDebug("[Schema] vehiclesubtypes.Slug: {Msg}", ex.Message); }
 
-            // CarAdvert subtype-specific fields
-            try {
-                db.Database.ExecuteSqlRaw(@"ALTER TABLE `caradverts`
-        ADD COLUMN IF NOT EXISTS `OperatingWeightKg` int NULL,
-        ADD COLUMN IF NOT EXISTS `WorkingWidthCm` int NULL,
-        ADD COLUMN IF NOT EXISTS `MaxDiggingDepthM` decimal(5,2) NULL,
-        ADD COLUMN IF NOT EXISTS `BucketCapacityL` int NULL,
-        ADD COLUMN IF NOT EXISTS `TankCapacityL` int NULL");
-            } catch (Exception ex) { logger.LogWarning("ALTER caradverts subtype fields skipped: {Message}", ex.Message); }
+            // refreshtokens.RevokedAt — required for every RefreshToken INSERT (EF Core always sends all columns)
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `refreshtokens` ADD COLUMN `RevokedAt` datetime(6) NULL"); }
+            catch (Exception ex) { logger.LogDebug("[Schema] refreshtokens.RevokedAt: {Msg}", ex.Message); }
 
-            // RefreshToken.RevokedAt — added in migration 20260622120000 but may be
-            // missing on existing DBs where that migration was bootstrapped without running.
-            try {
-                db.Database.ExecuteSqlRaw("ALTER TABLE `refreshtokens` ADD COLUMN IF NOT EXISTS `RevokedAt` datetime(6) NULL");
-            } catch (Exception ex) { logger.LogWarning("ALTER refreshtokens.RevokedAt skipped: {Message}", ex.Message); }
-
-            // FeaturedUntil on caradverts — added by migration 20260622110000 which may have been
-            // blocked by a prior cascade failure; this guard ensures the column always exists.
-            try {
-                db.Database.ExecuteSqlRaw("ALTER TABLE `caradverts` ADD COLUMN IF NOT EXISTS `FeaturedUntil` datetime(6) NULL");
-            } catch (Exception ex) { logger.LogWarning("ALTER caradverts.FeaturedUntil skipped: {Message}", ex.Message); }
-
-            // CarAdvert taxonomy FK columns — added in migration 20260623100000 but that migration
-            // may not have run if an earlier migration in the chain failed first (e.g. 20260621120000).
-            // Without these columns every EF query on CarAdverts throws "Unknown column 'TrimId'".
-            try {
-                db.Database.ExecuteSqlRaw(@"ALTER TABLE `caradverts`
-                    ADD COLUMN IF NOT EXISTS `TrimId` int NULL,
-                    ADD COLUMN IF NOT EXISTS `VehicleSubtypeId` int NULL,
-                    ADD COLUMN IF NOT EXISTS `PartCategoryId` int NULL,
-                    ADD COLUMN IF NOT EXISTS `PartSubcategoryId` int NULL,
-                    ADD COLUMN IF NOT EXISTS `OemNumber` varchar(100) NULL,
-                    ADD COLUMN IF NOT EXISTS `ManufacturerPartNumber` varchar(100) NULL,
-                    ADD COLUMN IF NOT EXISTS `PartManufacturer` varchar(100) NULL");
-                logger.LogInformation("[Schema] CarAdvert taxonomy columns ensured");
-            } catch (Exception ex) { logger.LogWarning("ALTER caradverts taxonomy columns skipped: {Message}", ex.Message); }
-
-            // AdvertViews.IpAddress — column was renamed from IpHash to IpAddress in the entity
-            // but no migration was created. CHANGE COLUMN renames the existing IpHash column;
-            // the ADD COLUMN IF NOT EXISTS below is a fallback for DBs that already have IpAddress.
+            // AdvertViews.IpAddress — renamed from IpHash; try rename first, then plain ADD as fallback
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `advertviews` CHANGE COLUMN `IpHash` `IpAddress` longtext NULL"); }
             catch (Exception ex) { logger.LogDebug("RENAME advertviews.IpHash→IpAddress skipped: {Message}", ex.Message); }
-            try { db.Database.ExecuteSqlRaw("ALTER TABLE `advertviews` ADD COLUMN IF NOT EXISTS `IpAddress` longtext NULL"); }
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `advertviews` ADD COLUMN `IpAddress` longtext NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN advertviews.IpAddress skipped: {Message}", ex.Message); }
 
             // Rename PascalCase tables to lowercase if they were created by a
@@ -573,6 +510,19 @@ internal class Program
   `ReviewedAt` datetime(6) NULL,
   PRIMARY KEY (`Id`),
   KEY `IX_customcategoryrequests_Status` (`Status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+                @"CREATE TABLE IF NOT EXISTS `refreshtokens` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `Token` varchar(128) NOT NULL,
+  `UserId` int NOT NULL,
+  `ExpiresAt` datetime(6) NOT NULL,
+  `IsRevoked` tinyint(1) NOT NULL DEFAULT 0,
+  `RevokedAt` datetime(6) NULL,
+  `CreatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`Id`),
+  UNIQUE KEY `IX_refreshtokens_Token` (`Token`),
+  KEY `IX_refreshtokens_UserId` (`UserId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
             };
 
@@ -584,7 +534,7 @@ internal class Program
                 }
                 catch (Exception ex)
                 {
-                    logger.LogWarning("Could not create table: {Message}", ex.Message);
+                    logger.LogDebug("CREATE TABLE skipped: {Message}", ex.Message);
                 }
             }
 
