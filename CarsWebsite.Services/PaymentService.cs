@@ -66,10 +66,10 @@ public class PaymentService : IPaymentService
 
         if (dto.AdvertId.HasValue)
         {
-            var advert = await _context.Adverts.FirstOrDefaultAsync(a => a.Id == dto.AdvertId.Value);
+            var advert = await _context.CarAdverts.FirstOrDefaultAsync(a => a.Id == dto.AdvertId.Value);
             if (advert == null)
             {
-                _logger.LogWarning("[Payment/Initiate] advertId={AdvertId} not found in Adverts", dto.AdvertId.Value);
+                _logger.LogWarning("[Payment/Initiate] advertId={AdvertId} not found in CarAdverts", dto.AdvertId.Value);
                 throw new KeyNotFoundException("Ogłoszenie nie istnieje.");
             }
             if (advert.UserId != userId)
