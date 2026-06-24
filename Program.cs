@@ -127,6 +127,7 @@ internal class Program
         builder.Services.AddHostedService<ExpiryReminderJob>();
         builder.Services.AddHostedService<BadgeExpiryJob>();
         builder.Services.AddHostedService<EventFeaturedExpiryJob>();
+        builder.Services.AddHostedService<DeletedUserPurgeJob>();
 
         builder.Services.AddRateLimiter(options =>
         {

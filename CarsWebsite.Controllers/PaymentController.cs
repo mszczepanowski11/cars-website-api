@@ -67,12 +67,24 @@ public class PaymentController : ControllerBase
     /// Webhook imoje – wywoływany automatycznie po zaksięgowaniu lub odrzuceniu płatności.
     /// </summary>
     [HttpPost("webhook")]
-    public async Task<IActionResult> Webhook()
+    public async Task<IActionResult> Webhook([FromServices] IConfiguration config, [FromServices] ILogger<PaymentController> logger)
     {
         using var reader = new StreamReader(Request.Body, Encoding.UTF8);
         var rawBody = await reader.ReadToEndAsync();
         var signature = Request.Headers["X-Imoje-Signature"].FirstOrDefault() ?? string.Empty;
         var internalSecret = Request.Headers["X-Internal-Secret"].FirstOrDefault();
+
+        // IP allowlist check (defence-in-depth; primary security is HMAC signature)
+        var allowedIps = config["Imoje:AllowedWebhookIps"]?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (allowedIps?.Length > 0 && string.IsNullOrEmpty(internalSecret))
+        {
+            var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+            if (remoteIp == null || !allowedIps.Contains(remoteIp))
+            {
+                logger.LogWarning("[Webhook] IP {Ip} not in allowlist — rejecting.", remoteIp);
+                return Forbid();
+            }
+        }
 
         ImojeWebhookDto? dto;
         try
