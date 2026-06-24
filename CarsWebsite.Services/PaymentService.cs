@@ -150,7 +150,10 @@ public class PaymentService : IPaymentService
             ?? Environment.GetEnvironmentVariable("INTERNAL_SERVICE_SECRET")
             ?? "";
         bool isInternalCall = !string.IsNullOrEmpty(configuredInternalSecret)
-            && configuredInternalSecret == internalSecret;
+            && !string.IsNullOrEmpty(internalSecret)
+            && System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
+                System.Text.Encoding.UTF8.GetBytes(configuredInternalSecret),
+                System.Text.Encoding.UTF8.GetBytes(internalSecret));
 
         _logger.LogInformation(
             "[Webhook] orderId={OrderId} status={Status} isInternalCall={IsInternal} hasInternalSecret={HasSecret} rawBodyLen={RawLen} hasTransaction={HasTx}",

@@ -608,6 +608,15 @@ public class AdvertService : IAdvertService
         var exists = await _context.CarAdverts.AnyAsync(a => a.Id == advertId && a.IsActive);
         if (!exists) return;
 
+        // Deduplicate: same IP must not have viewed within the last hour
+        var cutoff = DateTime.UtcNow.AddHours(-1);
+        if (!string.IsNullOrEmpty(ipAddress))
+        {
+            var alreadyViewed = await _context.AdvertViews.AnyAsync(v =>
+                v.AdvertId == advertId && v.IpAddress == ipAddress && v.ViewedAt >= cutoff);
+            if (alreadyViewed) return;
+        }
+
         _context.AdvertViews.Add(new cars_website_api.CarsWebsite.Domain.Entities.AdvertView
         {
             AdvertId = advertId,

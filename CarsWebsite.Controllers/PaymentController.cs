@@ -61,7 +61,7 @@ public class PaymentController : ControllerBase
 
     /// <summary>Weryfikacja URL webhooka przez imoje (GET probe).</summary>
     [HttpGet("webhook")]
-    public IActionResult WebhookProbe() => Ok();
+    public IActionResult WebhookProbe() => NotFound();
 
     /// <summary>
     /// Webhook imoje – wywoływany automatycznie po zaksięgowaniu lub odrzuceniu płatności.

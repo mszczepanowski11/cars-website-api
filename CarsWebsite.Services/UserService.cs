@@ -243,6 +243,23 @@ public class UserService : IUserService
         }
         _context.AdvertImages.RemoveRange(advertImages);
 
+        // GDPR: delete all conversations and messages involving this user
+        var conversationIds = await _context.Conversations
+            .Where(c => c.BuyerId == userId || c.SellerId == userId)
+            .Select(c => c.Id)
+            .ToListAsync();
+        if (conversationIds.Count > 0)
+        {
+            var userMessages = await _context.Messages
+                .Where(m => conversationIds.Contains(m.ConversationId))
+                .ToListAsync();
+            _context.Messages.RemoveRange(userMessages);
+            var conversations = await _context.Conversations
+                .Where(c => conversationIds.Contains(c.Id))
+                .ToListAsync();
+            _context.Conversations.RemoveRange(conversations);
+        }
+
         await _context.SaveChangesAsync();
     }
 
@@ -284,9 +301,15 @@ public class UserService : IUserService
             .Select(f => new { f.AdvertId, f.CreatedAt })
             .ToListAsync();
 
-        var messages = await _context.Messages
+        var sentMessages = await _context.Messages
             .Where(m => m.SenderId == userId)
             .Select(m => new { m.Id, m.Content, m.SentAt, m.ConversationId })
+            .ToListAsync();
+
+        var receivedMessages = await _context.Messages
+            .Where(m => m.SenderId != userId && _context.Conversations
+                .Any(c => c.Id == m.ConversationId && (c.BuyerId == userId || c.SellerId == userId)))
+            .Select(m => new { m.Id, m.Content, m.SentAt, m.ConversationId, m.SenderId })
             .ToListAsync();
 
         return new
@@ -303,7 +326,8 @@ public class UserService : IUserService
             },
             adverts,
             favorites,
-            sentMessages = messages
+            sentMessages,
+            receivedMessages
         };
     }
 
