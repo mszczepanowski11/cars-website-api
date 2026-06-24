@@ -72,8 +72,7 @@ namespace cars_website_api.Migrations
             migrationBuilder.Sql("ALTER TABLE `engineversions` ADD COLUMN IF NOT EXISTS `GearboxType` varchar(20) NULL");
             migrationBuilder.Sql("ALTER TABLE `engineversions` ADD COLUMN IF NOT EXISTS `Cylinders` int NULL");
 
-            // FK for engineversions.TrimId is added idempotently in Program.cs startup
-            // guards (try/catch), because MySQL 8.0 does not support ADD CONSTRAINT IF NOT EXISTS.
+            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS `IX_engineversions_TrimId` ON `engineversions` (`TrimId`)");
 
             // Add new columns to caradverts
             migrationBuilder.Sql("ALTER TABLE `caradverts` ADD COLUMN IF NOT EXISTS `TrimId` int NULL");

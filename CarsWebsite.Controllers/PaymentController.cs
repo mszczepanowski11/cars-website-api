@@ -61,17 +61,30 @@ public class PaymentController : ControllerBase
 
     /// <summary>Weryfikacja URL webhooka przez imoje (GET probe).</summary>
     [HttpGet("webhook")]
-    public IActionResult WebhookProbe() => Ok();
+    public IActionResult WebhookProbe() => NotFound();
 
     /// <summary>
     /// Webhook imoje – wywoływany automatycznie po zaksięgowaniu lub odrzuceniu płatności.
     /// </summary>
     [HttpPost("webhook")]
-    public async Task<IActionResult> Webhook()
+    public async Task<IActionResult> Webhook([FromServices] IConfiguration config, [FromServices] ILogger<PaymentController> logger)
     {
         using var reader = new StreamReader(Request.Body, Encoding.UTF8);
         var rawBody = await reader.ReadToEndAsync();
         var signature = Request.Headers["X-Imoje-Signature"].FirstOrDefault() ?? string.Empty;
+        var internalSecret = Request.Headers["X-Internal-Secret"].FirstOrDefault();
+
+        // IP allowlist check (defence-in-depth; primary security is HMAC signature)
+        var allowedIps = config["Imoje:AllowedWebhookIps"]?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (allowedIps?.Length > 0 && string.IsNullOrEmpty(internalSecret))
+        {
+            var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+            if (remoteIp == null || !allowedIps.Contains(remoteIp))
+            {
+                logger.LogWarning("[Webhook] IP {Ip} not in allowlist — rejecting.", remoteIp);
+                return Forbid();
+            }
+        }
 
         ImojeWebhookDto? dto;
         try
@@ -85,7 +98,7 @@ public class PaymentController : ControllerBase
 
         try
         {
-            await _paymentService.HandleWebhookAsync(dto, rawBody, signature);
+            await _paymentService.HandleWebhookAsync(dto, rawBody, signature, internalSecret);
             return Ok();
         }
         catch (UnauthorizedAccessException) { return Unauthorized(); }

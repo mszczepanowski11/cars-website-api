@@ -139,6 +139,7 @@ internal class Program
         builder.Services.AddHostedService<ExpiryReminderJob>();
         builder.Services.AddHostedService<BadgeExpiryJob>();
         builder.Services.AddHostedService<EventFeaturedExpiryJob>();
+        builder.Services.AddHostedService<DeletedUserPurgeJob>();
 
         builder.Services.AddRateLimiter(options =>
         {
@@ -320,7 +321,7 @@ internal class Program
             try
             {
                 db.Database.ExecuteSqlRaw(@"
-                    ALTER TABLE `FeatureCategories`
+                    ALTER TABLE `featurecategories`
                     ADD COLUMN IF NOT EXISTS `VehicleCategoryId` int NULL,
                     ADD COLUMN IF NOT EXISTS `BrandId` int NULL,
                     ADD COLUMN IF NOT EXISTS `ModelId` int NULL
@@ -373,6 +374,7 @@ internal class Program
                 logger.LogWarning("[Schema] Could not ensure CarAdverts extra columns: {Msg}", ex.Message);
             }
 
+
             // VehicleSubtype slug
             try {
                 db.Database.ExecuteSqlRaw("ALTER TABLE `vehiclesubtypes` ADD COLUMN IF NOT EXISTS `Slug` varchar(100) NULL");
@@ -393,6 +395,12 @@ internal class Program
             try {
                 db.Database.ExecuteSqlRaw("ALTER TABLE `refreshtokens` ADD COLUMN IF NOT EXISTS `RevokedAt` datetime(6) NULL");
             } catch (Exception ex) { logger.LogWarning("ALTER refreshtokens.RevokedAt skipped: {Message}", ex.Message); }
+
+            // FeaturedUntil on caradverts — added by migration 20260622110000 which may have been
+            // blocked by a prior cascade failure; this guard ensures the column always exists.
+            try {
+                db.Database.ExecuteSqlRaw("ALTER TABLE `caradverts` ADD COLUMN IF NOT EXISTS `FeaturedUntil` datetime(6) NULL");
+            } catch (Exception ex) { logger.LogWarning("ALTER caradverts.FeaturedUntil skipped: {Message}", ex.Message); }
 
             // CarAdvert taxonomy FK columns — added in migration 20260623100000 but that migration
             // may not have run if an earlier migration in the chain failed first (e.g. 20260621120000).
@@ -736,15 +744,16 @@ internal class Program
             {
                 db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS `customcategoryrequests` (
   `Id` int NOT NULL AUTO_INCREMENT,
-  `UserId` int NOT NULL,
-  `CategoryName` varchar(255) NOT NULL,
-  `Description` longtext NULL,
-  `Status` varchar(50) NOT NULL DEFAULT 'Pending',
-  `CreatedAt` datetime(6) NOT NULL,
+  `UserId` varchar(255) NULL,
+  `CategoryName` varchar(200) NOT NULL,
+  `Description` text NULL,
+  `ParametersJson` text NULL,
+  `Status` varchar(20) NOT NULL DEFAULT 'Pending',
+  `AdminNotes` text NULL,
+  `CreatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `ReviewedAt` datetime(6) NULL,
-  `ReviewNote` longtext NULL,
   PRIMARY KEY (`Id`),
-  KEY `IX_customcategoryrequests_UserId` (`UserId`)
+  KEY `IX_customcategoryrequests_Status` (`Status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
             }
             catch (Exception ex) { logger.LogWarning("CREATE TABLE customcategoryrequests skipped: {Message}", ex.Message); }

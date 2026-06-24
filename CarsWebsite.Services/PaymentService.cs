@@ -66,10 +66,10 @@ public class PaymentService : IPaymentService
 
         if (dto.AdvertId.HasValue)
         {
-            var advert = await _context.Adverts.FirstOrDefaultAsync(a => a.Id == dto.AdvertId.Value);
+            var advert = await _context.CarAdverts.FirstOrDefaultAsync(a => a.Id == dto.AdvertId.Value);
             if (advert == null)
             {
-                _logger.LogWarning("[Payment/Initiate] advertId={AdvertId} not found in Adverts", dto.AdvertId.Value);
+                _logger.LogWarning("[Payment/Initiate] advertId={AdvertId} not found in CarAdverts", dto.AdvertId.Value);
                 throw new KeyNotFoundException("Ogłoszenie nie istnieje.");
             }
             if (advert.UserId != userId)
@@ -144,13 +144,22 @@ public class PaymentService : IPaymentService
         };
     }
 
-    public async Task HandleWebhookAsync(ImojeWebhookDto dto, string rawBody, string signature)
+    public async Task HandleWebhookAsync(ImojeWebhookDto dto, string rawBody, string signature, string? internalSecret = null)
     {
+        var configuredInternalSecret = _config["InternalServiceSecret"]
+            ?? Environment.GetEnvironmentVariable("INTERNAL_SERVICE_SECRET")
+            ?? "";
+        bool isInternalCall = !string.IsNullOrEmpty(configuredInternalSecret)
+            && !string.IsNullOrEmpty(internalSecret)
+            && System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
+                System.Text.Encoding.UTF8.GetBytes(configuredInternalSecret),
+                System.Text.Encoding.UTF8.GetBytes(internalSecret));
+
         _logger.LogInformation(
             "[Webhook] orderId={OrderId} status={Status} rawBodyLen={RawLen} hasTransaction={HasTx}",
             dto.ResolvedOrderId, dto.ResolvedStatus, rawBody.Length, dto.Transaction != null);
 
-        if (!VerifySignature(rawBody, signature))
+        if (!isInternalCall && !VerifySignature(rawBody, signature))
         {
             _logger.LogWarning(
                 "[Webhook] Odrzucono - nieprawidłowy podpis HMAC. orderId={OrderId} sigLen={SigLen}",
