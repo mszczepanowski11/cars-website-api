@@ -5,5 +5,5 @@ namespace cars_website_api.CarsWebsite.DTOs.Message;
 public class StartConversationDto
 {
     public int AdvertId { get; set; }
-    [Required] [MaxLength(4000)] public string InitialMessage { get; set; } = string.Empty;
+    [MaxLength(4000)] public string? InitialMessage { get; set; }
 }
