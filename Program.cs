@@ -123,6 +123,7 @@ internal class Program
         builder.Services.AddScoped<INotificationService, NotificationService>();
         builder.Services.AddScoped<IPaymentService, PaymentService>();
         builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+        builder.Services.AddScoped<IFinancingService, FinancingService>();
         builder.Services.AddHostedService<MonthlyInvoiceJob>();
         builder.Services.AddHostedService<ExpiryReminderJob>();
         builder.Services.AddHostedService<BadgeExpiryJob>();
@@ -536,6 +537,38 @@ internal class Program
   `ReviewedAt` datetime(6) NULL,
   PRIMARY KEY (`Id`),
   KEY `IX_customcategoryrequests_Status` (`Status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+                @"CREATE TABLE IF NOT EXISTS `refreshtokens` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `Token` varchar(128) NOT NULL,
+  `UserId` int NOT NULL,
+  `ExpiresAt` datetime(6) NOT NULL,
+  `IsRevoked` tinyint(1) NOT NULL DEFAULT 0,
+  `RevokedAt` datetime(6) NULL,
+  `CreatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`Id`),
+  UNIQUE KEY `IX_refreshtokens_Token` (`Token`),
+  KEY `IX_refreshtokens_UserId` (`UserId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+                @"CREATE TABLE IF NOT EXISTS `financinginquiries` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `AdvertId` int NOT NULL,
+  `UserId` int NULL,
+  `Name` varchar(200) NOT NULL,
+  `Phone` varchar(30) NOT NULL,
+  `Email` varchar(200) NULL,
+  `Type` varchar(20) NOT NULL DEFAULT 'leasing',
+  `Price` decimal(18,2) NULL,
+  `DownPaymentPct` int NULL,
+  `Months` int NULL,
+  `Status` varchar(20) NOT NULL DEFAULT 'new',
+  `CreatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`Id`),
+  KEY `IX_financinginquiries_AdvertId` (`AdvertId`),
+  KEY `IX_financinginquiries_UserId` (`UserId`),
+  KEY `IX_financinginquiries_CreatedAt` (`CreatedAt`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
             };
 
