@@ -66,7 +66,7 @@ public class FinancingService : IFinancingService
         var siteUrl    = (_config["Imoje:SiteUrl"] ?? "https://carizo.pl").TrimEnd('/');
         var advertUrl  = $"{siteUrl}/advert/{inq.AdvertId}";
         var typeLabel  = inq.Type == "credit" ? "Kredyt" : "Leasing";
-        var adminEmail = _config["Admin:Email"] ?? "admin@carizo.pl";
+        var adminEmail = _config["Admin:Email"] ?? "kontakt@carizo.eu";
 
         var detailsHtml =
             $"<p><strong>Ogłoszenie:</strong> {System.Net.WebUtility.HtmlEncode(advertTitle)}</p>" +
