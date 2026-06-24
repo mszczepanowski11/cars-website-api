@@ -95,10 +95,8 @@ internal class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddDbContext<AppDbContext>(options => options
             .UseMySql(connectionString, new MySqlServerVersion(new Version(9, 4, 0)))
-            .ConfigureWarnings(w => {
-                w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning);
-                w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.CoreEventId.MultipleCollectionIncludeWarning);
-            }));
+            .ConfigureWarnings(w =>
+                w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
         
         builder.Services.AddScoped<UserService>();
         builder.Services.AddScoped<IUserService, UserService>();
