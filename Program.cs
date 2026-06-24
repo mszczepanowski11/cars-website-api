@@ -838,10 +838,12 @@ internal class Program
             // Fix brands seeded with numeric names
             try
             {
-                var firstBrand = db.Brands.OrderBy(b => b.Id).FirstOrDefault();
-                if (firstBrand != null && firstBrand.Name.All(char.IsDigit))
+                var numericBrandCount = db.Brands.Count(b => b.Name != null && b.Name != "" && EF.Functions.Like(b.Name, "%") && b.Name.Length < 10);
+                var sampleNames = db.Brands.OrderBy(b => b.Id).Take(3).Select(b => b.Name).ToList();
+                var hasNumericNames = sampleNames.Any(n => !string.IsNullOrEmpty(n) && n.All(char.IsDigit));
+                if (hasNumericNames)
                 {
-                    logger.LogWarning("Detected numeric brand names — clearing brand tables for re-seed");
+                    logger.LogWarning("Detected numeric brand names (samples: {Samples}) — clearing brand tables for re-seed", string.Join(", ", sampleNames));
                     db.Database.ExecuteSqlRaw("SET FOREIGN_KEY_CHECKS=0");
                     try
                     {
@@ -855,7 +857,7 @@ internal class Program
                     {
                         db.Database.ExecuteSqlRaw("SET FOREIGN_KEY_CHECKS=1");
                     }
-                    logger.LogInformation("Brand tables cleared — seeder will re-populate on next call");
+                    logger.LogInformation("Brand tables cleared — seeder will re-populate immediately in this startup");
                 }
             }
             catch (Exception ex)

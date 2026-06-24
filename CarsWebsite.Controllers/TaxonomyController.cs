@@ -27,21 +27,27 @@ namespace cars_website_api.CarsWebsite.Controllers
         public async Task<IActionResult> GetBrands()
         {
             var brands = await _taxonomyService.GetBrandsAsync();
-            return Ok(brands.Select(b => new { id = b.Id, name = b.Name }));
+            return Ok(brands
+                .Where(b => !string.IsNullOrWhiteSpace(b.Name) && !b.Name.All(char.IsDigit))
+                .Select(b => new { id = b.Id, name = b.Name }));
         }
 
         [HttpGet("brands/category/{categoryId}")]
         public async Task<IActionResult> GetBrandsByCategory(int categoryId)
         {
             var brands = await _taxonomyService.GetBrandsByCategoryAsync(categoryId);
-            return Ok(brands.Select(b => new { id = b.Id, name = b.Name }));
+            return Ok(brands
+                .Where(b => !string.IsNullOrWhiteSpace(b.Name) && !b.Name.All(char.IsDigit))
+                .Select(b => new { id = b.Id, name = b.Name }));
         }
 
         [HttpGet("brands/{brandId}/models")]
         public async Task<IActionResult> GetModelsByBrand(int brandId)
         {
             var models = await _taxonomyService.GetModelsByBrandAsync(brandId);
-            return Ok(models.Select(m => new { id = m.Id, name = m.Name }));
+            return Ok(models
+                .Where(m => !string.IsNullOrWhiteSpace(m.Name) && !m.Name.All(char.IsDigit))
+                .Select(m => new { id = m.Id, name = m.Name }));
         }
 
         [HttpGet("models/{modelId}/generations")]
