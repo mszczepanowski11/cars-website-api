@@ -799,6 +799,7 @@ internal class Program
                 "ALTER TABLE `reviews` ADD COLUMN `BuyerId` int NOT NULL DEFAULT 0",
                 "ALTER TABLE `reviews` ADD COLUMN `AdvertId` int NOT NULL DEFAULT 0",
                 "ALTER TABLE `reviews` ADD COLUMN `IsVerifiedPurchase` tinyint(1) NOT NULL DEFAULT 0",
+                "ALTER TABLE `reviews` ADD COLUMN `Comment` longtext NULL",
             };
             foreach (var sql in addReviewColumnsSql)
             {
