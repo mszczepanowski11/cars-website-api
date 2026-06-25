@@ -21,4 +21,7 @@ public class Invoice
     public DateTime? SentAt { get; set; }
 
     public ICollection<Payment> Payments { get; set; } = new List<Payment>();
+
+    public string? KSeFReferenceNumber { get; set; }
+    public bool IsKSeFSent { get; set; } = false;
 }

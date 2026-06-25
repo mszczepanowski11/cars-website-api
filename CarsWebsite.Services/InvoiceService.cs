@@ -14,14 +14,16 @@ public class InvoiceService : IInvoiceService
     private readonly IConfiguration _config;
     private readonly INotificationService _notifications;
     private readonly IEmailService _email;
+    private readonly IKSeFService _ksef;
     private readonly ILogger<InvoiceService> _logger;
 
-    public InvoiceService(AppDbContext context, IConfiguration config, INotificationService notifications, IEmailService email, ILogger<InvoiceService> logger)
+    public InvoiceService(AppDbContext context, IConfiguration config, INotificationService notifications, IEmailService email, IKSeFService ksef, ILogger<InvoiceService> logger)
     {
         _context = context;
         _config = config;
         _notifications = notifications;
         _email = email;
+        _ksef = ksef;
         _logger = logger;
     }
 
@@ -95,6 +97,14 @@ public class InvoiceService : IInvoiceService
                 invoice.Payments = groupPayments;
 
                 await SendInvoiceEmailAsync(invoice, user);
+
+                var ksefRef = await _ksef.SendInvoiceAsync(invoice, groupPayments);
+                if (ksefRef != null)
+                {
+                    invoice.KSeFReferenceNumber = ksefRef;
+                    invoice.IsKSeFSent = true;
+                    await _context.SaveChangesAsync();
+                }
 
                 _ = _notifications.NotifyAsync(group.Key, EmailNotificationType.InvoiceGenerated,
                     "Faktura wygenerowana",
@@ -592,6 +602,8 @@ public class InvoiceService : IInvoiceService
         UserEmail = inv.User?.Email ?? string.Empty,
         CompanyName = inv.User?.CompanyName,
         Nip = inv.User?.Nip,
+        KSeFReferenceNumber = inv.KSeFReferenceNumber,
+        IsKSeFSent = inv.IsKSeFSent,
         Items = inv.Payments.Select(p => new PaymentResponseDto
         {
             Id = p.Id,

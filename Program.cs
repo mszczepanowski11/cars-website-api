@@ -136,6 +136,7 @@ internal class Program
         builder.Services.AddScoped<INotificationService, NotificationService>();
         builder.Services.AddScoped<IPaymentService, PaymentService>();
         builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+        builder.Services.AddHttpClient<IKSeFService, KSeFService>();
         builder.Services.AddScoped<IFinancingService, FinancingService>();
         builder.Services.AddHostedService<MonthlyInvoiceJob>();
         builder.Services.AddHostedService<ExpiryReminderJob>();
