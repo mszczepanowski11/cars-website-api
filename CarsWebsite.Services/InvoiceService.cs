@@ -300,7 +300,7 @@ public class InvoiceService : IInvoiceService
                         var idx = 1;
                         foreach (var p in invoice.Payments)
                         {
-                            var bg = idx % 2 == 0 ? light : Colors.White;
+                            var bg = idx % 2 == 0 ? light : "#ffffff";
                             table.Cell().Background(bg).BorderBottom(1).BorderColor(border).Padding(8).Text(idx.ToString()).FontSize(9);
                             table.Cell().Background(bg).BorderBottom(1).BorderColor(border).Padding(8).Text(p.ServiceDescription).FontSize(9);
                             table.Cell().Background(bg).BorderBottom(1).BorderColor(border).Padding(8).Text(p.PaidAt?.ToString("dd.MM.yyyy") ?? "–").FontSize(9);
