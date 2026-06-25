@@ -847,6 +847,12 @@ internal class Program
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `payments` ADD COLUMN `BillingCity` varchar(100) NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN payments.BillingCity skipped: {Message}", ex.Message); }
 
+            // KSeF columns for invoices
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `invoices` ADD COLUMN `KSeFReferenceNumber` varchar(200) NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN invoices.KSeFReferenceNumber skipped: {Message}", ex.Message); }
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `invoices` ADD COLUMN `IsKSeFSent` tinyint(1) NOT NULL DEFAULT 0"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN invoices.IsKSeFSent skipped: {Message}", ex.Message); }
+
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `newslettersubscribers` ADD COLUMN `IsConfirmed` tinyint(1) NOT NULL DEFAULT 0"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN newslettersubscribers.IsConfirmed skipped: {Message}", ex.Message); }
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `newslettersubscribers` ADD COLUMN `ConfirmationToken` varchar(64) NULL"); }
