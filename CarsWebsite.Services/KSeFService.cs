@@ -209,7 +209,7 @@ public class KSeFService : IKSeFService
                         new XElement(Ns + "Miejscowosc", "Kraków"),
                         new XElement(Ns + "KodPocztowy", "31-223")),
                     new XElement(Ns + "DaneKontaktowe",
-                        new XElement(Ns + "Email", "carizokontakt@gmail.com"))),
+                        new XElement(Ns + "Email", "kontakt@carizo.eu"))),
                 podmiot2,
                 new XElement(Ns + "Fa",
                     new XElement(Ns + "KodWaluty", "PLN"),

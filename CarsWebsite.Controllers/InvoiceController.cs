@@ -20,7 +20,7 @@ public class InvoiceController : ControllerBase
     private bool IsAdmin() => User.FindFirstValue("isAdmin") == "true";
 
     [HttpGet("test-pdf")]
-    [AllowAnonymous]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> TestPdf()
     {
         var bytes = await _invoiceService.GenerateTestPdfAsync();

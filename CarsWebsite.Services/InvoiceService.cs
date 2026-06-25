@@ -203,11 +203,11 @@ public class InvoiceService : IInvoiceService
         var sellerName    = _config["Invoice:SellerName"]    ?? "CARIZO Wiktor Niezgoda";
         var sellerNip     = _config["Invoice:SellerNip"]     ?? "9452331007";
         var sellerRegon   = _config["Invoice:SellerRegon"]   ?? "544870688";
-        var sellerPhone   = _config["Invoice:SellerPhone"]   ?? "+48 799 123 456";
-        var sellerEmail   = _config["Invoice:SellerEmail"]   ?? "biuro@carizo.eu";
+        var sellerPhone   = _config["Invoice:SellerPhone"]   ?? "+48 531 657 872";
+        var sellerEmail   = _config["Invoice:SellerEmail"]   ?? "kontakt@carizo.eu";
         var sellerStreet  = _config["Invoice:SellerStreet"]  ?? "ul. Henryka Pachońskiego 7/60";
         var sellerCity    = _config["Invoice:SellerCity"]    ?? "31-223 Kraków";
-        var accountNumber = _config["Invoice:AccountNumber"] ?? "–";
+        var accountNumber = _config["Invoice:AccountNumber"] ?? "29 1050 1445 1000 0090 8697 1745";
 
         // Parse invoice number parts e.g. FZ/2026/06/0001
         var parts = invoice.InvoiceNumber.Split('/');
