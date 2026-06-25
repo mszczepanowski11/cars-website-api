@@ -26,7 +26,7 @@ public class EmailService : IEmailService
 
         // Strip accidentally included protocol prefix (e.g. "smtp://smtp.host.com")
         var host = rawHost.Contains("://") ? rawHost.Split("://", 2)[1].TrimEnd('/') : rawHost;
-        // Strip accidentally included port in host (e.g. "smtp.host.com:587")
+        // Strip accidentally included port suffix (e.g. "smtp.host.com:587")
         if (!host.StartsWith("[") && host.Contains(':'))
             host = host.Split(':')[0];
 
@@ -35,7 +35,7 @@ public class EmailService : IEmailService
         var user = section["User"];
         var password = section["Password"];
 
-        _logger.LogInformation("[Email] Sending to {To} via {Host}:{Port}", to, host, port);
+        _logger.LogInformation("[Email] Sending '{Subject}' to {To} via {Host}:{Port}", subject, to, host, port);
 
         try
         {
@@ -55,7 +55,7 @@ public class EmailService : IEmailService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Błąd wysyłki e-mail do {To}", to);
+            _logger.LogError(ex, "[Email] Błąd wysyłki e-mail do {To} via {Host}:{Port}", to, host, port);
         }
     }
 

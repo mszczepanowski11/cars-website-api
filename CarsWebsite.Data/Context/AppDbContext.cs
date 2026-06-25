@@ -65,6 +65,9 @@ namespace CarsWebsite
         // Custom category requests
         public DbSet<CustomCategoryRequest> CustomCategoryRequests { get; set; }
 
+        // Financing leads
+        public DbSet<FinancingInquiry> FinancingInquiries { get; set; }
+
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

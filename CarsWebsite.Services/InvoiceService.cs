@@ -301,7 +301,7 @@ public class InvoiceService : IInvoiceService
     private async Task SendInvoiceEmailAsync(Invoice invoice, User user)
     {
         var html = BuildInvoiceHtml(invoice);
-        var adminEmail = _config["Admin:Email"] ?? "admin@carizo.pl";
+        var adminEmail = _config["Admin:Email"] ?? "kontakt@carizo.eu";
 
         try
         {

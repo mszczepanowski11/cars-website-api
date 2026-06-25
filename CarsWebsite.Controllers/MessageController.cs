@@ -27,7 +27,7 @@ public class MessageController : ControllerBase
         try
         {
             var conversationId = await _messageService.StartOrGetConversationAsync(
-                userId, dto.AdvertId, dto.InitialMessage);
+                userId, dto.AdvertId, dto.InitialMessage ?? string.Empty);
             return Ok(new { conversationId });
         }
         catch (Exception ex)

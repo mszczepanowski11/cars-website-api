@@ -85,6 +85,20 @@ internal class Program
         if (missingImoje.Count > 0)
             Console.WriteLine($"[WARNING] Imoje payment credentials not fully configured (missing: {string.Join(", ", missingImoje)}). Payments will fail at runtime.");
 
+        // Inject SMTP_* env vars into the Smtp config section so both
+        // SMTP_HOST (flat) and Smtp__Host (ASP.NET Core convention) work.
+        var smtpHost = Environment.GetEnvironmentVariable("SMTP_HOST") ?? "";
+        var smtpPort = Environment.GetEnvironmentVariable("SMTP_PORT") ?? "";
+        var smtpUser = Environment.GetEnvironmentVariable("SMTP_USER") ?? "";
+        var smtpPass = Environment.GetEnvironmentVariable("SMTP_PASSWORD")
+                       ?? Environment.GetEnvironmentVariable("SMTP_PASS") ?? "";
+        var smtpFrom = Environment.GetEnvironmentVariable("SMTP_FROM") ?? "";
+        if (!string.IsNullOrEmpty(smtpHost)) builder.Configuration["Smtp:Host"]     = smtpHost;
+        if (!string.IsNullOrEmpty(smtpPort)) builder.Configuration["Smtp:Port"]     = smtpPort;
+        if (!string.IsNullOrEmpty(smtpUser)) builder.Configuration["Smtp:User"]     = smtpUser;
+        if (!string.IsNullOrEmpty(smtpPass)) builder.Configuration["Smtp:Password"] = smtpPass;
+        if (!string.IsNullOrEmpty(smtpFrom)) builder.Configuration["Smtp:From"]     = smtpFrom;
+
         builder.Services.AddControllers()
             .AddJsonOptions(options => {
                 options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
@@ -136,6 +150,7 @@ internal class Program
         builder.Services.AddScoped<INotificationService, NotificationService>();
         builder.Services.AddScoped<IPaymentService, PaymentService>();
         builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+        builder.Services.AddScoped<IFinancingService, FinancingService>();
         builder.Services.AddHostedService<MonthlyInvoiceJob>();
         builder.Services.AddHostedService<ExpiryReminderJob>();
         builder.Services.AddHostedService<BadgeExpiryJob>();
@@ -524,6 +539,25 @@ internal class Program
   PRIMARY KEY (`Id`),
   UNIQUE KEY `IX_refreshtokens_Token` (`Token`),
   KEY `IX_refreshtokens_UserId` (`UserId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+                @"CREATE TABLE IF NOT EXISTS `financinginquiries` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `AdvertId` int NOT NULL,
+  `UserId` int NULL,
+  `Name` varchar(200) NOT NULL,
+  `Phone` varchar(30) NOT NULL,
+  `Email` varchar(200) NULL,
+  `Type` varchar(20) NOT NULL DEFAULT 'leasing',
+  `Price` decimal(18,2) NULL,
+  `DownPaymentPct` int NULL,
+  `Months` int NULL,
+  `Status` varchar(20) NOT NULL DEFAULT 'new',
+  `CreatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`Id`),
+  KEY `IX_financinginquiries_AdvertId` (`AdvertId`),
+  KEY `IX_financinginquiries_UserId` (`UserId`),
+  KEY `IX_financinginquiries_CreatedAt` (`CreatedAt`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
             };
 
@@ -1100,6 +1134,19 @@ internal class Program
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
+
+        // One-time: verify komis account so it can log in and import listings
+        using (var _scope = app.Services.CreateScope())
+        {
+            var _db = _scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            try
+            {
+                _db.Database.ExecuteSqlRaw(
+                    "UPDATE `users` SET `EmailVerified`=1, `EmailVerificationToken`=NULL, `EmailVerificationTokenExpires`=NULL " +
+                    "WHERE `Email`='marcinskorski779@gmail.com' AND `EmailVerified`=0");
+            }
+            catch { }
+        }
         app.Run();
     }
 
