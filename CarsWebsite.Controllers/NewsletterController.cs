@@ -16,12 +16,14 @@ public class NewsletterController : ControllerBase
     private readonly AppDbContext _context;
     private readonly IEmailService _email;
     private readonly IConfiguration _config;
+    private readonly ILogger<NewsletterController> _logger;
 
-    public NewsletterController(AppDbContext context, IEmailService email, IConfiguration config)
+    public NewsletterController(AppDbContext context, IEmailService email, IConfiguration config, ILogger<NewsletterController> logger)
     {
         _context = context;
         _email = email;
         _config = config;
+        _logger = logger;
     }
 
     [HttpPost("subscribe")]
@@ -65,13 +67,17 @@ public class NewsletterController : ControllerBase
 
         var siteUrl = _config["SiteUrl"] ?? "https://carizo.pl";
         var confirmUrl = $"{siteUrl}/newsletter/potwierdz?token={token}";
-        await _email.SendAsync(email, "Potwierdź zapis na newsletter — CARIZO",
-            $@"<div style=""font-family:Inter,sans-serif;max-width:560px;margin:0 auto;background:#050505;color:#e0e0e0;padding:32px;border-radius:8px"">
+        var html = $@"<div style=""font-family:Inter,sans-serif;max-width:560px;margin:0 auto;background:#050505;color:#e0e0e0;padding:32px;border-radius:8px"">
                 <h2 style=""color:#8B0D1D;margin-top:0"">Potwierdź zapis na newsletter</h2>
                 <p>Kliknij poniższy przycisk, aby potwierdzić zapis. Link jest ważny przez <strong>24 godziny</strong>.</p>
                 <p><a href=""{confirmUrl}"" style=""display:inline-block;background:#8B0D1D;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:700"">Potwierdź zapis</a></p>
                 <p style=""font-size:12px;color:#666"">Jeśli nie zapisywałeś/aś się na newsletter CARIZO, zignoruj tę wiadomość.</p>
-               </div>");
+               </div>";
+
+        // Fire-and-forget — don't block the HTTP response waiting for SMTP
+        _ = _email.SendAsync(email, "Potwierdź zapis na newsletter — CARIZO", html)
+            .ContinueWith(t => { if (t.IsFaulted) _logger.LogError(t.Exception, "Newsletter email failed for {Email}", email); },
+                TaskContinuationOptions.OnlyOnFaulted);
 
         return Ok(new { message = "Sprawdź swoją skrzynkę email i kliknij link potwierdzający." });
     }
