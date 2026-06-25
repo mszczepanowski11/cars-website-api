@@ -19,7 +19,7 @@ Wymagania:
   playwright install chromium
 """
 
-import sys, json, time, re, io, os, math
+import sys, json, time, re, io, os, math, unicodedata
 from pathlib import Path
 
 try:
@@ -458,15 +458,25 @@ def get_models(session, brand_id):
     return {}
 
 
+def _norm(s):
+    """Normalizuje string: usuwa ogonki, zamienia na lowercase."""
+    return unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode("ascii").lower().strip()
+
 def fuzzy(raw, lookup):
     if not raw or not lookup: return None
-    r = raw.lower().strip()
-    if r in lookup: return lookup[r]
+    r  = raw.lower().strip()
+    rn = _norm(raw)
+    # 1. dokładne trafienie (z lub bez normalizacji)
+    if r  in lookup: return lookup[r]
+    if rn in {_norm(k): v for k, v in lookup.items()}: return {_norm(k): v for k, v in lookup.items()}[rn]
+    # 2. zawieranie (normalizowane)
     for k, v in lookup.items():
-        if r in k or k in r: return v
-    r0 = r.split()[0]
+        kn = _norm(k)
+        if rn in kn or kn in rn: return v
+    # 3. pierwsze słowo
+    r0 = rn.split()[0] if rn.split() else rn
     for k, v in lookup.items():
-        if r0 in k: return v
+        if r0 in _norm(k): return v
     return None
 
 
@@ -802,15 +812,31 @@ def cmd_import():
         if advert_id:
             ok(f"Ogloszenie #{advert_id}")
 
-            # Szukaj pasujacego folderu
+            # Szukaj pasujacego folderu po nazwie auta (nie po numerze)
             matched_folder = None
             if folder_name in folders:
                 matched_folder = folders[folder_name]
             else:
+                # Porownuj nazwe auta z nazwa folderu (po usunieciu prefiksu numerycznego)
+                title_key = _norm(car["title"])[:35]
+                best_fn, best_score = None, 0
                 for fn, fp in folders.items():
-                    if fn.startswith(f"{idx:02d}_"):
-                        matched_folder = fp
-                        break
+                    # Usun prefix numeryczny "07_" -> "Ford_S-MAX..."
+                    fn_body = re.sub(r'^\d+_', '', fn)
+                    fn_key  = _norm(fn_body.replace("_", " "))
+                    # Policz wspolne slowa (>=4 znaki)
+                    t_words = set(w for w in re.split(r'\W+', title_key) if len(w) >= 4)
+                    f_words = set(w for w in re.split(r'\W+', fn_key)    if len(w) >= 4)
+                    common  = t_words & f_words
+                    score   = len(common)
+                    if score > best_score:
+                        best_score, best_fn = score, fn
+                if best_score >= 2:
+                    matched_folder = folders[best_fn]
+                elif best_score == 1:
+                    # jesli tylko jedno wspolne slowo, sprawdz czy to marka+model
+                    if best_fn:
+                        matched_folder = folders[best_fn]
 
             if matched_folder:
                 photo_list = [f for f in matched_folder.iterdir() if f.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}]
