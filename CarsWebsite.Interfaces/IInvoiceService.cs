@@ -11,4 +11,5 @@ public interface IInvoiceService
     Task<byte[]> GenerateInvoicePdfAsync(int id, int userId, bool isAdmin = false);
     Task<PagedResult<InvoiceResponseDto>> GetAllInvoicesAsync(int page, int pageSize);
     Task SendInvoiceByEmailAsync(int invoiceId);
+    Task<byte[]> GenerateTestPdfAsync();
 }

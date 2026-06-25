@@ -180,6 +180,11 @@ public class InvoiceService : IInvoiceService
 
         if (invoice == null) throw new KeyNotFoundException("Faktura nie istnieje.");
 
+        return GenerateInvoicePdfFromModel(invoice);
+    }
+
+    private byte[] GenerateInvoicePdfFromModel(Invoice invoice)
+    {
         QuestPDF.Settings.License = LicenseType.Community;
 
         var user = invoice.User;
@@ -500,6 +505,65 @@ public class InvoiceService : IInvoiceService
             return qr.GetGraphic(5);
         }
         catch { return null; }
+    }
+
+    public Task<byte[]> GenerateTestPdfAsync()
+    {
+        var fakeInvoice = new Invoice
+        {
+            Id = 0,
+            InvoiceNumber = "FZ/2026/06/0001",
+            Month = 6,
+            Year = 2026,
+            TotalAmount = 447.00m,
+            NetAmount = 363.41m,
+            VatAmount = 83.59m,
+            VatRate = 0.23m,
+            Status = InvoiceStatus.Sent,
+            GeneratedAt = new DateTime(2026, 7, 1, 0, 0, 0, DateTimeKind.Utc),
+            SentAt = new DateTime(2026, 7, 1, 0, 0, 0, DateTimeKind.Utc),
+            User = new User
+            {
+                Name = "Auto Komis",
+                Surname = "Ostrowiec Sp. z o.o.",
+                Email = "kontakt@autokomis.pl",
+                AccountType = AccountType.Business,
+                CompanyName = "Auto Komis Ostrowiec Sp. z o.o.",
+                Nip = "6612345678"
+            },
+            Payments = new List<Payment>
+            {
+                new() {
+                    ServiceDescription = "Pakiet Premium – wyróżnienie ogłoszenia (30 dni)",
+                    Amount = 199.00m, DurationDays = 30,
+                    PaidAt = new DateTime(2026, 6, 5, 0, 0, 0, DateTimeKind.Utc),
+                    ImojeOrderId = "ZAM/2026/06/0150",
+                    ImojeTransactionId = "ING/2026/06/0150",
+                    BillingNip = "6612345678",
+                    BillingName = "Auto Komis Ostrowiec Sp. z o.o.",
+                    BillingStreet = "ul. Przykładowa 15",
+                    BillingPostalCode = "27-400",
+                    BillingCity = "Ostrowiec Świętokrzyski"
+                },
+                new() {
+                    ServiceDescription = "Pakiet TOP – podbicie ogłoszenia na górę listy (7 dni)",
+                    Amount = 49.00m, DurationDays = 7,
+                    PaidAt = new DateTime(2026, 6, 12, 0, 0, 0, DateTimeKind.Utc),
+                    ImojeOrderId = "ZAM/2026/06/0151",
+                    ImojeTransactionId = "ING/2026/06/0151",
+                },
+                new() {
+                    ServiceDescription = "Pakiet Premium – wyróżnienie ogłoszenia (30 dni)",
+                    Amount = 199.00m, DurationDays = 30,
+                    PaidAt = new DateTime(2026, 6, 20, 0, 0, 0, DateTimeKind.Utc),
+                    ImojeOrderId = "ZAM/2026/06/0152",
+                    ImojeTransactionId = "ING/2026/06/0152",
+                }
+            }
+        };
+
+        var bytes = GenerateInvoicePdfFromModel(fakeInvoice);
+        return Task.FromResult(bytes);
     }
 
     public async Task<PagedResult<InvoiceResponseDto>> GetAllInvoicesAsync(int page, int pageSize)

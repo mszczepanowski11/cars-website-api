@@ -19,6 +19,14 @@ public class InvoiceController : ControllerBase
 
     private bool IsAdmin() => User.FindFirstValue("isAdmin") == "true";
 
+    [HttpGet("test-pdf")]
+    [AllowAnonymous]
+    public async Task<IActionResult> TestPdf()
+    {
+        var bytes = await _invoiceService.GenerateTestPdfAsync();
+        return File(bytes, "application/pdf", "CARIZO_faktura_testowa.pdf");
+    }
+
     private int GetUserId()
     {
         int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var uid);
