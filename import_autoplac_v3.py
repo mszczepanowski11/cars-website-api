@@ -170,12 +170,40 @@ def scrape_all(pw):
     return cars
 
 
+def _num(text, pattern, scale=1, is_float=False):
+    """Wyciaga liczbe z tekstu na podstawie wzorca."""
+    m = re.search(pattern, text, re.I)
+    if not m: return None
+    raw = re.sub(r"\s", "", m.group(1)).replace(",", ".")
+    try:
+        return round(float(raw) * scale, 1) if is_float else int(float(raw) * scale)
+    except:
+        return None
+
+def _parse_date(text, pattern):
+    """Wyciaga date i zwraca jako YYYY-MM-DDT00:00:00Z lub None."""
+    m = re.search(pattern, text, re.I)
+    if not m: return None
+    raw = m.group(1)
+    parts = re.split(r"[./-]", raw)
+    if len(parts) == 3:
+        d, mo, y = parts
+        if len(y) == 2:
+            y = "20" + y if int(y) < 50 else "19" + y
+        try:
+            return f"{y}-{mo.zfill(2)}-{d.zfill(2)}T00:00:00Z"
+        except:
+            pass
+    return None
+
+
 def parse_listing(html, url):
     soup = BeautifulSoup(html, "html.parser")
     car = {"source_url": url}
     text = soup.get_text(" ")
+    tl = text.lower()
 
-    # Tytul
+    # ── Tytul ──
     for sel in ["h1", ".offer-title", ".title", '[class*="title"]', "h2"]:
         el = soup.select_one(sel)
         if el and len(el.get_text(strip=True)) > 3:
@@ -188,25 +216,23 @@ def parse_listing(html, url):
     car["brand_raw"] = parts[0] if parts else ""
     car["model_raw"] = parts[1] if len(parts) > 1 else ""
 
-    # Cena
+    # ── Cena ──
     m = re.search(r"([\d\s]{4,10})\s*(?:zl|PLN|zł)", text)
     car["price"] = int(re.sub(r"\s", "", m.group(1))) if m else 0
 
-    # Rok
+    # ── Rok ──
     m = re.search(r"\b(19[89]\d|20[012]\d)\b", text)
     car["year"] = int(m.group(1)) if m else 2010
 
-    # Przebieg
+    # ── Przebieg ──
     m = re.search(r"([\d\s]{3,7})\s*km", text, re.I)
     car["mileage"] = int(re.sub(r"\s", "", m.group(1))) if m else 0
 
-    # Moc
-    m = re.search(r"(\d+)\s*KM", text)
-    car["power_hp"] = int(m.group(1)) if m else None
-    m = re.search(r"(\d+)\s*kW", text)
-    car["power_kw"] = int(m.group(1)) if m else None
+    # ── Moc ──
+    car["power_hp"] = _num(text, r"(\d+)\s*KM")
+    car["power_kw"] = _num(text, r"(\d+)\s*kW")
 
-    # Pojemnosc silnika
+    # ── Pojemnosc silnika ──
     m = re.search(r"(\d[\d\s]{2,4})\s*(?:cm3|cm³|ccm)", text, re.I)
     if m:
         v = int(re.sub(r"\s", "", m.group(1)))
@@ -215,106 +241,163 @@ def parse_listing(html, url):
         m = re.search(r"\b(\d)\.(\d)\b", car["title"])
         car["engine_cc"] = int(m.group(1)) * 1000 + int(m.group(2)) * 100 if m else None
 
-    # Paliwo
+    # ── Moment obrotowy (Nm) ──
+    car["torque"] = _num(text, r"moment\s+obrotow\w*[:\s]+([\d\s,]+)\s*Nm")
+    if not car["torque"]:
+        car["torque"] = _num(text, r"([\d]+)\s*Nm")
+
+    # ── Przyspieszenie 0-100 ──
+    car["acceleration"] = _num(text,
+        r"(?:przyspieszen\w*\s*0[-–]100|0[-–]100\s*km/h)[:\s]+([\d,\.]+)\s*s",
+        is_float=True)
+
+    # ── Spalanie ──
+    car["fuel_city"]     = _num(text,
+        r"(?:zuzycie\s+paliwa\s+w\s+miesci\w*|miasto)[:\s]+([\d,\.]+)\s*l/100",
+        is_float=True)
+    car["fuel_highway"]  = _num(text,
+        r"(?:zuzycie\s+paliwa\s+poza\s+miastem|poza\s+miastem|trasa)[:\s]+([\d,\.]+)\s*l/100",
+        is_float=True)
+    car["fuel_combined"] = _num(text,
+        r"(?:zuzycie\s+(?:paliwa\s+)?mieszane|srednie|combined)[:\s]+([\d,\.]+)\s*l/100",
+        is_float=True)
+
+    # ── Emisja CO2 ──
+    car["co2"] = _num(text, r"(?:emisja\s+CO2|CO2)[:\s]+([\d]+)\s*g/km")
+
+    # ── Norma Euro ──
+    car["euro_norm"] = None
+    m = re.search(r"Euro\s*(\d)", text, re.I)
+    if m: car["euro_norm"] = f"Euro {m.group(1)}"
+
+    # ── Masa wlasna ──
+    car["curb_weight"] = _num(text, r"(?:masa\s+wlasna|masa\s+własna|waga)[:\s]+([\d\s]+)\s*kg")
+
+    # ── Paliwo ──
     car["fuel"] = None
     for kw in ["benzyna", "diesel", "hybryda", "elektryczny", "lpg", "cng"]:
-        if kw in text.lower():
-            car["fuel"] = kw
-            break
+        if kw in tl: car["fuel"] = kw; break
 
-    # Skrzynia
+    # ── Skrzynia ──
     car["gearbox"] = None
     for kw in ["automatyczna", "automat", "manualna", "manual"]:
-        if kw in text.lower():
-            car["gearbox"] = kw
-            break
+        if kw in tl: car["gearbox"] = kw; break
 
-    # Nadwozie
+    # ── Nadwozie ──
     car["body"] = None
     for kw in ["suv", "crossover", "hatchback", "sedan", "kombi", "coupe", "kabriolet", "van", "pickup", "minivan"]:
-        if kw in text.lower():
-            car["body"] = kw
-            break
+        if kw in tl: car["body"] = kw; break
 
-    # Naped
+    # ── Naped ──
     car["drive"] = None
-    for kw in ["4x4", "awd", "4wd", "quattro", "xdrive", "4motion"]:
-        if kw in text.lower():
-            car["drive"] = kw
-            break
+    for kw in ["4x4", "awd", "4wd", "quattro", "xdrive", "4motion", "syncro", "permanentny"]:
+        if kw in tl: car["drive"] = kw; break
 
-    # Kolor
+    # ── Kolor ──
     car["color"] = None
-    for c in ["czarny","bialy","srebrny","szary","czerwony","niebieski","zielony","zolty","brazowy","bezowy","granatowy","bordowy","zloty","pomaranczowy"]:
-        if c in text.lower():
-            car["color"] = c
-            break
-    # Polskie znaki
-    if not car["color"]:
-        for c in ["czarny","biały","srebrny","szary","czerwony","niebieski","zielony","żółty","brązowy","beżowy","granatowy","bordowy","złoty","pomarańczowy"]:
-            if c in text.lower():
-                car["color"] = c
-                break
+    for c in ["czarny","bialy","srebrny","szary","czerwony","niebieski","zielony",
+              "zolty","brazowy","bezowy","granatowy","bordowy","zloty","pomaranczowy",
+              "biały","żółty","brązowy","beżowy","złoty","pomarańczowy"]:
+        if c in tl: car["color"] = c; break
 
-    # Drzwi / miejsca
+    # ── Drzwi / miejsca ──
     m = re.search(r"(\d)\s*drzwi", text, re.I)
     car["doors"] = int(m.group(1)) if m else None
     m = re.search(r"(\d+)\s*miejsc", text, re.I)
     car["seats"] = int(m.group(1)) if m and int(m.group(1)) <= 9 else None
 
-    # Data pierwszej rejestracji
-    car["first_reg"] = None
-    m = re.search(r"(?:pierwsz\w+\s+rejestr\w*|data\s+rejestr\w*)[:\s]+(\d{1,2}[./-]\d{1,2}[./-]\d{2,4})", text, re.I)
-    if m:
-        parts = re.split(r"[./-]", m.group(1))
-        if len(parts) == 3:
-            d, mo, y = parts
-            if len(y) == 2:
-                y = "20" + y if int(y) < 50 else "19" + y
-            try:
-                car["first_reg"] = f"{y}-{mo.zfill(2)}-{d.zfill(2)}"
-            except:
-                pass
-    if not car["first_reg"]:
-        car["first_reg"] = f"{car['year']}-01-01"
+    # ── Data pierwszej rejestracji ──
+    car["first_reg"] = (
+        _parse_date(text, r"(?:pierwsz\w+\s+rejestr\w*|data\s+rejestr\w*)[:\s]+(\d{1,2}[./-]\d{1,2}[./-]\d{2,4})")
+        or f"{car['year']}-01-01T00:00:00Z"
+    )
 
-    # VIN
+    # ── Nastepny przeglad ──
+    car["next_inspection"] = _parse_date(text,
+        r"(?:nastepn\w+\s+przeglad\w*|nastepny\s+przeglad|badanie\s+techniczne)[:\s]+(\d{1,2}[./-]\d{1,2}[./-]\d{2,4})")
+
+    # ── VIN ──
     m = re.search(r"\b([A-HJ-NPR-Z0-9]{17})\b", text)
     car["vin"] = m.group(1) if m else None
 
-    # Wyposazenie
+    # ── Kraj rejestracji / import ──
+    car["reg_country"] = "Polska"
+    car["is_imported"] = bool(re.search(r"importowan|sprowadzon", tl))
+    car["import_country"] = None
+    for country in ["niemcy", "francja", "holandia", "belgia", "wlochy", "italia", "szwajcaria",
+                    "austria", "szwecja", "dania", "hiszpania", "usa", "japonia"]:
+        if country in tl:
+            COUNTRY_MAP = {
+                "niemcy": "Niemcy", "francja": "Francja", "holandia": "Holandia",
+                "belgia": "Belgia", "wlochy": "Wlochy", "italia": "Wlochy",
+                "szwajcaria": "Szwajcaria", "austria": "Austria", "szwecja": "Szwecja",
+                "dania": "Dania", "hiszpania": "Hiszpania", "usa": "USA", "japonia": "Japonia",
+            }
+            car["import_country"] = COUNTRY_MAP.get(country, country.capitalize())
+            car["is_imported"] = True
+            break
+
+    # ── Historia serwisowa ──
+    car["has_service_book"] = bool(re.search(
+        r"ksi[aą]żka\s*serwis|serwisow\w+\s*ksi|ksiazka\s*serwis", tl))
+    car["has_full_service_history"] = bool(re.search(
+        r"pełna\s*historia|pelna\s*historia|full\s*service\s*history", tl))
+
+    # ── Uszkodzenia / gwarancja ──
+    car["has_damage"] = bool(re.search(r"uszkodzon\w|po\s+kolizji|powypadkow\w", tl))
+    car["damage_desc"] = None
+    if car["has_damage"]:
+        m = re.search(r"(uszkodzon\w[^.]{0,150})", text, re.I)
+        if m: car["damage_desc"] = m.group(1)[:200]
+
+    car["has_warranty"] = bool(re.search(r"gwarancj", tl))
+    car["warranty_until"] = _parse_date(text,
+        r"gwarancja\s+do[:\s]+(\d{1,2}[./-]\d{1,2}[./-]\d{2,4})")
+
+    # ── Liczba wlascicieli ──
+    m = re.search(r"(\d+)\s*w[lł]a[sś]ciciel", text, re.I)
+    car["owners"] = int(m.group(1)) if m else None
+
+    # ── Wyposazenie — szukamy agresywniej ──
     equipment = []
-    for sel in [
+    EQUIP_SELECTORS = [
         "ul.features li", "ul.equipment li", "ul.extras li",
-        "div.features li", "div.equipment li",
+        "div.features li", "div.equipment li", "div.extras li",
         "[class*='feature'] li", "[class*='equipment'] li",
-        "[class*='wyposa'] li", ".offer-features li",
-    ]:
+        "[class*='wyposa'] li", "[class*='wyposaz'] li",
+        ".offer-features li", "div[class*='detail'] ul li",
+        "ul[class*='list'] li", ".parameters li", ".specs li",
+    ]
+    for sel in EQUIP_SELECTORS:
         items = soup.select(sel)
         for item in items:
             t = item.get_text(strip=True)
             if t and 2 < len(t) < 100:
                 equipment.append(t)
-        if equipment:
+        if len(equipment) >= 3:
             break
-    car["equipment"] = list(dict.fromkeys(equipment))[:50]
 
-    # Opis
+    # Fallback: divy/spany z klasami wskazujacymi na wyposazenie
+    if len(equipment) < 3:
+        for el in soup.find_all(["span", "div", "p"],
+                                class_=re.compile(r"feature|equipment|wyposaz|wyposa|param", re.I)):
+            t = el.get_text(strip=True)
+            if 3 < len(t) < 80 and t not in equipment:
+                equipment.append(t)
+
+    car["equipment"] = list(dict.fromkeys(equipment))[:60]
+
+    # ── Opis ──
     car["description"] = ""
-    for sel in [".description", '[class*="desc"]', ".offer-description", "article"]:
+    for sel in [".description", '[class*="desc"]', ".offer-description", "article", ".content", "main"]:
         el = soup.select_one(sel)
         if el and len(el.get_text(strip=True)) > 50:
             car["description"] = el.get_text("\n", strip=True)[:4000]
             break
 
-    # Lokalizacja
+    # ── Lokalizacja ──
     car["city"]   = "Ostrowiec Swietokrzyski"
     car["region"] = "swietokrzyskie"
-
-    # Wlasciciele
-    m = re.search(r"(\d+)\s*wlasciciel|(\d+)\s*właściciel", text, re.I)
-    car["owners"] = int(m.group(1) or m.group(2)) if m else None
-    car["has_service_book"] = bool(re.search(r"ksiazka\s*serwis|serwisow\w+\s*ksi|książka\s*serwis", text, re.I))
 
     return car
 
@@ -511,25 +594,58 @@ def create_advert(session, car, brands, fuels, gears, bodies, drives, colors, fe
         "region":      car.get("region", "swietokrzyskie"),
         "sellerType":  "Dealer",
         "condition":   "Used",
+        # Dane techniczne
         "powerHP":     car.get("power_hp"),
         "powerKW":     car.get("power_kw"),
         "engineSize":  car.get("engine_cc"),
+        "torque":      car.get("torque"),
+        "acceleration": car.get("acceleration"),
+        # Spalanie i emisje
+        "fuelConsumptionCity":     car.get("fuel_city"),
+        "fuelConsumptionHighway":  car.get("fuel_highway"),
+        "fuelConsumptionCombined": car.get("fuel_combined"),
+        "co2Emission":  car.get("co2"),
+        "euroNorm":     car.get("euro_norm"),
+        # Masa
+        "curbWeight":  car.get("curb_weight"),
+        # Nadwozie
         "doorCount":   car.get("doors"),
         "seatsCount":  car.get("seats"),
+        # Identyfikacja
         "vin":         car.get("vin"),
-        "ownersCount": car.get("owners"),
-        "hasServiceBook": car.get("has_service_book", False),
+        # Historia i rejestracja
+        "firstRegistrationDate": car.get("first_reg"),
+        "nextInspection":        car.get("next_inspection"),
+        "registrationCountry":   car.get("reg_country"),
+        "isImported":            car.get("is_imported", False),
+        "importCountry":         car.get("import_country"),
+        "ownersCount":           car.get("owners"),
+        "hasServiceBook":        car.get("has_service_book", False),
+        "hasFullServiceHistory": car.get("has_full_service_history", False),
+        # Uszkodzenia
+        "hasDamage":         car.get("has_damage", False),
+        "damageDescription": car.get("damage_desc"),
+        # Gwarancja
+        "hasWarranty":  car.get("has_warranty", False),
+        "warrantyUntil": car.get("warranty_until"),
+        # Wyposazenie
         "featureIds":  feat_ids if feat_ids else None,
     }
 
-    if car.get("first_reg"):
-        dto["firstRegistrationDate"] = car["first_reg"] + "T00:00:00Z"
-
-    dto = {k: v for k, v in dto.items() if v is not None}
+    dto = {k: v for k, v in dto.items() if v is not None and v is not False}
+    # Zawsze dodaj boolowe False jesli istotne
+    for bkey in ["isNegotiable", "isImported", "hasServiceBook", "hasFullServiceHistory", "hasDamage", "hasWarranty"]:
+        if bkey not in dto:
+            dto[bkey] = car.get(bkey.replace("has", "has_").replace("is", "is_")
+                                   .replace("HasS", "has_s").replace("HasF", "has_f")
+                                   .replace("HasD", "has_d").replace("HasW", "has_w")
+                                   .replace("IsI", "is_i"), False)
 
     code, body = api("POST", "/api/Advert", session, json=dto)
     if code in (200, 201):
-        return body.get("id") if isinstance(body, dict) else body
+        adv_id = body.get("id") if isinstance(body, dict) else body
+        log(f"  Pola: paliwo={car.get('fuel')} | {car.get('fuel_city')}l/100km miasto | CO2={car.get('co2')} | Euro={car.get('euro_norm')} | VIN={'tak' if car.get('vin') else 'brak'}")
+        return adv_id
     else:
         err(f"Tworzenie: {code} — {body}")
         return None
