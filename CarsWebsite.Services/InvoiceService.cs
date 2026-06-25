@@ -216,7 +216,7 @@ public class InvoiceService : IInvoiceService
                                 t.Span("CARI").FontSize(26).Bold().FontColor(Colors.White);
                                 t.Span("ZO").FontSize(26).Bold().FontColor(Colors.White).Underline();
                             });
-                            c.Item().Text("platforma motoryzacyjna · carizo.pl")
+                            c.Item().Text("platforma motoryzacyjna · carizo.eu")
                                 .FontSize(8).FontColor("#e8a0a8");
                         });
                         row.RelativeItem().AlignRight().Column(c =>
@@ -337,7 +337,7 @@ public class InvoiceService : IInvoiceService
                     col.Item().PaddingTop(30).PaddingHorizontal(28).LineHorizontal(1).LineColor(border);
                     col.Item().PaddingHorizontal(28).PaddingTop(8).PaddingBottom(28).Row(row =>
                     {
-                        row.RelativeItem().Text("Dokument wygenerowany automatycznie przez system CARIZO · carizo.pl")
+                        row.RelativeItem().Text("Dokument wygenerowany automatycznie przez system CARIZO · carizo.eu")
                             .FontSize(8).FontColor(muted);
                         row.AutoItem().Text(invoice.InvoiceNumber)
                             .FontSize(8).FontColor(muted).AlignRight();
@@ -459,8 +459,8 @@ public class InvoiceService : IInvoiceService
       <table width=""100%"" cellpadding=""0"" cellspacing=""0"">
         <tr>
           <td>
-            <div style=""font-size:28px;font-weight:700;color:#fff;letter-spacing:-1px"">CARI<u>ZO</u></div>
-            <div style=""font-size:11px;color:#e8a0a8;margin-top:2px"">platforma motoryzacyjna · carizo.pl</div>
+            <img src=""https://carizo.eu/carizo-logo.svg"" alt=""CARIZO"" height=""40"" style=""display:block;height:40px"" />
+            <div style=""font-size:11px;color:#e8a0a8;margin-top:6px"">platforma motoryzacyjna · carizo.eu</div>
           </td>
           <td align=""right"">
             <div style=""font-size:15px;font-weight:700;color:#fff"">FAKTURA ZBIORCZA</div>
@@ -565,7 +565,7 @@ public class InvoiceService : IInvoiceService
     <td style=""background:#f7f7f7;border-top:1px solid #e8e8e8;padding:16px 32px"">
       <table width=""100%"" cellpadding=""0"" cellspacing=""0"">
         <tr>
-          <td style=""font-size:11px;color:#aaa"">Dokument wygenerowany automatycznie przez system CARIZO · carizo.pl</td>
+          <td style=""font-size:11px;color:#aaa"">Dokument wygenerowany automatycznie przez system CARIZO · carizo.eu</td>
           <td align=""right"" style=""font-size:11px;color:#aaa"">{inv.InvoiceNumber}</td>
         </tr>
       </table>
