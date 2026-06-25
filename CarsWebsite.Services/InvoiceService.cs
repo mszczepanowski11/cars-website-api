@@ -185,86 +185,163 @@ public class InvoiceService : IInvoiceService
             ? $"{firstPayment?.BillingStreet}, {firstPayment?.BillingPostalCode} {firstPayment?.BillingCity}".Trim().TrimStart(',').Trim()
             : null;
 
+        var brand   = "#8B0D1D";
+        var dark    = "#1a1a1a";
+        var muted   = "#666666";
+        var light   = "#f7f7f7";
+        var border  = "#e0e0e0";
+
+        var sellerName    = _config["Invoice:SellerName"]    ?? "CARIZO Wiktor Niezgoda";
+        var sellerNip     = _config["Invoice:SellerNip"]     ?? "9452331007";
+        var sellerRegon   = _config["Invoice:SellerRegon"]   ?? "544870688";
+        var sellerAddress = _config["Invoice:SellerAddress"] ?? "ul. Henryka Pachońskiego 7/60, 31-223 Kraków";
+
         return Document.Create(container =>
         {
             container.Page(page =>
             {
-                page.Margin(40);
+                page.Margin(0);
                 page.Size(PageSizes.A4);
-                page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Arial"));
+                page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Arial").FontColor(dark));
 
                 page.Content().Column(col =>
                 {
-                    col.Item().Row(row =>
+                    // ── Red header bar ────────────────────────────────────────
+                    col.Item().Background(brand).Padding(28).Row(row =>
                     {
                         row.RelativeItem().Column(c =>
                         {
-                            c.Item().Text("Faktura zbiorcza").FontSize(20).Bold();
-                            c.Item().Text($"Nr: {invoice.InvoiceNumber}").FontSize(11);
-                            c.Item().Text($"Okres: {monthName} {invoice.Year}").FontSize(10).FontColor(Colors.Grey.Medium);
-                            c.Item().Text($"Wystawiono: {invoice.GeneratedAt:dd.MM.yyyy}").FontSize(10).FontColor(Colors.Grey.Medium);
+                            c.Item().Text(t =>
+                            {
+                                t.Span("CARI").FontSize(26).Bold().FontColor(Colors.White);
+                                t.Span("ZO").FontSize(26).Bold().FontColor(Colors.White).Underline();
+                            });
+                            c.Item().Text("platforma motoryzacyjna · carizo.pl")
+                                .FontSize(8).FontColor("#e8a0a8");
                         });
-                        row.RelativeItem().Column(c =>
+                        row.RelativeItem().AlignRight().Column(c =>
                         {
-                            c.Item().Text(_config["Invoice:SellerName"] ?? "CARIZO Wiktor Niezgoda").Bold().AlignRight();
-                            c.Item().Text($"NIP: {_config["Invoice:SellerNip"] ?? "9452331007"}").AlignRight();
-                            c.Item().Text(_config["Invoice:SellerAddress"] ?? "ul. H. Pachońskiego 7/60, 31-223 Kraków").AlignRight();
+                            c.Item().Text("FAKTURA ZBIORCZA")
+                                .FontSize(14).Bold().FontColor(Colors.White).AlignRight();
+                            c.Item().Text($"Nr {invoice.InvoiceNumber}")
+                                .FontSize(10).FontColor("#e8a0a8").AlignRight();
                         });
                     });
 
-                    col.Item().PaddingVertical(12).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
-
-                    col.Item().Row(row =>
+                    // ── Meta strip ────────────────────────────────────────────
+                    col.Item().Background(light).PaddingHorizontal(28).PaddingVertical(10).Row(row =>
                     {
                         row.RelativeItem().Column(c =>
                         {
-                            c.Item().Text("NABYWCA").FontSize(8).FontColor(Colors.Grey.Medium);
-                            c.Item().Text(buyerName).Bold();
+                            c.Item().Text("OKRES ROZLICZENIOWY").FontSize(7).FontColor(muted);
+                            c.Item().Text($"{monthName} {invoice.Year}").Bold().FontSize(11);
+                        });
+                        row.RelativeItem().Column(c =>
+                        {
+                            c.Item().Text("DATA WYSTAWIENIA").FontSize(7).FontColor(muted);
+                            c.Item().Text(invoice.GeneratedAt.ToString("dd.MM.yyyy")).Bold().FontSize(11);
+                        });
+                        row.RelativeItem().Column(c =>
+                        {
+                            c.Item().Text("FORMA PŁATNOŚCI").FontSize(7).FontColor(muted);
+                            c.Item().Text("Płatność elektroniczna").Bold().FontSize(11);
+                        });
+                    });
+
+                    col.Item().PaddingHorizontal(28).PaddingTop(20).Row(row =>
+                    {
+                        // Seller box
+                        row.RelativeItem().Border(1).BorderColor(border).Padding(14).Column(c =>
+                        {
+                            c.Item().Text("SPRZEDAWCA").FontSize(7).FontColor(brand).Bold();
+                            c.Item().PaddingTop(4).Text(sellerName).Bold().FontSize(11);
+                            c.Item().Text($"NIP: {sellerNip}").FontSize(9).FontColor(muted);
+                            c.Item().Text($"REGON: {sellerRegon}").FontSize(9).FontColor(muted);
+                            c.Item().PaddingTop(4).Text(sellerAddress).FontSize(9);
+                        });
+
+                        row.ConstantItem(16);
+
+                        // Buyer box
+                        row.RelativeItem().Border(1).BorderColor(brand).Padding(14).Column(c =>
+                        {
+                            c.Item().Text("NABYWCA").FontSize(7).FontColor(brand).Bold();
+                            c.Item().PaddingTop(4).Text(buyerName).Bold().FontSize(11);
                             if (!string.IsNullOrWhiteSpace(buyerNip))
-                                c.Item().Text($"NIP: {buyerNip}");
+                                c.Item().Text($"NIP: {buyerNip}").FontSize(9).FontColor(muted);
                             if (!string.IsNullOrWhiteSpace(buyerAddress))
-                                c.Item().Text(buyerAddress);
-                            c.Item().Text(user?.Email ?? "");
+                                c.Item().Text(buyerAddress).FontSize(9);
+                            c.Item().PaddingTop(4).Text(user?.Email ?? "").FontSize(9).FontColor(muted);
                         });
                     });
 
-                    col.Item().PaddingTop(16).Table(table =>
+                    // ── Items table ───────────────────────────────────────────
+                    col.Item().PaddingHorizontal(28).PaddingTop(20).Table(table =>
                     {
                         table.ColumnsDefinition(columns =>
                         {
-                            columns.ConstantColumn(25);
-                            columns.RelativeColumn(3);
-                            columns.RelativeColumn(1);
-                            columns.ConstantColumn(90);
+                            columns.ConstantColumn(28);
+                            columns.RelativeColumn(4);
+                            columns.ConstantColumn(80);
+                            columns.ConstantColumn(100);
                         });
 
                         table.Header(header =>
                         {
-                            header.Cell().Background(Colors.Grey.Lighten3).Padding(6).Text("Lp.").Bold();
-                            header.Cell().Background(Colors.Grey.Lighten3).Padding(6).Text("Opis usługi").Bold();
-                            header.Cell().Background(Colors.Grey.Lighten3).Padding(6).Text("Data").Bold();
-                            header.Cell().Background(Colors.Grey.Lighten3).Padding(6).Text("Kwota brutto").Bold().AlignRight();
+                            static IContainer HeaderCell(IContainer c) =>
+                                c.Background("#8B0D1D").Padding(8);
+
+                            HeaderCell(header.Cell()).Text("Lp.").FontColor(Colors.White).Bold().FontSize(9);
+                            HeaderCell(header.Cell()).Text("Opis usługi").FontColor(Colors.White).Bold().FontSize(9);
+                            HeaderCell(header.Cell()).Text("Data").FontColor(Colors.White).Bold().FontSize(9);
+                            HeaderCell(header.Cell()).AlignRight().Text("Kwota brutto").FontColor(Colors.White).Bold().FontSize(9);
                         });
 
-                        var i = 1;
+                        var idx = 1;
                         foreach (var p in invoice.Payments)
                         {
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(6).Text(i++.ToString());
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(6).Text(p.ServiceDescription);
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(6).Text(p.PaidAt?.ToString("dd.MM.yyyy") ?? "–");
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(6).Text($"{p.Amount:0.00} PLN").AlignRight();
+                            var bg = idx % 2 == 0 ? light : Colors.White;
+                            table.Cell().Background(bg).BorderBottom(1).BorderColor(border).Padding(8).Text(idx.ToString()).FontSize(9);
+                            table.Cell().Background(bg).BorderBottom(1).BorderColor(border).Padding(8).Text(p.ServiceDescription).FontSize(9);
+                            table.Cell().Background(bg).BorderBottom(1).BorderColor(border).Padding(8).Text(p.PaidAt?.ToString("dd.MM.yyyy") ?? "–").FontSize(9);
+                            table.Cell().Background(bg).BorderBottom(1).BorderColor(border).Padding(8).AlignRight().Text($"{p.Amount:0.00} PLN").FontSize(9).Bold();
+                            idx++;
                         }
                     });
 
-                    col.Item().PaddingTop(12).AlignRight().Column(c =>
+                    // ── Summary ───────────────────────────────────────────────
+                    col.Item().PaddingHorizontal(28).PaddingTop(16).AlignRight().Width(220).Column(c =>
                     {
-                        c.Item().Text($"Wartość netto: {invoice.NetAmount:0.00} PLN");
-                        c.Item().Text($"VAT 23%: {invoice.VatAmount:0.00} PLN");
-                        c.Item().Text($"Razem do zapłaty: {invoice.TotalAmount:0.00} PLN").FontSize(13).Bold();
+                        c.Item().Background(light).Border(1).BorderColor(border).Padding(12).Column(inner =>
+                        {
+                            inner.Item().Row(r =>
+                            {
+                                r.RelativeItem().Text("Wartość netto:").FontSize(9).FontColor(muted);
+                                r.ConstantItem(100).AlignRight().Text($"{invoice.NetAmount:0.00} PLN").FontSize(9);
+                            });
+                            inner.Item().PaddingTop(4).Row(r =>
+                            {
+                                r.RelativeItem().Text("VAT 23%:").FontSize(9).FontColor(muted);
+                                r.ConstantItem(100).AlignRight().Text($"{invoice.VatAmount:0.00} PLN").FontSize(9);
+                            });
+                            inner.Item().PaddingTop(8).LineHorizontal(1).LineColor(brand);
+                            inner.Item().PaddingTop(8).Row(r =>
+                            {
+                                r.RelativeItem().Text("RAZEM DO ZAPŁATY:").Bold().FontSize(11).FontColor(brand);
+                                r.ConstantItem(100).AlignRight().Text($"{invoice.TotalAmount:0.00} PLN").Bold().FontSize(13).FontColor(brand);
+                            });
+                        });
                     });
 
-                    col.Item().PaddingTop(30).Text("Dokument wygenerowany automatycznie przez system CARIZO · carizo.pl")
-                        .FontSize(8).FontColor(Colors.Grey.Medium).AlignCenter();
+                    // ── Footer ────────────────────────────────────────────────
+                    col.Item().PaddingTop(30).PaddingHorizontal(28).LineHorizontal(1).LineColor(border);
+                    col.Item().PaddingHorizontal(28).PaddingTop(8).PaddingBottom(28).Row(row =>
+                    {
+                        row.RelativeItem().Text("Dokument wygenerowany automatycznie przez system CARIZO · carizo.pl")
+                            .FontSize(8).FontColor(muted);
+                        row.AutoItem().Text(invoice.InvoiceNumber)
+                            .FontSize(8).FontColor(muted).AlignRight();
+                    });
                 });
             });
         }).GeneratePdf();
@@ -348,64 +425,157 @@ public class InvoiceService : IInvoiceService
             ? $"{firstPayment?.BillingStreet}, {firstPayment?.BillingPostalCode} {firstPayment?.BillingCity}"
             : null;
 
-        var sb = new StringBuilder();
-        sb.Append(@"<!DOCTYPE html>
-<html><head><meta charset=""UTF-8"">
-<style>
-body{font-family:Arial,sans-serif;color:#111;max-width:740px;margin:0 auto;padding:32px}
-h1{font-size:24px;margin:0 0 4px}
-.sub{color:#666;font-size:13px;margin-bottom:24px}
-hr{border:none;border-top:1px solid #ddd;margin:20px 0}
-.parties{display:flex;gap:40px;margin-bottom:24px;font-size:13px}
-.party h4{margin:0 0 6px;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px}
-.party p{margin:2px 0}
-table{width:100%;border-collapse:collapse;margin-top:8px}
-th{text-align:left;padding:9px 12px;background:#f5f5f5;border:1px solid #ddd;font-size:12px;text-transform:uppercase;color:#555}
-td{padding:9px 12px;border:1px solid #ddd;font-size:13px}
-.totals{margin-top:20px;text-align:right;font-size:13px}
-.totals div{margin:4px 0}
-.total-final{font-size:16px;font-weight:700;margin-top:10px}
-.footer{margin-top:40px;font-size:11px;color:#999;border-top:1px solid #eee;padding-top:12px;text-align:center}
-</style></head><body>
-");
+        var sName    = _config["Invoice:SellerName"]    ?? "CARIZO Wiktor Niezgoda";
+        var sNip     = _config["Invoice:SellerNip"]     ?? "9452331007";
+        var sRegon   = _config["Invoice:SellerRegon"]   ?? "544870688";
+        var sAddress = _config["Invoice:SellerAddress"] ?? "ul. Henryka Pachońskiego 7/60, 31-223 Kraków";
 
-        sb.Append($"<h1>Faktura zbiorcza</h1>");
-        sb.Append($"<div class=\"sub\">Nr: <strong>{inv.InvoiceNumber}</strong> &nbsp;·&nbsp; Okres: {monthName} {inv.Year} &nbsp;·&nbsp; Wystawiono: {inv.GeneratedAt:dd.MM.yyyy}</div>");
-        sb.Append("<hr/>");
-
-        sb.Append("<div class=\"parties\">");
-        sb.Append($"<div class=\"party\"><h4>Nabywca</h4><p><strong>{buyerName}</strong></p>");
-        if (!string.IsNullOrWhiteSpace(buyerNip))
-            sb.Append($"<p>NIP: {buyerNip}</p>");
-        if (!string.IsNullOrWhiteSpace(buyerAddress))
-            sb.Append($"<p>{buyerAddress}</p>");
-        sb.Append($"<p>{user?.Email}</p></div>");
-        var sellerName = _config["Invoice:SellerName"] ?? "CARIZO Wiktor Niezgoda";
-        var sellerNip = _config["Invoice:SellerNip"] ?? "9452331007";
-        var sellerRegon = _config["Invoice:SellerRegon"] ?? "544870688";
-        var sellerAddress = _config["Invoice:SellerAddress"] ?? "ul. Henryka Pachońskiego 7/60, 31-223 Kraków";
-        sb.Append($"<div class=\"party\"><h4>Sprzedawca</h4>" +
-                  $"<p><strong>{sellerName}</strong></p>" +
-                  $"<p>NIP: {sellerNip}</p><p>REGON: {sellerRegon}</p>" +
-                  $"<p>{sellerAddress}</p></div>");
-        sb.Append("</div>");
-
-        sb.Append("<table><thead><tr><th>Lp.</th><th>Opis usługi</th><th>Data</th><th style=\"text-align:right\">Kwota brutto</th></tr></thead><tbody>");
-        var i = 1;
+        var rows = new StringBuilder();
+        var idx = 1;
         foreach (var p in inv.Payments)
-            sb.Append($"<tr><td>{i++}</td><td>{p.ServiceDescription}</td><td>{p.PaidAt?.ToString("dd.MM.yyyy") ?? "–"}</td><td style=\"text-align:right\">{p.Amount:0.00} PLN</td></tr>");
-        sb.Append("</tbody></table>");
+        {
+            var bg = idx % 2 == 0 ? "#f9f9f9" : "#ffffff";
+            rows.Append($"<tr style=\"background:{bg}\">" +
+                $"<td style=\"padding:9px 12px;border-bottom:1px solid #eee;font-size:13px\">{idx++}</td>" +
+                $"<td style=\"padding:9px 12px;border-bottom:1px solid #eee;font-size:13px\">{p.ServiceDescription}</td>" +
+                $"<td style=\"padding:9px 12px;border-bottom:1px solid #eee;font-size:13px\">{p.PaidAt?.ToString("dd.MM.yyyy") ?? "–"}</td>" +
+                $"<td style=\"padding:9px 12px;border-bottom:1px solid #eee;font-size:13px;text-align:right;font-weight:600\">{p.Amount:0.00} PLN</td>" +
+                "</tr>");
+        }
 
-        sb.Append($@"
-<div class=""totals"">
-  <div>Wartość netto: {inv.NetAmount:0.00} PLN</div>
-  <div>VAT 23%: {inv.VatAmount:0.00} PLN</div>
-  <div class=""total-final"">Razem do zapłaty: {inv.TotalAmount:0.00} PLN</div>
-</div>
-<div class=""footer"">Faktura wygenerowana automatycznie przez system CARIZO &nbsp;·&nbsp; carizo.pl</div>
-</body></html>");
+        var nipRow    = !string.IsNullOrWhiteSpace(buyerNip)     ? $"<div style=\"color:#555\">NIP: {buyerNip}</div>" : "";
+        var addrRow   = !string.IsNullOrWhiteSpace(buyerAddress) ? $"<div style=\"color:#555\">{buyerAddress}</div>" : "";
 
-        return sb.ToString();
+        return $@"<!DOCTYPE html>
+<html><head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1""></head>
+<body style=""margin:0;padding:0;background:#f0f0f0;font-family:Arial,sans-serif"">
+<table width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""background:#f0f0f0;padding:32px 0"">
+<tr><td align=""center"">
+<table width=""680"" cellpadding=""0"" cellspacing=""0"" style=""background:#ffffff;border-radius:4px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.1)"">
+
+  <!-- Header -->
+  <tr>
+    <td style=""background:#8B0D1D;padding:28px 32px"">
+      <table width=""100%"" cellpadding=""0"" cellspacing=""0"">
+        <tr>
+          <td>
+            <div style=""font-size:28px;font-weight:700;color:#fff;letter-spacing:-1px"">CARI<u>ZO</u></div>
+            <div style=""font-size:11px;color:#e8a0a8;margin-top:2px"">platforma motoryzacyjna · carizo.pl</div>
+          </td>
+          <td align=""right"">
+            <div style=""font-size:15px;font-weight:700;color:#fff"">FAKTURA ZBIORCZA</div>
+            <div style=""font-size:12px;color:#e8a0a8;margin-top:4px"">Nr {inv.InvoiceNumber}</div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Meta strip -->
+  <tr>
+    <td style=""background:#f7f7f7;padding:14px 32px;border-bottom:1px solid #e8e8e8"">
+      <table width=""100%"" cellpadding=""0"" cellspacing=""0"">
+        <tr>
+          <td style=""width:33%"">
+            <div style=""font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.5px"">Okres rozliczeniowy</div>
+            <div style=""font-size:13px;font-weight:700;color:#1a1a1a;margin-top:2px"">{monthName} {inv.Year}</div>
+          </td>
+          <td style=""width:33%"">
+            <div style=""font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.5px"">Data wystawienia</div>
+            <div style=""font-size:13px;font-weight:700;color:#1a1a1a;margin-top:2px"">{inv.GeneratedAt:dd.MM.yyyy}</div>
+          </td>
+          <td style=""width:33%"">
+            <div style=""font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.5px"">Forma płatności</div>
+            <div style=""font-size:13px;font-weight:700;color:#1a1a1a;margin-top:2px"">Płatność elektroniczna</div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Parties -->
+  <tr>
+    <td style=""padding:24px 32px"">
+      <table width=""100%"" cellpadding=""0"" cellspacing=""0"">
+        <tr>
+          <td width=""48%"" valign=""top"" style=""border:1px solid #e0e0e0;border-radius:3px;padding:16px"">
+            <div style=""font-size:10px;font-weight:700;color:#8B0D1D;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px"">Sprzedawca</div>
+            <div style=""font-size:14px;font-weight:700;color:#1a1a1a"">{sName}</div>
+            <div style=""color:#666;margin-top:4px;font-size:12px"">NIP: {sNip}</div>
+            <div style=""color:#666;font-size:12px"">REGON: {sRegon}</div>
+            <div style=""color:#333;margin-top:6px;font-size:12px"">{sAddress}</div>
+          </td>
+          <td width=""4%""></td>
+          <td width=""48%"" valign=""top"" style=""border:2px solid #8B0D1D;border-radius:3px;padding:16px"">
+            <div style=""font-size:10px;font-weight:700;color:#8B0D1D;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px"">Nabywca</div>
+            <div style=""font-size:14px;font-weight:700;color:#1a1a1a"">{buyerName}</div>
+            {nipRow}
+            {addrRow}
+            <div style=""color:#888;margin-top:6px;font-size:12px"">{user?.Email}</div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Items table -->
+  <tr>
+    <td style=""padding:0 32px 24px"">
+      <table width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""border-collapse:collapse"">
+        <thead>
+          <tr style=""background:#8B0D1D"">
+            <th style=""padding:10px 12px;color:#fff;font-size:11px;text-align:left;width:36px"">Lp.</th>
+            <th style=""padding:10px 12px;color:#fff;font-size:11px;text-align:left"">Opis usługi</th>
+            <th style=""padding:10px 12px;color:#fff;font-size:11px;text-align:left;width:90px"">Data</th>
+            <th style=""padding:10px 12px;color:#fff;font-size:11px;text-align:right;width:110px"">Kwota brutto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows}
+        </tbody>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Totals -->
+  <tr>
+    <td style=""padding:0 32px 32px"" align=""right"">
+      <table cellpadding=""0"" cellspacing=""0"" style=""border:1px solid #e0e0e0;border-radius:3px;background:#f7f7f7;min-width:240px"">
+        <tr>
+          <td style=""padding:12px 20px 4px;font-size:12px;color:#666"">Wartość netto:</td>
+          <td style=""padding:12px 20px 4px;font-size:12px;text-align:right"">{inv.NetAmount:0.00} PLN</td>
+        </tr>
+        <tr>
+          <td style=""padding:4px 20px 12px;font-size:12px;color:#666"">VAT 23%:</td>
+          <td style=""padding:4px 20px 12px;font-size:12px;text-align:right"">{inv.VatAmount:0.00} PLN</td>
+        </tr>
+        <tr>
+          <td colspan=""2"" style=""padding:0 20px""><div style=""border-top:2px solid #8B0D1D""></div></td>
+        </tr>
+        <tr>
+          <td style=""padding:12px 20px;font-size:13px;font-weight:700;color:#8B0D1D"">RAZEM DO ZAPŁATY:</td>
+          <td style=""padding:12px 20px;font-size:16px;font-weight:700;color:#8B0D1D;text-align:right"">{inv.TotalAmount:0.00} PLN</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Footer -->
+  <tr>
+    <td style=""background:#f7f7f7;border-top:1px solid #e8e8e8;padding:16px 32px"">
+      <table width=""100%"" cellpadding=""0"" cellspacing=""0"">
+        <tr>
+          <td style=""font-size:11px;color:#aaa"">Dokument wygenerowany automatycznie przez system CARIZO · carizo.pl</td>
+          <td align=""right"" style=""font-size:11px;color:#aaa"">{inv.InvoiceNumber}</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+</table>
+</td></tr>
+</table>
+</body></html>";
     }
 
     private static InvoiceResponseDto MapToDto(Invoice inv) => new()
