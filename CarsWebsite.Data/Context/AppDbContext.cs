@@ -225,6 +225,8 @@ namespace CarsWebsite
             modelBuilder.Entity<AdvertView>().HasOne<CarAdvert>().WithMany().HasForeignKey(v => v.AdvertId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<UserFollow>().ToTable("UserFollows").HasKey(f => f.Id);
             modelBuilder.Entity<UserFollow>().HasIndex(f => new { f.FollowerId, f.FollowedId }).IsUnique();
+            modelBuilder.Entity<UserFollow>().HasOne(f => f.Follower).WithMany().HasForeignKey(f => f.FollowerId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<UserFollow>().HasOne(f => f.Followed).WithMany().HasForeignKey(f => f.FollowedId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<Review>().ToTable("Reviews").HasKey(r => r.Id);
 
             modelBuilder.Entity<AppNotification>().ToTable("AppNotifications").HasKey(n => n.Id);
