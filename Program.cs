@@ -85,20 +85,6 @@ internal class Program
         if (missingImoje.Count > 0)
             Console.WriteLine($"[WARNING] Imoje payment credentials not fully configured (missing: {string.Join(", ", missingImoje)}). Payments will fail at runtime.");
 
-        // Inject SMTP_* env vars into the Smtp config section so both
-        // SMTP_HOST (flat) and Smtp__Host (ASP.NET Core convention) work.
-        var smtpHost = Environment.GetEnvironmentVariable("SMTP_HOST") ?? "";
-        var smtpPort = Environment.GetEnvironmentVariable("SMTP_PORT") ?? "";
-        var smtpUser = Environment.GetEnvironmentVariable("SMTP_USER") ?? "";
-        var smtpPass = Environment.GetEnvironmentVariable("SMTP_PASSWORD")
-                       ?? Environment.GetEnvironmentVariable("SMTP_PASS") ?? "";
-        var smtpFrom = Environment.GetEnvironmentVariable("SMTP_FROM") ?? "";
-        if (!string.IsNullOrEmpty(smtpHost)) builder.Configuration["Smtp:Host"]     = smtpHost;
-        if (!string.IsNullOrEmpty(smtpPort)) builder.Configuration["Smtp:Port"]     = smtpPort;
-        if (!string.IsNullOrEmpty(smtpUser)) builder.Configuration["Smtp:User"]     = smtpUser;
-        if (!string.IsNullOrEmpty(smtpPass)) builder.Configuration["Smtp:Password"] = smtpPass;
-        if (!string.IsNullOrEmpty(smtpFrom)) builder.Configuration["Smtp:From"]     = smtpFrom;
-
         builder.Services.AddControllers()
             .AddJsonOptions(options => {
                 options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;

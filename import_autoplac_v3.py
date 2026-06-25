@@ -536,7 +536,7 @@ def delete_my_adverts(session):
     print("\n  Pobieranie moich ogloszen...")
     page_num, deleted = 1, 0
     while True:
-        code, body = api("GET", f"/api/Advert/my?page={page_num}&pageSize=50", session)
+        code, body = api("GET", f"/api/Advert/user?page={page_num}&pageSize=50", session)
         if code != 200 or not isinstance(body, dict):
             break
         items = body.get("items") or body.get("data") or []
