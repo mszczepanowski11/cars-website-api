@@ -45,7 +45,7 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[Auth/Login] Unhandled exception: {Message}", ex.ToString());
+            _logger.LogError(ex, "[Auth/Login] Unhandled exception: {Message}", ex.Message);
             return StatusCode(500, new { message = "Błąd serwera podczas logowania." });
         }
 

@@ -1128,18 +1128,6 @@ internal class Program
         app.UseAuthorization();
         app.MapControllers();
 
-        // One-time: verify komis account so it can log in and import listings
-        using (var _scope = app.Services.CreateScope())
-        {
-            var _db = _scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            try
-            {
-                _db.Database.ExecuteSqlRaw(
-                    "UPDATE `users` SET `EmailVerified`=1, `EmailVerificationToken`=NULL, `EmailVerificationTokenExpires`=NULL " +
-                    "WHERE `Email`='marcinskorski779@gmail.com' AND `EmailVerified`=0");
-            }
-            catch { }
-        }
         app.Run();
     }
 
