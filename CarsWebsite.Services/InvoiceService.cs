@@ -434,12 +434,12 @@ public class InvoiceService : IInvoiceService
         var idx = 1;
         foreach (var p in inv.Payments)
         {
-            var bg = idx % 2 == 0 ? "#f9f9f9" : "#ffffff";
+            var bg = idx % 2 == 0 ? "#fafafa" : "#ffffff";
             rows.Append($"<tr style=\"background:{bg}\">" +
-                $"<td style=\"padding:9px 12px;border-bottom:1px solid #eee;font-size:13px\">{idx++}</td>" +
-                $"<td style=\"padding:9px 12px;border-bottom:1px solid #eee;font-size:13px\">{p.ServiceDescription}</td>" +
-                $"<td style=\"padding:9px 12px;border-bottom:1px solid #eee;font-size:13px\">{p.PaidAt?.ToString("dd.MM.yyyy") ?? "–"}</td>" +
-                $"<td style=\"padding:9px 12px;border-bottom:1px solid #eee;font-size:13px;text-align:right;font-weight:600\">{p.Amount:0.00} PLN</td>" +
+                $"<td style=\"padding:11px 14px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#777\">{idx++}</td>" +
+                $"<td style=\"padding:11px 14px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#222\">{p.ServiceDescription}</td>" +
+                $"<td style=\"padding:11px 14px;border-bottom:1px solid #f0f0f0;font-size:12px;color:#666\">{p.PaidAt?.ToString("dd.MM.yyyy") ?? "–"}</td>" +
+                $"<td style=\"padding:11px 14px;border-bottom:1px solid #f0f0f0;font-size:13px;font-weight:700;text-align:right;color:#222\">{p.Amount:0.00} PLN</td>" +
                 "</tr>");
         }
 
@@ -448,45 +448,39 @@ public class InvoiceService : IInvoiceService
 
         return $@"<!DOCTYPE html>
 <html><head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1""></head>
-<body style=""margin:0;padding:0;background:#f0f0f0;font-family:Arial,sans-serif"">
-<table width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""background:#f0f0f0;padding:32px 0"">
+<body style=""margin:0;padding:0;background:#ececec;font-family:'Helvetica Neue',Arial,sans-serif"">
+<table width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""background:#ececec;padding:40px 0"">
 <tr><td align=""center"">
-<table width=""680"" cellpadding=""0"" cellspacing=""0"" style=""background:#ffffff;border-radius:4px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.1)"">
+<table width=""660"" cellpadding=""0"" cellspacing=""0"" style=""background:#ffffff;border-radius:6px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.13)"">
 
   <!-- Header -->
   <tr>
-    <td style=""background:#8B0D1D;padding:28px 32px"">
+    <td style=""background:#6b0d17;padding:0"">
       <table width=""100%"" cellpadding=""0"" cellspacing=""0"">
         <tr>
-          <td>
-            <img src=""https://carizo.eu/carizo-logo.svg"" alt=""CARIZO"" height=""40"" style=""display:block;height:40px"" />
-            <div style=""font-size:11px;color:#e8a0a8;margin-top:6px"">platforma motoryzacyjna · carizo.eu</div>
+          <!-- Left: logo -->
+          <td style=""padding:30px 36px 20px;width:50%"" valign=""bottom"">
+            <div style=""font-size:34px;font-weight:300;color:#fff;letter-spacing:3px;line-height:1"">CARI<span style=""color:#f5b5be"">Z</span>O</div>
           </td>
-          <td align=""right"">
-            <div style=""font-size:15px;font-weight:700;color:#fff"">FAKTURA ZBIORCZA</div>
-            <div style=""font-size:12px;color:#e8a0a8;margin-top:4px"">Nr {inv.InvoiceNumber}</div>
+          <!-- Right: doc type + number -->
+          <td style=""padding:30px 36px 20px;width:50%"" valign=""bottom"" align=""right"">
+            <div style=""font-size:11px;color:#f5b5be;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px"">Faktura zbiorcza</div>
+            <div style=""font-size:22px;font-weight:700;color:#fff"">{inv.InvoiceNumber}</div>
           </td>
         </tr>
-      </table>
-    </td>
-  </tr>
-
-  <!-- Meta strip -->
-  <tr>
-    <td style=""background:#f7f7f7;padding:14px 32px;border-bottom:1px solid #e8e8e8"">
-      <table width=""100%"" cellpadding=""0"" cellspacing=""0"">
+        <!-- Meta bar -->
         <tr>
-          <td style=""width:33%"">
-            <div style=""font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.5px"">Okres rozliczeniowy</div>
-            <div style=""font-size:13px;font-weight:700;color:#1a1a1a;margin-top:2px"">{monthName} {inv.Year}</div>
-          </td>
-          <td style=""width:33%"">
-            <div style=""font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.5px"">Data wystawienia</div>
-            <div style=""font-size:13px;font-weight:700;color:#1a1a1a;margin-top:2px"">{inv.GeneratedAt:dd.MM.yyyy}</div>
-          </td>
-          <td style=""width:33%"">
-            <div style=""font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.5px"">Forma płatności</div>
-            <div style=""font-size:13px;font-weight:700;color:#1a1a1a;margin-top:2px"">Płatność elektroniczna</div>
+          <td colspan=""2"" style=""background:rgba(0,0,0,.18);padding:12px 36px"">
+            <table width=""100%"" cellpadding=""0"" cellspacing=""0"">
+              <tr>
+                <td style=""font-size:11px;color:#f5b5be"">
+                  <span style=""color:#fff;font-weight:600"">{monthName} {inv.Year}</span>
+                  &nbsp;·&nbsp; wystawiono {inv.GeneratedAt:dd.MM.yyyy}
+                  &nbsp;·&nbsp; płatność elektroniczna
+                </td>
+                <td align=""right"" style=""font-size:11px;color:#f5b5be"">carizo.eu</td>
+              </tr>
+            </table>
           </td>
         </tr>
       </table>
@@ -495,23 +489,29 @@ public class InvoiceService : IInvoiceService
 
   <!-- Parties -->
   <tr>
-    <td style=""padding:24px 32px"">
+    <td style=""padding:28px 36px 0"">
       <table width=""100%"" cellpadding=""0"" cellspacing=""0"">
-        <tr>
-          <td width=""48%"" valign=""top"" style=""border:1px solid #e0e0e0;border-radius:3px;padding:16px"">
-            <div style=""font-size:10px;font-weight:700;color:#8B0D1D;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px"">Sprzedawca</div>
-            <div style=""font-size:14px;font-weight:700;color:#1a1a1a"">{sName}</div>
-            <div style=""color:#666;margin-top:4px;font-size:12px"">NIP: {sNip}</div>
-            <div style=""color:#666;font-size:12px"">REGON: {sRegon}</div>
-            <div style=""color:#333;margin-top:6px;font-size:12px"">{sAddress}</div>
+        <tr valign=""top"">
+          <!-- Seller -->
+          <td width=""47%"" style=""background:#fafafa;border:1px solid #e8e8e8;border-radius:4px;padding:18px 20px"">
+            <div style=""font-size:9px;font-weight:700;color:#6b0d17;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px"">Sprzedawca</div>
+            <div style=""font-size:15px;font-weight:700;color:#111;margin-bottom:6px"">{sName}</div>
+            <div style=""font-size:12px;color:#555;line-height:1.7"">
+              NIP: {sNip}<br/>
+              REGON: {sRegon}<br/>
+              {sAddress}
+            </div>
           </td>
-          <td width=""4%""></td>
-          <td width=""48%"" valign=""top"" style=""border:2px solid #8B0D1D;border-radius:3px;padding:16px"">
-            <div style=""font-size:10px;font-weight:700;color:#8B0D1D;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px"">Nabywca</div>
-            <div style=""font-size:14px;font-weight:700;color:#1a1a1a"">{buyerName}</div>
-            {nipRow}
-            {addrRow}
-            <div style=""color:#888;margin-top:6px;font-size:12px"">{user?.Email}</div>
+          <td width=""6%""></td>
+          <!-- Buyer -->
+          <td width=""47%"" style=""background:#fff8f8;border:2px solid #6b0d17;border-radius:4px;padding:18px 20px"">
+            <div style=""font-size:9px;font-weight:700;color:#6b0d17;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px"">Nabywca</div>
+            <div style=""font-size:15px;font-weight:700;color:#111;margin-bottom:6px"">{buyerName}</div>
+            <div style=""font-size:12px;color:#555;line-height:1.7"">
+              {(string.IsNullOrWhiteSpace(buyerNip) ? "" : $"NIP: {buyerNip}<br/>")}
+              {(string.IsNullOrWhiteSpace(buyerAddress) ? "" : $"{buyerAddress}<br/>")}
+              <span style=""color:#999"">{user?.Email}</span>
+            </div>
           </td>
         </tr>
       </table>
@@ -520,14 +520,14 @@ public class InvoiceService : IInvoiceService
 
   <!-- Items table -->
   <tr>
-    <td style=""padding:0 32px 24px"">
-      <table width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""border-collapse:collapse"">
+    <td style=""padding:24px 36px 0"">
+      <table width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""border-collapse:collapse;border-radius:4px;overflow:hidden"">
         <thead>
-          <tr style=""background:#8B0D1D"">
-            <th style=""padding:10px 12px;color:#fff;font-size:11px;text-align:left;width:36px"">Lp.</th>
-            <th style=""padding:10px 12px;color:#fff;font-size:11px;text-align:left"">Opis usługi</th>
-            <th style=""padding:10px 12px;color:#fff;font-size:11px;text-align:left;width:90px"">Data</th>
-            <th style=""padding:10px 12px;color:#fff;font-size:11px;text-align:right;width:110px"">Kwota brutto</th>
+          <tr style=""background:#6b0d17"">
+            <th style=""padding:11px 14px;color:#fff;font-size:10px;text-align:left;font-weight:600;letter-spacing:.5px;width:40px"">Lp.</th>
+            <th style=""padding:11px 14px;color:#fff;font-size:10px;text-align:left;font-weight:600;letter-spacing:.5px"">Opis usługi</th>
+            <th style=""padding:11px 14px;color:#fff;font-size:10px;text-align:left;font-weight:600;letter-spacing:.5px;width:88px"">Data</th>
+            <th style=""padding:11px 14px;color:#fff;font-size:10px;text-align:right;font-weight:600;letter-spacing:.5px;width:110px"">Kwota brutto</th>
           </tr>
         </thead>
         <tbody>
@@ -539,22 +539,19 @@ public class InvoiceService : IInvoiceService
 
   <!-- Totals -->
   <tr>
-    <td style=""padding:0 32px 32px"" align=""right"">
-      <table cellpadding=""0"" cellspacing=""0"" style=""border:1px solid #e0e0e0;border-radius:3px;background:#f7f7f7;min-width:240px"">
+    <td style=""padding:20px 36px 32px"" align=""right"">
+      <table cellpadding=""0"" cellspacing=""0"" style=""min-width:260px"">
         <tr>
-          <td style=""padding:12px 20px 4px;font-size:12px;color:#666"">Wartość netto:</td>
-          <td style=""padding:12px 20px 4px;font-size:12px;text-align:right"">{inv.NetAmount:0.00} PLN</td>
+          <td style=""padding:7px 0;font-size:12px;color:#777;border-bottom:1px solid #eee"">Wartość netto</td>
+          <td style=""padding:7px 0 7px 24px;font-size:12px;text-align:right;border-bottom:1px solid #eee"">{inv.NetAmount:0.00} PLN</td>
         </tr>
         <tr>
-          <td style=""padding:4px 20px 12px;font-size:12px;color:#666"">VAT 23%:</td>
-          <td style=""padding:4px 20px 12px;font-size:12px;text-align:right"">{inv.VatAmount:0.00} PLN</td>
+          <td style=""padding:7px 0;font-size:12px;color:#777;border-bottom:1px solid #eee"">VAT 23%</td>
+          <td style=""padding:7px 0 7px 24px;font-size:12px;text-align:right;border-bottom:1px solid #eee"">{inv.VatAmount:0.00} PLN</td>
         </tr>
         <tr>
-          <td colspan=""2"" style=""padding:0 20px""><div style=""border-top:2px solid #8B0D1D""></div></td>
-        </tr>
-        <tr>
-          <td style=""padding:12px 20px;font-size:13px;font-weight:700;color:#8B0D1D"">RAZEM DO ZAPŁATY:</td>
-          <td style=""padding:12px 20px;font-size:16px;font-weight:700;color:#8B0D1D;text-align:right"">{inv.TotalAmount:0.00} PLN</td>
+          <td style=""padding:14px 0 0;font-size:14px;font-weight:700;color:#6b0d17"">Razem do zapłaty</td>
+          <td style=""padding:14px 0 0 24px;font-size:20px;font-weight:700;color:#6b0d17;text-align:right;white-space:nowrap"">{inv.TotalAmount:0.00} PLN</td>
         </tr>
       </table>
     </td>
@@ -562,11 +559,11 @@ public class InvoiceService : IInvoiceService
 
   <!-- Footer -->
   <tr>
-    <td style=""background:#f7f7f7;border-top:1px solid #e8e8e8;padding:16px 32px"">
+    <td style=""background:#f5f5f5;border-top:3px solid #6b0d17;padding:14px 36px"">
       <table width=""100%"" cellpadding=""0"" cellspacing=""0"">
         <tr>
-          <td style=""font-size:11px;color:#aaa"">Dokument wygenerowany automatycznie przez system CARIZO · carizo.eu</td>
-          <td align=""right"" style=""font-size:11px;color:#aaa"">{inv.InvoiceNumber}</td>
+          <td style=""font-size:10px;color:#bbb"">Dokument wygenerowany automatycznie przez system CARIZO · carizo.eu</td>
+          <td align=""right"" style=""font-size:10px;color:#bbb"">{inv.InvoiceNumber}</td>
         </tr>
       </table>
     </td>
