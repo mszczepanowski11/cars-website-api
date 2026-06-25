@@ -414,17 +414,19 @@ def load_ref_data(session):
     _, drd = api("GET", "/api/Taxonomy/drivetypes", session)
     _, cod = api("GET", "/api/Taxonomy/colors", session)
     _, frd = api("GET", "/api/Taxonomy/features", session)
+    _, vcd = api("GET", "/api/Taxonomy/vehiclecategories", session)
 
     def to_dict(data):
         if not isinstance(data, list): return {}
         return {item["name"].lower(): item["id"] for item in data if "name" in item and "id" in item}
 
-    brands = to_dict(bd)
-    fuels  = to_dict(fd)
-    gears  = to_dict(gd)
-    bodies = to_dict(bod)
-    drives = to_dict(drd)
-    colors = to_dict(cod)
+    brands    = to_dict(bd)
+    fuels     = to_dict(fd)
+    gears     = to_dict(gd)
+    bodies    = to_dict(bod)
+    drives    = to_dict(drd)
+    colors    = to_dict(cod)
+    veh_cats  = to_dict(vcd)
 
     features = {}
     if isinstance(frd, list):
@@ -436,8 +438,17 @@ def load_ref_data(session):
             elif "name" in item and "id" in item:
                 features[item["name"].lower()] = item["id"]
 
-    ok(f"Marki:{len(brands)} Paliwa:{len(fuels)} Skrzynie:{len(gears)} Nadwozia:{len(bodies)} Napedy:{len(drives)} Kolory:{len(colors)} Cechy:{len(features)}")
-    return brands, fuels, gears, bodies, drives, colors, features
+    # Znajdz ID kategorii "Osobowe" (samochody osobowe)
+    car_cat_id = None
+    for name, cid in veh_cats.items():
+        if any(k in name for k in ["osobow", "car", "samochod", "pkw"]):
+            car_cat_id = cid
+            break
+    if car_cat_id is None and veh_cats:
+        car_cat_id = list(veh_cats.values())[0]
+
+    ok(f"Marki:{len(brands)} Paliwa:{len(fuels)} Skrzynie:{len(gears)} Nadwozia:{len(bodies)} Napedy:{len(drives)} Kolory:{len(colors)} Cechy:{len(features)} KatPojazdu:{car_cat_id}")
+    return brands, fuels, gears, bodies, drives, colors, features, veh_cats, car_cat_id
 
 
 def get_models(session, brand_id):
@@ -551,7 +562,7 @@ def delete_my_adverts(session):
 #  TWORZENIE OGLOSZENIA
 # ================================================================
 
-def create_advert(session, car, brands, fuels, gears, bodies, drives, colors, feat_lookup):
+def create_advert(session, car, brands, fuels, gears, bodies, drives, colors, feat_lookup, car_cat_id=None):
     brand_id = fuzzy(car.get("brand_raw"), brands)
     if not brand_id:
         warn(f"Nieznana marka: '{car.get('brand_raw')}' — pomijam")
@@ -577,6 +588,7 @@ def create_advert(session, car, brands, fuels, gears, bodies, drives, colors, fe
         desc += f"\n\nZrodlo: {car['source_url']}"
 
     dto = {
+        "vehicleCategoryId": car_cat_id,
         "brandId":     brand_id,
         "modelId":     model_id,
         "fuelTypeId":  fuel_id,
@@ -775,7 +787,7 @@ def cmd_import():
     delete_my_adverts(session)
 
     # Slowniki
-    brands, fuels, gears, bodies, drives, colors, feat_lookup = load_ref_data(session)
+    brands, fuels, gears, bodies, drives, colors, feat_lookup, veh_cats, car_cat_id = load_ref_data(session)
 
     # Import
     print(f"\n  Import {len(cars)} ogloszen...\n")
@@ -786,7 +798,7 @@ def cmd_import():
         folder_name = safe_folder_name(car["title"], idx)
         print(f"\n  [{idx:02d}] {car.get('title','?')}  {car.get('price','?')} zl")
 
-        advert_id = create_advert(session, car, brands, fuels, gears, bodies, drives, colors, feat_lookup)
+        advert_id = create_advert(session, car, brands, fuels, gears, bodies, drives, colors, feat_lookup, car_cat_id)
         if advert_id:
             ok(f"Ogloszenie #{advert_id}")
 
