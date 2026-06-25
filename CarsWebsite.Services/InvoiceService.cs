@@ -4,6 +4,7 @@ using cars_website_api.CarsWebsite.DTOs.Invoice;
 using cars_website_api.CarsWebsite.DTOs.Payment;
 using cars_website_api.CarsWebsite.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using QRCoder;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -181,30 +182,49 @@ public class InvoiceService : IInvoiceService
 
         QuestPDF.Settings.License = LicenseType.Community;
 
-        var ci = new System.Globalization.CultureInfo("pl-PL");
-        var monthName = ci.DateTimeFormat.GetMonthName(invoice.Month);
         var user = invoice.User;
         var firstPayment = invoice.Payments.FirstOrDefault();
+
         var buyerName = !string.IsNullOrWhiteSpace(firstPayment?.BillingName)
             ? firstPayment.BillingName
             : (user?.AccountType == AccountType.Business && !string.IsNullOrWhiteSpace(user.CompanyName)
-                ? user.CompanyName : $"{user?.Name} {user?.Surname}");
-        var buyerNip = !string.IsNullOrWhiteSpace(firstPayment?.BillingNip)
-            ? firstPayment.BillingNip : user?.Nip;
-        var buyerAddress = (!string.IsNullOrWhiteSpace(firstPayment?.BillingStreet) || !string.IsNullOrWhiteSpace(firstPayment?.BillingCity))
-            ? $"{firstPayment?.BillingStreet}, {firstPayment?.BillingPostalCode} {firstPayment?.BillingCity}".Trim().TrimStart(',').Trim()
-            : null;
-
-        var brand   = "#8B0D1D";
-        var dark    = "#1a1a1a";
-        var muted   = "#666666";
-        var light   = "#f7f7f7";
-        var border  = "#e0e0e0";
+                ? user.CompanyName : $"{user?.Name} {user?.Surname}".Trim());
+        var buyerNip     = (firstPayment?.BillingNip ?? user?.Nip) ?? "";
+        var buyerStreet  = firstPayment?.BillingStreet ?? "";
+        var buyerPostal  = firstPayment?.BillingPostalCode ?? "";
+        var buyerCity    = firstPayment?.BillingCity ?? "";
+        var buyerEmail   = user?.Email ?? "";
 
         var sellerName    = _config["Invoice:SellerName"]    ?? "CARIZO Wiktor Niezgoda";
         var sellerNip     = _config["Invoice:SellerNip"]     ?? "9452331007";
         var sellerRegon   = _config["Invoice:SellerRegon"]   ?? "544870688";
-        var sellerAddress = _config["Invoice:SellerAddress"] ?? "ul. Henryka Pachońskiego 7/60, 31-223 Kraków";
+        var sellerPhone   = _config["Invoice:SellerPhone"]   ?? "+48 799 123 456";
+        var sellerEmail   = _config["Invoice:SellerEmail"]   ?? "biuro@carizo.eu";
+        var sellerStreet  = _config["Invoice:SellerStreet"]  ?? "ul. Henryka Pachońskiego 7/60";
+        var sellerCity    = _config["Invoice:SellerCity"]    ?? "31-223 Kraków";
+        var accountNumber = _config["Invoice:AccountNumber"] ?? "–";
+
+        // Parse invoice number parts e.g. FZ/2026/06/0001
+        var parts = invoice.InvoiceNumber.Split('/');
+        var numYear = parts.Length > 1 ? parts[1] : "";
+        var numRest = parts.Length > 1 ? "/" + string.Join("/", parts.Skip(2)) : "";
+
+        var issueDate   = invoice.GeneratedAt.ToString("dd.MM.yyyy");
+        var saleDate    = new DateTime(invoice.Year, invoice.Month, 1).ToString("dd.MM.yyyy");
+        var termDate    = invoice.GeneratedAt.ToString("dd.MM.yyyy");
+        var orderNum    = firstPayment?.ImojeOrderId ?? "–";
+        var paymentNum  = firstPayment?.ImojeTransactionId ?? "–";
+
+        // QR code pointing to invoice verification
+        var qrBytes = GenerateQrBytes($"https://carizo.eu/faktury/{invoice.InvoiceNumber}");
+
+        const string dark   = "#111111";
+        const string brand  = "#C0392B";
+        const string muted  = "#888888";
+        const string border = "#e0e0e0";
+        const string light  = "#f5f5f5";
+        const string white  = "#ffffff";
+        const string hdr    = "#1a1a1a";
 
         return Document.Create(container =>
         {
@@ -212,149 +232,274 @@ public class InvoiceService : IInvoiceService
             {
                 page.Margin(0);
                 page.Size(PageSizes.A4);
-                page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Arial").FontColor(dark));
+                page.DefaultTextStyle(x => x.FontSize(9).FontFamily("Arial").FontColor(dark));
 
                 page.Content().Column(col =>
                 {
-                    // ── Red header bar ────────────────────────────────────────
-                    col.Item().Background(brand).Padding(28).Row(row =>
+                    // ── Dark header ───────────────────────────────────────────
+                    col.Item().Background(hdr).Padding(32).Column(hc =>
                     {
-                        row.RelativeItem().Column(c =>
+                        hc.Item().Row(row =>
                         {
-                            c.Item().Text(t =>
+                            // Left: logo + contacts
+                            row.RelativeItem().Column(lc =>
                             {
-                                t.Span("CARI").FontSize(26).Bold().FontColor(Colors.White);
-                                t.Span("ZO").FontSize(26).Bold().FontColor(Colors.White).Underline();
+                                lc.Item().Text("CARIZO")
+                                    .FontSize(38).Bold().FontColor(white).LetterSpacing(0.05f);
+                                lc.Item().PaddingTop(18).Column(contacts =>
+                                {
+                                    ContactRow(contacts, "carizo.eu");
+                                    ContactRow(contacts, sellerEmail);
+                                    ContactRow(contacts, sellerPhone);
+                                    ContactRow(contacts, sellerStreet);
+                                    ContactRow(contacts, sellerCity);
+                                });
                             });
-                            c.Item().Text("platforma motoryzacyjna · carizo.eu")
-                                .FontSize(8).FontColor("#e8a0a8");
-                        });
-                        row.RelativeItem().AlignRight().Column(c =>
-                        {
-                            c.Item().Text("FAKTURA ZBIORCZA")
-                                .FontSize(14).Bold().FontColor(Colors.White).AlignRight();
-                            c.Item().Text($"Nr {invoice.InvoiceNumber}")
-                                .FontSize(10).FontColor("#e8a0a8").AlignRight();
+
+                            // Right: FAKTURA ZBIORCZA + number
+                            row.RelativeItem().AlignRight().Column(rc =>
+                            {
+                                rc.Item().AlignRight().Text("FAKTURA ZBIORCZA")
+                                    .FontSize(10).FontColor(muted).Bold().LetterSpacing(0.08f);
+                                rc.Item().PaddingTop(6).AlignRight().Text(t =>
+                                {
+                                    t.Span("FZ/").FontSize(30).Bold().FontColor(white);
+                                    t.Span(numYear).FontSize(30).Bold().FontColor(brand);
+                                    t.Span(numRest).FontSize(30).Bold().FontColor(white);
+                                });
+
+                                // Date grid
+                                rc.Item().PaddingTop(20).AlignRight().Table(tbl =>
+                                {
+                                    tbl.ColumnsDefinition(c =>
+                                    {
+                                        c.RelativeColumn();
+                                        c.RelativeColumn();
+                                    });
+                                    DateRow(tbl, "DATA WYSTAWIENIA:", issueDate);
+                                    DateRow(tbl, "DATA SPRZEDAŻY:", saleDate);
+                                    DateRow(tbl, "TERMIN PŁATNOŚCI:", termDate);
+                                    DateRow(tbl, "SPOSÓB PŁATNOŚCI:", "Płatność elektroniczna");
+                                    DateRow(tbl, "STATUS PŁATNOŚCI:", invoice.SentAt.HasValue ? "Opłacono" : "Oczekuje");
+                                });
+                            });
                         });
                     });
 
-                    // ── Meta strip ────────────────────────────────────────────
-                    col.Item().Background(light).PaddingHorizontal(28).PaddingVertical(10).Row(row =>
-                    {
-                        row.RelativeItem().Column(c =>
-                        {
-                            c.Item().Text("OKRES ROZLICZENIOWY").FontSize(7).FontColor(muted);
-                            c.Item().Text($"{monthName} {invoice.Year}").Bold().FontSize(11);
-                        });
-                        row.RelativeItem().Column(c =>
-                        {
-                            c.Item().Text("DATA WYSTAWIENIA").FontSize(7).FontColor(muted);
-                            c.Item().Text(invoice.GeneratedAt.ToString("dd.MM.yyyy")).Bold().FontSize(11);
-                        });
-                        row.RelativeItem().Column(c =>
-                        {
-                            c.Item().Text("FORMA PŁATNOŚCI").FontSize(7).FontColor(muted);
-                            c.Item().Text("Płatność elektroniczna").Bold().FontSize(11);
-                        });
-                    });
-
+                    // ── Parties ───────────────────────────────────────────────
                     col.Item().PaddingHorizontal(28).PaddingTop(20).Row(row =>
                     {
-                        // Seller box
-                        row.RelativeItem().Border(1).BorderColor(border).Padding(14).Column(c =>
+                        // Seller
+                        row.RelativeItem().Border(1).BorderColor(border).Padding(16).Column(c =>
                         {
-                            c.Item().Text("SPRZEDAWCA").FontSize(7).FontColor(brand).Bold();
-                            c.Item().PaddingTop(4).Text(sellerName).Bold().FontSize(11);
-                            c.Item().Text($"NIP: {sellerNip}").FontSize(9).FontColor(muted);
+                            c.Item().Text("SPRZEDAWCA").FontSize(7).Bold().FontColor(brand).LetterSpacing(0.1f);
+                            c.Item().PaddingTop(6).Text(sellerName).Bold().FontSize(11).FontColor(dark);
+                            c.Item().PaddingTop(6).Text($"NIP: {sellerNip}").FontSize(9).FontColor(muted);
                             c.Item().Text($"REGON: {sellerRegon}").FontSize(9).FontColor(muted);
-                            c.Item().PaddingTop(4).Text(sellerAddress).FontSize(9);
+                            c.Item().PaddingTop(4).Text(sellerStreet).FontSize(9);
+                            c.Item().Text(sellerCity).FontSize(9);
+                            c.Item().Text("Polska").FontSize(9).FontColor(muted);
                         });
 
-                        row.ConstantItem(16);
+                        row.ConstantItem(14);
 
-                        // Buyer box
-                        row.RelativeItem().Border(1).BorderColor(brand).Padding(14).Column(c =>
+                        // Buyer
+                        row.RelativeItem().Border(1).BorderColor(border).BorderLeft(3).BorderColor(brand).Padding(16).Column(c =>
                         {
-                            c.Item().Text("NABYWCA").FontSize(7).FontColor(brand).Bold();
-                            c.Item().PaddingTop(4).Text(buyerName).Bold().FontSize(11);
+                            c.Item().Text("NABYWCA").FontSize(7).Bold().FontColor(brand).LetterSpacing(0.1f);
+                            c.Item().PaddingTop(6).Text(buyerName).Bold().FontSize(11).FontColor(dark);
                             if (!string.IsNullOrWhiteSpace(buyerNip))
-                                c.Item().Text($"NIP: {buyerNip}").FontSize(9).FontColor(muted);
-                            if (!string.IsNullOrWhiteSpace(buyerAddress))
-                                c.Item().Text(buyerAddress).FontSize(9);
-                            c.Item().PaddingTop(4).Text(user?.Email ?? "").FontSize(9).FontColor(muted);
+                                c.Item().PaddingTop(6).Text($"NIP: {buyerNip}").FontSize(9).FontColor(muted);
+                            if (!string.IsNullOrWhiteSpace(buyerStreet))
+                                c.Item().PaddingTop(4).Text(buyerStreet).FontSize(9);
+                            if (!string.IsNullOrWhiteSpace(buyerCity))
+                                c.Item().Text($"{buyerPostal} {buyerCity}".Trim()).FontSize(9);
+                            c.Item().Text("Polska").FontSize(9).FontColor(muted);
+                            if (!string.IsNullOrWhiteSpace(buyerEmail))
+                                c.Item().PaddingTop(4).Text(buyerEmail).FontSize(9).FontColor(muted);
                         });
                     });
 
                     // ── Items table ───────────────────────────────────────────
                     col.Item().PaddingHorizontal(28).PaddingTop(20).Table(table =>
                     {
-                        table.ColumnsDefinition(columns =>
+                        table.ColumnsDefinition(cols =>
                         {
-                            columns.ConstantColumn(28);
-                            columns.RelativeColumn(4);
-                            columns.ConstantColumn(80);
-                            columns.ConstantColumn(100);
+                            cols.ConstantColumn(24);   // Lp.
+                            cols.RelativeColumn(3);    // Nazwa usługi
+                            cols.ConstantColumn(44);   // Okres
+                            cols.ConstantColumn(68);   // Data
+                            cols.ConstantColumn(72);   // Kwota netto
+                            cols.ConstantColumn(58);   // VAT 23%
+                            cols.ConstantColumn(80);   // Kwota brutto
                         });
 
                         table.Header(header =>
                         {
-                            static IContainer HeaderCell(IContainer c) =>
-                                c.Background("#8B0D1D").Padding(8);
-
-                            HeaderCell(header.Cell()).Text("Lp.").FontColor(Colors.White).Bold().FontSize(9);
-                            HeaderCell(header.Cell()).Text("Opis usługi").FontColor(Colors.White).Bold().FontSize(9);
-                            HeaderCell(header.Cell()).Text("Data").FontColor(Colors.White).Bold().FontSize(9);
-                            HeaderCell(header.Cell()).AlignRight().Text("Kwota brutto").FontColor(Colors.White).Bold().FontSize(9);
+                            IContainer H(IContainer c) => c.Background(dark).PaddingVertical(9).PaddingHorizontal(6);
+                            H(header.Cell()).Text("LP.").FontColor(white).Bold().FontSize(8);
+                            H(header.Cell()).Text("NAZWA USŁUGI").FontColor(white).Bold().FontSize(8);
+                            H(header.Cell()).AlignCenter().Text("OKRES").FontColor(white).Bold().FontSize(8);
+                            H(header.Cell()).AlignCenter().Text("DATA").FontColor(white).Bold().FontSize(8);
+                            H(header.Cell()).AlignRight().Text("KWOTA NETTO").FontColor(white).Bold().FontSize(8);
+                            H(header.Cell()).AlignRight().Text("VAT 23%").FontColor(white).Bold().FontSize(8);
+                            H(header.Cell()).AlignRight().Text("KWOTA BRUTTO").FontColor(white).Bold().FontSize(8);
                         });
 
                         var idx = 1;
                         foreach (var p in invoice.Payments)
                         {
-                            var bg = idx % 2 == 0 ? light : "#ffffff";
-                            table.Cell().Background(bg).BorderBottom(1).BorderColor(border).Padding(8).Text(idx.ToString()).FontSize(9);
-                            table.Cell().Background(bg).BorderBottom(1).BorderColor(border).Padding(8).Text(p.ServiceDescription).FontSize(9);
-                            table.Cell().Background(bg).BorderBottom(1).BorderColor(border).Padding(8).Text(p.PaidAt?.ToString("dd.MM.yyyy") ?? "–").FontSize(9);
-                            table.Cell().Background(bg).BorderBottom(1).BorderColor(border).Padding(8).AlignRight().Text($"{p.Amount:0.00} PLN").FontSize(9).Bold();
+                            var bg = idx % 2 == 0 ? light : white;
+                            var net = Math.Round(p.Amount / 1.23m, 2);
+                            var vat = Math.Round(p.Amount - net, 2);
+                            var dur = p.DurationDays.HasValue ? $"{p.DurationDays} dni" : "–";
+
+                            IContainer D(IContainer c) => c.Background(bg).BorderBottom(1).BorderColor(border).PaddingVertical(9).PaddingHorizontal(6);
+                            D(table.Cell()).Text(idx.ToString()).FontSize(8).FontColor(muted);
+                            D(table.Cell()).Text(p.ServiceDescription).FontSize(8);
+                            D(table.Cell()).AlignCenter().Text(dur).FontSize(8).FontColor(muted);
+                            D(table.Cell()).AlignCenter().Text(p.PaidAt?.ToString("dd.MM.yyyy") ?? "–").FontSize(8).FontColor(muted);
+                            D(table.Cell()).AlignRight().Text($"{net:0.00} PLN").FontSize(8);
+                            D(table.Cell()).AlignRight().Text($"{vat:0.00} PLN").FontSize(8);
+                            D(table.Cell()).AlignRight().Text($"{p.Amount:0.00} PLN").FontSize(8).Bold().FontColor(brand);
                             idx++;
                         }
                     });
 
-                    // ── Summary ───────────────────────────────────────────────
-                    col.Item().PaddingHorizontal(28).PaddingTop(16).AlignRight().Width(220).Column(c =>
+                    // ── Bottom: extra info + totals ───────────────────────────
+                    col.Item().PaddingHorizontal(28).PaddingTop(20).Row(row =>
                     {
-                        c.Item().Background(light).Border(1).BorderColor(border).Padding(12).Column(inner =>
+                        // Left: Dodatkowe informacje
+                        row.RelativeItem().Column(lc =>
                         {
-                            inner.Item().Row(r =>
+                            lc.Item().Text("DODATKOWE INFORMACJE").FontSize(7).Bold().FontColor(brand).LetterSpacing(0.08f);
+                            lc.Item().PaddingTop(10).Table(tbl =>
                             {
-                                r.RelativeItem().Text("Wartość netto:").FontSize(9).FontColor(muted);
-                                r.ConstantItem(100).AlignRight().Text($"{invoice.NetAmount:0.00} PLN").FontSize(9);
+                                tbl.ColumnsDefinition(c => { c.RelativeColumn(); c.RelativeColumn(); });
+                                ExtraRow(tbl, "Numer zamówienia:", orderNum);
+                                ExtraRow(tbl, "Numer płatności ING:", paymentNum);
+                                ExtraRow(tbl, "Metoda płatności:", "Bramka ING");
+                                ExtraRow(tbl, "Data płatności:", firstPayment?.PaidAt?.ToString("dd.MM.yyyy") ?? "–");
+                                ExtraRow(tbl, "Waluta:", "PLN");
                             });
-                            inner.Item().PaddingTop(4).Row(r =>
+                        });
+
+                        row.ConstantItem(20);
+
+                        // Right: totals
+                        row.RelativeItem().Column(rc =>
+                        {
+                            rc.Item().Border(1).BorderColor(border).Table(tbl =>
                             {
-                                r.RelativeItem().Text("VAT 23%:").FontSize(9).FontColor(muted);
-                                r.ConstantItem(100).AlignRight().Text($"{invoice.VatAmount:0.00} PLN").FontSize(9);
-                            });
-                            inner.Item().PaddingTop(8).LineHorizontal(1).LineColor(brand);
-                            inner.Item().PaddingTop(8).Row(r =>
-                            {
-                                r.RelativeItem().Text("RAZEM DO ZAPŁATY:").Bold().FontSize(11).FontColor(brand);
-                                r.ConstantItem(100).AlignRight().Text($"{invoice.TotalAmount:0.00} PLN").Bold().FontSize(13).FontColor(brand);
+                                tbl.ColumnsDefinition(c => { c.RelativeColumn(); c.ConstantColumn(100); });
+
+                                TotalRow(tbl, "WARTOŚĆ NETTO", $"{invoice.NetAmount:0.00} PLN", light, dark, false);
+                                TotalRow(tbl, "VAT 23%", $"{invoice.VatAmount:0.00} PLN", white, dark, false);
+                                TotalRow(tbl, "DO ZAPŁATY", $"{invoice.TotalAmount:0.00} PLN", white, brand, true);
                             });
                         });
                     });
 
-                    // ── Footer ────────────────────────────────────────────────
-                    col.Item().PaddingTop(30).PaddingHorizontal(28).LineHorizontal(1).LineColor(border);
-                    col.Item().PaddingHorizontal(28).PaddingTop(8).PaddingBottom(28).Row(row =>
+                    // ── QR + thank you ────────────────────────────────────────
+                    col.Item().PaddingHorizontal(28).PaddingTop(20).LineHorizontal(1).LineColor(border);
+                    col.Item().PaddingHorizontal(28).PaddingTop(14).PaddingBottom(16).Row(row =>
                     {
-                        row.RelativeItem().Text("Dokument wygenerowany automatycznie przez system CARIZO · carizo.eu")
-                            .FontSize(8).FontColor(muted);
-                        row.AutoItem().Text(invoice.InvoiceNumber)
-                            .FontSize(8).FontColor(muted).AlignRight();
+                        // QR code
+                        row.ConstantItem(70).Column(qc =>
+                        {
+                            if (qrBytes != null)
+                                qc.Item().Width(60).Height(60).Image(qrBytes);
+                            qc.Item().PaddingTop(4).Text("ZESKANUJ KOD QR")
+                                .FontSize(6).Bold().FontColor(brand).LetterSpacing(0.05f);
+                            qc.Item().Text("aby zweryfikować")
+                                .FontSize(6).FontColor(muted);
+                            qc.Item().Text("autentyczność faktury")
+                                .FontSize(6).FontColor(muted);
+                        });
+
+                        row.RelativeItem();
+
+                        // Thank you
+                        row.AutoItem().AlignRight().Column(tc =>
+                        {
+                            tc.Item().AlignRight().Text("Dziękujemy za zaufanie i współpracę.")
+                                .FontSize(9).FontColor(muted);
+                            tc.Item().AlignRight().Text("Zespół CARIZO")
+                                .FontSize(10).Bold().FontColor(brand);
+                        });
+                    });
+
+                    // ── Dark footer ───────────────────────────────────────────
+                    col.Item().Background(hdr).PaddingHorizontal(28).PaddingVertical(18).Row(row =>
+                    {
+                        // Logo + address
+                        row.RelativeItem().Column(c =>
+                        {
+                            c.Item().Text("CARIZO").FontSize(14).Bold().FontColor(white).LetterSpacing(0.05f);
+                            c.Item().PaddingTop(4).Text(sellerName).FontSize(8).FontColor(muted);
+                            c.Item().Text($"{sellerStreet}, {sellerCity}, Polska").FontSize(8).FontColor(muted);
+                        });
+
+                        // NIP / REGON
+                        row.RelativeItem().Column(c =>
+                        {
+                            c.Item().Text($"NIP: {sellerNip}").FontSize(8).FontColor(muted);
+                            c.Item().PaddingTop(2).Text($"REGON: {sellerRegon}").FontSize(8).FontColor(muted);
+                        });
+
+                        // Account
+                        row.RelativeItem().AlignRight().Column(c =>
+                        {
+                            c.Item().AlignRight().Text("Numer konta:").FontSize(7).FontColor(muted);
+                            c.Item().AlignRight().Text(accountNumber).FontSize(8).FontColor(white).Bold();
+                        });
+                    });
+
+                    // ── Legal note ────────────────────────────────────────────
+                    col.Item().Background("#0a0a0a").PaddingHorizontal(28).PaddingVertical(8).Column(c =>
+                    {
+                        c.Item().AlignCenter().Text("Faktura wygenerowana automatycznie przez system CARIZO.  Dokument nie wymaga podpisu.")
+                            .FontSize(7).FontColor("#555555");
                     });
                 });
             });
         }).GeneratePdf();
+    }
+
+    private static void ContactRow(ColumnDescriptor col, string text) =>
+        col.Item().Text(text).FontSize(8).FontColor("#aaaaaa");
+
+    private static void DateRow(TableDescriptor tbl, string label, string value)
+    {
+        tbl.Cell().PaddingVertical(2).AlignRight().Text(label).FontSize(7).FontColor("#888888");
+        tbl.Cell().PaddingVertical(2).PaddingLeft(8).Text(value).FontSize(7).FontColor("#ffffff").Bold();
+    }
+
+    private static void ExtraRow(TableDescriptor tbl, string label, string value)
+    {
+        tbl.Cell().PaddingVertical(3).Text(label).FontSize(8).FontColor("#888888");
+        tbl.Cell().PaddingVertical(3).Text(value).FontSize(8);
+    }
+
+    private static void TotalRow(TableDescriptor tbl, string label, string value, string bg, string color, bool large)
+    {
+        var fs = large ? 12 : 9;
+        tbl.Cell().Background(bg).PaddingVertical(large ? 12 : 8).PaddingHorizontal(10)
+            .Text(label).FontSize(fs).Bold().FontColor(color);
+        tbl.Cell().Background(bg).PaddingVertical(large ? 12 : 8).PaddingHorizontal(10)
+            .AlignRight().Text(value).FontSize(fs).Bold().FontColor(color);
+    }
+
+    private static byte[]? GenerateQrBytes(string content)
+    {
+        try
+        {
+            using var gen = new QRCodeGenerator();
+            using var data = gen.CreateQrCode(content, QRCodeGenerator.ECCLevel.Q);
+            using var qr = new PngByteQRCode(data);
+            return qr.GetGraphic(5);
+        }
+        catch { return null; }
     }
 
     public async Task<PagedResult<InvoiceResponseDto>> GetAllInvoicesAsync(int page, int pageSize)
