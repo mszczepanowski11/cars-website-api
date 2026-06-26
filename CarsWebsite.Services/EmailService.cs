@@ -62,7 +62,8 @@ public class EmailService : IEmailService
             message.Headers.Add("X-Mailer", "CARIZO Mailer 1.0");
 
             using var client = new SmtpClient();
-            await client.ConnectAsync(host, port, SecureSocketOptions.StartTls);
+            // Auto detects: port 465 → SSL, port 587 → STARTTLS, port 25 → plain
+            await client.ConnectAsync(host, port, SecureSocketOptions.Auto);
             if (!string.IsNullOrEmpty(user))
                 await client.AuthenticateAsync(user, password);
             await client.SendAsync(message);

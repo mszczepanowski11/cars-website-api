@@ -59,6 +59,9 @@ internal class Program
         if (!string.IsNullOrEmpty(smtpUser)) builder.Configuration["Smtp:User"] = smtpUser;
         if (!string.IsNullOrEmpty(smtpPass)) builder.Configuration["Smtp:Password"] = smtpPass;
         if (!string.IsNullOrEmpty(smtpFrom)) builder.Configuration["Smtp:From"] = smtpFrom;
+        // Log SMTP config at startup (password masked) to detect misconfiguration early
+        Console.WriteLine($"[SMTP] host={builder.Configuration["Smtp:Host"] ?? "(not set)"} port={builder.Configuration["Smtp:Port"] ?? "587"} user={builder.Configuration["Smtp:User"] ?? "(not set)"} from={builder.Configuration["Smtp:From"] ?? "(not set)"} pass={(string.IsNullOrEmpty(smtpPass) ? "(NOT SET)" : "***")}");
+
 
         // JWT_SECRET_KEY env var takes precedence over appsettings (required in production)
         var jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? builder.Configuration["Jwt:Key"];
