@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using cars_website_api.CarsWebsite.Interfaces;
 using MailKit.Net.Smtp;
 using MailKit.Security;
@@ -43,7 +44,19 @@ public class EmailService : IEmailService
             message.From.Add(MailboxAddress.Parse(from));
             message.To.Add(MailboxAddress.Parse(to));
             message.Subject = subject;
-            message.Body = new TextPart("html") { Text = htmlBody };
+
+            // Reply-To: same as From so replies go to the right place
+            message.ReplyTo.Add(MailboxAddress.Parse(from));
+
+            // Multipart/alternative: plain text first (fallback), HTML second (preferred).
+            // Having a plain-text part significantly reduces spam score with corporate filters.
+            var multipart = new Multipart("alternative");
+            multipart.Add(new TextPart("plain") { Text = HtmlToPlainText(htmlBody) });
+            multipart.Add(new TextPart("html") { Text = htmlBody });
+            message.Body = multipart;
+
+            // Standard headers that improve deliverability
+            message.Headers.Add("X-Mailer", "CARIZO Mailer 1.0");
 
             using var client = new SmtpClient();
             await client.ConnectAsync(host, port, SecureSocketOptions.StartTls);
@@ -57,6 +70,25 @@ public class EmailService : IEmailService
         {
             _logger.LogError(ex, "[Email] Błąd wysyłki e-mail do {To} via {Host}:{Port}", to, host, port);
         }
+    }
+
+    private static string HtmlToPlainText(string html)
+    {
+        // Replace <br>, <p>, <div> with newlines before stripping tags
+        var text = Regex.Replace(html, @"<br\s*/?>|</p>|</div>|</li>|</h[1-6]>", "\n", RegexOptions.IgnoreCase);
+        // Remove all remaining HTML tags
+        text = Regex.Replace(text, @"<[^>]+>", string.Empty);
+        // Decode common HTML entities
+        text = text
+            .Replace("&amp;", "&")
+            .Replace("&lt;", "<")
+            .Replace("&gt;", ">")
+            .Replace("&quot;", "\"")
+            .Replace("&#39;", "'")
+            .Replace("&nbsp;", " ");
+        // Collapse multiple blank lines
+        text = Regex.Replace(text, @"\n{3,}", "\n\n");
+        return text.Trim();
     }
 
     public static string BuildHtml(
