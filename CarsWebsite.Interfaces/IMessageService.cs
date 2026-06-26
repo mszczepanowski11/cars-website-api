@@ -1,4 +1,4 @@
-﻿using cars_website_api.CarsWebsite.DTOs.Message;
+using cars_website_api.CarsWebsite.DTOs.Message;
 
 namespace cars_website_api.CarsWebsite.Interfaces;
 
@@ -9,4 +9,7 @@ public interface IMessageService
     Task<List<MessageDto>> GetConversationMessagesAsync(int conversationId, int userId);
     Task<MessageDto> SendMessageAsync(int conversationId, int senderId, string content);
     Task<int> GetUnreadCountAsync(int userId);
+    Task<ConversationDto> PinConversationAsync(int conversationId, int userId);
+    Task<ConversationDto> ArchiveConversationAsync(int conversationId, int userId);
+    Task MarkConversationUnreadAsync(int conversationId, int userId);
 }

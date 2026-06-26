@@ -1,4 +1,4 @@
-﻿using cars_website_api.CarsWebsite.DTOs.Message;
+using cars_website_api.CarsWebsite.DTOs.Message;
 using cars_website_api.CarsWebsite.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -92,5 +92,56 @@ public class MessageController : ControllerBase
 
         var count = await _messageService.GetUnreadCountAsync(userId);
         return Ok(count);
+    }
+
+    [HttpPut("conversation/{conversationId}/pin")]
+    public async Task<IActionResult> TogglePin(int conversationId)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out var userId)) return Unauthorized();
+
+        try
+        {
+            var result = await _messageService.PinConversationAsync(conversationId, userId);
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
+
+    [HttpPut("conversation/{conversationId}/archive")]
+    public async Task<IActionResult> ToggleArchive(int conversationId)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out var userId)) return Unauthorized();
+
+        try
+        {
+            var result = await _messageService.ArchiveConversationAsync(conversationId, userId);
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
+
+    [HttpPut("conversation/{conversationId}/mark-unread")]
+    public async Task<IActionResult> MarkUnread(int conversationId)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out var userId)) return Unauthorized();
+
+        try
+        {
+            await _messageService.MarkConversationUnreadAsync(conversationId, userId);
+            return Ok();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
     }
 }

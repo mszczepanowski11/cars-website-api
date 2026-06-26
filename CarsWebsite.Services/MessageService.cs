@@ -1,4 +1,4 @@
-﻿using cars_website_api.CarsWebsite.DTOs.Message;
+using cars_website_api.CarsWebsite.DTOs.Message;
 using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
 using Microsoft.EntityFrameworkCore;
@@ -72,10 +72,12 @@ public class MessageService : IMessageService
             .Include(c => c.Seller)
             .Include(c => c.Advert)
             .Where(c => c.BuyerId == userId || c.SellerId == userId)
-            .OrderByDescending(c => c.LastMessageAt)
+            .OrderByDescending(c => c.IsPinned)
+            .ThenByDescending(c => c.LastMessageAt)
             .ToListAsync();
 
         var convIds = convs.Select(c => c.Id).ToList();
+        var advertIds = convs.Select(c => c.AdvertId).Distinct().ToList();
 
         var lastMessages = await _context.Messages
             .Where(m => convIds.Contains(m.ConversationId))
@@ -88,6 +90,13 @@ public class MessageService : IMessageService
             .GroupBy(m => m.ConversationId)
             .Select(g => new { ConvId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.ConvId, x => x.Count);
+
+        // Fetch one thumbnail per advert (main image or first)
+        var thumbnails = await _context.AdvertImages
+            .Where(img => advertIds.Contains(img.AdvertId))
+            .GroupBy(img => img.AdvertId)
+            .Select(g => g.OrderByDescending(img => img.IsMain).First())
+            .ToDictionaryAsync(img => img.AdvertId, img => img.Url);
 
         return convs.Select(c =>
         {
@@ -104,11 +113,16 @@ public class MessageService : IMessageService
                 SellerName = $"{c.Seller.Name} {c.Seller.Surname}",
                 AdvertId = c.AdvertId,
                 AdvertTitle = c.Advert?.Title ?? "(Ogłoszenie usunięte)",
+                AdvertThumbnail = thumbnails.GetValueOrDefault(c.AdvertId),
                 LastMessageAt = c.LastMessageAt,
                 LastMessageContent = last?.Content,
+                LastMessageIsMine = last?.SenderId == userId,
                 UnreadCount = unreadCounts.GetValueOrDefault(c.Id, 0),
                 OtherUserId = other.Id,
-                OtherUserName = $"{other.Name} {other.Surname}"
+                OtherUserName = $"{other.Name} {other.Surname}",
+                OtherUserAvatar = other.AvatarUrl,
+                IsPinned = c.IsPinned,
+                IsArchived = c.IsArchived
             };
         }).ToList();
     }
@@ -166,7 +180,6 @@ public class MessageService : IMessageService
 
         var sender = await _context.Users.FindAsync(senderId);
 
-        // Notify the recipient
         var recipientId = conv.BuyerId == senderId ? conv.SellerId : conv.BuyerId;
         _ = _notifications.NotifyAsync(recipientId, EmailNotificationType.NewMessage,
             "Nowa wiadomość",
@@ -192,4 +205,93 @@ public class MessageService : IMessageService
                 !m.IsRead &&
                 (m.Conversation.BuyerId == userId || m.Conversation.SellerId == userId))
             .CountAsync();
+
+    public async Task<ConversationDto> PinConversationAsync(int conversationId, int userId)
+    {
+        var conv = await _context.Conversations
+            .Include(c => c.Buyer).Include(c => c.Seller).Include(c => c.Advert)
+            .FirstOrDefaultAsync(c => c.Id == conversationId &&
+                (c.BuyerId == userId || c.SellerId == userId))
+            ?? throw new UnauthorizedAccessException();
+
+        conv.IsPinned = !conv.IsPinned;
+        await _context.SaveChangesAsync();
+
+        return await BuildConversationDtoAsync(conv, userId);
+    }
+
+    public async Task<ConversationDto> ArchiveConversationAsync(int conversationId, int userId)
+    {
+        var conv = await _context.Conversations
+            .Include(c => c.Buyer).Include(c => c.Seller).Include(c => c.Advert)
+            .FirstOrDefaultAsync(c => c.Id == conversationId &&
+                (c.BuyerId == userId || c.SellerId == userId))
+            ?? throw new UnauthorizedAccessException();
+
+        conv.IsArchived = !conv.IsArchived;
+        if (conv.IsArchived) conv.IsPinned = false;
+        await _context.SaveChangesAsync();
+
+        return await BuildConversationDtoAsync(conv, userId);
+    }
+
+    public async Task MarkConversationUnreadAsync(int conversationId, int userId)
+    {
+        var conv = await _context.Conversations
+            .FirstOrDefaultAsync(c => c.Id == conversationId &&
+                (c.BuyerId == userId || c.SellerId == userId))
+            ?? throw new UnauthorizedAccessException();
+
+        var lastMsg = await _context.Messages
+            .Where(m => m.ConversationId == conversationId && m.SenderId != userId)
+            .OrderByDescending(m => m.SentAt)
+            .FirstOrDefaultAsync();
+
+        if (lastMsg != null)
+        {
+            lastMsg.IsRead = false;
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    private async Task<ConversationDto> BuildConversationDtoAsync(Conversation conv, int userId)
+    {
+        bool isBuyer = conv.BuyerId == userId;
+        var other = isBuyer ? conv.Seller : conv.Buyer;
+
+        var last = await _context.Messages
+            .Where(m => m.ConversationId == conv.Id)
+            .OrderByDescending(m => m.SentAt)
+            .FirstOrDefaultAsync();
+
+        var unreadCount = await _context.Messages
+            .CountAsync(m => m.ConversationId == conv.Id && m.SenderId != userId && !m.IsRead);
+
+        var thumb = await _context.AdvertImages
+            .Where(img => img.AdvertId == conv.AdvertId)
+            .OrderByDescending(img => img.IsMain)
+            .Select(img => img.Url)
+            .FirstOrDefaultAsync();
+
+        return new ConversationDto
+        {
+            Id = conv.Id,
+            BuyerId = conv.BuyerId,
+            BuyerName = $"{conv.Buyer.Name} {conv.Buyer.Surname}",
+            SellerId = conv.SellerId,
+            SellerName = $"{conv.Seller.Name} {conv.Seller.Surname}",
+            AdvertId = conv.AdvertId,
+            AdvertTitle = conv.Advert?.Title ?? "(Ogłoszenie usunięte)",
+            AdvertThumbnail = thumb,
+            LastMessageAt = conv.LastMessageAt,
+            LastMessageContent = last?.Content,
+            LastMessageIsMine = last?.SenderId == userId,
+            UnreadCount = unreadCount,
+            OtherUserId = other.Id,
+            OtherUserName = $"{other.Name} {other.Surname}",
+            OtherUserAvatar = other.AvatarUrl,
+            IsPinned = conv.IsPinned,
+            IsArchived = conv.IsArchived
+        };
+    }
 }
