@@ -32,8 +32,11 @@ public class EmailService : IEmailService
             host = host.Split(':')[0];
 
         var port = int.TryParse(section["Port"], out var p) ? p : 587;
-        var from = (section["From"] ?? "powiadomienia@carizo.pl").Trim();
         var user = section["User"];
+        // From must match the authenticated SMTP account (Hostinger requirement).
+        // Priority: SMTP_FROM env var → appsettings Smtp:From → SMTP_USER → hardcoded fallback.
+        var fromCfg = (section["From"] ?? "").Trim();
+        var from = !string.IsNullOrEmpty(fromCfg) ? fromCfg : (user ?? "powiadomienia@carizo.pl");
         var password = section["Password"];
 
         _logger.LogInformation("[Email] Sending '{Subject}' to {To} via {Host}:{Port}", subject, to, host, port);
