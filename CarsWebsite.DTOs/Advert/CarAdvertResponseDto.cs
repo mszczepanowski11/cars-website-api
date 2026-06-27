@@ -101,6 +101,22 @@ public class CarAdvertResponseDto
     public DriveTypeDto? DriveType { get; set; }
     public CarColorDto? Color { get; set; }
 
+    // Premium listing fields
+    public string? RegistrationPlate { get; set; }
+    public bool HasVatInvoice { get; set; }
+    public bool IsLeasingPossible { get; set; }
+    public bool IsCreditPossible { get; set; }
+    public bool IsExchangePossible { get; set; }
+    public int? GearCount { get; set; }
+    public bool MetallicPaint { get; set; }
+    public int? MaxTrailerWeight { get; set; }
+    public bool IsFirstOwner { get; set; }
+    public bool IsServicedAtASO { get; set; }
+    public bool IsGaraged { get; set; }
+    public int? KeyCount { get; set; }
+    public DateTime? InsuranceUntil { get; set; }
+    public string? YoutubeUrl { get; set; }
+
     public List<FeatureDto> Features { get; set; } = new();
     public List<AdvertImageDto> Images { get; set; } = new();
 

@@ -381,6 +381,22 @@ public class AdvertService : IAdvertService
         if (!string.IsNullOrEmpty(dto.CatalogNumber))
             query = query.Where(a => a.CatalogNumber != null && a.CatalogNumber.Contains(dto.CatalogNumber));
 
+        // Premium filters
+        if (dto.HasVatInvoice.HasValue)
+            query = query.Where(a => a.HasVatInvoice == dto.HasVatInvoice);
+        if (dto.IsExchangePossible.HasValue)
+            query = query.Where(a => a.IsExchangePossible == dto.IsExchangePossible);
+        if (dto.IsLeasingPossible.HasValue)
+            query = query.Where(a => a.IsLeasingPossible == dto.IsLeasingPossible);
+        if (dto.IsCreditPossible.HasValue)
+            query = query.Where(a => a.IsCreditPossible == dto.IsCreditPossible);
+        if (dto.MetallicPaint.HasValue)
+            query = query.Where(a => a.MetallicPaint == dto.MetallicPaint);
+        if (dto.IsFirstOwner.HasValue)
+            query = query.Where(a => a.IsFirstOwner == dto.IsFirstOwner);
+        if (dto.IsGaraged.HasValue)
+            query = query.Where(a => a.IsGaraged == dto.IsGaraged);
+
         var prioritized = query.OrderBy(a =>
             (a.Badge == "TOP"      && (a.BadgeExpiresAt == null || a.BadgeExpiresAt > DateTime.UtcNow)) ? 0 :
             (a.Badge == "PREMIUM"  && (a.BadgeExpiresAt == null || a.BadgeExpiresAt > DateTime.UtcNow)) ? 1 :

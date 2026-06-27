@@ -52,6 +52,15 @@ public class SearchCarAdvertDto
     public string? City { get; set; }
     public string? Region { get; set; }
 
+    // Premium filters
+    public bool? HasVatInvoice { get; set; }
+    public bool? IsExchangePossible { get; set; }
+    public bool? IsLeasingPossible { get; set; }
+    public bool? IsCreditPossible { get; set; }
+    public bool? MetallicPaint { get; set; }
+    public bool? IsFirstOwner { get; set; }
+    public bool? IsGaraged { get; set; }
+
     public List<int>? FeatureIds { get; set; }
     public string? SortBy { get; set; }
     public int Page { get; set; } = 1;
