@@ -27,6 +27,7 @@ public class TaxonomyService : ITaxonomyService
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.Brands
+                .AsNoTracking()
                 .Include(b => b.Models)
                 .ThenInclude(m => m.Generations)
                 .ThenInclude(g => g.EngineVersions)
@@ -41,6 +42,7 @@ public class TaxonomyService : ITaxonomyService
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.Brands
+                .AsNoTracking()
                 .OrderBy(b => b.Name)
                 .ToListAsync();
         }) ?? [];
@@ -68,6 +70,7 @@ public class TaxonomyService : ITaxonomyService
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.Models
+                .AsNoTracking()
                 .Where(m => m.BrandId == brandId)
                 .OrderBy(m => m.Name)
                 .ToListAsync();
@@ -80,6 +83,7 @@ public class TaxonomyService : ITaxonomyService
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.Generations
+                .AsNoTracking()
                 .Where(g => g.ModelId == modelId)
                 .OrderBy(g => g.YearFrom)
                 .ToListAsync();
@@ -92,6 +96,7 @@ public class TaxonomyService : ITaxonomyService
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.EngineVersions
+                .AsNoTracking()
                 .Include(e => e.FuelType)
                 .Where(e => e.GenerationId == generationId)
                 .OrderBy(e => e.EngineName)
@@ -105,6 +110,7 @@ public class TaxonomyService : ITaxonomyService
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.FuelTypes
+                .AsNoTracking()
                 .OrderBy(f => f.Name)
                 .ToListAsync();
         }) ?? [];
@@ -116,6 +122,7 @@ public class TaxonomyService : ITaxonomyService
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.Gearboxes
+                .AsNoTracking()
                 .OrderBy(g => g.Name)
                 .ToListAsync();
         }) ?? [];
@@ -127,6 +134,7 @@ public class TaxonomyService : ITaxonomyService
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.BodyTypes
+                .AsNoTracking()
                 .OrderBy(b => b.Name)
                 .ToListAsync();
         }) ?? [];
@@ -138,6 +146,7 @@ public class TaxonomyService : ITaxonomyService
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.DriveTypes
+                .AsNoTracking()
                 .OrderBy(d => d.Id)
                 .ToListAsync();
         }) ?? [];
@@ -149,6 +158,7 @@ public class TaxonomyService : ITaxonomyService
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.CarColors
+                .AsNoTracking()
                 .OrderBy(c => c.Name)
                 .ToListAsync();
         }) ?? [];
@@ -160,6 +170,7 @@ public class TaxonomyService : ITaxonomyService
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.Features
+                .AsNoTracking()
                 .Include(f => f.Category)
                 .OrderBy(f => f.Name)
                 .ToListAsync();
@@ -172,6 +183,7 @@ public class TaxonomyService : ITaxonomyService
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.VehicleCategories
+                .AsNoTracking()
                 .OrderBy(c => c.SortOrder)
                 .ToListAsync();
         }) ?? [];
@@ -183,6 +195,7 @@ public class TaxonomyService : ITaxonomyService
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.FeatureCategories
+                .AsNoTracking()
                 .Include(fc => fc.Features)
                 .OrderBy(fc => fc.Name)
                 .ToListAsync();
@@ -195,6 +208,7 @@ public class TaxonomyService : ITaxonomyService
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.FeatureCategories
+                .AsNoTracking()
                 .Include(fc => fc.Features)
                 .Where(fc => fc.VehicleCategoryId == vehicleCategoryId || fc.VehicleCategoryId == null)
                 .OrderBy(fc => fc.Name)
@@ -209,6 +223,7 @@ public class TaxonomyService : ITaxonomyService
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.FeatureCategories
+                .AsNoTracking()
                 .Include(fc => fc.Features)
                 .Where(fc =>
                     (fc.VehicleCategoryId == null || fc.VehicleCategoryId == vehicleCategoryId) &&
@@ -225,6 +240,7 @@ public class TaxonomyService : ITaxonomyService
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.Trims
+                .AsNoTracking()
                 .Where(t => t.GenerationId == generationId)
                 .OrderBy(t => t.Name)
                 .ToListAsync();
@@ -237,6 +253,7 @@ public class TaxonomyService : ITaxonomyService
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.EngineVersions
+                .AsNoTracking()
                 .Include(e => e.FuelType)
                 .Where(e => e.TrimId == trimId)
                 .OrderBy(e => e.EngineName)
@@ -250,6 +267,7 @@ public class TaxonomyService : ITaxonomyService
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.EngineVersions
+                .AsNoTracking()
                 .Include(e => e.FuelType)
                 .FirstOrDefaultAsync(e => e.Id == engineVersionId);
         });
@@ -261,6 +279,7 @@ public class TaxonomyService : ITaxonomyService
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.VehicleSubtypes
+                .AsNoTracking()
                 .Where(vs => vs.VehicleCategoryId == vehicleCategoryId)
                 .OrderBy(vs => vs.SortOrder)
                 .ThenBy(vs => vs.Name)
@@ -274,6 +293,7 @@ public class TaxonomyService : ITaxonomyService
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.PartCategories
+                .AsNoTracking()
                 .Include(pc => pc.Subcategories)
                 .OrderBy(pc => pc.SortOrder)
                 .ThenBy(pc => pc.Name)
@@ -287,6 +307,7 @@ public class TaxonomyService : ITaxonomyService
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.PartSubcategories
+                .AsNoTracking()
                 .Where(ps => ps.PartCategoryId == partCategoryId)
                 .OrderBy(ps => ps.SortOrder)
                 .ThenBy(ps => ps.Name)
