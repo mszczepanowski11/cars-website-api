@@ -235,12 +235,11 @@ public class UserService : IUserService
                 .Contains(img.AdvertId))
             .ToListAsync();
 
-        foreach (var img in advertImages)
-        {
-            var publicId = ExtractPublicId(img.Url);
-            if (publicId != null)
-                await DeleteCloudinaryWithRetryAsync(publicId);
-        }
+        var cloudinaryTasks = advertImages
+            .Select(img => ExtractPublicId(img.Url))
+            .Where(pid => pid != null)
+            .Select(pid => DeleteCloudinaryWithRetryAsync(pid!));
+        await Task.WhenAll(cloudinaryTasks);
         _context.AdvertImages.RemoveRange(advertImages);
 
         // GDPR: delete all conversations and messages involving this user
@@ -265,7 +264,9 @@ public class UserService : IUserService
 
     public async Task<PublicUserProfileDto?> GetPublicProfileAsync(int userId)
     {
-        var user = await _context.Users.FindAsync(userId);
+        var user = await _context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == userId);
         if (user == null) return null;
 
         return new PublicUserProfileDto
