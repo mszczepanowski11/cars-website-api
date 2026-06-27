@@ -84,26 +84,37 @@ public class MessageService : IMessageService
         var advertIds = convs.Select(c => c.AdvertId).Distinct().ToList();
 
         // GroupBy + Max(Id) is translatable by Pomelo/MySQL; fetch full rows by Id in a second query.
-        var lastMessageIds = await _context.Messages
+        var lastMessageIdsTask = _context.Messages
+            .AsNoTracking()
             .Where(m => convIds.Contains(m.ConversationId))
             .GroupBy(m => m.ConversationId)
             .Select(g => g.Max(m => m.Id))
             .ToListAsync();
 
-        var lastMessages = await _context.Messages
-            .Where(m => lastMessageIds.Contains(m.Id))
-            .ToListAsync();
-
-        var unreadCounts = await _context.Messages
+        var unreadCountsTask = _context.Messages
+            .AsNoTracking()
             .Where(m => convIds.Contains(m.ConversationId) && m.SenderId != userId && !m.IsRead)
             .GroupBy(m => m.ConversationId)
             .Select(g => new { ConvId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.ConvId, x => x.Count);
 
         // Fetch all images for these adverts, then pick the main (or first) per advert client-side.
-        var allImages = await _context.AdvertImages
+        var allImagesTask = _context.AdvertImages
+            .AsNoTracking()
             .Where(img => advertIds.Contains(img.AdvertId))
             .ToListAsync();
+
+        var lastMessageIds = await lastMessageIdsTask;
+
+        var lastMessagesTask = _context.Messages
+            .AsNoTracking()
+            .Where(m => lastMessageIds.Contains(m.Id))
+            .ToListAsync();
+
+        await Task.WhenAll(lastMessagesTask, unreadCountsTask, allImagesTask);
+        var lastMessages = lastMessagesTask.Result;
+        var unreadCounts = unreadCountsTask.Result;
+        var allImages = allImagesTask.Result;
 
         var thumbnails = allImages
             .GroupBy(img => img.AdvertId)
@@ -213,6 +224,7 @@ public class MessageService : IMessageService
 
     public async Task<int> GetUnreadCountAsync(int userId) =>
         await _context.Messages
+            .AsNoTracking()
             .Where(m =>
                 m.SenderId != userId &&
                 !m.IsRead &&
