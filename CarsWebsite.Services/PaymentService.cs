@@ -61,20 +61,8 @@ public class PaymentService : IPaymentService
             "[Payment/Initiate] userId={UserId} serviceType={ServiceType} durationDays={Days} advertId={AdvertId} eventId={EventId}",
             userId, dto.ServiceType, dto.DurationDays, dto.AdvertId, dto.EventId);
 
-        var user = await _context.Users.FindAsync(userId)
+        var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId)
             ?? throw new KeyNotFoundException("Użytkownik nie istnieje.");
-
-        if (dto.AdvertId.HasValue)
-        {
-            var advert = await _context.CarAdverts.FirstOrDefaultAsync(a => a.Id == dto.AdvertId.Value);
-            if (advert == null)
-            {
-                _logger.LogWarning("[Payment/Initiate] advertId={AdvertId} not found in CarAdverts", dto.AdvertId.Value);
-                throw new KeyNotFoundException("Ogłoszenie nie istnieje.");
-            }
-            if (advert.UserId != userId)
-                throw new UnauthorizedAccessException("Nie masz dostępu do tego ogłoszenia.");
-        }
 
         var priceInfo = await GetServicePriceAsync(dto.ServiceType, dto.DurationDays);
         _logger.LogInformation("[Payment/Initiate] price={Price} desc={Desc}", priceInfo.Price, priceInfo.Description);
@@ -84,7 +72,12 @@ public class PaymentService : IPaymentService
         {
             var ownerCheck = await _context.CarAdverts.AsNoTracking()
                 .FirstOrDefaultAsync(a => a.Id == dto.AdvertId.Value);
-            if (ownerCheck == null || ownerCheck.UserId != userId)
+            if (ownerCheck == null)
+            {
+                _logger.LogWarning("[Payment/Initiate] advertId={AdvertId} not found in CarAdverts", dto.AdvertId.Value);
+                throw new KeyNotFoundException("Ogłoszenie nie istnieje.");
+            }
+            if (ownerCheck.UserId != userId)
                 throw new UnauthorizedAccessException("Nie jesteś właścicielem tego ogłoszenia.");
         }
         if (dto.EventId.HasValue)
@@ -127,8 +120,8 @@ public class PaymentService : IPaymentService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[Payment/Initiate] SaveChangesAsync FAILED for Payment: {Message}", ex.Message);
-            throw new InvalidOperationException($"Błąd zapisu płatności: {ex.InnerException?.Message ?? ex.Message}");
+            _logger.LogError(ex, "[Payment/Initiate] SaveChangesAsync FAILED for Payment orderId={OrderId}", orderId);
+            throw new InvalidOperationException("Błąd zapisu płatności. Spróbuj ponownie.");
         }
         _logger.LogInformation("[Payment/Initiate] Payment #{PaymentId} saved", payment.Id);
 
