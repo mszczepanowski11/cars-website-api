@@ -41,14 +41,18 @@ namespace cars_website_api.CarsWebsite.Services
         public async Task<PagedResult<ReportResponseDto>> GetUserReportsAsync(int userId, int page, int pageSize)
         {
             var query = _context.Reports
+                .AsNoTracking()
                 .Include(r => r.ReportedBy)
                 .Include(r => r.TargetAdvert)
                 .Include(r => r.TargetUser)
                 .Where(r => r.ReportedByUserId == userId)
                 .OrderByDescending(r => r.ReportedAt);
 
-            var totalCount = await query.CountAsync();
-            var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            var totalTask = query.CountAsync();
+            var itemsTask = query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            await Task.WhenAll(totalTask, itemsTask);
+            var totalCount = totalTask.Result;
+            var items = itemsTask.Result;
 
             return new PagedResult<ReportResponseDto>
             {

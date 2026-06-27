@@ -18,12 +18,14 @@ public class ReviewService : IReviewService
     public async Task<ReviewsResultDto> GetSellerReviewsAsync(int sellerId, int page, int pageSize)
     {
         pageSize = Math.Clamp(pageSize, 1, 100);
-        var query = _context.Reviews.Where(r => r.SellerId == sellerId);
-        var total = await query.CountAsync();
-        var avg = total > 0 ? await query.AverageAsync(r => (double)r.Rating) : 0.0;
-        var reviews = await query.OrderByDescending(r => r.CreatedAt)
+        var query = _context.Reviews.AsNoTracking().Where(r => r.SellerId == sellerId);
+        var totalTask = query.CountAsync();
+        var reviewsTask = query.OrderByDescending(r => r.CreatedAt)
             .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-        var items = await EnrichReviewsAsync(reviews);
+        await Task.WhenAll(totalTask, reviewsTask);
+        var total = totalTask.Result;
+        var avg = total > 0 ? await query.AverageAsync(r => (double)r.Rating) : 0.0;
+        var items = await EnrichReviewsAsync(reviewsTask.Result);
         return new ReviewsResultDto { Items = items, TotalCount = total, AverageRating = Math.Round(avg, 2) };
     }
 
@@ -33,10 +35,13 @@ public class ReviewService : IReviewService
     public async Task<PagedReviewResultDto> GetMyGivenReviewsAsync(int userId, int page, int pageSize)
     {
         pageSize = Math.Clamp(pageSize, 1, 100);
-        var query = _context.Reviews.Where(r => r.BuyerId == userId);
-        var total = await query.CountAsync();
-        var reviews = await query.OrderByDescending(r => r.CreatedAt)
+        var query = _context.Reviews.AsNoTracking().Where(r => r.BuyerId == userId);
+        var totalTask = query.CountAsync();
+        var reviewsTask = query.OrderByDescending(r => r.CreatedAt)
             .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        await Task.WhenAll(totalTask, reviewsTask);
+        var total = totalTask.Result;
+        var reviews = reviewsTask.Result;
         var items = await EnrichReviewsAsync(reviews);
         return new PagedReviewResultDto { Items = items, TotalCount = total };
     }
@@ -47,11 +52,12 @@ public class ReviewService : IReviewService
 
         // Sprawdź czy kupujący miał konwersację ze sprzedającym
         var hadContact = await _context.Conversations
+            .AsNoTracking()
             .AnyAsync(c => (c.BuyerId == buyerId && c.SellerId == sellerId) ||
                            (c.BuyerId == sellerId && c.SellerId == buyerId));
         if (!hadContact) return false;
 
-        return !await _context.Reviews.AnyAsync(r => r.BuyerId == buyerId && r.SellerId == sellerId);
+        return !await _context.Reviews.AsNoTracking().AnyAsync(r => r.BuyerId == buyerId && r.SellerId == sellerId);
     }
 
     public async Task<ReviewDto> CreateReviewAsync(int buyerId, CreateReviewDto dto)
@@ -96,6 +102,7 @@ public class ReviewService : IReviewService
         var advertIds = reviews.Select(r => r.AdvertId).Where(id => id != 0).Distinct().ToList();
 
         var users = await _context.Users
+            .AsNoTracking()
             .Where(u => userIds.Contains(u.Id))
             .Select(u => new { u.Id, u.Name, u.Surname })
             .ToListAsync();
@@ -105,6 +112,7 @@ public class ReviewService : IReviewService
         if (advertIds.Any())
         {
             var adverts = await _context.Adverts
+                .AsNoTracking()
                 .Where(a => advertIds.Contains(a.Id))
                 .Select(a => new { a.Id, a.Title })
                 .ToListAsync();

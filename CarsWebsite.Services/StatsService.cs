@@ -12,11 +12,14 @@ public class StatsService : IStatsService
 
     public async Task<HomeStatsDto> GetHomeStatsAsync()
     {
-        var activeAdverts = await _context.CarAdverts.CountAsync(a => a.IsActive && !a.IsHidden);
-        var totalUsers = await _context.Users.CountAsync();
-        var soldVehicles = await _context.CarAdverts.CountAsync(a => a.SoldAt != null);
-        var companies = await _context.Users.CountAsync(u => u.AccountType == AccountType.Business);
-        var events = await _context.Events.CountAsync(e => e.Status == EventStatus.Published);
-        return new HomeStatsDto(activeAdverts, totalUsers, soldVehicles, companies, events);
+        var activeAdvertsTask = _context.CarAdverts.AsNoTracking().CountAsync(a => a.IsActive && !a.IsHidden);
+        var totalUsersTask    = _context.Users.AsNoTracking().CountAsync();
+        var soldVehiclesTask  = _context.CarAdverts.AsNoTracking().CountAsync(a => a.SoldAt != null);
+        var companiesTask     = _context.Users.AsNoTracking().CountAsync(u => u.AccountType == AccountType.Business);
+        var eventsTask        = _context.Events.AsNoTracking().CountAsync(e => e.Status == EventStatus.Published);
+
+        await Task.WhenAll(activeAdvertsTask, totalUsersTask, soldVehiclesTask, companiesTask, eventsTask);
+
+        return new HomeStatsDto(activeAdvertsTask.Result, totalUsersTask.Result, soldVehiclesTask.Result, companiesTask.Result, eventsTask.Result);
     }
 }
