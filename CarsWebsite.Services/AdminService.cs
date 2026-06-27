@@ -24,14 +24,24 @@ namespace cars_website_api.CarsWebsite.Services
             var now = DateTime.UtcNow;
             var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
             var monthEnd = monthStart.AddMonths(1);
+
+            var activeAdvertsTask      = _context.CarAdverts.AsNoTracking().CountAsync(a => a.IsActive && !a.IsHidden);
+            var totalUsersTask         = _context.Users.AsNoTracking().CountAsync();
+            var totalReportsTask       = _context.Reports.AsNoTracking().CountAsync();
+            var pendingReportsTask     = _context.Reports.AsNoTracking().CountAsync(r => r.Status == ReportStatus.Pending);
+            var newRegistrationsTask   = _context.Users.AsNoTracking().CountAsync(u => u.CreatedAt >= monthStart && u.CreatedAt < monthEnd);
+            var blockedUsersTask       = _context.Users.AsNoTracking().CountAsync(u => u.IsBlocked);
+
+            await Task.WhenAll(activeAdvertsTask, totalUsersTask, totalReportsTask, pendingReportsTask, newRegistrationsTask, blockedUsersTask);
+
             return new AdminStatsDto
             {
-                TotalActiveAdverts = await _context.CarAdverts.CountAsync(a => a.IsActive && !a.IsHidden),
-                TotalUsers = await _context.Users.CountAsync(),
-                TotalReports = await _context.Reports.CountAsync(),
-                PendingReports = await _context.Reports.CountAsync(r => r.Status == ReportStatus.Pending),
-                NewRegistrationsThisMonth = await _context.Users.CountAsync(u => u.CreatedAt >= monthStart && u.CreatedAt < monthEnd),
-                BlockedUsers = await _context.Users.CountAsync(u => u.IsBlocked)
+                TotalActiveAdverts = activeAdvertsTask.Result,
+                TotalUsers = totalUsersTask.Result,
+                TotalReports = totalReportsTask.Result,
+                PendingReports = pendingReportsTask.Result,
+                NewRegistrationsThisMonth = newRegistrationsTask.Result,
+                BlockedUsers = blockedUsersTask.Result
             };
         }
 
@@ -39,6 +49,7 @@ namespace cars_website_api.CarsWebsite.Services
         {
             filter.PageSize = Math.Clamp(filter.PageSize, 1, 100);
             var query = _context.Reports
+                .AsNoTracking()
                 .Include(r => r.ReportedBy)
                 .Include(r => r.TargetAdvert)
                 .Include(r => r.TargetUser)
@@ -56,19 +67,21 @@ namespace cars_website_api.CarsWebsite.Services
                     (r.Content != null && r.Content.Contains(filter.Search)));
 
             query = query.OrderByDescending(r => r.ReportedAt);
-            var totalCount = await query.CountAsync();
-            var items = await query.Skip((filter.Page - 1) * filter.PageSize).Take(filter.PageSize).ToListAsync();
+            var totalTask = query.CountAsync();
+            var itemsTask = query.Skip((filter.Page - 1) * filter.PageSize).Take(filter.PageSize).ToListAsync();
+            await Task.WhenAll(totalTask, itemsTask);
 
             return new PagedResult<ReportResponseDto>
             {
-                TotalCount = totalCount,
-                Items = items.Select(ReportService.MapToDto).ToList()
+                TotalCount = totalTask.Result,
+                Items = itemsTask.Result.Select(ReportService.MapToDto).ToList()
             };
         }
 
         public async Task<ReportResponseDto?> GetReportByIdAsync(int id)
         {
             var report = await _context.Reports
+                .AsNoTracking()
                 .Include(r => r.ReportedBy).Include(r => r.TargetAdvert).Include(r => r.TargetUser)
                 .FirstOrDefaultAsync(r => r.Id == id);
             return report == null ? null : ReportService.MapToDto(report);
@@ -225,7 +238,7 @@ namespace cars_website_api.CarsWebsite.Services
         public async Task<PagedResult<AdminUserDto>> GetUsersAsync(string? search, string? accountType, bool? isBlocked, int page, int pageSize)
         {
             pageSize = Math.Clamp(pageSize, 1, 100);
-            var query = _context.Users.Include(u => u.Adverts).AsQueryable();
+            var query = _context.Users.AsNoTracking().Include(u => u.Adverts).AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
                 query = query.Where(u => u.Email.Contains(search) || u.Name.Contains(search) || u.Surname.Contains(search));
@@ -237,8 +250,11 @@ namespace cars_website_api.CarsWebsite.Services
                 query = query.Where(u => u.IsBlocked == isBlocked.Value);
 
             query = query.OrderBy(u => u.Id);
-            var totalCount = await query.CountAsync();
-            var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            var totalTask = query.CountAsync();
+            var itemsTask = query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            await Task.WhenAll(totalTask, itemsTask);
+            var totalCount = totalTask.Result;
+            var items = itemsTask.Result;
             return new PagedResult<AdminUserDto>
             {
                 TotalCount = totalCount,
@@ -258,6 +274,7 @@ namespace cars_website_api.CarsWebsite.Services
         {
             pageSize = Math.Clamp(pageSize, 1, 100);
             var query = _context.CarAdverts
+                .AsNoTracking()
                 .Include(a => a.createdBy)
                 .Include(a => a.Brand)
                 .Include(a => a.Model)
@@ -267,11 +284,15 @@ namespace cars_website_api.CarsWebsite.Services
             if (isHidden.HasValue) query = query.Where(a => a.IsHidden == isHidden);
             if (isActive.HasValue) query = query.Where(a => a.IsActive == isActive);
             query = query.OrderByDescending(a => a.CreatedAt);
-            var totalCount = await query.CountAsync();
-            var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            var totalTask = query.CountAsync();
+            var itemsTask = query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            await Task.WhenAll(totalTask, itemsTask);
+            var totalCount = totalTask.Result;
+            var items = itemsTask.Result;
 
             var advertIds = items.Select(a => a.Id).ToList();
             var viewCounts = await _context.AdvertViews
+                .AsNoTracking()
                 .Where(v => advertIds.Contains(v.AdvertId))
                 .GroupBy(v => v.AdvertId)
                 .Select(g => new { AdvertId = g.Key, Count = g.Count() })
@@ -298,6 +319,7 @@ namespace cars_website_api.CarsWebsite.Services
         {
             pageSize = Math.Clamp(pageSize, 1, 100);
             var logs = await _context.AdminActionLogs
+                .AsNoTracking()
                 .Include(l => l.Admin)
                 .OrderByDescending(l => l.PerformedAt)
                 .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
