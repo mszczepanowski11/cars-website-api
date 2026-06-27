@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using cars_website_api.CarsWebsite.Interfaces;
 using MailKit.Net.Smtp;
 using MailKit.Security;
@@ -31,8 +32,10 @@ public class EmailService : IEmailService
             host = host.Split(':')[0];
 
         var port = int.TryParse(section["Port"], out var p) ? p : 587;
-        var from = (section["From"] ?? "powiadomienia@carizo.pl").Trim();
         var user = section["User"];
+        // From priority: Smtp:From → Smtp:User → hardcoded fallback
+        var fromCfg = (section["From"] ?? "").Trim();
+        var from = !string.IsNullOrEmpty(fromCfg) ? fromCfg : (user ?? "powiadomienia@carizo.pl");
         var password = section["Password"];
 
         _logger.LogInformation("[Email] Sending '{Subject}' to {To} via {Host}:{Port}", subject, to, host, port);
@@ -43,10 +46,19 @@ public class EmailService : IEmailService
             message.From.Add(MailboxAddress.Parse(from));
             message.To.Add(MailboxAddress.Parse(to));
             message.Subject = subject;
-            message.Body = new TextPart("html") { Text = htmlBody };
+            message.ReplyTo.Add(MailboxAddress.Parse(from));
+
+            // Multipart/alternative: plain text first (reduces spam score with corporate filters)
+            var multipart = new Multipart("alternative");
+            multipart.Add(new TextPart("plain") { Text = HtmlToPlainText(htmlBody) });
+            multipart.Add(new TextPart("html") { Text = htmlBody });
+            message.Body = multipart;
+
+            message.Headers.Add("X-Mailer", "CARIZO Mailer 1.0");
 
             using var client = new SmtpClient();
-            await client.ConnectAsync(host, port, SecureSocketOptions.StartTls);
+            // Auto detects TLS mode: port 465 → SSL, port 587 → STARTTLS, port 25 → plain
+            await client.ConnectAsync(host, port, SecureSocketOptions.Auto);
             if (!string.IsNullOrEmpty(user))
                 await client.AuthenticateAsync(user, password);
             await client.SendAsync(message);
@@ -57,6 +69,17 @@ public class EmailService : IEmailService
         {
             _logger.LogError(ex, "[Email] Błąd wysyłki e-mail do {To} via {Host}:{Port}", to, host, port);
         }
+    }
+
+    private static string HtmlToPlainText(string html)
+    {
+        var text = Regex.Replace(html, @"<br\s*/?>|</p>|</div>|</li>|</h[1-6]>", "\n", RegexOptions.IgnoreCase);
+        text = Regex.Replace(text, @"<[^>]+>", string.Empty);
+        text = text
+            .Replace("&amp;", "&").Replace("&lt;", "<").Replace("&gt;", ">")
+            .Replace("&quot;", "\"").Replace("&#39;", "'").Replace("&nbsp;", " ");
+        text = Regex.Replace(text, @"\n{3,}", "\n\n");
+        return text.Trim();
     }
 
     public static string BuildHtml(

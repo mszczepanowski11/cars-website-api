@@ -79,10 +79,15 @@ public class MessageService : IMessageService
         var convIds = convs.Select(c => c.Id).ToList();
         var advertIds = convs.Select(c => c.AdvertId).Distinct().ToList();
 
-        var lastMessages = await _context.Messages
+        // GroupBy + Max(Id) is translatable by Pomelo/MySQL; fetch full rows by Id in a second query.
+        var lastMessageIds = await _context.Messages
             .Where(m => convIds.Contains(m.ConversationId))
             .GroupBy(m => m.ConversationId)
-            .Select(g => g.OrderByDescending(m => m.SentAt).First())
+            .Select(g => g.Max(m => m.Id))
+            .ToListAsync();
+
+        var lastMessages = await _context.Messages
+            .Where(m => lastMessageIds.Contains(m.Id))
             .ToListAsync();
 
         var unreadCounts = await _context.Messages
@@ -91,12 +96,16 @@ public class MessageService : IMessageService
             .Select(g => new { ConvId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.ConvId, x => x.Count);
 
-        // Fetch one thumbnail per advert (main image or first)
-        var thumbnails = await _context.AdvertImages
+        // Fetch all images for these adverts, then pick the main (or first) per advert client-side.
+        var allImages = await _context.AdvertImages
             .Where(img => advertIds.Contains(img.AdvertId))
+            .ToListAsync();
+
+        var thumbnails = allImages
             .GroupBy(img => img.AdvertId)
-            .Select(g => g.OrderByDescending(img => img.IsMain).First())
-            .ToDictionaryAsync(img => img.AdvertId, img => img.Url);
+            .ToDictionary(
+                g => g.Key,
+                g => (g.FirstOrDefault(img => img.IsMain) ?? g.First()).Url);
 
         return convs.Select(c =>
         {

@@ -74,15 +74,20 @@ public class AuthService : IAuthService
         await _context.SaveChangesAsync();
 
         var siteUrl = _configuration["SiteUrl"] ?? "https://carizo.pl";
-        await _email.SendAsync(
+        _ = _email.SendAsync(
             user.Email,
             "Potwierdź swój adres email – CARIZO",
             EmailService.BuildHtml(
                 "Potwierdź adres email",
-                "Kliknij poniższy przycisk, aby aktywować konto CARIZO.",
+                "Kliknij poniższy przycisk, aby aktywować konto CARIZO. Link jest ważny przez 24 godziny.",
                 null,
                 $"{siteUrl}/weryfikacja-email?token={token}",
-                "Aktywuj konto"));
+                "Aktywuj konto"))
+            .ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                    _logger.LogError(t.Exception, "[Register] Email wysyłki nie powiódł się dla {Email}", user.Email);
+            }, TaskContinuationOptions.OnlyOnFaulted);
 
         return new { message = "Rejestracja zakończona. Sprawdź skrzynkę email." };
     }
@@ -166,12 +171,17 @@ public class AuthService : IAuthService
         await _context.SaveChangesAsync();
 
         var siteUrl = _configuration["SiteUrl"] ?? "https://carizo.pl";
-        await _email.SendAsync(user.Email, "Resetowanie hasła – CARIZO",
+        _ = _email.SendAsync(user.Email, "Resetowanie hasła – CARIZO",
             EmailService.BuildHtml("Resetowanie hasła",
                 "Kliknij poniższy przycisk, aby ustawić nowe hasło. Link jest ważny przez 1 godzinę.",
                 null,
                 $"{siteUrl}/reset-password?token={token}",
-                "Resetuj hasło"));
+                "Resetuj hasło"))
+            .ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                    _logger.LogError(t.Exception, "[ForgotPassword] Email wysyłki nie powiódł się dla {Email}", user.Email);
+            }, TaskContinuationOptions.OnlyOnFaulted);
     }
 
     public async Task<bool> ResetPasswordAsync(string token, string newPassword)
@@ -210,15 +220,20 @@ public class AuthService : IAuthService
         await _context.SaveChangesAsync();
 
         var siteUrl = _configuration["SiteUrl"] ?? "https://carizo.pl";
-        await _email.SendAsync(
+        _ = _email.SendAsync(
             user.Email,
             "Potwierdź swój adres email – CARIZO",
             EmailService.BuildHtml(
                 "Potwierdź adres email",
-                "Kliknij poniższy przycisk, aby aktywować konto CARIZO.",
+                "Kliknij poniższy przycisk, aby aktywować konto CARIZO. Link jest ważny przez 24 godziny.",
                 null,
                 $"{siteUrl}/weryfikacja-email?token={token}",
-                "Aktywuj konto"));
+                "Aktywuj konto"))
+            .ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                    _logger.LogError(t.Exception, "[ResendVerification] Email wysyłki nie powiódł się dla {Email}", user.Email);
+            }, TaskContinuationOptions.OnlyOnFaulted);
     }
 
     public async Task<object?> GoogleLoginAsync(string credential)
