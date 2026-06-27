@@ -83,20 +83,7 @@ public class AdvertService : IAdvertService
         
         
         _context.CarAdverts.Add(advert);
-        await _context.SaveChangesAsync();
-
-        
-        if (dto.FeatureIds != null && dto.FeatureIds.Any())
-        {
-            var features = dto.FeatureIds.Select(fid => new AdvertFeature
-            {
-                AdvertId = advert.Id,
-                FeatureId = fid
-            });
-
-            _context.AdvertFeatures.AddRange(features);
-            await _context.SaveChangesAsync();
-        }
+        await _context.SaveChangesAsync(); // first save to get advert.Id
 
         // Generate URL slug from ID + title
         var slugBase = $"{advert.Id}-{advert.Title.ToLowerInvariant()}";
@@ -104,6 +91,17 @@ public class AdvertService : IAdvertService
         var slug = System.Text.RegularExpressions.Regex.Replace(slugClean, @"-{2,}", "-").Trim('-');
         if (slug.Length > 80) slug = slug[..80].TrimEnd('-');
         advert.Slug = slug;
+
+        if (dto.FeatureIds != null && dto.FeatureIds.Any())
+        {
+            var features = dto.FeatureIds.Select(fid => new AdvertFeature
+            {
+                AdvertId = advert.Id,
+                FeatureId = fid
+            });
+            _context.AdvertFeatures.AddRange(features);
+        }
+
         await _context.SaveChangesAsync();
 
         return advert.Id;
@@ -172,19 +170,17 @@ public class AdvertService : IAdvertService
         advert.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
-        // Clean up Cloudinary images — wrap in try/catch so Cloudinary failures
+        // Clean up Cloudinary images in parallel — wrap in try/catch so Cloudinary failures
         // do not prevent the soft-delete from being persisted.
         try
         {
-            foreach (var image in advert.Images)
-            {
-                var publicId = ExtractPublicId(image.Url);
-                if (publicId != null)
-                {
-                    await _cloudinary.DestroyAsync(new DeletionParams(publicId));
-                    _logger.LogInformation("[AdvertService/Delete] Deleted Cloudinary image publicId={PublicId} for advertId={AdvertId}", publicId, id);
-                }
-            }
+            var deleteTasks = advert.Images
+                .Select(image => ExtractPublicId(image.Url))
+                .Where(publicId => publicId != null)
+                .Select(publicId => _cloudinary.DestroyAsync(new DeletionParams(publicId!))
+                    .ContinueWith(t => _logger.LogInformation(
+                        "[AdvertService/Delete] Deleted Cloudinary image publicId={PublicId} for advertId={AdvertId}", publicId, id)));
+            await Task.WhenAll(deleteTasks);
         }
         catch (Exception ex)
         {
@@ -196,6 +192,7 @@ public class AdvertService : IAdvertService
     public async Task<CarAdvertResponseDto> GetCarAdvertByIdAsync(int id, int? requestingUserId = null, bool isAdmin = false)
     {
         var advert = await _context.CarAdverts
+            .AsNoTracking()
             .Include(a => a.Brand)
             .Include(a => a.Model)
             .Include(a => a.Generation)
@@ -227,22 +224,14 @@ public class AdvertService : IAdvertService
     {
         dto.PageSize = Math.Clamp(dto.PageSize, 1, 100);
 
-        var query = _context.CarAdverts
+        // Build filter query WITHOUT includes — used for COUNT and to get IDs
+        var filterQuery = _context.CarAdverts
             .AsNoTracking()
-            .Include(a => a.Brand)
-            .Include(a => a.Model)
-            .Include(a => a.Generation)
-            .Include(a => a.EngineVersion)
-            .Include(a => a.FuelType)
-            .Include(a => a.Gearbox)
-            .Include(a => a.BodyType)
-            .Include(a => a.Images)
-            .Include(a => a.AdvertFeatures)
-                .ThenInclude(af => af.Feature)
+            .Where(a => a.IsActive && !a.IsHidden && (a.ExpiresAt == null || a.ExpiresAt > DateTime.UtcNow))
             .AsQueryable();
 
-        // Only show active, non-hidden, non-expired adverts
-        query = query.Where(a => a.IsActive && !a.IsHidden && (a.ExpiresAt == null || a.ExpiresAt > DateTime.UtcNow));
+        // Keep a typed alias so the rest of the method can use query as before
+        var query = filterQuery;
 
         if (dto.BrandId.HasValue)
             query = query.Where(a => a.BrandId == dto.BrandId);
@@ -413,10 +402,30 @@ public class AdvertService : IAdvertService
 
         var totalCount = await query.CountAsync();
 
-        var items = await query
+        var ids = await query
             .Skip((dto.Page - 1) * dto.PageSize)
             .Take(dto.PageSize)
+            .Select(a => a.Id)
             .ToListAsync();
+
+        var itemsUnordered = await _context.CarAdverts
+            .AsNoTracking()
+            .Include(a => a.Brand)
+            .Include(a => a.Model)
+            .Include(a => a.Generation)
+            .Include(a => a.EngineVersion)
+            .Include(a => a.FuelType)
+            .Include(a => a.Gearbox)
+            .Include(a => a.BodyType)
+            .Include(a => a.Images)
+            .Include(a => a.AdvertFeatures)
+                .ThenInclude(af => af.Feature)
+            .Where(a => ids.Contains(a.Id))
+            .ToListAsync();
+
+        // Restore the sort order from the ID list (priority/sort was applied in the filter query)
+        var idOrder = ids.Select((id, i) => (id, i)).ToDictionary(x => x.id, x => x.i);
+        var items = itemsUnordered.OrderBy(a => idOrder[a.Id]).ToList();
 
         var mapped = _mapper.Map<List<CarAdvertResponseDto>>(items);
 
@@ -470,6 +479,7 @@ public class AdvertService : IAdvertService
     public async Task<CarAdvertResponseDto?> GetByVinAsync(string vin)
     {
         var advert = await _context.CarAdverts
+            .AsNoTracking()
             .Include(a => a.Brand).Include(a => a.Model)
             .Include(a => a.Generation).Include(a => a.EngineVersion)
             .Include(a => a.FuelType).Include(a => a.Gearbox)

@@ -127,7 +127,7 @@ public class AdvertController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "[Advert/Create] FAILED userId={UserId} msg={Message} inner={Inner}", userId, ex.Message, ex.InnerException?.Message);
-            return StatusCode(500, new { message = ex.InnerException?.Message ?? ex.Message });
+            return StatusCode(500, new { message = "Wystąpił błąd serwera. Spróbuj ponownie." });
         }
     }
 

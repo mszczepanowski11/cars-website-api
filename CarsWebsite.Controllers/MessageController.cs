@@ -3,6 +3,7 @@ using cars_website_api.CarsWebsite.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 
 [ApiController]
@@ -30,9 +31,13 @@ public class MessageController : ControllerBase
                 userId, dto.AdvertId, dto.InitialMessage ?? string.Empty);
             return Ok(new { conversationId });
         }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            var logger = HttpContext.RequestServices.GetRequiredService<ILogger<MessageController>>();
+            logger.LogError(ex, "[Message] StartConversation failed userId={UserId} advertId={AdvertId}", userId, dto.AdvertId);
+            return StatusCode(500, new { message = "Wystąpił błąd serwera." });
         }
     }
 

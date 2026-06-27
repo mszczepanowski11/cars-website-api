@@ -74,6 +74,7 @@ public class UserController : ControllerBase
 
     [Authorize]
     [HttpPut("password")]
+    [EnableRateLimiting("strict")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
     {
         var userId = GetUserId();

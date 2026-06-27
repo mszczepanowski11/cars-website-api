@@ -181,6 +181,12 @@ internal class Program
         });
 
         builder.Services.AddMemoryCache();
+        builder.Services.AddResponseCompression(opts =>
+        {
+            opts.EnableForHttps = true;
+            opts.Providers.Add<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProvider>();
+            opts.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
+        });
         builder.Services.AddAutoMapper(typeof(AdvertMappingProfile));
 
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -289,7 +295,7 @@ internal class Program
                     foreach (var m in allMigrations.Where(m => !newMigrations.Contains(m)))
                     {
                         db.Database.ExecuteSqlRaw(
-                            $"INSERT IGNORE INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) VALUES ('{m}', '9.0.0')");
+                            "INSERT IGNORE INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) VALUES ({0}, '9.0.0')", m);
                     }
                     histLogger.LogInformation("[Migrations] Bootstrapped migration history with {Count} pre-existing migrations", allMigrations.Count - newMigrations.Count);
                 }
@@ -1125,6 +1131,7 @@ internal class Program
         });
         if (!app.Environment.IsDevelopment())
             app.UseHsts();
+        app.UseResponseCompression();
         app.UseStaticFiles();
         app.UseHttpsRedirection();
         app.UseCors("AllowNuxt");

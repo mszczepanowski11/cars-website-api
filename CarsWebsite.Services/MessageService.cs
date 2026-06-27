@@ -2,26 +2,29 @@ using cars_website_api.CarsWebsite.DTOs.Message;
 using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 public class MessageService : IMessageService
 {
     private readonly AppDbContext _context;
     private readonly INotificationService _notifications;
+    private readonly ILogger<MessageService> _logger;
 
-    public MessageService(AppDbContext context, INotificationService notifications)
+    public MessageService(AppDbContext context, INotificationService notifications, ILogger<MessageService> logger)
     {
         _context = context;
         _notifications = notifications;
+        _logger = logger;
     }
 
     public async Task<int> StartOrGetConversationAsync(int buyerId, int advertId, string initialMessage)
     {
         var advert = await _context.Adverts.FindAsync(advertId)
-            ?? throw new Exception("Advert not found");
+            ?? throw new KeyNotFoundException("Advert not found");
 
         int sellerId = advert.UserId;
         if (buyerId == sellerId)
-            throw new Exception("Cannot start a conversation with yourself");
+            throw new InvalidOperationException("Cannot start a conversation with yourself");
 
         var existing = await _context.Conversations
             .FirstOrDefaultAsync(c => c.BuyerId == buyerId && c.AdvertId == advertId);
@@ -68,6 +71,7 @@ public class MessageService : IMessageService
     public async Task<List<ConversationDto>> GetUserConversationsAsync(int userId)
     {
         var convs = await _context.Conversations
+            .AsNoTracking()
             .Include(c => c.Buyer)
             .Include(c => c.Seller)
             .Include(c => c.Advert)
@@ -147,7 +151,7 @@ public class MessageService : IMessageService
             .Include(m => m.Sender)
             .Where(m => m.ConversationId == conversationId)
             .OrderBy(m => m.SentAt)
-            .ToListAsync();
+            .ToListAsync(); // tracked so we can mark IsRead below
 
         var unread = messages.Where(m => m.SenderId != userId && !m.IsRead).ToList();
         foreach (var m in unread) m.IsRead = true;

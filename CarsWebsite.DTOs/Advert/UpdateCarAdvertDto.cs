@@ -28,8 +28,8 @@ public class UpdateCarAdvertDto
     public decimal Price { get; set; }
 
     public bool IsNegotiable { get; set; }
-    public string? SellerType { get; set; }
-    public string? Condition { get; set; }
+    [MaxLength(20)] public string? SellerType { get; set; }
+    [MaxLength(20)] public string? Condition { get; set; }
 
     [Required]
     [MaxLength(200, ErrorMessage = "Tytuł nie może przekraczać 200 znaków.")]
@@ -61,21 +61,21 @@ public class UpdateCarAdvertDto
     public decimal? FuelConsumptionHighway { get; set; }
     public decimal? FuelConsumptionCombined { get; set; }
     public int? Co2Emission { get; set; }
-    public string? EuroNorm { get; set; }
+    [MaxLength(20)] public string? EuroNorm { get; set; }
     public int? CurbWeight { get; set; }
     public int? GrossWeight { get; set; }
 
     // Vehicle history
     public DateTime? FirstRegistrationDate { get; set; }
-    public string? RegistrationCountry { get; set; }
+    [MaxLength(100)] public string? RegistrationCountry { get; set; }
     public int? OwnersCount { get; set; }
     public bool IsImported { get; set; }
-    public string? ImportCountry { get; set; }
+    [MaxLength(100)] public string? ImportCountry { get; set; }
     public DateTime? NextInspection { get; set; }
     public bool HasServiceBook { get; set; }
     public bool HasFullServiceHistory { get; set; }
     public bool HasDamage { get; set; }
-    public string? DamageDescription { get; set; }
+    [MaxLength(2000)] public string? DamageDescription { get; set; }
     public bool HasWarranty { get; set; }
     public DateTime? WarrantyUntil { get; set; }
 
@@ -87,11 +87,11 @@ public class UpdateCarAdvertDto
     public decimal? Volume { get; set; }
     public bool? HasRetarder { get; set; }
     public bool? HasTachograph { get; set; }
-    public string? BodySubtype { get; set; }
+    [MaxLength(100)] public string? BodySubtype { get; set; }
 
     // Parts specific
-    public string? CatalogNumber { get; set; }
-    public string? Compatibility { get; set; }
+    [MaxLength(100)] public string? CatalogNumber { get; set; }
+    [MaxLength(1000)] public string? Compatibility { get; set; }
 
     // Subtype-specific machine fields
     public int? OperatingWeightKg { get; set; }
