@@ -1,3 +1,4 @@
+using cars_website_api.CarsWebsite.Domain.Entities;
 using cars_website_api.CarsWebsite.DTOs.Advert;
 
 public interface IAdvertService
@@ -18,6 +19,8 @@ public interface IAdvertService
     Task<List<CarAdvertResponseDto>> GetMostViewedAsync(int count = 8);
     Task<List<CarAdvertResponseDto>> GetPremiumCollectionAsync(int count = 8);
     Task RecordViewAsync(int advertId, string? ipAddress);
+    Task<CarAdvert?> GetCarAdvertEntityAsync(int advertId);
+    Task SetPdfBrochureUrlAsync(int advertId, string? url);
 }
 
 public class PagedResult<T>

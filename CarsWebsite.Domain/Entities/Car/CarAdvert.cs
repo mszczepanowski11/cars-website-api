@@ -111,5 +111,24 @@ public class CarAdvert : Advert
     public string? ManufacturerPartNumber { get; set; }
     public string? PartManufacturer { get; set; }
 
+    // Premium listing fields
+    public string? RegistrationPlate { get; set; }
+    public bool HasVatInvoice { get; set; }
+    public bool IsLeasingPossible { get; set; }
+    public bool IsCreditPossible { get; set; }
+    public bool IsExchangePossible { get; set; }
+    public int? GearCount { get; set; }
+    public bool MetallicPaint { get; set; }
+    public int? MaxTrailerWeight { get; set; }
+
+    // Premium history fields
+    public bool IsFirstOwner { get; set; }
+    public bool IsServicedAtASO { get; set; }
+    public bool IsGaraged { get; set; }
+    public int? KeyCount { get; set; }
+    public DateTime? InsuranceUntil { get; set; }
+    public string? YoutubeUrl { get; set; }
+    public string? PdfBrochureUrl { get; set; }
+
     public ICollection<AdvertFeature> AdvertFeatures { get; set; } = new List<AdvertFeature>();
 }

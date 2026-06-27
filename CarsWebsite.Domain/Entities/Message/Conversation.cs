@@ -11,5 +11,7 @@ public class Conversation
     public Advert Advert { get; set; } = null!;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime LastMessageAt { get; set; } = DateTime.UtcNow;
+    public bool IsPinned { get; set; } = false;
+    public bool IsArchived { get; set; } = false;
     public List<Message> Messages { get; set; } = new();
 }

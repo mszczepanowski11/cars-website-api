@@ -85,4 +85,21 @@ public class CreateCarAdvertDto
     public int? TankCapacityL { get; set; }
 
     public List<int>? FeatureIds { get; set; }
+
+    // Premium listing fields
+    [MaxLength(20)] public string? RegistrationPlate { get; set; }
+    public bool HasVatInvoice { get; set; }
+    public bool IsLeasingPossible { get; set; }
+    public bool IsCreditPossible { get; set; }
+    public bool IsExchangePossible { get; set; }
+    [Range(1, 20)] public int? GearCount { get; set; }
+    public bool MetallicPaint { get; set; }
+    [Range(0, 100000)] public int? MaxTrailerWeight { get; set; }
+    public bool IsFirstOwner { get; set; }
+    public bool IsServicedAtASO { get; set; }
+    public bool IsGaraged { get; set; }
+    [Range(1, 10)] public int? KeyCount { get; set; }
+    public DateTime? InsuranceUntil { get; set; }
+    [MaxLength(500)] public string? YoutubeUrl { get; set; }
+    [MaxLength(1000)] public string? PdfBrochureUrl { get; set; }
 }
