@@ -129,27 +129,29 @@ public class InvoiceService : IInvoiceService
     {
         pageSize = Math.Clamp(pageSize, 1, 100);
         var query = _context.Invoices
+            .AsNoTracking()
             .Include(i => i.Payments)
             .Include(i => i.User)
             .Where(i => i.UserId == userId)
             .OrderByDescending(i => i.Year).ThenByDescending(i => i.Month);
 
-        var total = await query.CountAsync();
-        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var totalTask = query.CountAsync();
+        var itemsTask = query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        await Task.WhenAll(totalTask, itemsTask);
 
         return new PagedResult<InvoiceResponseDto>
         {
-            Items = items.Select(MapToDto).ToList(),
-            TotalCount = total
+            Items = itemsTask.Result.Select(MapToDto).ToList(),
+            TotalCount = totalTask.Result
         };
     }
 
     public async Task<InvoiceResponseDto> GetInvoiceAsync(int id, int userId, bool isAdmin = false)
     {
         var invoice = isAdmin
-            ? await _context.Invoices.Include(i => i.Payments).Include(i => i.User)
+            ? await _context.Invoices.AsNoTracking().Include(i => i.Payments).Include(i => i.User)
                 .FirstOrDefaultAsync(i => i.Id == id)
-            : await _context.Invoices.Include(i => i.Payments).Include(i => i.User)
+            : await _context.Invoices.AsNoTracking().Include(i => i.Payments).Include(i => i.User)
                 .FirstOrDefaultAsync(i => i.Id == id && i.UserId == userId);
 
         return invoice != null
@@ -160,9 +162,9 @@ public class InvoiceService : IInvoiceService
     public async Task<byte[]> GenerateInvoiceHtmlAsync(int id, int userId, bool isAdmin = false)
     {
         var invoice = isAdmin
-            ? await _context.Invoices.Include(i => i.Payments).Include(i => i.User)
+            ? await _context.Invoices.AsNoTracking().Include(i => i.Payments).Include(i => i.User)
                 .FirstOrDefaultAsync(i => i.Id == id)
-            : await _context.Invoices.Include(i => i.Payments).Include(i => i.User)
+            : await _context.Invoices.AsNoTracking().Include(i => i.Payments).Include(i => i.User)
                 .FirstOrDefaultAsync(i => i.Id == id && i.UserId == userId);
 
         if (invoice == null) throw new KeyNotFoundException("Faktura nie istnieje.");
@@ -173,9 +175,9 @@ public class InvoiceService : IInvoiceService
     public async Task<byte[]> GenerateInvoicePdfAsync(int id, int userId, bool isAdmin = false)
     {
         var invoice = isAdmin
-            ? await _context.Invoices.Include(i => i.Payments).Include(i => i.User)
+            ? await _context.Invoices.AsNoTracking().Include(i => i.Payments).Include(i => i.User)
                 .FirstOrDefaultAsync(i => i.Id == id)
-            : await _context.Invoices.Include(i => i.Payments).Include(i => i.User)
+            : await _context.Invoices.AsNoTracking().Include(i => i.Payments).Include(i => i.User)
                 .FirstOrDefaultAsync(i => i.Id == id && i.UserId == userId);
 
         if (invoice == null) throw new KeyNotFoundException("Faktura nie istnieje.");
@@ -569,23 +571,26 @@ public class InvoiceService : IInvoiceService
     public async Task<PagedResult<InvoiceResponseDto>> GetAllInvoicesAsync(int page, int pageSize)
     {
         var query = _context.Invoices
+            .AsNoTracking()
             .Include(i => i.Payments)
             .Include(i => i.User)
             .OrderByDescending(i => i.GeneratedAt);
 
-        var total = await query.CountAsync();
-        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var totalTask = query.CountAsync();
+        var itemsTask = query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        await Task.WhenAll(totalTask, itemsTask);
 
         return new PagedResult<InvoiceResponseDto>
         {
-            Items = items.Select(MapToDto).ToList(),
-            TotalCount = total
+            Items = itemsTask.Result.Select(MapToDto).ToList(),
+            TotalCount = totalTask.Result
         };
     }
 
     public async Task SendInvoiceByEmailAsync(int invoiceId)
     {
         var invoice = await _context.Invoices
+            .AsNoTracking()
             .Include(i => i.Payments)
             .Include(i => i.User)
             .FirstOrDefaultAsync(i => i.Id == invoiceId)
