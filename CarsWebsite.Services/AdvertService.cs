@@ -567,6 +567,7 @@ public class AdvertService : IAdvertService
     public async Task<List<CarAdvertResponseDto>> GetMostViewedAsync(int count = 8)
     {
         var topAdvertIds = await _context.AdvertViews
+            .AsNoTracking()
             .GroupBy(v => v.AdvertId)
             .Select(g => new { AdvertId = g.Key, ViewCount = g.Count() })
             .OrderByDescending(x => x.ViewCount)
