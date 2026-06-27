@@ -187,6 +187,7 @@ internal class Program
             opts.Providers.Add<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProvider>();
             opts.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
         });
+        builder.Services.AddResponseCaching();
         builder.Services.AddAutoMapper(typeof(AdvertMappingProfile));
 
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -1132,6 +1133,7 @@ internal class Program
         if (!app.Environment.IsDevelopment())
             app.UseHsts();
         app.UseResponseCompression();
+        app.UseResponseCaching();
         app.UseStaticFiles();
         app.UseHttpsRedirection();
         app.UseCors("AllowNuxt");

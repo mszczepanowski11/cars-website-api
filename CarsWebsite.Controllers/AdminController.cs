@@ -7,6 +7,7 @@ using MailKit.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using MimeKit;
 using System.Security.Claims;
 
@@ -18,12 +19,14 @@ public class AdminController : ControllerBase
     private readonly IAdminService _adminService;
     private readonly AppDbContext _db;
     private readonly IConfiguration _config;
+    private readonly ILogger<AdminController> _logger;
 
-    public AdminController(IAdminService adminService, AppDbContext db, IConfiguration config)
+    public AdminController(IAdminService adminService, AppDbContext db, IConfiguration config, ILogger<AdminController> logger)
     {
         _adminService = adminService;
         _db = db;
         _config = config;
+        _logger = logger;
     }
 
     private int GetUserId()
@@ -51,70 +54,90 @@ public class AdminController : ControllerBase
     [HttpPost("reports/{id}/resolve")]
     public async Task<IActionResult> ResolveReport(int id, [FromBody] AdminResolveReportDto dto)
     {
-        await _adminService.ResolveReportAsync(id, GetUserId(), dto.Note);
+        var adminId = GetUserId();
+        await _adminService.ResolveReportAsync(id, adminId, dto.Note);
+        _logger.LogInformation("[Admin] ResolveReport reportId={ReportId} adminId={AdminId}", id, adminId);
         return NoContent();
     }
 
     [HttpPost("reports/{id}/reject")]
     public async Task<IActionResult> RejectReport(int id, [FromBody] AdminResolveReportDto dto)
     {
-        await _adminService.RejectReportAsync(id, GetUserId(), dto.Note);
+        var adminId = GetUserId();
+        await _adminService.RejectReportAsync(id, adminId, dto.Note);
+        _logger.LogInformation("[Admin] RejectReport reportId={ReportId} adminId={AdminId}", id, adminId);
         return NoContent();
     }
 
     [HttpPost("adverts/{id}/hide")]
     public async Task<IActionResult> HideAdvert(int id, [FromBody] AdminActionRequestDto dto)
     {
-        await _adminService.HideAdvertAsync(id, GetUserId(), dto.Note);
+        var adminId = GetUserId();
+        await _adminService.HideAdvertAsync(id, adminId, dto.Note);
+        _logger.LogInformation("[Admin] HideAdvert advertId={AdvertId} adminId={AdminId}", id, adminId);
         return NoContent();
     }
 
     [HttpPost("adverts/{id}/unhide")]
     public async Task<IActionResult> UnhideAdvert(int id)
     {
-        await _adminService.UnhideAdvertAsync(id, GetUserId());
+        var adminId = GetUserId();
+        await _adminService.UnhideAdvertAsync(id, adminId);
+        _logger.LogInformation("[Admin] UnhideAdvert advertId={AdvertId} adminId={AdminId}", id, adminId);
         return NoContent();
     }
 
     [HttpDelete("adverts/{id}")]
     public async Task<IActionResult> DeleteAdvert(int id)
     {
-        await _adminService.DeleteAdvertAsync(id, GetUserId(), null);
+        var adminId = GetUserId();
+        await _adminService.DeleteAdvertAsync(id, adminId, null);
+        _logger.LogInformation("[Admin] DeleteAdvert advertId={AdvertId} adminId={AdminId}", id, adminId);
         return NoContent();
     }
 
     [HttpPost("adverts/{id}/activate")]
     public async Task<IActionResult> ActivateAdvert(int id)
     {
-        await _adminService.ActivateAdvertAsync(id, GetUserId());
+        var adminId = GetUserId();
+        await _adminService.ActivateAdvertAsync(id, adminId);
+        _logger.LogInformation("[Admin] ActivateAdvert advertId={AdvertId} adminId={AdminId}", id, adminId);
         return NoContent();
     }
 
     [HttpPost("adverts/{id}/deactivate")]
     public async Task<IActionResult> DeactivateAdvert(int id)
     {
-        await _adminService.DeactivateAdvertAsync(id, GetUserId());
+        var adminId = GetUserId();
+        await _adminService.DeactivateAdvertAsync(id, adminId);
+        _logger.LogInformation("[Admin] DeactivateAdvert advertId={AdvertId} adminId={AdminId}", id, adminId);
         return NoContent();
     }
 
     [HttpPost("users/{id}/block")]
     public async Task<IActionResult> BlockUser(int id, [FromBody] AdminBlockUserDto dto)
     {
-        await _adminService.BlockUserAsync(id, GetUserId(), dto.Reason);
+        var adminId = GetUserId();
+        await _adminService.BlockUserAsync(id, adminId, dto.Reason);
+        _logger.LogWarning("[Admin] BlockUser targetUserId={TargetId} adminId={AdminId} reason={Reason}", id, adminId, dto.Reason);
         return NoContent();
     }
 
     [HttpPost("users/{id}/unblock")]
     public async Task<IActionResult> UnblockUser(int id)
     {
-        await _adminService.UnblockUserAsync(id, GetUserId());
+        var adminId = GetUserId();
+        await _adminService.UnblockUserAsync(id, adminId);
+        _logger.LogInformation("[Admin] UnblockUser targetUserId={TargetId} adminId={AdminId}", id, adminId);
         return NoContent();
     }
 
     [HttpDelete("users/{id}")]
     public async Task<IActionResult> DeleteUser(int id)
     {
-        await _adminService.DeleteUserAsync(id, GetUserId(), "Usunięte przez administratora");
+        var adminId = GetUserId();
+        await _adminService.DeleteUserAsync(id, adminId, "Usunięte przez administratora");
+        _logger.LogWarning("[Admin] DeleteUser targetUserId={TargetId} adminId={AdminId}", id, adminId);
         return NoContent();
     }
 

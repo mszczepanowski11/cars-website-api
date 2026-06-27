@@ -20,10 +20,12 @@ namespace cars_website_api.CarsWebsite.Controllers
         }
 
         [HttpGet("full")]
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetFullTaxonomy()
             => Ok(await _taxonomyService.GetFullTaxonomyAsync());
 
         [HttpGet("brands")]
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetBrands()
         {
             var brands = await _taxonomyService.GetBrandsAsync();
@@ -33,6 +35,7 @@ namespace cars_website_api.CarsWebsite.Controllers
         }
 
         [HttpGet("brands/category/{categoryId}")]
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any, VaryByQueryKeys = new[] { "categoryId" })]
         public async Task<IActionResult> GetBrandsByCategory(int categoryId)
         {
             var brands = await _taxonomyService.GetBrandsByCategoryAsync(categoryId);
@@ -42,6 +45,7 @@ namespace cars_website_api.CarsWebsite.Controllers
         }
 
         [HttpGet("brands/{brandId}/models")]
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetModelsByBrand(int brandId)
         {
             var models = await _taxonomyService.GetModelsByBrandAsync(brandId);
@@ -51,10 +55,12 @@ namespace cars_website_api.CarsWebsite.Controllers
         }
 
         [HttpGet("models/{modelId}/generations")]
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetGenerationsByModel(int modelId)
             => Ok(await _taxonomyService.GetGenerationsByModelAsync(modelId));
 
         [HttpGet("generations/{generationId}/engines")]
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetEnginesByGeneration(int generationId)
         {
             var engines = await _taxonomyService.GetEnginesByGenerationAsync(generationId);
@@ -62,30 +68,37 @@ namespace cars_website_api.CarsWebsite.Controllers
         }
 
         [HttpGet("fueltypes")]
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetFuelTypes()
             => Ok(await _taxonomyService.GetFuelTypesAsync());
 
         [HttpGet("gearboxes")]
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetGearboxes()
             => Ok(await _taxonomyService.GetGearboxesAsync());
 
         [HttpGet("bodytypes")]
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetBodyTypes()
             => Ok(await _taxonomyService.GetBodyTypesAsync());
 
         [HttpGet("drive-types")]
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetDriveTypes()
             => Ok(await _taxonomyService.GetDriveTypesAsync());
 
         [HttpGet("colors")]
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetColors()
             => Ok(await _taxonomyService.GetColorsAsync());
 
         [HttpGet("features")]
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetFeatures()
             => Ok(await _taxonomyService.GetFeaturesAsync());
 
         [HttpGet("categories")]
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetVehicleCategories()
             => Ok(await _taxonomyService.GetVehicleCategoriesAsync());
 
