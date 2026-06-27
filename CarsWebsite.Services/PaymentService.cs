@@ -231,32 +231,36 @@ public class PaymentService : IPaymentService
     public async Task<PagedResult<PaymentResponseDto>> GetUserPaymentsAsync(int userId, int page, int pageSize)
     {
         var query = _context.Payments
+            .AsNoTracking()
             .Where(p => p.UserId == userId)
             .OrderByDescending(p => p.CreatedAt);
 
-        var total = await query.CountAsync();
-        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var totalTask = query.CountAsync();
+        var itemsTask = query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        await Task.WhenAll(totalTask, itemsTask);
 
         return new PagedResult<PaymentResponseDto>
         {
-            Items = items.Select(MapToDto).ToList(),
-            TotalCount = total
+            Items = itemsTask.Result.Select(MapToDto).ToList(),
+            TotalCount = totalTask.Result
         };
     }
 
     public async Task<PagedResult<PaymentResponseDto>> GetAllPaymentsAsync(int page, int pageSize)
     {
         var query = _context.Payments
+            .AsNoTracking()
             .Include(p => p.User)
             .OrderByDescending(p => p.CreatedAt);
 
-        var total = await query.CountAsync();
-        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var totalTask = query.CountAsync();
+        var itemsTask = query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        await Task.WhenAll(totalTask, itemsTask);
 
         return new PagedResult<PaymentResponseDto>
         {
-            Items = items.Select(MapToDto).ToList(),
-            TotalCount = total
+            Items = itemsTask.Result.Select(MapToDto).ToList(),
+            TotalCount = totalTask.Result
         };
     }
 
