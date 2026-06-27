@@ -360,6 +360,8 @@ namespace CarsWebsite
             modelBuilder.Entity<CarAdvert>().HasIndex(a => a.Year);
             modelBuilder.Entity<CarAdvert>().HasIndex(a => a.CreatedAt);
             modelBuilder.Entity<CarAdvert>().HasIndex(a => a.VehicleCategoryId);
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.Vin);
+            modelBuilder.Entity<Payment>().HasIndex(p => p.ImojeOrderId);
             modelBuilder.Entity<User>().HasIndex(u => u.GoogleId);
             modelBuilder.Entity<User>().HasIndex(u => u.FacebookId);
 
