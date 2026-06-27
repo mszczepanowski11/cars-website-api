@@ -4,6 +4,7 @@ using CarsWebsite;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
@@ -14,10 +15,12 @@ using System.Text.Json;
 public class PaymentController : ControllerBase
 {
     private readonly IPaymentService _paymentService;
+    private readonly ILogger<PaymentController> _logger;
 
-    public PaymentController(IPaymentService paymentService)
+    public PaymentController(IPaymentService paymentService, ILogger<PaymentController> logger)
     {
         _paymentService = paymentService;
+        _logger = logger;
     }
 
     /// <summary>Pobierz cenę dla wybranej usługi i czasu trwania.</summary>
@@ -44,7 +47,7 @@ public class PaymentController : ControllerBase
         catch (KeyNotFoundException ex)       { return NotFound(new { message = ex.Message }); }
         catch (UnauthorizedAccessException ex){ return StatusCode(403, new { message = ex.Message }); }
         catch (InvalidOperationException ex)  { return StatusCode(502, new { message = ex.Message }); }
-        catch (Exception ex)                  { return StatusCode(500, new { message = $"Błąd bramki płatności: {ex.Message}" }); }
+        catch (Exception ex)                  { _logger.LogError(ex, "[Payment] InitiatePayment failed userId={UserId}", userId); return StatusCode(500, new { message = "Błąd bramki płatności. Spróbuj ponownie." }); }
     }
 
     /// <summary>Lista płatności zalogowanego użytkownika.</summary>

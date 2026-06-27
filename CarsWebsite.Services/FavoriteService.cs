@@ -42,11 +42,13 @@ public class FavoriteService : IFavoriteService
     {
         pageSize = Math.Clamp(pageSize, 1, 100);
         var favoriteIds = await _context.FavoriteAdverts
+            .AsNoTracking()
             .Where(f => f.UserId == userId)
             .Select(f => f.AdvertId)
             .ToListAsync();
 
         var query = _context.CarAdverts
+            .AsNoTracking()
             .Include(a => a.Brand).Include(a => a.Model)
             .Include(a => a.Generation).Include(a => a.EngineVersion)
             .Include(a => a.FuelType).Include(a => a.Gearbox)
@@ -56,16 +58,17 @@ public class FavoriteService : IFavoriteService
             .Where(a => favoriteIds.Contains(a.Id))
             .OrderByDescending(a => a.CreatedAt);
 
-        var total = await query.CountAsync();
-        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var totalTask = query.CountAsync();
+        var itemsTask = query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        await Task.WhenAll(totalTask, itemsTask);
 
         return new PagedResult<CarAdvertResponseDto>
         {
-            Items = _mapper.Map<List<CarAdvertResponseDto>>(items),
-            TotalCount = total
+            Items = _mapper.Map<List<CarAdvertResponseDto>>(itemsTask.Result),
+            TotalCount = totalTask.Result
         };
     }
 
     public async Task<bool> IsFavoriteAsync(int userId, int advertId) =>
-        await _context.FavoriteAdverts.AnyAsync(f => f.UserId == userId && f.AdvertId == advertId);
+        await _context.FavoriteAdverts.AsNoTracking().AnyAsync(f => f.UserId == userId && f.AdvertId == advertId);
 }

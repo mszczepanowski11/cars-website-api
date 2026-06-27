@@ -126,24 +126,28 @@ public class EventService : IEventService
     public async Task<PagedResult<EventResponseDto>> GetPublishedEventsAsync(string? search, int page, int pageSize)
     {
         pageSize = Math.Clamp(pageSize, 1, 100);
-        var query = _context.Events
-            .Include(e => e.Images)
-            .Include(e => e.CreatedBy)
+        var baseQuery = _context.Events
+            .AsNoTracking()
             .Where(e => e.Status == EventStatus.Published)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(e => e.Name.Contains(search) || e.City.Contains(search) || e.Description.Contains(search));
+            baseQuery = baseQuery.Where(e => e.Name.Contains(search) || e.City.Contains(search) || e.Description.Contains(search));
 
-        query = query.OrderBy(e => e.StartDate);
+        baseQuery = baseQuery.OrderBy(e => e.StartDate);
 
-        var total = await query.CountAsync();
-        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var totalTask = baseQuery.CountAsync();
+        var itemsTask = baseQuery
+            .Include(e => e.Images)
+            .Include(e => e.CreatedBy)
+            .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+
+        await Task.WhenAll(totalTask, itemsTask);
 
         return new PagedResult<EventResponseDto>
         {
-            Items = items.Select(e => MapToDto(e)).ToList(),
-            TotalCount = total
+            Items = itemsTask.Result.Select(e => MapToDto(e)).ToList(),
+            TotalCount = totalTask.Result
         };
     }
 
@@ -151,6 +155,7 @@ public class EventService : IEventService
     {
         var now = DateTime.UtcNow;
         var items = await _context.Events
+            .AsNoTracking()
             .Include(e => e.Images)
             .Include(e => e.CreatedBy)
             .Where(e => e.Status == EventStatus.Published && e.StartDate >= now)
@@ -163,17 +168,20 @@ public class EventService : IEventService
 
     public async Task<EventResponseDto?> GetEventByIdAsync(int id)
     {
-        var e = await _context.Events
+        var eventTask = _context.Events
+            .AsNoTracking()
             .Include(e => e.Images)
             .Include(e => e.CreatedBy)
             .FirstOrDefaultAsync(e => e.Id == id && e.Status == EventStatus.Published);
+        var attendingTask = _context.EventAttendees.AsNoTracking().CountAsync(a => a.EventId == id);
+        var interestedTask = _context.EventFavourites.AsNoTracking().CountAsync(f => f.EventId == id);
 
+        await Task.WhenAll(eventTask, attendingTask, interestedTask);
+
+        var e = eventTask.Result;
         if (e == null) return null;
 
-        var attendingCount = await _context.EventAttendees.CountAsync(a => a.EventId == id);
-        var interestedCount = await _context.EventFavourites.CountAsync(f => f.EventId == id);
-
-        return MapToDto(e, attendingCount, interestedCount);
+        return MapToDto(e, attendingTask.Result, interestedTask.Result);
     }
 
     public async Task<EventResponseDto> CreateEventAsync(CreateEventDto dto, int userId, IFormFile? mainImage, List<IFormFile>? galleryImages)
@@ -249,6 +257,7 @@ public class EventService : IEventService
     public async Task<PagedResult<AdminEventDto>> GetAdminEventsAsync(AdminEventFilterDto filter)
     {
         var query = _context.Events
+            .AsNoTracking()
             .Include(e => e.CreatedBy)
             .Include(e => e.Images)
             .Include(e => e.Reports)
@@ -289,6 +298,7 @@ public class EventService : IEventService
     public async Task<EventResponseDto?> GetAdminEventByIdAsync(int id)
     {
         var e = await _context.Events
+            .AsNoTracking()
             .Include(e => e.Images)
             .Include(e => e.CreatedBy)
             .FirstOrDefaultAsync(e => e.Id == id);
@@ -330,12 +340,11 @@ public class EventService : IEventService
             .FirstOrDefaultAsync(e => e.Id == id)
             ?? throw new KeyNotFoundException("Event not found.");
 
-        foreach (var img in ev.Images)
-        {
-            var publicId = ExtractPublicId(img.Url);
-            if (publicId != null)
-                await _cloudinary.DestroyAsync(new DeletionParams(publicId));
-        }
+        var deletionTasks = ev.Images
+            .Select(img => ExtractPublicId(img.Url))
+            .Where(pid => pid != null)
+            .Select(pid => _cloudinary.DestroyAsync(new DeletionParams(pid!)));
+        await Task.WhenAll(deletionTasks);
 
         _context.Events.Remove(ev);
         await _context.SaveChangesAsync();
@@ -418,19 +427,23 @@ public class EventService : IEventService
 
     public async Task<PagedResult<EventResponseDto>> GetMyEventsAsync(int userId, int page, int pageSize)
     {
-        var query = _context.Events
-            .Include(e => e.Images)
-            .Include(e => e.CreatedBy)
+        var baseQuery = _context.Events
+            .AsNoTracking()
             .Where(e => e.CreatedByUserId == userId)
             .OrderByDescending(e => e.CreatedAt);
 
-        var total = await query.CountAsync();
-        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var totalTask = baseQuery.CountAsync();
+        var itemsTask = baseQuery
+            .Include(e => e.Images)
+            .Include(e => e.CreatedBy)
+            .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+
+        await Task.WhenAll(totalTask, itemsTask);
 
         return new PagedResult<EventResponseDto>
         {
-            Items = items.Select(e => MapToDto(e)).ToList(),
-            TotalCount = total
+            Items = itemsTask.Result.Select(e => MapToDto(e)).ToList(),
+            TotalCount = totalTask.Result
         };
     }
 }

@@ -52,6 +52,7 @@ public class UserService : IUserService
         {
             _logger.LogDebug("[Stats] Querying CarAdverts for userId={UserId}", userId);
             var advertIds = await _context.CarAdverts
+                .AsNoTracking()
                 .Where(a => a.UserId == userId)
                 .Select(a => a.Id)
                 .ToListAsync();
@@ -59,23 +60,25 @@ public class UserService : IUserService
             _logger.LogDebug("[Stats] CarAdverts count={Count}", dto.TotalAdverts);
 
             dto.ActiveAdverts = await _context.CarAdverts
+                .AsNoTracking()
                 .CountAsync(a => a.UserId == userId && a.IsActive && !a.IsHidden);
 
             if (advertIds.Count > 0)
             {
-                try { dto.TotalViews = await _context.AdvertViews.CountAsync(v => advertIds.Contains(v.AdvertId)); }
+                try { dto.TotalViews = await _context.AdvertViews.AsNoTracking().CountAsync(v => advertIds.Contains(v.AdvertId)); }
                 catch (Exception ex) { _logger.LogWarning("[Stats] AdvertViews query failed: {Msg}", ex.Message); }
             }
         }
         catch (Exception ex) { _logger.LogWarning("[Stats] CarAdverts query failed: {Type} {Msg}", ex.GetType().Name, ex.Message); }
 
-        try { dto.FavoritesCount = await _context.FavoriteAdverts.CountAsync(f => f.UserId == userId); }
+        try { dto.FavoritesCount = await _context.FavoriteAdverts.AsNoTracking().CountAsync(f => f.UserId == userId); }
         catch (Exception ex) { _logger.LogWarning("[Stats] FavoriteAdverts query failed: {Type} {Msg}", ex.GetType().Name, ex.Message); }
 
         try
         {
             _logger.LogDebug("[Stats] Querying Messages for userId={UserId}", userId);
             dto.UnreadMessages = await _context.Messages
+                .AsNoTracking()
                 .CountAsync(m => (m.Conversation.SellerId == userId || m.Conversation.BuyerId == userId)
                                  && !m.IsRead && m.SenderId != userId);
         }
@@ -83,15 +86,15 @@ public class UserService : IUserService
 
         try
         {
-            dto.FollowersCount = await _context.UserFollows.CountAsync(f => f.FollowedId == userId);
-            dto.FollowingCount = await _context.UserFollows.CountAsync(f => f.FollowerId == userId);
+            dto.FollowersCount = await _context.UserFollows.AsNoTracking().CountAsync(f => f.FollowedId == userId);
+            dto.FollowingCount = await _context.UserFollows.AsNoTracking().CountAsync(f => f.FollowerId == userId);
         }
         catch (Exception ex) { _logger.LogWarning("[Stats] UserFollows query failed: {Type} {Msg}", ex.GetType().Name, ex.Message); }
 
         try
         {
             _logger.LogDebug("[Stats] Querying Reviews for userId={UserId}", userId);
-            var reviews = await _context.Reviews.Where(r => r.SellerId == userId).ToListAsync();
+            var reviews = await _context.Reviews.AsNoTracking().Where(r => r.SellerId == userId).ToListAsync();
             dto.ReviewCount = reviews.Count;
             dto.AverageRating = reviews.Count > 0 ? Math.Round(reviews.Average(r => r.Rating), 2) : 0.0;
         }
@@ -284,30 +287,41 @@ public class UserService : IUserService
     public async Task<object> ExportUserDataAsync(int userId)
     {
         var user = await _context.Users
-            .Include(u => u.Adverts)
+            .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == userId)
             ?? throw new KeyNotFoundException("Użytkownik nie istnieje.");
 
-        var adverts = await _context.CarAdverts
+        var advertsTask = _context.CarAdverts
+            .AsNoTracking()
             .Where(a => a.UserId == userId)
             .Select(a => new { a.Id, a.Title, a.Price, a.CreatedAt, a.IsActive })
             .ToListAsync();
 
-        var favorites = await _context.FavoriteAdverts
+        var favoritesTask = _context.FavoriteAdverts
+            .AsNoTracking()
             .Where(f => f.UserId == userId)
             .Select(f => new { f.AdvertId, f.CreatedAt })
             .ToListAsync();
 
-        var sentMessages = await _context.Messages
+        var sentMessagesTask = _context.Messages
+            .AsNoTracking()
             .Where(m => m.SenderId == userId)
             .Select(m => new { m.Id, m.Content, m.SentAt, m.ConversationId })
             .ToListAsync();
 
-        var receivedMessages = await _context.Messages
+        var receivedMessagesTask = _context.Messages
+            .AsNoTracking()
             .Where(m => m.SenderId != userId && _context.Conversations
                 .Any(c => c.Id == m.ConversationId && (c.BuyerId == userId || c.SellerId == userId)))
             .Select(m => new { m.Id, m.Content, m.SentAt, m.ConversationId, m.SenderId })
             .ToListAsync();
+
+        await Task.WhenAll(advertsTask, favoritesTask, sentMessagesTask, receivedMessagesTask);
+
+        var adverts = advertsTask.Result;
+        var favorites = favoritesTask.Result;
+        var sentMessages = sentMessagesTask.Result;
+        var receivedMessages = receivedMessagesTask.Result;
 
         return new
         {
