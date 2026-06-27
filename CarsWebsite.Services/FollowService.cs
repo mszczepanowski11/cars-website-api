@@ -17,7 +17,7 @@ public class FollowService : IFollowService
     public async Task FollowAsync(int followerId, int followedId)
     {
         if (followerId == followedId) return;
-        var exists = await _context.UserFollows.AnyAsync(f => f.FollowerId == followerId && f.FollowedId == followedId);
+        var exists = await _context.UserFollows.AsNoTracking().AnyAsync(f => f.FollowerId == followerId && f.FollowedId == followedId);
         if (exists) return;
 
         _context.UserFollows.Add(new UserFollow { FollowerId = followerId, FollowedId = followedId });
@@ -34,5 +34,5 @@ public class FollowService : IFollowService
     }
 
     public async Task<bool> IsFollowingAsync(int followerId, int followedId)
-        => await _context.UserFollows.AnyAsync(f => f.FollowerId == followerId && f.FollowedId == followedId);
+        => await _context.UserFollows.AsNoTracking().AnyAsync(f => f.FollowerId == followerId && f.FollowedId == followedId);
 }

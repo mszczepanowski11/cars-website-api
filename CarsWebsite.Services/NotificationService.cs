@@ -80,16 +80,21 @@ public class NotificationService : INotificationService
 
             var category = Categories.GetValueOrDefault(type, "Other");
             var pref = await _context.UserNotificationSettings
+                .AsNoTracking()
                 .FirstOrDefaultAsync(s => s.UserId == userId && s.Category == category);
             var emailEnabled = pref?.EmailEnabled ?? true;
 
             if (emailEnabled)
             {
-                var user = await _context.Users.FindAsync(userId);
-                if (user != null)
+                var userEmail = await _context.Users
+                    .AsNoTracking()
+                    .Where(u => u.Id == userId)
+                    .Select(u => u.Email)
+                    .FirstOrDefaultAsync();
+                if (userEmail != null)
                 {
                     var html = BuildEmailHtml(type, title, content, advertId, paymentId, invoiceId);
-                    await _email.SendAsync(user.Email, title, html);
+                    await _email.SendAsync(userEmail, title, html);
                     notification.EmailSent = true;
                 }
             }
