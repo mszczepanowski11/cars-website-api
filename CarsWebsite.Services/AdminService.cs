@@ -132,15 +132,12 @@ namespace cars_website_api.CarsWebsite.Services
                 .FirstOrDefaultAsync(a => a.Id == advertId)
                 ?? throw new KeyNotFoundException("Advert not found");
 
-            foreach (var image in advert.Images)
-            {
-                var publicId = ExtractPublicId(image.Url);
-                if (publicId != null)
-                {
-                    try { await _cloudinary.DestroyAsync(new DeletionParams(publicId)); }
-                    catch { /* best-effort cleanup */ }
-                }
-            }
+            var deletionTasks = advert.Images
+                .Select(img => ExtractPublicId(img.Url))
+                .Where(pid => pid != null)
+                .Select(pid => _cloudinary.DestroyAsync(new DeletionParams(pid!)).ContinueWith(_ => { }));
+            try { await Task.WhenAll(deletionTasks); } catch { /* best-effort cleanup */ }
+
             _context.AdvertImages.RemoveRange(advert.Images);
 
             _context.AdminActionLogs.Add(new AdminActionLog { AdminUserId = adminUserId, ActionType = AdminActionType.DeleteAdvert, TargetAdvertId = advertId, Note = note, PerformedAt = DateTime.UtcNow });

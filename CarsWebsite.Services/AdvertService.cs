@@ -400,13 +400,16 @@ public class AdvertService : IAdvertService
             _            => prioritized.ThenByDescending(a => a.UpdatedAt ?? a.CreatedAt)
         };
 
-        var totalCount = await query.CountAsync();
-
-        var ids = await query
+        var totalTask = query.CountAsync();
+        var idsTask = query
             .Skip((dto.Page - 1) * dto.PageSize)
             .Take(dto.PageSize)
             .Select(a => a.Id)
             .ToListAsync();
+        await Task.WhenAll(totalTask, idsTask);
+
+        var totalCount = totalTask.Result;
+        var ids = idsTask.Result;
 
         var itemsUnordered = await _context.CarAdverts
             .AsNoTracking()
@@ -447,15 +450,15 @@ public class AdvertService : IAdvertService
             .Include(a => a.AdvertFeatures).ThenInclude(af => af.Feature)
             .Where(a => a.UserId == userId && !a.IsHidden)
             .OrderByDescending(a => a.CreatedAt);
-        
-       
-        var totalCount= await query.CountAsync();
-        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+
+        var totalTask = query.CountAsync();
+        var itemsTask = query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        await Task.WhenAll(totalTask, itemsTask);
         
         return new PagedResult<CarAdvertResponseDto>
         {
-            Items = _mapper.Map<List<CarAdvertResponseDto>>(items),
-            TotalCount = totalCount
+            Items = _mapper.Map<List<CarAdvertResponseDto>>(itemsTask.Result),
+            TotalCount = totalTask.Result
         };
     }
 
@@ -527,13 +530,13 @@ public class AdvertService : IAdvertService
         var yearStart = new DateTime(DateTime.UtcNow.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         var yearEnd   = yearStart.AddYears(1);
 
-        var activeCount = await _context.CarAdverts
+        var activeCountTask = _context.CarAdverts.AsNoTracking()
             .CountAsync(a => a.UserId == userId && a.IsActive && !a.IsHidden);
-
-        var yearCount = await _context.CarAdverts
+        var yearCountTask = _context.CarAdverts.AsNoTracking()
             .CountAsync(a => a.UserId == userId && a.CreatedAt >= yearStart && a.CreatedAt < yearEnd);
+        await Task.WhenAll(activeCountTask, yearCountTask);
 
-        return (activeCount, yearCount);
+        return (activeCountTask.Result, yearCountTask.Result);
     }
 
     public async Task DeactivateAsync(int advertId, int userId)
