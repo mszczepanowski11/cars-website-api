@@ -128,6 +128,7 @@ public class CarAdvert : Advert
     public int? KeyCount { get; set; }
     public DateTime? InsuranceUntil { get; set; }
     public string? YoutubeUrl { get; set; }
+    public string? PdfBrochureUrl { get; set; }
 
     public ICollection<AdvertFeature> AdvertFeatures { get; set; } = new List<AdvertFeature>();
 }

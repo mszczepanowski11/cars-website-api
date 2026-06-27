@@ -101,4 +101,5 @@ public class CreateCarAdvertDto
     [Range(1, 10)] public int? KeyCount { get; set; }
     public DateTime? InsuranceUntil { get; set; }
     [MaxLength(500)] public string? YoutubeUrl { get; set; }
+    [MaxLength(1000)] public string? PdfBrochureUrl { get; set; }
 }

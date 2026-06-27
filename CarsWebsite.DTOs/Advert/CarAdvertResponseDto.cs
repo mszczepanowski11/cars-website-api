@@ -116,6 +116,7 @@ public class CarAdvertResponseDto
     public int? KeyCount { get; set; }
     public DateTime? InsuranceUntil { get; set; }
     public string? YoutubeUrl { get; set; }
+    public string? PdfBrochureUrl { get; set; }
 
     public List<FeatureDto> Features { get; set; } = new();
     public List<AdvertImageDto> Images { get; set; } = new();

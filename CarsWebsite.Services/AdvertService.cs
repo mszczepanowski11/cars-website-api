@@ -641,4 +641,15 @@ public class AdvertService : IAdvertService
         });
         await _context.SaveChangesAsync();
     }
+
+    public async Task<cars_website_api.CarsWebsite.Domain.Entities.CarAdvert?> GetCarAdvertEntityAsync(int advertId)
+        => await _context.CarAdverts.FirstOrDefaultAsync(a => a.Id == advertId);
+
+    public async Task SetPdfBrochureUrlAsync(int advertId, string? url)
+    {
+        var advert = await _context.CarAdverts.FirstOrDefaultAsync(a => a.Id == advertId);
+        if (advert == null) return;
+        advert.PdfBrochureUrl = url;
+        await _context.SaveChangesAsync();
+    }
 }

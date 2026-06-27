@@ -314,4 +314,72 @@ public class AdvertController : ControllerBase
         catch (UnauthorizedAccessException) { return Forbid(); }
     }
 
+    [Authorize]
+    [HttpPost("{advertId}/pdf")]
+    public async Task<IActionResult> UploadPdf(int advertId, IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "Plik jest pusty." });
+
+        var userId = GetUserId();
+        if (userId == 0) return Unauthorized();
+
+        const long maxSize = 25 * 1024 * 1024;
+        if (file.Length > maxSize)
+            return BadRequest(new { message = "Plik PDF przekracza limit 25 MB." });
+
+        var mime = file.ContentType.ToLowerInvariant();
+        if (mime != "application/pdf")
+            return BadRequest(new { message = "Dozwolony tylko plik PDF." });
+
+        // Validate PDF magic bytes: %PDF
+        using var stream = file.OpenReadStream();
+        var header = new byte[4];
+        var read = await stream.ReadAsync(header.AsMemory(0, 4));
+        if (read < 4 || header[0] != 0x25 || header[1] != 0x50 || header[2] != 0x44 || header[3] != 0x46)
+            return BadRequest(new { message = "Plik nie jest prawidłowym PDF." });
+        stream.Position = 0;
+
+        var advert = await _advertService.GetCarAdvertEntityAsync(advertId);
+        if (advert == null) return NotFound(new { message = "Ogłoszenie nie istnieje." });
+        if (advert.UserId != userId) return Forbid();
+
+        try
+        {
+            var cloudinary = HttpContext.RequestServices.GetRequiredService<CloudinaryDotNet.Cloudinary>();
+            var publicId = $"adverts/{advertId}/brochure_{Guid.NewGuid()}";
+            var uploadParams = new CloudinaryDotNet.Actions.RawUploadParams
+            {
+                File = new CloudinaryDotNet.FileDescription(file.FileName, stream),
+                PublicId = publicId,
+                Overwrite = true,
+            };
+            var result = await cloudinary.UploadAsync(uploadParams);
+            if (result.Error != null)
+                return StatusCode(502, new { message = $"Błąd Cloudinary: {result.Error.Message}" });
+
+            var url = result.SecureUrl.ToString();
+            await _advertService.SetPdfBrochureUrlAsync(advertId, url);
+            return Ok(new { url });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[PdfUpload] Error advertId={AdvertId}", advertId);
+            return StatusCode(500, new { message = "Błąd podczas uploadu PDF." });
+        }
+    }
+
+    [Authorize]
+    [HttpDelete("{advertId}/pdf")]
+    public async Task<IActionResult> DeletePdf(int advertId)
+    {
+        var userId = GetUserId();
+        if (userId == 0) return Unauthorized();
+        var advert = await _advertService.GetCarAdvertEntityAsync(advertId);
+        if (advert == null) return NotFound();
+        if (advert.UserId != userId) return Forbid();
+        await _advertService.SetPdfBrochureUrlAsync(advertId, null);
+        return NoContent();
+    }
+
 }
