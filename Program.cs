@@ -188,6 +188,8 @@ internal class Program
             opts.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
         });
         builder.Services.AddResponseCaching();
+        builder.Services.AddHealthChecks()
+            .AddCheck<DatabaseHealthCheck>("db");
         builder.Services.AddAutoMapper(typeof(AdvertMappingProfile));
 
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -1141,6 +1143,7 @@ internal class Program
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
+        app.MapHealthChecks("/health").AllowAnonymous();
 
         // SMTP connectivity test — runs in background after startup so it appears in Railway logs
         _ = Task.Run(async () =>
@@ -2094,5 +2097,29 @@ internal class Program
         TrimSeeder.SeedTrims(db, logger);
         VehicleDataSeeder.SeedTrimData(db, logger);
         VehicleDataSeeder.SeedMotorcycleData(db, logger);
+    }
+}
+
+public class DatabaseHealthCheck : Microsoft.Extensions.Diagnostics.HealthChecks.IHealthCheck
+{
+    private readonly IServiceScopeFactory _scopeFactory;
+
+    public DatabaseHealthCheck(IServiceScopeFactory scopeFactory) => _scopeFactory = scopeFactory;
+
+    public async Task<Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult> CheckHealthAsync(
+        Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckContext context,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await db.Database.ExecuteSqlRawAsync("SELECT 1", cancellationToken);
+            return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy();
+        }
+        catch (Exception ex)
+        {
+            return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Unhealthy("Database unreachable", ex);
+        }
     }
 }
