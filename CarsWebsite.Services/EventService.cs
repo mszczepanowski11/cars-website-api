@@ -11,11 +11,13 @@ public class EventService : IEventService
 {
     private readonly AppDbContext _context;
     private readonly Cloudinary _cloudinary;
+    private readonly ILogger<EventService> _logger;
 
-    public EventService(AppDbContext context, Cloudinary cloudinary)
+    public EventService(AppDbContext context, Cloudinary cloudinary, ILogger<EventService> logger)
     {
         _context = context;
         _cloudinary = cloudinary;
+        _logger = logger;
     }
 
     private static readonly string[] AllowedMimeTypes = ["image/jpeg", "image/png", "image/webp"];
@@ -313,6 +315,7 @@ public class EventService : IEventService
         ev.Status = EventStatus.Published;
         ev.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+        _logger.LogInformation("[Event/Publish] adminId={AdminId} eventId={Id}", adminId, id);
     }
 
     public async Task RejectEventAsync(int id, int adminId, string? note)
@@ -322,6 +325,7 @@ public class EventService : IEventService
         ev.Status = EventStatus.Rejected;
         ev.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+        _logger.LogInformation("[Event/Reject] adminId={AdminId} eventId={Id} note={Note}", adminId, id, note);
     }
 
     public async Task ArchiveEventAsync(int id, int adminId)
@@ -331,6 +335,7 @@ public class EventService : IEventService
         ev.Status = EventStatus.Archived;
         ev.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+        _logger.LogInformation("[Event/Archive] adminId={AdminId} eventId={Id}", adminId, id);
     }
 
     public async Task DeleteEventAsync(int id, int adminId)
@@ -348,6 +353,7 @@ public class EventService : IEventService
 
         _context.Events.Remove(ev);
         await _context.SaveChangesAsync();
+        _logger.LogInformation("[Event/Delete] adminId={AdminId} eventId={Id}", adminId, id);
     }
 
     public async Task<EventResponseDto> UpdateEventAsync(int id, CreateEventDto dto, int adminId)
@@ -372,6 +378,7 @@ public class EventService : IEventService
         ev.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+        _logger.LogInformation("[Event/Update] adminId={AdminId} eventId={Id}", adminId, id);
         return MapToDto(ev);
     }
 
@@ -391,6 +398,7 @@ public class EventService : IEventService
             ev.FeaturedUntil = null;
         }
         await _context.SaveChangesAsync();
+        _logger.LogInformation("[Event/Feature] adminId={AdminId} eventId={Id} featured={Featured}", adminId, id, featured);
     }
 
     public async Task AttendEventAsync(int eventId, int userId)

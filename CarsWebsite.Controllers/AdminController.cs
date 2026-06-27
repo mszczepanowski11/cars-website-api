@@ -692,7 +692,8 @@ public class AdminController : ControllerBase
         }
         catch (Exception ex)
         {
-            return Ok(new { success = false, error = ex.Message, exceptionType = ex.GetType().Name, config });
+            _logger.LogWarning("[Admin/TestEmail] Send failed to={To}: {Error}", dto.To, ex.Message);
+            return Ok(new { success = false, error = "Wysyłka nieudana. Sprawdź konfigurację SMTP.", config });
         }
     }
 }
