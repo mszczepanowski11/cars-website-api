@@ -1,3 +1,5 @@
+using MailKit.Net.Smtp;
+using MailKit.Security;
 using System.Text;
 using System.Text.Json.Serialization;
 using cars_website_api.CarsWebsite.Data;
@@ -59,6 +61,9 @@ internal class Program
         if (!string.IsNullOrEmpty(smtpUser)) builder.Configuration["Smtp:User"] = smtpUser;
         if (!string.IsNullOrEmpty(smtpPass)) builder.Configuration["Smtp:Password"] = smtpPass;
         if (!string.IsNullOrEmpty(smtpFrom)) builder.Configuration["Smtp:From"] = smtpFrom;
+        // Log SMTP config at startup (password masked) to detect misconfiguration early
+        Console.WriteLine($"[SMTP] host={builder.Configuration["Smtp:Host"] ?? "(not set)"} port={builder.Configuration["Smtp:Port"] ?? "587"} user={builder.Configuration["Smtp:User"] ?? "(not set)"} from={builder.Configuration["Smtp:From"] ?? "(not set)"} pass={(string.IsNullOrEmpty(smtpPass) ? "(NOT SET)" : "***")}");
+
 
         // JWT_SECRET_KEY env var takes precedence over appsettings (required in production)
         var jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? builder.Configuration["Jwt:Key"];
@@ -1127,6 +1132,40 @@ internal class Program
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
+
+        // SMTP connectivity test — runs in background after startup so it appears in Railway logs
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(3000); // wait for app to fully start
+            var cfg = app.Services.GetRequiredService<IConfiguration>();
+            var logger = app.Services.GetRequiredService<ILogger<Program>>();
+            var rawHost = (cfg["Smtp:Host"] ?? "").Trim();
+            if (string.IsNullOrEmpty(rawHost)) { logger.LogWarning("[SMTP-TEST] SMTP_HOST nie ustawiony — wysyłka e-mail wyłączona."); return; }
+            var host = rawHost.Contains("://") ? rawHost.Split("://", 2)[1].TrimEnd('/') : rawHost;
+            if (!host.StartsWith("[") && host.Contains(':')) host = host.Split(':')[0];
+            var port = int.TryParse(cfg["Smtp:Port"], out var sp) ? sp : 587;
+            var user = cfg["Smtp:User"] ?? "";
+            var pass = cfg["Smtp:Password"] ?? "";
+            logger.LogInformation("[SMTP-TEST] Testuję połączenie: {Host}:{Port} user={User} pass={Pass}",
+                host, port, string.IsNullOrEmpty(user) ? "(brak)" : user, string.IsNullOrEmpty(pass) ? "(NIE USTAWIONE!)" : "***");
+            try
+            {
+                using var client = new SmtpClient();
+                await client.ConnectAsync(host, port, SecureSocketOptions.Auto);
+                logger.LogInformation("[SMTP-TEST] Połączenie OK. Serwer: {ServerCaps}", client.Capabilities);
+                if (!string.IsNullOrEmpty(user))
+                {
+                    await client.AuthenticateAsync(user, pass);
+                    logger.LogInformation("[SMTP-TEST] Uwierzytelnienie OK dla {User}", user);
+                }
+                await client.DisconnectAsync(true);
+                logger.LogInformation("[SMTP-TEST] SMTP działa poprawnie ✓");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError("[SMTP-TEST] BŁĄD: {Type}: {Message}", ex.GetType().Name, ex.Message);
+            }
+        });
 
         app.Run();
     }

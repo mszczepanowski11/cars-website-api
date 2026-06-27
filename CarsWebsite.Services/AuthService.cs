@@ -74,15 +74,16 @@ public class AuthService : IAuthService
         await _context.SaveChangesAsync();
 
         var siteUrl = _configuration["SiteUrl"] ?? "https://carizo.pl";
-        _ = _email.SendAsync(
-            user.Email,
-            "Potwierdź swój adres email – CARIZO",
-            EmailService.BuildHtml(
-                "Potwierdź adres email",
-                "Kliknij poniższy przycisk, aby aktywować konto CARIZO. Link jest ważny przez 24 godziny.",
-                null,
-                $"{siteUrl}/weryfikacja-email?token={token}",
-                "Aktywuj konto"))
+        var subject = "Potwierdź swój adres email – CARIZO";
+        var html = EmailService.BuildHtml(
+            "Potwierdź adres email",
+            "Kliknij poniższy przycisk, aby aktywować konto CARIZO. Link jest ważny przez 24 godziny.",
+            null,
+            $"{siteUrl}/weryfikacja-email?token={token}",
+            "Aktywuj konto");
+
+        // Fire-and-forget — don't block HTTP response on SMTP; log failures asynchronously.
+        _ = _email.SendAsync(user.Email, subject, html)
             .ContinueWith(t =>
             {
                 if (t.IsFaulted)
@@ -171,12 +172,13 @@ public class AuthService : IAuthService
         await _context.SaveChangesAsync();
 
         var siteUrl = _configuration["SiteUrl"] ?? "https://carizo.pl";
-        _ = _email.SendAsync(user.Email, "Resetowanie hasła – CARIZO",
-            EmailService.BuildHtml("Resetowanie hasła",
-                "Kliknij poniższy przycisk, aby ustawić nowe hasło. Link jest ważny przez 1 godzinę.",
-                null,
-                $"{siteUrl}/reset-password?token={token}",
-                "Resetuj hasło"))
+        var html = EmailService.BuildHtml("Resetowanie hasła",
+            "Kliknij poniższy przycisk, aby ustawić nowe hasło. Link jest ważny przez 1 godzinę.",
+            null,
+            $"{siteUrl}/reset-password?token={token}",
+            "Resetuj hasło");
+
+        _ = _email.SendAsync(user.Email, "Resetowanie hasła – CARIZO", html)
             .ContinueWith(t =>
             {
                 if (t.IsFaulted)
@@ -220,15 +222,15 @@ public class AuthService : IAuthService
         await _context.SaveChangesAsync();
 
         var siteUrl = _configuration["SiteUrl"] ?? "https://carizo.pl";
-        _ = _email.SendAsync(
-            user.Email,
-            "Potwierdź swój adres email – CARIZO",
-            EmailService.BuildHtml(
-                "Potwierdź adres email",
-                "Kliknij poniższy przycisk, aby aktywować konto CARIZO. Link jest ważny przez 24 godziny.",
-                null,
-                $"{siteUrl}/weryfikacja-email?token={token}",
-                "Aktywuj konto"))
+        var subject = "Potwierdź swój adres email – CARIZO";
+        var html = EmailService.BuildHtml(
+            "Potwierdź adres email",
+            "Kliknij poniższy przycisk, aby aktywować konto CARIZO. Link jest ważny przez 24 godziny.",
+            null,
+            $"{siteUrl}/weryfikacja-email?token={token}",
+            "Aktywuj konto");
+
+        _ = _email.SendAsync(user.Email, subject, html)
             .ContinueWith(t =>
             {
                 if (t.IsFaulted)

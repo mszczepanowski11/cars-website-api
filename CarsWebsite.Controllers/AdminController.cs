@@ -2,9 +2,12 @@
 using cars_website_api.CarsWebsite.DTOs.Admin;
 using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
+using MailKit.Net.Smtp;
+using MailKit.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MimeKit;
 using System.Security.Claims;
 
 [ApiController]
@@ -14,11 +17,13 @@ public class AdminController : ControllerBase
 {
     private readonly IAdminService _adminService;
     private readonly AppDbContext _db;
+    private readonly IConfiguration _config;
 
-    public AdminController(IAdminService adminService, AppDbContext db)
+    public AdminController(IAdminService adminService, AppDbContext db, IConfiguration config)
     {
         _adminService = adminService;
         _db = db;
+        _config = config;
     }
 
     private int GetUserId()
@@ -613,4 +618,60 @@ public class AdminController : ControllerBase
         await _db.SaveChangesAsync();
         return NoContent();
     }
+
+    /// <summary>
+    /// Diagnostic: test SMTP connection and send a test email. Returns full error detail on failure.
+    /// </summary>
+    [HttpPost("test-email")]
+    public async Task<IActionResult> TestEmail([FromBody] TestEmailDto dto)
+    {
+        var section = _config.GetSection("Smtp");
+        var rawHost = (section["Host"] ?? "").Trim();
+        var port    = int.TryParse(section["Port"], out var p) ? p : 587;
+        var user    = section["User"] ?? "";
+        var pass    = section["Password"] ?? "";
+        var fromCfg = (section["From"] ?? "").Trim();
+        var from    = !string.IsNullOrEmpty(fromCfg) ? fromCfg : (user.Length > 0 ? user : "test@carizo.pl");
+
+        // Normalise host
+        var host = rawHost.Contains("://") ? rawHost.Split("://", 2)[1].TrimEnd('/') : rawHost;
+        if (!host.StartsWith("[") && host.Contains(':')) host = host.Split(':')[0];
+
+        var config = new
+        {
+            host    = string.IsNullOrEmpty(host) ? "(not set)" : host,
+            port,
+            user    = string.IsNullOrEmpty(user) ? "(not set)" : user,
+            pass    = string.IsNullOrEmpty(pass) ? "(not set)" : "***",
+            from,
+            to      = dto.To
+        };
+
+        if (string.IsNullOrEmpty(host))
+            return Ok(new { success = false, error = "SMTP_HOST nie jest skonfigurowany.", config });
+
+        try
+        {
+            var message = new MimeMessage();
+            message.From.Add(MailboxAddress.Parse(from));
+            message.To.Add(MailboxAddress.Parse(dto.To));
+            message.Subject = "Test e-mail — CARIZO";
+            message.Body = new TextPart("plain") { Text = $"To jest testowy e-mail CARIZO.\nNadawca: {from}\nSerwer: {host}:{port}" };
+
+            using var client = new SmtpClient();
+            await client.ConnectAsync(host, port, SecureSocketOptions.Auto);
+            if (!string.IsNullOrEmpty(user))
+                await client.AuthenticateAsync(user, pass);
+            await client.SendAsync(message);
+            await client.DisconnectAsync(true);
+
+            return Ok(new { success = true, message = $"E-mail wysłany do {dto.To}", config });
+        }
+        catch (Exception ex)
+        {
+            return Ok(new { success = false, error = ex.Message, exceptionType = ex.GetType().Name, config });
+        }
+    }
 }
+
+public record TestEmailDto(string To);

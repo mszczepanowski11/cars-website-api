@@ -76,11 +76,8 @@ public class NewsletterController : ControllerBase
 
         // Fire-and-forget — don't block the HTTP response waiting for SMTP
         _ = _email.SendAsync(email, "Potwierdź zapis na newsletter — CARIZO", html)
-            .ContinueWith(t =>
-            {
-                if (t.IsFaulted)
-                    _logger.LogError(t.Exception, "[Newsletter] Email wysyłki nie powiódł się dla {Email}", email);
-            }, TaskContinuationOptions.OnlyOnFaulted);
+            .ContinueWith(t => { if (t.IsFaulted) _logger.LogError(t.Exception, "Newsletter email failed for {Email}", email); },
+                TaskContinuationOptions.OnlyOnFaulted);
 
         return Ok(new { message = "Sprawdź swoją skrzynkę email i kliknij link potwierdzający." });
     }
