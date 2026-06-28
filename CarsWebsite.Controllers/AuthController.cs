@@ -111,8 +111,8 @@ public class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(dto.Token) || string.IsNullOrWhiteSpace(dto.NewPassword))
             return BadRequest("Brakujące dane.");
 
-        if (dto.NewPassword.Length < 8)
-            return BadRequest("Hasło musi mieć co najmniej 8 znaków.");
+        if (dto.NewPassword.Length < 8 || dto.NewPassword.Length > 128)
+            return BadRequest("Hasło musi mieć od 8 do 128 znaków.");
 
         var success = await _authService.ResetPasswordAsync(dto.Token, dto.NewPassword);
         if (!success)

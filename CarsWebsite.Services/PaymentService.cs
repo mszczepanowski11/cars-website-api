@@ -214,8 +214,9 @@ public class PaymentService : IPaymentService
                 await tx.CommitAsync();
             }
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "[Webhook] Transaction rolled back for orderId={OrderId}", dto.ResolvedOrderId);
             await tx.RollbackAsync();
             throw;
         }
@@ -294,7 +295,7 @@ public class PaymentService : IPaymentService
 
         var fields = new Dictionary<string, string>
         {
-            ["amount"]            = ((int)(payment.Amount * 100)).ToString(),
+            ["amount"]            = ((long)Math.Round(payment.Amount * 100, MidpointRounding.AwayFromZero)).ToString(),
             ["currency"]          = "PLN",
             ["orderId"]           = orderId,
             ["customerFirstName"] = firstName,
