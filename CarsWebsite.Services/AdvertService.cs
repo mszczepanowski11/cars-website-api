@@ -38,7 +38,8 @@ public class AdvertService : IAdvertService
             var dot = idWithExt.LastIndexOf('.');
             return dot > 0 ? idWithExt[..dot] : idWithExt;
         }
-        catch { return null; }
+        catch (UriFormatException) { return null; }
+        catch (IndexOutOfRangeException) { return null; }
     }
 
     

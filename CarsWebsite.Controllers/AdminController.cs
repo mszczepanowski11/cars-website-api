@@ -1,5 +1,6 @@
 ﻿using cars_website_api.CarsWebsite.Domain.Entities;
 using cars_website_api.CarsWebsite.DTOs.Admin;
+using System.ComponentModel.DataAnnotations;
 using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
 using MailKit.Net.Smtp;
@@ -166,9 +167,9 @@ public class AdminController : ControllerBase
     // ── Taxonomy management ────────────────────────────────────────────────────
 
     [HttpGet("features")]
-    public async Task<IActionResult> GetFeatures([FromQuery] string? search, [FromQuery] int? categoryId)
+    public async Task<IActionResult> GetFeatures([FromQuery][MaxLength(100)] string? search, [FromQuery] int? categoryId)
     {
-        var q = _db.Features.Include(f => f.Category).AsQueryable();
+        var q = _db.Features.AsNoTracking().Include(f => f.Category).AsQueryable();
         if (!string.IsNullOrWhiteSpace(search))
             q = q.Where(f => f.Name.Contains(search));
         if (categoryId.HasValue)
@@ -247,7 +248,7 @@ public class AdminController : ControllerBase
     [HttpGet("custom-categories")]
     public async Task<IActionResult> GetCustomCategories([FromQuery] string? status = null)
     {
-        var query = _db.CustomCategoryRequests.AsQueryable();
+        var query = _db.CustomCategoryRequests.AsNoTracking().AsQueryable();
         if (!string.IsNullOrEmpty(status))
             query = query.Where(r => r.Status == status);
         var results = await query.OrderByDescending(r => r.CreatedAt).ToListAsync();
@@ -407,9 +408,9 @@ public class AdminController : ControllerBase
     // ── Brand CRUD ─────────────────────────────────────────────────────────────
 
     [HttpGet("brands")]
-    public async Task<IActionResult> GetAdminBrands([FromQuery] string? search, [FromQuery] int? categoryId, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
+    public async Task<IActionResult> GetAdminBrands([FromQuery][MaxLength(100)] string? search, [FromQuery] int? categoryId, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
     {
-        var q = _db.Brands.Include(b => b.Categories).Include(b => b.Models).AsQueryable();
+        var q = _db.Brands.AsNoTracking().Include(b => b.Categories).Include(b => b.Models).AsQueryable();
         if (!string.IsNullOrWhiteSpace(search))
             q = q.Where(b => b.Name.Contains(search) || b.Slug.Contains(search));
         if (categoryId.HasValue)
@@ -701,4 +702,9 @@ public class AdminController : ControllerBase
     }
 }
 
-public record TestEmailDto(string To);
+public record TestEmailDto(
+    [property: System.ComponentModel.DataAnnotations.Required]
+    [property: System.ComponentModel.DataAnnotations.MaxLength(254)]
+    [property: System.ComponentModel.DataAnnotations.EmailAddress]
+    string To
+);
