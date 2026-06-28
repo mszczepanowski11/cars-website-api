@@ -84,22 +84,34 @@ public class NotificationService : INotificationService
                 .FirstOrDefaultAsync(s => s.UserId == userId && s.Category == category);
             var emailEnabled = pref?.EmailEnabled ?? true;
 
+            string? userEmail = null;
             if (emailEnabled)
             {
-                var userEmail = await _context.Users
+                userEmail = await _context.Users
                     .AsNoTracking()
                     .Where(u => u.Id == userId)
                     .Select(u => u.Email)
                     .FirstOrDefaultAsync();
-                if (userEmail != null)
+            }
+
+            // Persist the in-app notification before attempting email so it is always saved
+            // even if the SMTP send fails.
+            await _context.SaveChangesAsync();
+
+            if (emailEnabled && userEmail != null)
+            {
+                try
                 {
                     var html = BuildEmailHtml(type, title, content, advertId, paymentId, invoiceId);
                     await _email.SendAsync(userEmail, title, html);
                     notification.EmailSent = true;
+                    await _context.SaveChangesAsync();
+                }
+                catch (Exception emailEx)
+                {
+                    _logger.LogWarning(emailEx, "Email send failed userId={UserId} typ={Type}", userId, type);
                 }
             }
-
-            await _context.SaveChangesAsync();
         }
         catch (Exception ex)
         {
