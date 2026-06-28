@@ -25,6 +25,7 @@ public class AIController : ControllerBase
     // POST /api/ai/validate — validate brand/engine combination
     [HttpPost("validate")]
     [Authorize]
+    [EnableRateLimiting("ai")]
     public async Task<IActionResult> ValidateCombination([FromBody] ValidateCombinationDto dto)
     {
         var warnings = new List<string>();
