@@ -2094,6 +2094,99 @@ internal class Program
             }
         }
 
+        // Additional VehicleSubtype seeds — per-slug idempotent, safe when subtypes already exist
+        {
+            var allVCatsForSubtypes2 = db.VehicleCategories.ToList();
+            int CatId2(string slug) => allVCatsForSubtypes2.FirstOrDefault(c => c.Slug == slug)?.Id ?? 0;
+
+            var existingSubtypeSlugs = db.VehicleSubtypes.Select(s => s.Slug).ToHashSet();
+
+            var newSubtypeDefs = new List<(string catSlug, string name, string slug)>
+            {
+                // przyczepy
+                ("przyczepy", "Naczepa kurtynowa",        "naczepa-kurtynowa"),
+                ("przyczepy", "Naczepa wywrotka",          "naczepa-wywrotka"),
+                ("przyczepy", "Naczepa cysterna",          "naczepa-cysterna"),
+                ("przyczepy", "Naczepa izoterma",          "naczepa-izoterma"),
+                ("przyczepy", "Naczepa silos",             "naczepa-silos"),
+                ("przyczepy", "Naczepa kontener",          "naczepa-kontener"),
+                ("przyczepy", "Naczepa niskopodwoziowa",   "naczepa-niskopodwoziowa"),
+                ("przyczepy", "Naczepa autotransporter",   "naczepa-autotransporter"),
+                ("przyczepy", "Naczepa dłużyca",           "naczepa-dluzica"),
+                ("przyczepy", "Przyczepa laweta",          "przyczepa-laweta-aut"),
+                ("przyczepy", "Przyczepa laweta moto",     "przyczepa-laweta-moto"),
+                ("przyczepy", "Przyczepa platforma",       "przyczepa-platforma"),
+                ("przyczepy", "Przyczepa niskopodwoziowa", "przyczepa-niskopodwoziowa"),
+                ("przyczepy", "Przyczepa wywrotka",        "przyczepa-wywrotka"),
+                ("przyczepy", "Przyczepa cysterna",        "przyczepa-cysterna"),
+                ("przyczepy", "Przyczepa gastronomiczna",  "przyczepa-gastronomiczna"),
+                ("przyczepy", "Przyczepa do koni",         "przyczepa-konie"),
+                ("przyczepy", "Przyczepa do maszyn",       "przyczepa-maszyny"),
+                ("przyczepy", "Dłużyca",                   "dluzica"),
+                ("przyczepy", "Silos",                     "silos"),
+                ("przyczepy", "Kontener morski",           "kontener-morski"),
+
+                // budowlane
+                ("budowlane", "Koparko-ładowarka",  "koparko-ladowarka"),
+                ("budowlane", "Równiarka",           "rowniarka"),
+                ("budowlane", "Wozidło",             "wozidlo"),
+                ("budowlane", "Kruszarka",           "kruszarka"),
+                ("budowlane", "Przesiewacz",         "przesiewacz"),
+                ("budowlane", "Dźwig samojezdny",    "dzwig"),
+                ("budowlane", "Podnośnik koszowy",   "podnosnik-koszowy"),
+                ("budowlane", "Betoniarka",          "betoniarka"),
+                ("budowlane", "Pompa do betonu",     "pompa-betonu"),
+                ("budowlane", "Zagęszczarka",        "zagestczarka"),
+
+                // rolnicze
+                ("rolnicze", "Brona",                  "brona"),
+                ("rolnicze", "Kosiarka",               "kosiarka"),
+                ("rolnicze", "Rozrzutnik",             "rozrzutnik"),
+                ("rolnicze", "Wóz paszowy",            "woz-paszowy"),
+                ("rolnicze", "Agregat uprawowy",       "agregat-uprawowy"),
+                ("rolnicze", "Ładowarka teleskopowa",  "ladowarka-teleskopowa"),
+                ("rolnicze", "Sadzarka",               "sadzarka"),
+                ("rolnicze", "Żniwiarka",              "zniwiarka"),
+
+                // maszyny
+                ("maszyny", "Wózek elektryczny", "wozek-elektryczny"),
+                ("maszyny", "Reach truck",        "reach-truck"),
+                ("maszyny", "Układnica",          "ukladnica"),
+                ("maszyny", "Taśmociąg",          "tasmociag"),
+                ("maszyny", "Suwnica",            "suwnica"),
+                ("maszyny", "Wciągnik",           "wciagnik"),
+
+                // motocykle
+                ("motocykle", "Maxi skuter",           "maxi-skuter"),
+                ("motocykle", "Motocykl elektryczny",  "motocykl-elektryczny"),
+                ("motocykle", "Klasyczny",             "klasyczny"),
+                ("motocykle", "Adventure",             "adventure"),
+                ("motocykle", "Custom",                "custom"),
+                ("motocykle", "Trójkołowiec",          "trojkolowiec"),
+            };
+
+            var newSubtypes2 = new List<VehicleSubtype>();
+            var catOrderCounters = new Dictionary<int, int>();
+
+            foreach (var (catSlug, name, slug) in newSubtypeDefs)
+            {
+                if (existingSubtypeSlugs.Contains(slug)) continue;
+                int catId = CatId2(catSlug);
+                if (catId == 0) continue;
+                if (!catOrderCounters.ContainsKey(catId))
+                    catOrderCounters[catId] = db.VehicleSubtypes.Where(s => s.VehicleCategoryId == catId).Select(s => (int?)s.SortOrder).Max() ?? 0 + 1;
+                newSubtypes2.Add(new VehicleSubtype { VehicleCategoryId = catId, Name = name, Slug = slug, SortOrder = catOrderCounters[catId]++ });
+                existingSubtypeSlugs.Add(slug);
+            }
+
+            if (newSubtypes2.Count > 0)
+            {
+                db.VehicleSubtypes.AddRange(newSubtypes2);
+                db.SaveChanges();
+                logger.LogInformation("Seeded {Count} additional vehicle subtypes", newSubtypes2.Count);
+            }
+        }
+
         // PartCategory + PartSubcategory seeds
         if (!db.PartCategories.Any())
         {
@@ -2139,6 +2232,7 @@ internal class Program
         TrimSeeder.SeedTrims(db, logger);
         VehicleDataSeeder.SeedTrimData(db, logger);
         VehicleDataSeeder.SeedMotorcycleData(db, logger);
+        ComprehensiveSeeder.SeedComprehensiveData(db, logger);
     }
 }
 
