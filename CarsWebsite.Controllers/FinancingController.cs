@@ -32,6 +32,7 @@ public class FinancingController : ControllerBase
     /// Authentication is optional — guest submissions are allowed.
     /// </summary>
     [HttpPost]
+    [EnableRateLimiting("strict")]
     public async Task<IActionResult> Create([FromBody] CreateFinancingInquiryDto dto)
     {
         if (!ModelState.IsValid)

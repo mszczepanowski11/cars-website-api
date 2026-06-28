@@ -27,6 +27,7 @@ public class NewsletterController : ControllerBase
     }
 
     [HttpPost("subscribe")]
+    [EnableRateLimiting("strict")]
     public async Task<IActionResult> Subscribe([FromBody] NewsletterSubscribeDto dto)
     {
         if (string.IsNullOrWhiteSpace(dto.Email) || !new EmailAddressAttribute().IsValid(dto.Email))
@@ -105,6 +106,7 @@ public class NewsletterController : ControllerBase
     }
 
     [HttpPost("unsubscribe")]
+    [EnableRateLimiting("strict")]
     public async Task<IActionResult> Unsubscribe([FromBody] NewsletterSubscribeDto dto)
     {
         if (string.IsNullOrWhiteSpace(dto.Email))
