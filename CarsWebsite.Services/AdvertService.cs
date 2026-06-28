@@ -275,9 +275,13 @@ public class AdvertService : IAdvertService
 
         if (dto.FeatureIds != null && dto.FeatureIds.Any())
         {
-            query = query.Where(a =>
-                dto.FeatureIds.All(fid =>
-                    a.AdvertFeatures.Any(af => af.FeatureId == fid)));
+            // One EXISTS subquery per feature ID — reliably translatable by EF Core,
+            // whereas .All() on a local list inside a query expression is not.
+            foreach (var fid in dto.FeatureIds)
+            {
+                var capturedFid = fid;
+                query = query.Where(a => a.AdvertFeatures.Any(af => af.FeatureId == capturedFid));
+            }
         }
         
         if (dto.CategoryId.HasValue)
@@ -420,7 +424,7 @@ public class AdvertService : IAdvertService
             .Include(a => a.Images)
             .Include(a => a.AdvertFeatures)
                 .ThenInclude(af => af.Feature)
-            .Where(a => ids.Contains(a.Id))
+            .Where(a => ids.Contains(a.Id) && a.IsActive && !a.IsHidden)
             .ToListAsync();
 
         // Restore the sort order from the ID list (priority/sort was applied in the filter query)
