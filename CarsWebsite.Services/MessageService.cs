@@ -83,7 +83,7 @@ public class MessageService : IMessageService
         var convIds = convs.Select(c => c.Id).ToList();
         var advertIds = convs.Select(c => c.AdvertId).Distinct().ToList();
 
-        // Sequential queries — EF Core DbContext does not support concurrent operations.
+        // GroupBy + Max(Id) is translatable by Pomelo/MySQL; fetch full rows by Id in a second query.
         var lastMessageIds = await _context.Messages
             .AsNoTracking()
             .Where(m => convIds.Contains(m.ConversationId))
