@@ -10,6 +10,7 @@ public class CategoryController : ControllerBase
     public CategoryController(ICategoryService categoryService) => _categoryService = categoryService;
 
     [HttpGet]
+    [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Any)]
     public async Task<IActionResult> GetAll()
     {
         var categories = await _categoryService.GetCategoriesWithCountsAsync();

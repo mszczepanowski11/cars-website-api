@@ -9,6 +9,7 @@ public class StatsController : ControllerBase
     public StatsController(IStatsService stats) => _stats = stats;
 
     [HttpGet("home")]
+    [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Any)]
     public async Task<IActionResult> GetHomeStats()
     {
         var s = await _stats.GetHomeStatsAsync();
