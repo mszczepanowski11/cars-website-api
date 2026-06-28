@@ -35,6 +35,7 @@ public class FollowController : ControllerBase
     public async Task<IActionResult> GetFollowedAdverts([FromQuery] int page = 1, [FromQuery] int pageSize = 12)
     {
         var uid = GetUserId(); if (uid == 0) return Unauthorized();
+        page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
         var query = _context.FavoriteAdverts
@@ -109,6 +110,7 @@ public class FollowController : ControllerBase
     public async Task<IActionResult> GetFollowedSellers([FromQuery] int page = 1, [FromQuery] int pageSize = 12)
     {
         var uid = GetUserId(); if (uid == 0) return Unauthorized();
+        page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
         var query = _context.UserFollows
@@ -143,6 +145,7 @@ public class FollowController : ControllerBase
     public async Task<IActionResult> GetFollowers([FromQuery] int page = 1, [FromQuery] int pageSize = 12)
     {
         var uid = GetUserId(); if (uid == 0) return Unauthorized();
+        page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
         var query = _context.UserFollows

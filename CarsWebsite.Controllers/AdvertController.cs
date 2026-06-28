@@ -34,11 +34,11 @@ public class AdvertController : ControllerBase
 
     [HttpGet("most-viewed")]
     public async Task<IActionResult> GetMostViewed([FromQuery] int count = 8)
-        => Ok(await _advertService.GetMostViewedAsync(count));
+        => Ok(await _advertService.GetMostViewedAsync(Math.Clamp(count, 1, 50)));
 
     [HttpGet("premium-collection")]
     public async Task<IActionResult> GetPremiumCollection([FromQuery] int count = 8)
-        => Ok(await _advertService.GetPremiumCollectionAsync(count));
+        => Ok(await _advertService.GetPremiumCollectionAsync(Math.Clamp(count, 1, 50)));
 
     [HttpPost("{id}/view")]
     public async Task<IActionResult> RecordView(int id)

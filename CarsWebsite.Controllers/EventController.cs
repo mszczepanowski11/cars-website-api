@@ -57,7 +57,7 @@ public class EventController : ControllerBase
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
-        return Ok(await _eventService.GetMyEventsAsync(userId.Value, page, pageSize));
+        return Ok(await _eventService.GetMyEventsAsync(userId.Value, Math.Max(1, page), Math.Clamp(pageSize, 1, 100)));
     }
 
     [HttpPost]
