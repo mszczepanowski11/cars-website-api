@@ -1,4 +1,5 @@
 using CarsWebsite;
+using System.ComponentModel.DataAnnotations;
 
 namespace cars_website_api.CarsWebsite.Domain.Entities;
 
@@ -37,12 +38,12 @@ public class CarAdvert : Advert
 
     // VIN & identification
     public string? Vin { get; set; }
-    public string? Slug { get; set; }
+    [MaxLength(100)] public string? Slug { get; set; }
 
     // Sale info
-    public string? Condition { get; set; }       // "new" | "used"
+    [MaxLength(20)] public string? Condition { get; set; }       // "new" | "used"
     public bool IsNegotiable { get; set; }
-    public string? SellerType { get; set; }      // "private" | "dealer"
+    [MaxLength(20)] public string? SellerType { get; set; }      // "private" | "dealer"
 
     // Vehicle history
     public DateTime? FirstRegistrationDate { get; set; }
@@ -65,12 +66,12 @@ public class CarAdvert : Advert
     public decimal? FuelConsumptionHighway { get; set; }  // l/100km
     public decimal? FuelConsumptionCombined { get; set; } // l/100km
     public int? Co2Emission { get; set; }        // g/km
-    public string? EuroNorm { get; set; }        // "Euro 3" ... "Euro 6d"
+    [MaxLength(20)] public string? EuroNorm { get; set; }        // "Euro 3" ... "Euro 6d"
     public int? CurbWeight { get; set; }         // kg
     public int? GrossWeight { get; set; }        // kg
 
     // Promotion badge: "TOP", "PREMIUM", "FEATURED" or null
-    public string? Badge { get; set; }
+    [MaxLength(20)] public string? Badge { get; set; }
     public DateTime? BadgeExpiresAt { get; set; }
 
     // FeaturedUntil mirrors BadgeExpiresAt specifically for the "FEATURED" badge type
