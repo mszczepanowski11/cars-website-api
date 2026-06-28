@@ -178,6 +178,14 @@ internal class Program
                 o.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
                 o.QueueLimit = 0;
             });
+            // AI endpoints that call paid external APIs — limit per user to cap cost.
+            options.AddFixedWindowLimiter("ai", o =>
+            {
+                o.PermitLimit = 10;
+                o.Window = TimeSpan.FromHours(1);
+                o.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+                o.QueueLimit = 0;
+            });
         });
 
         builder.Services.AddMemoryCache();

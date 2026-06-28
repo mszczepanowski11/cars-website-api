@@ -17,10 +17,16 @@ public class PhotoController : ControllerBase
 
     [HttpPost("analyze")]
     [Authorize]
+    [EnableRateLimiting("ai")]
     public async Task<IActionResult> AnalyzePhoto([FromBody] AnalyzePhotoRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.ImageUrl))
             return BadRequest("imageUrl is required");
+
+        if (!Uri.TryCreate(request.ImageUrl, UriKind.Absolute, out var uri) ||
+            (uri.Scheme != "https" && uri.Scheme != "http") ||
+            !uri.Host.EndsWith("cloudinary.com", StringComparison.OrdinalIgnoreCase))
+            return BadRequest("Nieprawidłowy adres URL zdjęcia.");
 
         var result = await _photoAnalysisService.AnalyzeAsync(request.ImageUrl);
         return Ok(result);

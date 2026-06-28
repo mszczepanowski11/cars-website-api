@@ -4,6 +4,7 @@ using cars_website_api.CarsWebsite.DTOs.Admin;
 using CarsWebsite;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 [ApiController]
@@ -23,6 +24,7 @@ public class AIController : ControllerBase
 
     // POST /api/ai/validate — validate brand/engine combination
     [HttpPost("validate")]
+    [Authorize]
     public async Task<IActionResult> ValidateCombination([FromBody] ValidateCombinationDto dto)
     {
         var warnings = new List<string>();
@@ -87,6 +89,7 @@ public class AIController : ControllerBase
     // POST /api/ai/describe — generate advert description
     [HttpPost("describe")]
     [Authorize]
+    [EnableRateLimiting("ai")]
     public async Task<IActionResult> GenerateDescription([FromBody] AiDescriptionRequestDto dto)
     {
         var apiKey = _config["Anthropic:ApiKey"] ?? Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY");
