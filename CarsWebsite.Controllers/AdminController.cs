@@ -263,6 +263,7 @@ public class AdminController : ControllerBase
         request.AdminNotes = dto.Notes;
         request.ReviewedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
+        _logger.LogInformation("[Admin] ApproveCustomCategory requestId={Id} adminId={AdminId} notes={Notes}", id, GetUserId(), dto.Notes);
         return Ok(request);
     }
 
@@ -275,6 +276,7 @@ public class AdminController : ControllerBase
         request.AdminNotes = dto.Notes;
         request.ReviewedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
+        _logger.LogInformation("[Admin] RejectCustomCategory requestId={Id} adminId={AdminId} notes={Notes}", id, GetUserId(), dto.Notes);
         return Ok(request);
     }
 
@@ -298,6 +300,7 @@ public class AdminController : ControllerBase
     {
         var advert = await _db.CarAdverts.FindAsync(id);
         if (advert == null) return NotFound();
+        _logger.LogWarning("[Admin] DeleteSuspiciousRecord advertId={Id} title={Title} adminId={AdminId}", id, advert.Title, GetUserId());
         _db.CarAdverts.Remove(advert);
         await _db.SaveChangesAsync();
         return Ok(new { message = "Deleted", id });
