@@ -441,6 +441,8 @@ public class AdvertService : IAdvertService
 
     public async Task<PagedResult<CarAdvertResponseDto>> GetUserAdvertsAsync(int userId, int page = 1, int pageSize = 20)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 50);
         var query = _context.CarAdverts
             .AsNoTracking()
             .Include(a => a.Brand).Include(a => a.Model)
