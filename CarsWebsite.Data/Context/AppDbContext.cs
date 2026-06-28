@@ -369,6 +369,17 @@ namespace CarsWebsite
             modelBuilder.Entity<User>().HasIndex(u => u.PasswordResetToken).IsUnique();
             modelBuilder.Entity<User>().HasIndex(u => u.EmailVerificationToken).IsUnique();
 
+            // Indexes for search-filter and time-bounded queries (SR-10)
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.ExpiresAt);
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.BadgeExpiresAt);
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.GearboxId);
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.BodyTypeId);
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.Mileage);
+            modelBuilder.Entity<Event>().HasIndex(e => e.Status);
+            modelBuilder.Entity<Event>().HasIndex(e => e.StartDate);
+            modelBuilder.Entity<Event>().HasIndex(e => e.CreatedByUserId);
+            modelBuilder.Entity<Payment>().HasIndex(p => p.UserId);
+
             // Lowercase every table name so EF Core generates lowercase SQL,
             // matching Railway Linux MySQL where tables were imported with
             // lowercase names from Windows (case-insensitive) MySQL.
