@@ -59,8 +59,57 @@ public static class ComprehensiveSeeder
             return g.Id;
         }
 
+        // Like GetOrCreateGeneration, but if the model has exactly one generation with a generic
+        // placeholder name (e.g. "Generation I"), renames it in place to preserve existing FK refs.
+        int GetOrFixGeneration(int modelId, string name, string slug, int yearFrom, int? yearTo)
+        {
+            var g = db.Generations.FirstOrDefault(x => x.ModelId == modelId && x.Name == name);
+            if (g != null) return g.Id;
+
+            var allGens = db.Generations.Where(x => x.ModelId == modelId).ToList();
+            if (allGens.Count == 1)
+            {
+                var sole = allGens[0];
+                bool isGeneric = sole.Name is "Generation I" or "Gen 1" or "I" or "Gen I"
+                    || sole.Name.StartsWith("Gen ", StringComparison.OrdinalIgnoreCase);
+                if (isGeneric)
+                {
+                    sole.Name    = name;
+                    sole.Slug    = slug;
+                    sole.YearFrom = yearFrom;
+                    sole.YearTo   = yearTo;
+                    db.SaveChanges();
+                    logger.LogInformation("[ComprehensiveSeeder] Renamed placeholder gen to '{Name}'", name);
+                    return sole.Id;
+                }
+            }
+
+            g = new Generation { ModelId = modelId, Name = name, Slug = slug, YearFrom = yearFrom, YearTo = yearTo };
+            db.Generations.Add(g);
+            db.SaveChanges();
+            return g.Id;
+        }
+
         void AddEngines(int generationId, List<EngineVersion> engines)
         {
+            if (db.EngineVersions.Any(e => e.GenerationId == generationId && e.TorqueNm != null)) return;
+            foreach (var e in engines) e.GenerationId = generationId;
+            db.EngineVersions.AddRange(engines);
+            db.SaveChanges();
+        }
+
+        // Removes engines with HP below minExpectedHp (wrong data for this brand), then adds correct ones.
+        void AddOrReplaceEngines(int generationId, int minExpectedHp, List<EngineVersion> engines)
+        {
+            var wrong = db.EngineVersions
+                .Where(e => e.GenerationId == generationId && e.PowerHP < minExpectedHp)
+                .ToList();
+            if (wrong.Any())
+            {
+                db.EngineVersions.RemoveRange(wrong);
+                db.SaveChanges();
+                logger.LogInformation("[ComprehensiveSeeder] Removed {Count} wrong engines (<{Min}HP) from gen {Id}", wrong.Count, minExpectedHp, generationId);
+            }
             if (db.EngineVersions.Any(e => e.GenerationId == generationId && e.TorqueNm != null)) return;
             foreach (var e in engines) e.GenerationId = generationId;
             db.EngineVersions.AddRange(engines);
@@ -75,7 +124,7 @@ public static class ComprehensiveSeeder
             if (BrandNeedsModels(bId)) { seededModelBrandIds.Add(bId); }
 
             int veyron = GetOrCreateModel(bId, "Veyron", "bugatti-veyron");
-            AddEngines(GetOrCreateGeneration(veyron, "16.4 (2005–2015)", "bugatti-veyron-164", 2005, 2015), [
+            AddOrReplaceEngines(GetOrFixGeneration(veyron, "16.4 (2005–2015)", "bugatti-veyron-164", 2005, 2015), 900, [
                 new EngineVersion { EngineName = "W16 8.0 1001 KM", PowerHP = 1001, PowerKW = 736, Displacement = 7993, FuelTypeId = ben,
                     TorqueNm = 1250, Co2EmissionGkm = 574, EuroNorm = "Euro 4", GearboxType = "dsg",
                     DriveType = "AWD", Cylinders = 16, Acceleration0100 = 2.5m, TopSpeedKmh = 407,
@@ -87,7 +136,7 @@ public static class ComprehensiveSeeder
             ]);
 
             int chiron = GetOrCreateModel(bId, "Chiron", "bugatti-chiron");
-            AddEngines(GetOrCreateGeneration(chiron, "Chiron (2016–2023)", "bugatti-chiron-2016", 2016, 2023), [
+            AddOrReplaceEngines(GetOrFixGeneration(chiron, "Chiron (2016–2023)", "bugatti-chiron-2016", 2016, 2023), 900, [
                 new EngineVersion { EngineName = "W16 8.0 1500 KM", PowerHP = 1500, PowerKW = 1103, Displacement = 7993, FuelTypeId = ben,
                     TorqueNm = 1600, Co2EmissionGkm = 516, EuroNorm = "Euro 6", GearboxType = "dsg",
                     DriveType = "AWD", Cylinders = 16, Acceleration0100 = 2.4m, TopSpeedKmh = 420,
@@ -103,7 +152,7 @@ public static class ComprehensiveSeeder
             ]);
 
             int bolide = GetOrCreateModel(bId, "Bolide", "bugatti-bolide");
-            AddEngines(GetOrCreateGeneration(bolide, "Bolide (2024–)", "bugatti-bolide-2024", 2024, null), [
+            AddOrReplaceEngines(GetOrFixGeneration(bolide, "Bolide (2024–)", "bugatti-bolide-2024", 2024, null), 900, [
                 new EngineVersion { EngineName = "W16 8.0 1825 KM", PowerHP = 1825, PowerKW = 1342, Displacement = 7993, FuelTypeId = ben,
                     TorqueNm = 1850, EuroNorm = "Euro 6d", GearboxType = "dsg",
                     DriveType = "AWD", Cylinders = 16, Acceleration0100 = 2.2m, TopSpeedKmh = 500,
@@ -117,12 +166,12 @@ public static class ComprehensiveSeeder
             if (BrandNeedsModels(bId)) { seededModelBrandIds.Add(bId); }
 
             int ghost = GetOrCreateModel(bId, "Ghost", "rr-ghost");
-            AddEngines(GetOrCreateGeneration(ghost, "Ghost I (2009–2020)", "rr-ghost-i", 2009, 2020), [
+            AddOrReplaceEngines(GetOrFixGeneration(ghost, "Ghost I (2009–2020)", "rr-ghost-i", 2009, 2020), 400, [
                 new EngineVersion { EngineName = "6.75 V12 570 KM", PowerHP = 570, PowerKW = 419, Displacement = 6749, FuelTypeId = ben,
                     TorqueNm = 780, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD",
                     Cylinders = 12, Acceleration0100 = 4.9m, TopSpeedKmh = 250, FuelConsumptionCombined = 15.3m },
             ]);
-            AddEngines(GetOrCreateGeneration(ghost, "Ghost II (2020–)", "rr-ghost-ii", 2020, null), [
+            AddOrReplaceEngines(GetOrFixGeneration(ghost, "Ghost II (2020–)", "rr-ghost-ii", 2020, null), 400, [
                 new EngineVersion { EngineName = "6.75 V12 571 KM", PowerHP = 571, PowerKW = 420, Displacement = 6749, FuelTypeId = ben,
                     TorqueNm = 850, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
                     Cylinders = 12, Acceleration0100 = 4.8m, TopSpeedKmh = 250, FuelConsumptionCombined = 14.9m },
@@ -132,33 +181,33 @@ public static class ComprehensiveSeeder
             ]);
 
             int phantom = GetOrCreateModel(bId, "Phantom", "rr-phantom");
-            AddEngines(GetOrCreateGeneration(phantom, "Phantom VII (2003–2016)", "rr-phantom-vii", 2003, 2016), [
+            AddOrReplaceEngines(GetOrFixGeneration(phantom, "Phantom VII (2003–2016)", "rr-phantom-vii", 2003, 2016), 400, [
                 new EngineVersion { EngineName = "6.75 V12 460 KM", PowerHP = 460, PowerKW = 338, Displacement = 6749, FuelTypeId = ben,
                     TorqueNm = 720, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "RWD",
                     Cylinders = 12, Acceleration0100 = 5.9m, TopSpeedKmh = 240, FuelConsumptionCombined = 16.8m },
             ]);
-            AddEngines(GetOrCreateGeneration(phantom, "Phantom VIII (2017–)", "rr-phantom-viii", 2017, null), [
+            AddOrReplaceEngines(GetOrFixGeneration(phantom, "Phantom VIII (2017–)", "rr-phantom-viii", 2017, null), 400, [
                 new EngineVersion { EngineName = "6.75 V12 571 KM", PowerHP = 571, PowerKW = 420, Displacement = 6749, FuelTypeId = ben,
                     TorqueNm = 900, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "RWD",
                     Cylinders = 12, Acceleration0100 = 5.1m, TopSpeedKmh = 250, FuelConsumptionCombined = 15.8m },
             ]);
 
             int wraith = GetOrCreateModel(bId, "Wraith", "rr-wraith");
-            AddEngines(GetOrCreateGeneration(wraith, "Wraith (2013–2023)", "rr-wraith-2013", 2013, 2023), [
+            AddOrReplaceEngines(GetOrFixGeneration(wraith, "Wraith (2013–2023)", "rr-wraith-2013", 2013, 2023), 400, [
                 new EngineVersion { EngineName = "6.6 V12 Bi-Turbo 632 KM", PowerHP = 632, PowerKW = 465, Displacement = 6592, FuelTypeId = ben,
                     TorqueNm = 800, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD",
                     Cylinders = 12, Acceleration0100 = 4.4m, TopSpeedKmh = 250, FuelConsumptionCombined = 14.9m },
             ]);
 
             int dawn = GetOrCreateModel(bId, "Dawn", "rr-dawn");
-            AddEngines(GetOrCreateGeneration(dawn, "Dawn (2015–2023)", "rr-dawn-2015", 2015, 2023), [
+            AddOrReplaceEngines(GetOrFixGeneration(dawn, "Dawn (2015–2023)", "rr-dawn-2015", 2015, 2023), 400, [
                 new EngineVersion { EngineName = "6.6 V12 Bi-Turbo 571 KM", PowerHP = 571, PowerKW = 420, Displacement = 6592, FuelTypeId = ben,
                     TorqueNm = 820, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD",
                     Cylinders = 12, Acceleration0100 = 5.0m, TopSpeedKmh = 250, FuelConsumptionCombined = 15.4m },
             ]);
 
             int cullinan = GetOrCreateModel(bId, "Cullinan", "rr-cullinan");
-            AddEngines(GetOrCreateGeneration(cullinan, "Cullinan (2018–)", "rr-cullinan-2018", 2018, null), [
+            AddOrReplaceEngines(GetOrFixGeneration(cullinan, "Cullinan (2018–)", "rr-cullinan-2018", 2018, null), 400, [
                 new EngineVersion { EngineName = "6.75 V12 571 KM", PowerHP = 571, PowerKW = 420, Displacement = 6749, FuelTypeId = ben,
                     TorqueNm = 850, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
                     Cylinders = 12, Acceleration0100 = 5.2m, TopSpeedKmh = 250, FuelConsumptionCombined = 15.7m },
@@ -168,7 +217,7 @@ public static class ComprehensiveSeeder
             ]);
 
             int spectre = GetOrCreateModel(bId, "Spectre", "rr-spectre");
-            AddEngines(GetOrCreateGeneration(spectre, "Spectre (2023–)", "rr-spectre-2023", 2023, null), [
+            AddOrReplaceEngines(GetOrFixGeneration(spectre, "Spectre (2023–)", "rr-spectre-2023", 2023, null), 400, [
                 new EngineVersion { EngineName = "Elektryczny AWD 585 KM", PowerHP = 585, PowerKW = 430, Displacement = null, FuelTypeId = ev,
                     TorqueNm = 900, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
                     Cylinders = 0, Acceleration0100 = 4.5m, TopSpeedKmh = 250, FuelConsumptionCombined = 0 },
@@ -181,7 +230,7 @@ public static class ComprehensiveSeeder
             if (BrandNeedsModels(bId)) { seededModelBrandIds.Add(bId); }
 
             int cgt = GetOrCreateModel(bId, "Continental GT", "bentley-continental-gt");
-            AddEngines(GetOrCreateGeneration(cgt, "II (2011–2018)", "bentley-cgt-ii", 2011, 2018), [
+            AddOrReplaceEngines(GetOrFixGeneration(cgt, "II (2011–2018)", "bentley-cgt-ii", 2011, 2018), 400, [
                 new EngineVersion { EngineName = "6.0 W12 575 KM", PowerHP = 575, PowerKW = 423, Displacement = 5998, FuelTypeId = ben,
                     TorqueNm = 800, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "AWD",
                     Cylinders = 12, Acceleration0100 = 4.3m, TopSpeedKmh = 318, FuelConsumptionCombined = 15.4m },
@@ -192,7 +241,7 @@ public static class ComprehensiveSeeder
                     TorqueNm = 680, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "AWD",
                     Cylinders = 8, Acceleration0100 = 4.5m, TopSpeedKmh = 309, FuelConsumptionCombined = 12.3m },
             ]);
-            AddEngines(GetOrCreateGeneration(cgt, "III (2018–)", "bentley-cgt-iii", 2018, null), [
+            AddOrReplaceEngines(GetOrFixGeneration(cgt, "III (2018–)", "bentley-cgt-iii", 2018, null), 400, [
                 new EngineVersion { EngineName = "6.0 W12 635 KM", PowerHP = 635, PowerKW = 467, Displacement = 5950, FuelTypeId = ben,
                     TorqueNm = 900, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
                     Cylinders = 12, Acceleration0100 = 3.6m, TopSpeedKmh = 335, FuelConsumptionCombined = 14.8m },
@@ -205,7 +254,7 @@ public static class ComprehensiveSeeder
             ]);
 
             int bentayga = GetOrCreateModel(bId, "Bentayga", "bentley-bentayga");
-            AddEngines(GetOrCreateGeneration(bentayga, "I (2015–2020)", "bentley-bentayga-i", 2015, 2020), [
+            AddOrReplaceEngines(GetOrFixGeneration(bentayga, "I (2015–2020)", "bentley-bentayga-i", 2015, 2020), 400, [
                 new EngineVersion { EngineName = "6.0 W12 608 KM", PowerHP = 608, PowerKW = 447, Displacement = 5950, FuelTypeId = ben,
                     TorqueNm = 900, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
                     Cylinders = 12, Acceleration0100 = 4.1m, TopSpeedKmh = 301, FuelConsumptionCombined = 15.0m },
@@ -216,7 +265,7 @@ public static class ComprehensiveSeeder
                     TorqueNm = 700, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
                     Cylinders = 6, Acceleration0100 = 5.2m, TopSpeedKmh = 254, FuelConsumptionCombined = 3.4m },
             ]);
-            AddEngines(GetOrCreateGeneration(bentayga, "II (2020–)", "bentley-bentayga-ii", 2020, null), [
+            AddOrReplaceEngines(GetOrFixGeneration(bentayga, "II (2020–)", "bentley-bentayga-ii", 2020, null), 400, [
                 new EngineVersion { EngineName = "4.0 V8 550 KM", PowerHP = 550, PowerKW = 404, Displacement = 3996, FuelTypeId = ben,
                     TorqueNm = 770, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
                     Cylinders = 8, Acceleration0100 = 4.5m, TopSpeedKmh = 290, FuelConsumptionCombined = 12.6m },
@@ -229,7 +278,7 @@ public static class ComprehensiveSeeder
             ]);
 
             int flyingSpur = GetOrCreateModel(bId, "Flying Spur", "bentley-flying-spur");
-            AddEngines(GetOrCreateGeneration(flyingSpur, "III (2019–)", "bentley-flying-spur-iii", 2019, null), [
+            AddOrReplaceEngines(GetOrFixGeneration(flyingSpur, "III (2019–)", "bentley-flying-spur-iii", 2019, null), 400, [
                 new EngineVersion { EngineName = "6.0 W12 635 KM", PowerHP = 635, PowerKW = 467, Displacement = 5950, FuelTypeId = ben,
                     TorqueNm = 900, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
                     Cylinders = 12, Acceleration0100 = 3.8m, TopSpeedKmh = 333, FuelConsumptionCombined = 14.9m },
@@ -242,7 +291,7 @@ public static class ComprehensiveSeeder
             ]);
 
             int mulsanne = GetOrCreateModel(bId, "Mulsanne", "bentley-mulsanne");
-            AddEngines(GetOrCreateGeneration(mulsanne, "II (2010–2020)", "bentley-mulsanne-ii", 2010, 2020), [
+            AddOrReplaceEngines(GetOrFixGeneration(mulsanne, "II (2010–2020)", "bentley-mulsanne-ii", 2010, 2020), 400, [
                 new EngineVersion { EngineName = "6.75 V8 512 KM", PowerHP = 512, PowerKW = 377, Displacement = 6749, FuelTypeId = ben,
                     TorqueNm = 1020, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD",
                     Cylinders = 8, Acceleration0100 = 5.1m, TopSpeedKmh = 296, FuelConsumptionCombined = 17.5m },
@@ -258,12 +307,12 @@ public static class ComprehensiveSeeder
             if (BrandNeedsModels(bId)) { seededModelBrandIds.Add(bId); }
 
             int db11 = GetOrCreateModel(bId, "DB11", "aston-martin-db11");
-            AddEngines(GetOrCreateGeneration(db11, "DB11 V8 (2016–)", "aston-db11-v8", 2016, null), [
+            AddOrReplaceEngines(GetOrFixGeneration(db11, "DB11 V8 (2016–)", "aston-db11-v8", 2016, null), 400, [
                 new EngineVersion { EngineName = "4.0 V8 Bi-Turbo 510 KM", PowerHP = 510, PowerKW = 375, Displacement = 3982, FuelTypeId = ben,
                     TorqueNm = 675, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD",
                     Cylinders = 8, Acceleration0100 = 4.0m, TopSpeedKmh = 301, FuelConsumptionCombined = 13.0m },
             ]);
-            AddEngines(GetOrCreateGeneration(db11, "DB11 V12 (2016–)", "aston-db11-v12", 2016, null), [
+            AddOrReplaceEngines(GetOrFixGeneration(db11, "DB11 V12 (2016–)", "aston-db11-v12", 2016, null), 400, [
                 new EngineVersion { EngineName = "5.2 V12 Bi-Turbo 600 KM", PowerHP = 600, PowerKW = 441, Displacement = 5204, FuelTypeId = ben,
                     TorqueNm = 700, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD",
                     Cylinders = 12, Acceleration0100 = 3.7m, TopSpeedKmh = 322, FuelConsumptionCombined = 13.8m },
@@ -273,26 +322,26 @@ public static class ComprehensiveSeeder
             ]);
 
             int dbs = GetOrCreateModel(bId, "DBS Superleggera", "aston-martin-dbs");
-            AddEngines(GetOrCreateGeneration(dbs, "DBS (2018–)", "aston-dbs-2018", 2018, null), [
+            AddOrReplaceEngines(GetOrFixGeneration(dbs, "DBS (2018–)", "aston-dbs-2018", 2018, null), 400, [
                 new EngineVersion { EngineName = "5.2 V12 Bi-Turbo 725 KM", PowerHP = 725, PowerKW = 533, Displacement = 5204, FuelTypeId = ben,
                     TorqueNm = 900, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "RWD",
                     Cylinders = 12, Acceleration0100 = 3.4m, TopSpeedKmh = 340, FuelConsumptionCombined = 14.9m },
             ]);
 
             int dbx = GetOrCreateModel(bId, "DBX", "aston-martin-dbx");
-            AddEngines(GetOrCreateGeneration(dbx, "DBX V8 (2020–)", "aston-dbx-v8", 2020, null), [
+            AddOrReplaceEngines(GetOrFixGeneration(dbx, "DBX V8 (2020–)", "aston-dbx-v8", 2020, null), 400, [
                 new EngineVersion { EngineName = "4.0 V8 Bi-Turbo 550 KM", PowerHP = 550, PowerKW = 404, Displacement = 3982, FuelTypeId = ben,
                     TorqueNm = 700, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
                     Cylinders = 8, Acceleration0100 = 4.5m, TopSpeedKmh = 291, FuelConsumptionCombined = 14.2m },
             ]);
-            AddEngines(GetOrCreateGeneration(dbx, "DBX707 (2022–)", "aston-dbx707", 2022, null), [
+            AddOrReplaceEngines(GetOrFixGeneration(dbx, "DBX707 (2022–)", "aston-dbx707", 2022, null), 400, [
                 new EngineVersion { EngineName = "4.0 V8 Bi-Turbo 707 KM", PowerHP = 707, PowerKW = 520, Displacement = 3982, FuelTypeId = ben,
                     TorqueNm = 900, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
                     Cylinders = 8, Acceleration0100 = 3.3m, TopSpeedKmh = 310, FuelConsumptionCombined = 14.8m },
             ]);
 
             int vantage = GetOrCreateModel(bId, "Vantage", "aston-martin-vantage");
-            AddEngines(GetOrCreateGeneration(vantage, "Vantage II (2018–)", "aston-vantage-ii", 2018, null), [
+            AddOrReplaceEngines(GetOrFixGeneration(vantage, "Vantage II (2018–)", "aston-vantage-ii", 2018, null), 400, [
                 new EngineVersion { EngineName = "4.0 V8 Bi-Turbo 510 KM", PowerHP = 510, PowerKW = 375, Displacement = 3982, FuelTypeId = ben,
                     TorqueNm = 685, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "RWD",
                     Cylinders = 8, Acceleration0100 = 3.7m, TopSpeedKmh = 314, FuelConsumptionCombined = 13.3m },
@@ -302,7 +351,7 @@ public static class ComprehensiveSeeder
             ]);
 
             int db12 = GetOrCreateModel(bId, "DB12", "aston-martin-db12");
-            AddEngines(GetOrCreateGeneration(db12, "DB12 (2023–)", "aston-db12-2023", 2023, null), [
+            AddOrReplaceEngines(GetOrFixGeneration(db12, "DB12 (2023–)", "aston-db12-2023", 2023, null), 400, [
                 new EngineVersion { EngineName = "4.0 V8 Bi-Turbo 680 KM", PowerHP = 680, PowerKW = 500, Displacement = 3982, FuelTypeId = ben,
                     TorqueNm = 800, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "RWD",
                     Cylinders = 8, Acceleration0100 = 3.5m, TopSpeedKmh = 325, FuelConsumptionCombined = 13.5m },
@@ -315,14 +364,14 @@ public static class ComprehensiveSeeder
             if (BrandNeedsModels(bId)) { seededModelBrandIds.Add(bId); }
 
             int m650 = GetOrCreateModel(bId, "650S", "mclaren-650s");
-            AddEngines(GetOrCreateGeneration(m650, "650S (2014–2017)", "mclaren-650s-2014", 2014, 2017), [
+            AddOrReplaceEngines(GetOrFixGeneration(m650, "650S (2014–2017)", "mclaren-650s-2014", 2014, 2017), 500, [
                 new EngineVersion { EngineName = "3.8 V8 Bi-Turbo 650 KM", PowerHP = 650, PowerKW = 478, Displacement = 3799, FuelTypeId = ben,
                     TorqueNm = 678, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "RWD",
                     Cylinders = 8, Acceleration0100 = 3.0m, TopSpeedKmh = 329, FuelConsumptionCombined = 12.8m },
             ]);
 
             int m570 = GetOrCreateModel(bId, "570S", "mclaren-570s");
-            AddEngines(GetOrCreateGeneration(m570, "Sports Series (2015–2022)", "mclaren-570s-2015", 2015, 2022), [
+            AddOrReplaceEngines(GetOrFixGeneration(m570, "Sports Series (2015–2022)", "mclaren-570s-2015", 2015, 2022), 500, [
                 new EngineVersion { EngineName = "3.8 V8 Bi-Turbo 570 KM", PowerHP = 570, PowerKW = 419, Displacement = 3799, FuelTypeId = ben,
                     TorqueNm = 600, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "RWD",
                     Cylinders = 8, Acceleration0100 = 3.2m, TopSpeedKmh = 328, FuelConsumptionCombined = 13.1m },
@@ -332,7 +381,7 @@ public static class ComprehensiveSeeder
             ]);
 
             int m720 = GetOrCreateModel(bId, "720S", "mclaren-720s");
-            AddEngines(GetOrCreateGeneration(m720, "720S (2017–2022)", "mclaren-720s-2017", 2017, 2022), [
+            AddOrReplaceEngines(GetOrFixGeneration(m720, "720S (2017–2022)", "mclaren-720s-2017", 2017, 2022), 500, [
                 new EngineVersion { EngineName = "4.0 V8 Bi-Turbo 720 KM", PowerHP = 720, PowerKW = 529, Displacement = 3994, FuelTypeId = ben,
                     TorqueNm = 770, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
                     Cylinders = 8, Acceleration0100 = 2.9m, TopSpeedKmh = 341, FuelConsumptionCombined = 13.4m },
@@ -342,14 +391,14 @@ public static class ComprehensiveSeeder
             ]);
 
             int artura = GetOrCreateModel(bId, "Artura", "mclaren-artura");
-            AddEngines(GetOrCreateGeneration(artura, "Artura (2021–)", "mclaren-artura-2021", 2021, null), [
+            AddOrReplaceEngines(GetOrFixGeneration(artura, "Artura (2021–)", "mclaren-artura-2021", 2021, null), 500, [
                 new EngineVersion { EngineName = "3.0 V6 Bi-Turbo + Hybrid 700 KM", PowerHP = 700, PowerKW = 515, Displacement = 2993, FuelTypeId = phev,
                     TorqueNm = 720, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
                     Cylinders = 6, Acceleration0100 = 3.0m, TopSpeedKmh = 330, FuelConsumptionCombined = 6.5m },
             ]);
 
             int mgt = GetOrCreateModel(bId, "GT", "mclaren-gt");
-            AddEngines(GetOrCreateGeneration(mgt, "GT (2019–)", "mclaren-gt-2019", 2019, null), [
+            AddOrReplaceEngines(GetOrFixGeneration(mgt, "GT (2019–)", "mclaren-gt-2019", 2019, null), 500, [
                 new EngineVersion { EngineName = "4.0 V8 Bi-Turbo 620 KM", PowerHP = 620, PowerKW = 456, Displacement = 3994, FuelTypeId = ben,
                     TorqueNm = 630, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
                     Cylinders = 8, Acceleration0100 = 3.2m, TopSpeedKmh = 326, FuelConsumptionCombined = 13.1m },
