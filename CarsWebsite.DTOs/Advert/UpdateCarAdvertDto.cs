@@ -48,27 +48,27 @@ public class UpdateCarAdvertDto
     [RegularExpression(@"^[A-HJ-NPR-Z0-9]{17}$", ErrorMessage = "VIN musi mieć dokładnie 17 znaków alfanumerycznych (bez liter I, O, Q).")]
     public string? Vin { get; set; }
 
-    public int? DoorCount { get; set; }
-    public int? SeatsCount { get; set; }
+    [Range(1, 10)] public int? DoorCount { get; set; }
+    [Range(1, 100)] public int? SeatsCount { get; set; }
 
     // Technical
-    public int? PowerHP { get; set; }
-    public int? PowerKW { get; set; }
-    public int? EngineSize { get; set; }
-    public int? Torque { get; set; }
-    public decimal? Acceleration { get; set; }
-    public decimal? FuelConsumptionCity { get; set; }
-    public decimal? FuelConsumptionHighway { get; set; }
-    public decimal? FuelConsumptionCombined { get; set; }
-    public int? Co2Emission { get; set; }
+    [Range(1, 5000)] public int? PowerHP { get; set; }
+    [Range(1, 4000)] public int? PowerKW { get; set; }
+    [Range(1, 100000)] public int? EngineSize { get; set; }
+    [Range(1, 5000)] public int? Torque { get; set; }
+    [Range(0, 60)] public decimal? Acceleration { get; set; }
+    [Range(0, 100)] public decimal? FuelConsumptionCity { get; set; }
+    [Range(0, 100)] public decimal? FuelConsumptionHighway { get; set; }
+    [Range(0, 100)] public decimal? FuelConsumptionCombined { get; set; }
+    [Range(0, 2000)] public int? Co2Emission { get; set; }
     [MaxLength(20)] public string? EuroNorm { get; set; }
-    public int? CurbWeight { get; set; }
-    public int? GrossWeight { get; set; }
+    [Range(100, 100000)] public int? CurbWeight { get; set; }
+    [Range(100, 200000)] public int? GrossWeight { get; set; }
 
     // Vehicle history
     public DateTime? FirstRegistrationDate { get; set; }
     [MaxLength(100)] public string? RegistrationCountry { get; set; }
-    public int? OwnersCount { get; set; }
+    [Range(0, 100)] public int? OwnersCount { get; set; }
     public bool IsImported { get; set; }
     [MaxLength(100)] public string? ImportCountry { get; set; }
     public DateTime? NextInspection { get; set; }
