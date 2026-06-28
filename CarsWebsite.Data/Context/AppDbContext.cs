@@ -366,6 +366,8 @@ namespace CarsWebsite
             modelBuilder.Entity<Payment>().HasIndex(p => p.ImojeOrderId);
             modelBuilder.Entity<User>().HasIndex(u => u.GoogleId);
             modelBuilder.Entity<User>().HasIndex(u => u.FacebookId);
+            modelBuilder.Entity<User>().HasIndex(u => u.PasswordResetToken).IsUnique();
+            modelBuilder.Entity<User>().HasIndex(u => u.EmailVerificationToken).IsUnique();
 
             // Lowercase every table name so EF Core generates lowercase SQL,
             // matching Railway Linux MySQL where tables were imported with
