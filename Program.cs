@@ -29,6 +29,16 @@ internal class Program
             WebRootPath = webRootPath
         });
 
+        // Prevent oversized requests (JSON API: 8 MB; multipart/form uploads handled separately)
+        builder.WebHost.ConfigureKestrel(kestrel =>
+        {
+            kestrel.Limits.MaxRequestBodySize = 8 * 1024 * 1024; // 8 MB
+        });
+        builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(opts =>
+        {
+            opts.MultipartBodyLengthLimit = 26 * 1024 * 1024; // 26 MB for image/PDF uploads
+        });
+
         // Prefer Railway-injected MySQL env vars (always correct) over manually set connection string
         var mysqlHost = Environment.GetEnvironmentVariable("MYSQLHOST");
         var mysqlPass = Environment.GetEnvironmentVariable("MYSQLPASSWORD");
