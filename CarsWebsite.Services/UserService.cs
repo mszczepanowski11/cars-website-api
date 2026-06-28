@@ -188,6 +188,8 @@ public class UserService : IUserService
         var user = await _context.Users.FindAsync(userId)
             ?? throw new KeyNotFoundException("User not found.");
 
+        var originalEmail = user.Email;
+
         // RODO: anonymize instead of hard delete to preserve referential integrity
         user.Email = $"deleted_{userId}_{Guid.NewGuid():N}@carizo.deleted";
         user.Name = "Usunięty";
@@ -258,6 +260,12 @@ public class UserService : IUserService
                 .ToListAsync();
             _context.Conversations.RemoveRange(conversations);
         }
+
+        // GDPR: remove newsletter subscriptions (original email must not persist)
+        var newsletterSub = await _context.NewsletterSubscribers
+            .Where(n => n.Email == originalEmail)
+            .ToListAsync();
+        _context.NewsletterSubscribers.RemoveRange(newsletterSub);
 
         await _context.SaveChangesAsync();
     }
