@@ -381,8 +381,32 @@ internal class Program
                 "`WorkingWidthCm` int NULL",
                 "`MaxDiggingDepthM` decimal(5,2) NULL",
                 "`BucketCapacityL` int NULL",
-                "`TankCapacityL` int NULL" })
+                "`TankCapacityL` int NULL",
+                // Premium advert fields (migrations AddPremiumAdvertFields / AddPdfBrochureUrl).
+                // Added here too because the migration history bootstrap can mark these as
+                // already-applied, so MigrateAsync skips them and the columns never get created.
+                "`RegistrationPlate` varchar(20) NULL",
+                "`HasVatInvoice` tinyint(1) NOT NULL DEFAULT 0",
+                "`IsLeasingPossible` tinyint(1) NOT NULL DEFAULT 0",
+                "`IsCreditPossible` tinyint(1) NOT NULL DEFAULT 0",
+                "`IsExchangePossible` tinyint(1) NOT NULL DEFAULT 0",
+                "`GearCount` int NULL",
+                "`MetallicPaint` tinyint(1) NOT NULL DEFAULT 0",
+                "`MaxTrailerWeight` int NULL",
+                "`IsFirstOwner` tinyint(1) NOT NULL DEFAULT 0",
+                "`IsServicedAtASO` tinyint(1) NOT NULL DEFAULT 0",
+                "`IsGaraged` tinyint(1) NOT NULL DEFAULT 0",
+                "`KeyCount` int NULL",
+                "`InsuranceUntil` datetime(6) NULL",
+                "`YoutubeUrl` varchar(500) NULL",
+                "`PdfBrochureUrl` varchar(1000) NULL" })
             { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `caradverts` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] caradverts.{Col}: {Msg}", colDef, ex.Message); } }
+
+            // Conversation pin/archive (migration AddConversationPinArchive) — same bootstrap risk.
+            foreach (var colDef in new[] {
+                "`IsPinned` tinyint(1) NOT NULL DEFAULT 0",
+                "`IsArchived` tinyint(1) NOT NULL DEFAULT 0" })
+            { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `conversations` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] conversations.{Col}: {Msg}", colDef, ex.Message); } }
 
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `vehiclesubtypes` ADD COLUMN `Slug` varchar(100) NULL"); }
             catch (Exception ex) { logger.LogDebug("[Schema] vehiclesubtypes.Slug: {Msg}", ex.Message); }
