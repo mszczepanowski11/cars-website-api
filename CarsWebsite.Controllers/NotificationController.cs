@@ -74,9 +74,9 @@ public class NotificationController : ControllerBase
     public async Task<IActionResult> MarkAllAsRead()
     {
         var uid = UserId;
-        var unread = await _context.AppNotifications.Where(n => n.UserId == uid && !n.IsRead).ToListAsync();
-        unread.ForEach(n => n.IsRead = true);
-        await _context.SaveChangesAsync();
+        await _context.AppNotifications
+            .Where(n => n.UserId == uid && !n.IsRead)
+            .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true));
         return NoContent();
     }
 

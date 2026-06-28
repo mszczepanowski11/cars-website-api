@@ -127,6 +127,7 @@ public class EventService : IEventService
 
     public async Task<PagedResult<EventResponseDto>> GetPublishedEventsAsync(string? search, int page, int pageSize)
     {
+        page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
         var baseQuery = _context.Events
             .AsNoTracking()
@@ -175,11 +176,8 @@ public class EventService : IEventService
             .FirstOrDefaultAsync(e => e.Id == id && e.Status == EventStatus.Published);
         if (e == null) return null;
 
-        var attendingTask = _context.EventAttendees.AsNoTracking().CountAsync(a => a.EventId == id);
-        var interestedTask = _context.EventFavourites.AsNoTracking().CountAsync(f => f.EventId == id);
-        await Task.WhenAll(attendingTask, interestedTask);
-        var attending = attendingTask.Result;
-        var interested = interestedTask.Result;
+        var attending = await _context.EventAttendees.AsNoTracking().CountAsync(a => a.EventId == id);
+        var interested = await _context.EventFavourites.AsNoTracking().CountAsync(f => f.EventId == id);
 
         return MapToDto(e, attending, interested);
     }
@@ -256,6 +254,9 @@ public class EventService : IEventService
 
     public async Task<PagedResult<AdminEventDto>> GetAdminEventsAsync(AdminEventFilterDto filter)
     {
+        filter.Page = Math.Max(1, filter.Page);
+        filter.PageSize = Math.Clamp(filter.PageSize, 1, 100);
+        if (filter.Search?.Length > 100) filter.Search = filter.Search[..100];
         var query = _context.Events
             .AsNoTracking()
             .Include(e => e.CreatedBy)
@@ -433,6 +434,8 @@ public class EventService : IEventService
 
     public async Task<PagedResult<EventResponseDto>> GetMyEventsAsync(int userId, int page, int pageSize)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
         var baseQuery = _context.Events
             .AsNoTracking()
             .Where(e => e.CreatedByUserId == userId)
