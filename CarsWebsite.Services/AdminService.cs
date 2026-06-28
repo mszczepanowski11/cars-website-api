@@ -5,6 +5,7 @@ using CarsWebsite;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace cars_website_api.CarsWebsite.Services
 {
@@ -12,15 +13,21 @@ namespace cars_website_api.CarsWebsite.Services
     {
         private readonly AppDbContext _context;
         private readonly Cloudinary _cloudinary;
+        private readonly IMemoryCache _cache;
 
-        public AdminService(AppDbContext context, Cloudinary cloudinary)
+        public AdminService(AppDbContext context, Cloudinary cloudinary, IMemoryCache cache)
         {
             _context = context;
             _cloudinary = cloudinary;
+            _cache = cache;
         }
 
         public async Task<AdminStatsDto> GetStatsAsync()
         {
+            const string cacheKey = "admin:stats";
+            if (_cache.TryGetValue(cacheKey, out AdminStatsDto? cached) && cached != null)
+                return cached;
+
             var now = DateTime.UtcNow;
             var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
             var monthEnd = monthStart.AddMonths(1);
@@ -32,7 +39,7 @@ namespace cars_website_api.CarsWebsite.Services
             var newRegistrations   = await _context.Users.AsNoTracking().CountAsync(u => u.CreatedAt >= monthStart && u.CreatedAt < monthEnd);
             var blockedUsers       = await _context.Users.AsNoTracking().CountAsync(u => u.IsBlocked);
 
-            return new AdminStatsDto
+            var result = new AdminStatsDto
             {
                 TotalActiveAdverts = activeAdverts,
                 TotalUsers = totalUsers,
@@ -41,6 +48,9 @@ namespace cars_website_api.CarsWebsite.Services
                 NewRegistrationsThisMonth = newRegistrations,
                 BlockedUsers = blockedUsers
             };
+
+            _cache.Set(cacheKey, result, TimeSpan.FromMinutes(5));
+            return result;
         }
 
         public async Task<PagedResult<ReportResponseDto>> GetReportsAsync(AdminReportFilterDto filter)
