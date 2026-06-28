@@ -103,10 +103,12 @@ namespace cars_website_api.CarsWebsite.Controllers
             => Ok(await _taxonomyService.GetVehicleCategoriesAsync());
 
         [HttpGet("feature-categories")]
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetFeatureCategories()
             => Ok(await _taxonomyService.GetFeatureCategoriesAsync());
 
         [HttpGet("feature-categories/by-vehicle/{vehicleCategoryId}")]
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetFeatureCategoriesByVehicle(int vehicleCategoryId)
         {
             var categories = await _taxonomyService.GetFeatureCategoriesByVehicleCategoryAsync(vehicleCategoryId);
@@ -114,6 +116,7 @@ namespace cars_website_api.CarsWebsite.Controllers
         }
 
         [HttpGet("feature-categories/by-context")]
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any, VaryByQueryKeys = new[] { "vehicleCategoryId", "brandId", "modelId" })]
         public async Task<IActionResult> GetFeatureCategoriesByContext(
             [FromQuery] int? vehicleCategoryId,
             [FromQuery] int? brandId,
@@ -124,6 +127,7 @@ namespace cars_website_api.CarsWebsite.Controllers
         }
 
         [HttpGet("trims/generation/{generationId}")]
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetTrimsByGeneration(int generationId)
         {
             var trims = await _taxonomyService.GetTrimsByGenerationAsync(generationId);
@@ -131,6 +135,7 @@ namespace cars_website_api.CarsWebsite.Controllers
         }
 
         [HttpGet("engines/trim/{trimId}")]
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetEnginesByTrim(int trimId)
         {
             var engines = await _taxonomyService.GetEnginesByTrimAsync(trimId);
@@ -138,6 +143,7 @@ namespace cars_website_api.CarsWebsite.Controllers
         }
 
         [HttpGet("engines/{engineVersionId}/specs")]
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetEngineSpecs(int engineVersionId)
         {
             var specs = await _taxonomyService.GetEngineSpecsAsync(engineVersionId);
@@ -146,6 +152,7 @@ namespace cars_website_api.CarsWebsite.Controllers
         }
 
         [HttpGet("vehicle-subtypes/category/{vehicleCategoryId}")]
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetVehicleSubtypesByCategory(int vehicleCategoryId)
         {
             var subtypes = await _taxonomyService.GetVehicleSubtypesByCategoryAsync(vehicleCategoryId);
@@ -153,6 +160,7 @@ namespace cars_website_api.CarsWebsite.Controllers
         }
 
         [HttpGet("part-categories")]
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetPartCategories()
         {
             var categories = await _taxonomyService.GetPartCategoriesAsync();
@@ -160,6 +168,7 @@ namespace cars_website_api.CarsWebsite.Controllers
         }
 
         [HttpGet("part-subcategories/category/{partCategoryId}")]
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetPartSubcategoriesByCategory(int partCategoryId)
         {
             var subcategories = await _taxonomyService.GetPartSubcategoriesByCategoryAsync(partCategoryId);
