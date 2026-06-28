@@ -52,7 +52,7 @@ public class AdvertController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var result = await _advertService.SearchCarAdvertsAsync(new SearchCarAdvertDto { Page = page, PageSize = pageSize });
+        var result = await _advertService.SearchCarAdvertsAsync(new SearchCarAdvertDto { Page = Math.Max(1, page), PageSize = Math.Clamp(pageSize, 1, 100) });
         return Ok(result);
     }
 
@@ -68,6 +68,8 @@ public class AdvertController : ControllerBase
     [HttpGet("vin/{vin}")]
     public async Task<IActionResult> GetByVin(string vin)
     {
+        if (vin.Length != 17 || !System.Text.RegularExpressions.Regex.IsMatch(vin, @"^[A-HJ-NPR-Z0-9]{17}$", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+            return BadRequest(new { message = "Nieprawidłowy numer VIN." });
         var advert = await _advertService.GetByVinAsync(vin);
         if (advert == null) return NotFound();
         return Ok(advert);
