@@ -339,6 +339,8 @@ namespace CarsWebsite
                 .HasIndex(a => a.Badge);
             modelBuilder.Entity<Conversation>()
                 .HasIndex(c => new { c.BuyerId, c.LastMessageAt });
+            modelBuilder.Entity<Conversation>()
+                .HasIndex(c => new { c.SellerId, c.LastMessageAt });
             modelBuilder.Entity<Message>()
                 .HasIndex(m => new { m.ConversationId, m.IsRead });
             modelBuilder.Entity<AppNotification>()
