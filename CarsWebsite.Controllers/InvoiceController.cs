@@ -38,6 +38,8 @@ public class InvoiceController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
         return Ok(await _invoiceService.GetUserInvoicesAsync(GetUserId(), page, pageSize));
     }
 
@@ -82,7 +84,11 @@ public class InvoiceController : ControllerBase
     public async Task<IActionResult> AdminGetAll(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50)
-        => Ok(await _invoiceService.GetAllInvoicesAsync(page, pageSize));
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        return Ok(await _invoiceService.GetAllInvoicesAsync(page, pageSize));
+    }
 
     [HttpPost("admin/generate")]
     [Authorize(Policy = "AdminOnly")]

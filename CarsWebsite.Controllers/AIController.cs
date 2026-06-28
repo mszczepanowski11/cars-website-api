@@ -126,6 +126,7 @@ public class AIController : ControllerBase
 
     // POST /api/ai/analyze — analyze advert quality
     [HttpPost("analyze")]
+    [Authorize]
     public IActionResult AnalyzeQuality([FromBody] AnalyzeQualityDto dto)
     {
         var issues = new List<string>();

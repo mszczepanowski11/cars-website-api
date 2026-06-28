@@ -131,8 +131,8 @@ public class UserService : IUserService
 
     public async Task UpdatePasswordAsync(int userId, string currentPassword, string newPassword)
     {
-        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 8)
-            throw new ArgumentException("Hasło musi mieć co najmniej 8 znaków.");
+        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 8 || newPassword.Length > 128)
+            throw new ArgumentException("Hasło musi mieć od 8 do 128 znaków.");
 
         var user = await _context.Users.FindAsync(userId)
             ?? throw new KeyNotFoundException("User not found.");
