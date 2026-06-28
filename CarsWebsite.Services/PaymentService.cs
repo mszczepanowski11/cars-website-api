@@ -224,6 +224,8 @@ public class PaymentService : IPaymentService
 
     public async Task<PagedResult<PaymentResponseDto>> GetUserPaymentsAsync(int userId, int page, int pageSize)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
         var query = _context.Payments
             .AsNoTracking()
             .Where(p => p.UserId == userId)
@@ -241,6 +243,8 @@ public class PaymentService : IPaymentService
 
     public async Task<PagedResult<PaymentResponseDto>> GetAllPaymentsAsync(int page, int pageSize)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
         var query = _context.Payments
             .AsNoTracking()
             .Include(p => p.User)
