@@ -83,15 +83,20 @@ public class MessageService : IMessageService
         var convIds = convs.Select(c => c.Id).ToList();
         var advertIds = convs.Select(c => c.AdvertId).Distinct().ToList();
 
-        // GroupBy + Max(Id) is translatable by Pomelo/MySQL; fetch full rows by Id in a second query.
-        var lastMessageIdsTask = _context.Messages
+        // Sequential queries — EF Core DbContext does not support concurrent operations.
+        var lastMessageIds = await _context.Messages
             .AsNoTracking()
             .Where(m => convIds.Contains(m.ConversationId))
             .GroupBy(m => m.ConversationId)
             .Select(g => g.Max(m => m.Id))
             .ToListAsync();
 
-        var unreadCountsTask = _context.Messages
+        var lastMessages = await _context.Messages
+            .AsNoTracking()
+            .Where(m => lastMessageIds.Contains(m.Id))
+            .ToListAsync();
+
+        var unreadCounts = await _context.Messages
             .AsNoTracking()
             .Where(m => convIds.Contains(m.ConversationId) && m.SenderId != userId && !m.IsRead)
             .GroupBy(m => m.ConversationId)
@@ -99,22 +104,10 @@ public class MessageService : IMessageService
             .ToDictionaryAsync(x => x.ConvId, x => x.Count);
 
         // Fetch all images for these adverts, then pick the main (or first) per advert client-side.
-        var allImagesTask = _context.AdvertImages
+        var allImages = await _context.AdvertImages
             .AsNoTracking()
             .Where(img => advertIds.Contains(img.AdvertId))
             .ToListAsync();
-
-        var lastMessageIds = await lastMessageIdsTask;
-
-        var lastMessagesTask = _context.Messages
-            .AsNoTracking()
-            .Where(m => lastMessageIds.Contains(m.Id))
-            .ToListAsync();
-
-        await Task.WhenAll(lastMessagesTask, unreadCountsTask, allImagesTask);
-        var lastMessages = lastMessagesTask.Result;
-        var unreadCounts = unreadCountsTask.Result;
-        var allImages = allImagesTask.Result;
 
         var thumbnails = allImages
             .GroupBy(img => img.AdvertId)
@@ -132,9 +125,9 @@ public class MessageService : IMessageService
             {
                 Id = c.Id,
                 BuyerId = c.BuyerId,
-                BuyerName = $"{c.Buyer.Name} {c.Buyer.Surname}",
+                BuyerName = c.Buyer != null ? $"{c.Buyer.Name} {c.Buyer.Surname}" : "(Użytkownik usunięty)",
                 SellerId = c.SellerId,
-                SellerName = $"{c.Seller.Name} {c.Seller.Surname}",
+                SellerName = c.Seller != null ? $"{c.Seller.Name} {c.Seller.Surname}" : "(Użytkownik usunięty)",
                 AdvertId = c.AdvertId,
                 AdvertTitle = c.Advert?.Title ?? "(Ogłoszenie usunięte)",
                 AdvertThumbnail = thumbnails.GetValueOrDefault(c.AdvertId),
@@ -142,9 +135,9 @@ public class MessageService : IMessageService
                 LastMessageContent = last?.Content,
                 LastMessageIsMine = last?.SenderId == userId,
                 UnreadCount = unreadCounts.GetValueOrDefault(c.Id, 0),
-                OtherUserId = other.Id,
-                OtherUserName = $"{other.Name} {other.Surname}",
-                OtherUserAvatar = other.AvatarUrl,
+                OtherUserId = other?.Id ?? 0,
+                OtherUserName = other != null ? $"{other.Name} {other.Surname}" : "(Użytkownik usunięty)",
+                OtherUserAvatar = other?.AvatarUrl,
                 IsPinned = c.IsPinned,
                 IsArchived = c.IsArchived
             };
