@@ -58,14 +58,13 @@ public class FavoriteService : IFavoriteService
             .Where(a => favoriteIds.Contains(a.Id))
             .OrderByDescending(a => a.CreatedAt);
 
-        var totalTask = query.CountAsync();
-        var itemsTask = query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-        await Task.WhenAll(totalTask, itemsTask);
+        var total = await query.CountAsync();
+        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
         return new PagedResult<CarAdvertResponseDto>
         {
-            Items = _mapper.Map<List<CarAdvertResponseDto>>(itemsTask.Result),
-            TotalCount = totalTask.Result
+            Items = _mapper.Map<List<CarAdvertResponseDto>>(items),
+            TotalCount = total
         };
     }
 

@@ -228,14 +228,13 @@ public class PaymentService : IPaymentService
             .Where(p => p.UserId == userId)
             .OrderByDescending(p => p.CreatedAt);
 
-        var totalTask = query.CountAsync();
-        var itemsTask = query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-        await Task.WhenAll(totalTask, itemsTask);
+        var total = await query.CountAsync();
+        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
         return new PagedResult<PaymentResponseDto>
         {
-            Items = itemsTask.Result.Select(MapToDto).ToList(),
-            TotalCount = totalTask.Result
+            Items = items.Select(MapToDto).ToList(),
+            TotalCount = total
         };
     }
 
@@ -246,14 +245,13 @@ public class PaymentService : IPaymentService
             .Include(p => p.User)
             .OrderByDescending(p => p.CreatedAt);
 
-        var totalTask = query.CountAsync();
-        var itemsTask = query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-        await Task.WhenAll(totalTask, itemsTask);
+        var total = await query.CountAsync();
+        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
         return new PagedResult<PaymentResponseDto>
         {
-            Items = itemsTask.Result.Select(MapToDto).ToList(),
-            TotalCount = totalTask.Result
+            Items = items.Select(MapToDto).ToList(),
+            TotalCount = total
         };
     }
 

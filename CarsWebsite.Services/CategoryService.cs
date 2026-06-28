@@ -12,21 +12,17 @@ public class CategoryService: ICategoryService
     
     public async Task<List<CategoryWithCountDto>> GetCategoriesWithCountsAsync()
     {
-        var categoriesTask = _context.VehicleCategories
+        var categories = await _context.VehicleCategories
             .AsNoTracking()
             .OrderBy(c => c.SortOrder)
             .ToListAsync();
 
-        var countsTask = _context.CarAdverts
+        var counts = await _context.CarAdverts
             .AsNoTracking()
             .Where(a => a.IsActive && !a.IsHidden)
             .GroupBy(a => a.VehicleCategoryId)
             .Select(g => new { CategoryId = g.Key, Count = g.Count() })
             .ToListAsync();
-
-        await Task.WhenAll(categoriesTask, countsTask);
-        var categories = categoriesTask.Result;
-        var counts = countsTask.Result;
 
         return categories.Select(c => new CategoryWithCountDto
         {

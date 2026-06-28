@@ -135,14 +135,13 @@ public class InvoiceService : IInvoiceService
             .Where(i => i.UserId == userId)
             .OrderByDescending(i => i.Year).ThenByDescending(i => i.Month);
 
-        var totalTask = query.CountAsync();
-        var itemsTask = query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-        await Task.WhenAll(totalTask, itemsTask);
+        var total = await query.CountAsync();
+        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
         return new PagedResult<InvoiceResponseDto>
         {
-            Items = itemsTask.Result.Select(MapToDto).ToList(),
-            TotalCount = totalTask.Result
+            Items = items.Select(MapToDto).ToList(),
+            TotalCount = total
         };
     }
 
@@ -576,14 +575,13 @@ public class InvoiceService : IInvoiceService
             .Include(i => i.User)
             .OrderByDescending(i => i.GeneratedAt);
 
-        var totalTask = query.CountAsync();
-        var itemsTask = query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-        await Task.WhenAll(totalTask, itemsTask);
+        var total = await query.CountAsync();
+        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
         return new PagedResult<InvoiceResponseDto>
         {
-            Items = itemsTask.Result.Select(MapToDto).ToList(),
-            TotalCount = totalTask.Result
+            Items = items.Select(MapToDto).ToList(),
+            TotalCount = total
         };
     }
 

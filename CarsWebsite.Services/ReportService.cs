@@ -48,11 +48,8 @@ namespace cars_website_api.CarsWebsite.Services
                 .Where(r => r.ReportedByUserId == userId)
                 .OrderByDescending(r => r.ReportedAt);
 
-            var totalTask = query.CountAsync();
-            var itemsTask = query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-            await Task.WhenAll(totalTask, itemsTask);
-            var totalCount = totalTask.Result;
-            var items = itemsTask.Result;
+            var totalCount = await query.CountAsync();
+            var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
             return new PagedResult<ReportResponseDto>
             {

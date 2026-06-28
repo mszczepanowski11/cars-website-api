@@ -19,13 +19,11 @@ public class ReviewService : IReviewService
     {
         pageSize = Math.Clamp(pageSize, 1, 100);
         var query = _context.Reviews.AsNoTracking().Where(r => r.SellerId == sellerId);
-        var totalTask = query.CountAsync();
-        var reviewsTask = query.OrderByDescending(r => r.CreatedAt)
+        var total = await query.CountAsync();
+        var reviews = await query.OrderByDescending(r => r.CreatedAt)
             .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-        await Task.WhenAll(totalTask, reviewsTask);
-        var total = totalTask.Result;
         var avg = total > 0 ? await query.AverageAsync(r => (double)r.Rating) : 0.0;
-        var items = await EnrichReviewsAsync(reviewsTask.Result);
+        var items = await EnrichReviewsAsync(reviews);
         return new ReviewsResultDto { Items = items, TotalCount = total, AverageRating = Math.Round(avg, 2) };
     }
 
@@ -36,12 +34,9 @@ public class ReviewService : IReviewService
     {
         pageSize = Math.Clamp(pageSize, 1, 100);
         var query = _context.Reviews.AsNoTracking().Where(r => r.BuyerId == userId);
-        var totalTask = query.CountAsync();
-        var reviewsTask = query.OrderByDescending(r => r.CreatedAt)
+        var total = await query.CountAsync();
+        var reviews = await query.OrderByDescending(r => r.CreatedAt)
             .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-        await Task.WhenAll(totalTask, reviewsTask);
-        var total = totalTask.Result;
-        var reviews = reviewsTask.Result;
         var items = await EnrichReviewsAsync(reviews);
         return new PagedReviewResultDto { Items = items, TotalCount = total };
     }

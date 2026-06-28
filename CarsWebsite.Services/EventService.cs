@@ -138,18 +138,16 @@ public class EventService : IEventService
 
         baseQuery = baseQuery.OrderBy(e => e.StartDate);
 
-        var totalTask = baseQuery.CountAsync();
-        var itemsTask = baseQuery
+        var total = await baseQuery.CountAsync();
+        var items = await baseQuery
             .Include(e => e.Images)
             .Include(e => e.CreatedBy)
             .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
-        await Task.WhenAll(totalTask, itemsTask);
-
         return new PagedResult<EventResponseDto>
         {
-            Items = itemsTask.Result.Select(e => MapToDto(e)).ToList(),
-            TotalCount = totalTask.Result
+            Items = items.Select(e => MapToDto(e)).ToList(),
+            TotalCount = total
         };
     }
 
@@ -170,20 +168,17 @@ public class EventService : IEventService
 
     public async Task<EventResponseDto?> GetEventByIdAsync(int id)
     {
-        var eventTask = _context.Events
+        var e = await _context.Events
             .AsNoTracking()
             .Include(e => e.Images)
             .Include(e => e.CreatedBy)
             .FirstOrDefaultAsync(e => e.Id == id && e.Status == EventStatus.Published);
-        var attendingTask = _context.EventAttendees.AsNoTracking().CountAsync(a => a.EventId == id);
-        var interestedTask = _context.EventFavourites.AsNoTracking().CountAsync(f => f.EventId == id);
-
-        await Task.WhenAll(eventTask, attendingTask, interestedTask);
-
-        var e = eventTask.Result;
         if (e == null) return null;
 
-        return MapToDto(e, attendingTask.Result, interestedTask.Result);
+        var attending = await _context.EventAttendees.AsNoTracking().CountAsync(a => a.EventId == id);
+        var interested = await _context.EventFavourites.AsNoTracking().CountAsync(f => f.EventId == id);
+
+        return MapToDto(e, attending, interested);
     }
 
     public async Task<EventResponseDto> CreateEventAsync(CreateEventDto dto, int userId, IFormFile? mainImage, List<IFormFile>? galleryImages)
@@ -440,18 +435,16 @@ public class EventService : IEventService
             .Where(e => e.CreatedByUserId == userId)
             .OrderByDescending(e => e.CreatedAt);
 
-        var totalTask = baseQuery.CountAsync();
-        var itemsTask = baseQuery
+        var total = await baseQuery.CountAsync();
+        var items = await baseQuery
             .Include(e => e.Images)
             .Include(e => e.CreatedBy)
             .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
-        await Task.WhenAll(totalTask, itemsTask);
-
         return new PagedResult<EventResponseDto>
         {
-            Items = itemsTask.Result.Select(e => MapToDto(e)).ToList(),
-            TotalCount = totalTask.Result
+            Items = items.Select(e => MapToDto(e)).ToList(),
+            TotalCount = total
         };
     }
 }

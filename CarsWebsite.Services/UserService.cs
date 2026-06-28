@@ -292,37 +292,30 @@ public class UserService : IUserService
             .FirstOrDefaultAsync(u => u.Id == userId)
             ?? throw new KeyNotFoundException("Użytkownik nie istnieje.");
 
-        var advertsTask = _context.CarAdverts
+        var adverts = await _context.CarAdverts
             .AsNoTracking()
             .Where(a => a.UserId == userId)
             .Select(a => new { a.Id, a.Title, a.Price, a.CreatedAt, a.IsActive })
             .ToListAsync();
 
-        var favoritesTask = _context.FavoriteAdverts
+        var favorites = await _context.FavoriteAdverts
             .AsNoTracking()
             .Where(f => f.UserId == userId)
             .Select(f => new { f.AdvertId, f.CreatedAt })
             .ToListAsync();
 
-        var sentMessagesTask = _context.Messages
+        var sentMessages = await _context.Messages
             .AsNoTracking()
             .Where(m => m.SenderId == userId)
             .Select(m => new { m.Id, m.Content, m.SentAt, m.ConversationId })
             .ToListAsync();
 
-        var receivedMessagesTask = _context.Messages
+        var receivedMessages = await _context.Messages
             .AsNoTracking()
             .Where(m => m.SenderId != userId && _context.Conversations
                 .Any(c => c.Id == m.ConversationId && (c.BuyerId == userId || c.SellerId == userId)))
             .Select(m => new { m.Id, m.Content, m.SentAt, m.ConversationId, m.SenderId })
             .ToListAsync();
-
-        await Task.WhenAll(advertsTask, favoritesTask, sentMessagesTask, receivedMessagesTask);
-
-        var adverts = advertsTask.Result;
-        var favorites = favoritesTask.Result;
-        var sentMessages = sentMessagesTask.Result;
-        var receivedMessages = receivedMessagesTask.Result;
 
         return new
         {
