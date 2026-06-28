@@ -569,6 +569,8 @@ public class InvoiceService : IInvoiceService
 
     public async Task<PagedResult<InvoiceResponseDto>> GetAllInvoicesAsync(int page, int pageSize)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
         var query = _context.Invoices
             .AsNoTracking()
             .Include(i => i.Payments)

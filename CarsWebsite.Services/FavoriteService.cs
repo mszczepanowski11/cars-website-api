@@ -40,6 +40,7 @@ public class FavoriteService : IFavoriteService
 
     public async Task<PagedResult<CarAdvertResponseDto>> GetUserFavoritesAsync(int userId, int page, int pageSize)
     {
+        page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
         var favoriteIds = await _context.FavoriteAdverts
             .AsNoTracking()

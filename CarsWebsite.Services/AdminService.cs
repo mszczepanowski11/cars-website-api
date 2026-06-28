@@ -241,6 +241,7 @@ namespace cars_website_api.CarsWebsite.Services
 
         public async Task<PagedResult<AdminUserDto>> GetUsersAsync(string? search, string? accountType, bool? isBlocked, int page, int pageSize)
         {
+            page = Math.Max(1, page);
             pageSize = Math.Clamp(pageSize, 1, 100);
             var query = _context.Users.AsNoTracking().Include(u => u.Adverts).AsQueryable();
 
@@ -273,6 +274,7 @@ namespace cars_website_api.CarsWebsite.Services
 
         public async Task<PagedResult<AdminAdvertDto>> GetAdvertsAsync(string? search, bool? isHidden, bool? isActive, int page, int pageSize)
         {
+            page = Math.Max(1, page);
             pageSize = Math.Clamp(pageSize, 1, 100);
             var query = _context.CarAdverts
                 .AsNoTracking()
@@ -315,6 +317,7 @@ namespace cars_website_api.CarsWebsite.Services
 
         public async Task<List<AdminActionLogDto>> GetActionLogsAsync(int page, int pageSize)
         {
+            page = Math.Max(1, page);
             pageSize = Math.Clamp(pageSize, 1, 100);
             var logs = await _context.AdminActionLogs
                 .AsNoTracking()

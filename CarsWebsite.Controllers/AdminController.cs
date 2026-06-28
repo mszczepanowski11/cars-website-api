@@ -410,6 +410,7 @@ public class AdminController : ControllerBase
     [HttpGet("brands")]
     public async Task<IActionResult> GetAdminBrands([FromQuery][MaxLength(100)] string? search, [FromQuery] int? categoryId, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
     {
+        page = Math.Max(1, page); pageSize = Math.Clamp(pageSize, 1, 200);
         var q = _db.Brands.AsNoTracking().Include(b => b.Categories).Include(b => b.Models).AsQueryable();
         if (!string.IsNullOrWhiteSpace(search))
             q = q.Where(b => b.Name.Contains(search) || b.Slug.Contains(search));
@@ -474,6 +475,7 @@ public class AdminController : ControllerBase
     [HttpGet("models")]
     public async Task<IActionResult> GetAdminModels([FromQuery] int? brandId, [FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
     {
+        page = Math.Max(1, page); pageSize = Math.Clamp(pageSize, 1, 200);
         var q = _db.Models.Include(m => m.Brand).Include(m => m.Generations).AsQueryable();
         if (brandId.HasValue) q = q.Where(m => m.BrandId == brandId.Value);
         if (!string.IsNullOrWhiteSpace(search)) q = q.Where(m => m.Name.Contains(search));
@@ -526,6 +528,7 @@ public class AdminController : ControllerBase
     [HttpGet("generations")]
     public async Task<IActionResult> GetAdminGenerations([FromQuery] int? modelId, [FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
     {
+        page = Math.Max(1, page); pageSize = Math.Clamp(pageSize, 1, 200);
         var q = _db.Generations.Include(g => g.Model).ThenInclude(m => m.Brand).Include(g => g.EngineVersions).AsQueryable();
         if (modelId.HasValue) q = q.Where(g => g.ModelId == modelId.Value);
         if (!string.IsNullOrWhiteSpace(search)) q = q.Where(g => g.Name.Contains(search));
@@ -580,6 +583,7 @@ public class AdminController : ControllerBase
     [HttpGet("engines")]
     public async Task<IActionResult> GetAdminEngines([FromQuery] int? generationId, [FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
     {
+        page = Math.Max(1, page); pageSize = Math.Clamp(pageSize, 1, 200);
         var q = _db.EngineVersions
             .Include(e => e.Generation).ThenInclude(g => g.Model).ThenInclude(m => m.Brand)
             .Include(e => e.FuelType).AsQueryable();
