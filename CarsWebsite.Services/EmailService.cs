@@ -62,10 +62,22 @@ public class EmailService : IEmailService
             message.Headers.Add("X-Mailer", "CARIZO Mailer 1.0");
 
             using var client = new SmtpClient();
-            // Auto detects: port 465 → SSL, port 587 → STARTTLS, port 25 → plain
-            await client.ConnectAsync(host, port, SecureSocketOptions.Auto);
+            // Fail fast instead of hanging when the SMTP port is blocked (e.g. PaaS egress
+            // filtering). Without this, ConnectAsync can block until the OS socket timeout,
+            // so neither success nor failure is ever logged.
+            client.Timeout = 30_000; // 30s
+
+            // Port 465 → implicit SSL; 587 → STARTTLS; anything else → Auto-detect.
+            var secureOptions = port == 465
+                ? SecureSocketOptions.SslOnConnect
+                : port == 587 ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto;
+
+            _logger.LogInformation("[Email] Connecting to {Host}:{Port} ({Tls})", host, port, secureOptions);
+            await client.ConnectAsync(host, port, secureOptions);
+            _logger.LogInformation("[Email] Connected; authenticating as {User}", user);
             if (!string.IsNullOrEmpty(user))
                 await client.AuthenticateAsync(user, password);
+            _logger.LogInformation("[Email] Authenticated; sending message");
             await client.SendAsync(message);
             await client.DisconnectAsync(true);
             _logger.LogInformation("[Email] Sent successfully to {To}", to);
