@@ -175,8 +175,11 @@ public class EventService : IEventService
             .FirstOrDefaultAsync(e => e.Id == id && e.Status == EventStatus.Published);
         if (e == null) return null;
 
-        var attending = await _context.EventAttendees.AsNoTracking().CountAsync(a => a.EventId == id);
-        var interested = await _context.EventFavourites.AsNoTracking().CountAsync(f => f.EventId == id);
+        var attendingTask = _context.EventAttendees.AsNoTracking().CountAsync(a => a.EventId == id);
+        var interestedTask = _context.EventFavourites.AsNoTracking().CountAsync(f => f.EventId == id);
+        await Task.WhenAll(attendingTask, interestedTask);
+        var attending = attendingTask.Result;
+        var interested = interestedTask.Result;
 
         return MapToDto(e, attending, interested);
     }
