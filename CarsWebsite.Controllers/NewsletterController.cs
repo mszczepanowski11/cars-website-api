@@ -84,6 +84,7 @@ public class NewsletterController : ControllerBase
     }
 
     [HttpGet("confirm")]
+    [EnableRateLimiting("strict")]
     public async Task<IActionResult> Confirm([FromQuery] string token)
     {
         if (string.IsNullOrWhiteSpace(token))

@@ -122,6 +122,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpGet("verify-email")]
+    [EnableRateLimiting("strict")]
     public async Task<IActionResult> VerifyEmail([FromQuery] string token)
     {
         var ok = await _authService.VerifyEmailAsync(token);
