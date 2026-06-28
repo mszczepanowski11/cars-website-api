@@ -165,7 +165,7 @@ public class MessageService : IMessageService
         {
             Id = m.Id,
             SenderId = m.SenderId,
-            SenderName = $"{m.Sender.Name} {m.Sender.Surname}",
+            SenderName = m.Sender != null ? $"{m.Sender.Name} {m.Sender.Surname}" : "(Użytkownik usunięty)",
             Content = m.Content,
             SentAt = m.SentAt,
             IsRead = m.IsRead,
@@ -195,19 +195,22 @@ public class MessageService : IMessageService
         conv.LastMessageAt = msg.SentAt;
         await _context.SaveChangesAsync();
 
-        var sender = await _context.Users.FindAsync(senderId);
+        var sender = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == senderId);
 
         var recipientId = conv.BuyerId == senderId ? conv.SellerId : conv.BuyerId;
-        _ = _notifications.NotifyAsync(recipientId, EmailNotificationType.NewMessage,
-            "Nowa wiadomość",
-            $"{sender!.Name} {sender.Surname} wysłał(a) Ci wiadomość: \"{(content.Length > 100 ? content[..100] + "..." : content)}\"",
-            advertId: conv.AdvertId);
+        if (sender != null)
+        {
+            _ = _notifications.NotifyAsync(recipientId, EmailNotificationType.NewMessage,
+                "Nowa wiadomość",
+                $"{sender.Name} {sender.Surname} wysłał(a) Ci wiadomość: \"{(content.Length > 100 ? content[..100] + "..." : content)}\"",
+                advertId: conv.AdvertId);
+        }
 
         return new MessageDto
         {
             Id = msg.Id,
             SenderId = msg.SenderId,
-            SenderName = $"{sender!.Name} {sender.Surname}",
+            SenderName = sender != null ? $"{sender.Name} {sender.Surname}" : "(Użytkownik usunięty)",
             Content = msg.Content,
             SentAt = msg.SentAt,
             IsRead = false,
@@ -295,9 +298,9 @@ public class MessageService : IMessageService
         {
             Id = conv.Id,
             BuyerId = conv.BuyerId,
-            BuyerName = $"{conv.Buyer.Name} {conv.Buyer.Surname}",
+            BuyerName = conv.Buyer != null ? $"{conv.Buyer.Name} {conv.Buyer.Surname}" : "(Użytkownik usunięty)",
             SellerId = conv.SellerId,
-            SellerName = $"{conv.Seller.Name} {conv.Seller.Surname}",
+            SellerName = conv.Seller != null ? $"{conv.Seller.Name} {conv.Seller.Surname}" : "(Użytkownik usunięty)",
             AdvertId = conv.AdvertId,
             AdvertTitle = conv.Advert?.Title ?? "(Ogłoszenie usunięte)",
             AdvertThumbnail = thumb,
@@ -305,9 +308,9 @@ public class MessageService : IMessageService
             LastMessageContent = last?.Content,
             LastMessageIsMine = last?.SenderId == userId,
             UnreadCount = unreadCount,
-            OtherUserId = other.Id,
-            OtherUserName = $"{other.Name} {other.Surname}",
-            OtherUserAvatar = other.AvatarUrl,
+            OtherUserId = other?.Id ?? 0,
+            OtherUserName = other != null ? $"{other.Name} {other.Surname}" : "(Użytkownik usunięty)",
+            OtherUserAvatar = other?.AvatarUrl,
             IsPinned = conv.IsPinned,
             IsArchived = conv.IsArchived
         };

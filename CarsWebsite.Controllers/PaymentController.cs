@@ -29,6 +29,7 @@ public class PaymentController : ControllerBase
         [FromQuery] ServiceType serviceType,
         [FromQuery] int durationDays)
     {
+        if (durationDays <= 0 || durationDays > 365) return BadRequest(new { message = "Nieprawidłowy czas trwania (1–365 dni)." });
         try { return Ok(await _paymentService.GetServicePriceAsync(serviceType, durationDays)); }
         catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
     }
@@ -95,7 +96,11 @@ public class PaymentController : ControllerBase
             dto = JsonSerializer.Deserialize<ImojeWebhookDto>(rawBody,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
-        catch { return BadRequest("Nieprawidłowy payload."); }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "[Payment] Webhook deserialization failed");
+            return BadRequest("Nieprawidłowy payload.");
+        }
 
         if (dto == null) return BadRequest("Pusty payload.");
 

@@ -30,7 +30,12 @@ public class EventController : ControllerBase
         [FromQuery] string? search,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 12)
-        => Ok(await _eventService.GetPublishedEventsAsync(search, page, pageSize));
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 50);
+        if (search?.Length > 100) search = search[..100];
+        return Ok(await _eventService.GetPublishedEventsAsync(search, page, pageSize));
+    }
 
     [HttpGet("upcoming")]
     public async Task<IActionResult> GetUpcoming([FromQuery] int count = 4)
@@ -140,7 +145,9 @@ public class EventController : ControllerBase
     [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> PublishEvent(int id)
     {
-        await _eventService.PublishEventAsync(id, GetUserId()!.Value);
+        var adminId = GetUserId();
+        if (adminId == null) return Unauthorized();
+        await _eventService.PublishEventAsync(id, adminId.Value);
         return NoContent();
     }
 
@@ -148,7 +155,9 @@ public class EventController : ControllerBase
     [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> RejectEvent(int id, [FromBody] AdminEventActionDto dto)
     {
-        await _eventService.RejectEventAsync(id, GetUserId()!.Value, dto.Note);
+        var adminId = GetUserId();
+        if (adminId == null) return Unauthorized();
+        await _eventService.RejectEventAsync(id, adminId.Value, dto.Note);
         return NoContent();
     }
 
@@ -156,7 +165,9 @@ public class EventController : ControllerBase
     [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> ArchiveEvent(int id)
     {
-        await _eventService.ArchiveEventAsync(id, GetUserId()!.Value);
+        var adminId = GetUserId();
+        if (adminId == null) return Unauthorized();
+        await _eventService.ArchiveEventAsync(id, adminId.Value);
         return NoContent();
     }
 
@@ -164,7 +175,9 @@ public class EventController : ControllerBase
     [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> FeatureEvent(int id)
     {
-        await _eventService.FeatureEventAsync(id, GetUserId()!.Value, true);
+        var adminId = GetUserId();
+        if (adminId == null) return Unauthorized();
+        await _eventService.FeatureEventAsync(id, adminId.Value, true);
         return NoContent();
     }
 
@@ -172,7 +185,9 @@ public class EventController : ControllerBase
     [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> UnfeatureEvent(int id)
     {
-        await _eventService.FeatureEventAsync(id, GetUserId()!.Value, false);
+        var adminId = GetUserId();
+        if (adminId == null) return Unauthorized();
+        await _eventService.FeatureEventAsync(id, adminId.Value, false);
         return NoContent();
     }
 
@@ -180,7 +195,9 @@ public class EventController : ControllerBase
     [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> DeleteEvent(int id)
     {
-        await _eventService.DeleteEventAsync(id, GetUserId()!.Value);
+        var adminId = GetUserId();
+        if (adminId == null) return Unauthorized();
+        await _eventService.DeleteEventAsync(id, adminId.Value);
         return NoContent();
     }
 
@@ -188,7 +205,9 @@ public class EventController : ControllerBase
     [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> UpdateEvent(int id, [FromBody] CreateEventDto dto)
     {
-        var result = await _eventService.UpdateEventAsync(id, dto, GetUserId()!.Value);
+        var adminId = GetUserId();
+        if (adminId == null) return Unauthorized();
+        var result = await _eventService.UpdateEventAsync(id, dto, adminId.Value);
         return Ok(result);
     }
 }
