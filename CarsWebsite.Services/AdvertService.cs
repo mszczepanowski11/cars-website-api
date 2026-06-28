@@ -629,10 +629,16 @@ public class AdvertService : IAdvertService
         return _mapper.Map<List<CarAdvertResponseDto>>(adverts);
     }
 
-    public async Task RecordViewAsync(int advertId, string? ipAddress)
+    public async Task RecordViewAsync(int advertId, string? ipAddress, int? viewerUserId = null)
     {
-        var exists = await _context.CarAdverts.AnyAsync(a => a.Id == advertId && a.IsActive);
-        if (!exists) return;
+        var advert = await _context.CarAdverts.AsNoTracking()
+            .Where(a => a.Id == advertId && a.IsActive)
+            .Select(a => new { a.Id, a.UserId })
+            .FirstOrDefaultAsync();
+        if (advert == null) return;
+
+        // Owners viewing their own listing must not inflate the view count
+        if (viewerUserId.HasValue && viewerUserId.Value == advert.UserId) return;
 
         // Deduplicate: same IP must not have viewed within the last hour
         var cutoff = DateTime.UtcNow.AddHours(-1);

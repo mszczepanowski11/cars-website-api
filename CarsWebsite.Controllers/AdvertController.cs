@@ -44,7 +44,8 @@ public class AdvertController : ControllerBase
     public async Task<IActionResult> RecordView(int id)
     {
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
-        await _advertService.RecordViewAsync(id, ip);
+        var viewerId = GetUserId(); // 0 if anonymous
+        await _advertService.RecordViewAsync(id, ip, viewerId > 0 ? viewerId : null);
         return Ok();
     }
 

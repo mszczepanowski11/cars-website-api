@@ -18,7 +18,7 @@ public interface IAdvertService
     Task RenewAsync(int advertId, int userId);
     Task<List<CarAdvertResponseDto>> GetMostViewedAsync(int count = 8);
     Task<List<CarAdvertResponseDto>> GetPremiumCollectionAsync(int count = 8);
-    Task RecordViewAsync(int advertId, string? ipAddress);
+    Task RecordViewAsync(int advertId, string? ipAddress, int? viewerUserId = null);
     Task<CarAdvert?> GetCarAdvertEntityAsync(int advertId);
     Task SetPdfBrochureUrlAsync(int advertId, string? url);
 }
