@@ -60,8 +60,44 @@ public static class ComprehensiveSeeder
         }
 
         static bool IsGenericGenName(string n) =>
-            n is "Generation I" or "Gen 1" or "I" or "Gen I"
+            n is "Generation I" or "Generation II" or "Generation III" or "Generation IV" or "Generation V"
+            or "Gen 1" or "Gen 2" or "Gen 3" or "Gen 4"
+            or "I" or "II" or "III" or "IV" or "Gen I" or "Gen II" or "Gen III" or "Gen IV"
             || n.StartsWith("Gen ", StringComparison.OrdinalIgnoreCase);
+
+        // Maps existing generic placeholder generations (e.g. "Generation I/II/III") to real names
+        // in creation order, preserving all FK references (adverts, trims, etc.).
+        // Call this BEFORE GetOrFixGeneration for any model with known multi-gen history.
+        void PrepareGenerations(int modelId, params (string name, string slug, int yearFrom, int? yearTo)[] expected)
+        {
+            var existing = db.Generations.Where(x => x.ModelId == modelId).ToList();
+            var alreadyNamed = existing.Select(x => x.Name).ToHashSet();
+            var generics = existing.Where(x => IsGenericGenName(x.Name)).OrderBy(x => x.Id).ToList();
+            if (!generics.Any()) return;
+
+            // Only rename generics whose target name isn't already taken
+            var toRename = expected.Where(e => !alreadyNamed.Contains(e.name)).ToList();
+
+            for (int i = 0; i < Math.Min(generics.Count, toRename.Count); i++)
+            {
+                var g = generics[i];
+                var exp = toRename[i];
+                logger.LogInformation("[ComprehensiveSeeder] PrepareGenerations: '{Old}' → '{New}'", g.Name, exp.name);
+                g.Name = exp.name; g.Slug = exp.slug; g.YearFrom = exp.yearFrom; g.YearTo = exp.yearTo;
+            }
+
+            // Delete any leftover generics that couldn't be mapped (wrong count)
+            for (int i = toRename.Count; i < generics.Count; i++)
+            {
+                var orphan = generics[i];
+                var engines = db.EngineVersions.Where(e => e.GenerationId == orphan.Id).ToList();
+                db.EngineVersions.RemoveRange(engines);
+                db.Generations.Remove(orphan);
+                logger.LogInformation("[ComprehensiveSeeder] PrepareGenerations: deleted extra generic gen '{Name}'", orphan.Name);
+            }
+
+            db.SaveChanges();
+        }
 
         // Like GetOrCreateGeneration, but if the model has exactly one generation with a generic
         // placeholder name (e.g. "Generation I"), renames it in place to preserve existing FK refs.
@@ -284,6 +320,9 @@ public static class ComprehensiveSeeder
             if (BrandNeedsModels(bId)) { seededModelBrandIds.Add(bId); }
 
             int ghost = GetOrCreateModel(bId, "Ghost", "rr-ghost");
+            PrepareGenerations(ghost,
+                ("Ghost I (2009–2020)", "rr-ghost-i", 2009, 2020),
+                ("Ghost II (2020–)", "rr-ghost-ii", 2020, null));
             AddOrReplaceEngines(GetOrFixGeneration(ghost, "Ghost I (2009–2020)", "rr-ghost-i", 2009, 2020), 400, [
                 new EngineVersion { EngineName = "6.75 V12 570 KM", PowerHP = 570, PowerKW = 419, Displacement = 6749, FuelTypeId = ben,
                     TorqueNm = 780, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD",
@@ -299,6 +338,9 @@ public static class ComprehensiveSeeder
             ]);
 
             int phantom = GetOrCreateModel(bId, "Phantom", "rr-phantom");
+            PrepareGenerations(phantom,
+                ("Phantom VII (2003–2016)", "rr-phantom-vii", 2003, 2016),
+                ("Phantom VIII (2017–)", "rr-phantom-viii", 2017, null));
             AddOrReplaceEngines(GetOrFixGeneration(phantom, "Phantom VII (2003–2016)", "rr-phantom-vii", 2003, 2016), 400, [
                 new EngineVersion { EngineName = "6.75 V12 460 KM", PowerHP = 460, PowerKW = 338, Displacement = 6749, FuelTypeId = ben,
                     TorqueNm = 720, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "RWD",
@@ -348,6 +390,18 @@ public static class ComprehensiveSeeder
             if (BrandNeedsModels(bId)) { seededModelBrandIds.Add(bId); }
 
             int cgt = GetOrCreateModel(bId, "Continental GT", "bentley-continental-gt");
+            PrepareGenerations(cgt,
+                ("I (2003–2011)", "bentley-cgt-i", 2003, 2011),
+                ("II (2011–2018)", "bentley-cgt-ii", 2011, 2018),
+                ("III (2018–)", "bentley-cgt-iii", 2018, null));
+            AddOrReplaceEngines(GetOrFixGeneration(cgt, "I (2003–2011)", "bentley-cgt-i", 2003, 2011), 400, [
+                new EngineVersion { EngineName = "6.0 W12 560 KM", PowerHP = 560, PowerKW = 412, Displacement = 5998, FuelTypeId = ben,
+                    TorqueNm = 650, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 12, Acceleration0100 = 4.8m, TopSpeedKmh = 318, FuelConsumptionCombined = 17.0m },
+                new EngineVersion { EngineName = "6.0 W12 Speed 610 KM", PowerHP = 610, PowerKW = 449, Displacement = 5998, FuelTypeId = ben,
+                    TorqueNm = 750, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 12, Acceleration0100 = 4.3m, TopSpeedKmh = 330, FuelConsumptionCombined = 17.5m },
+            ]);
             AddOrReplaceEngines(GetOrFixGeneration(cgt, "II (2011–2018)", "bentley-cgt-ii", 2011, 2018), 400, [
                 new EngineVersion { EngineName = "6.0 W12 575 KM", PowerHP = 575, PowerKW = 423, Displacement = 5998, FuelTypeId = ben,
                     TorqueNm = 800, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "AWD",
@@ -372,6 +426,9 @@ public static class ComprehensiveSeeder
             ]);
 
             int bentayga = GetOrCreateModel(bId, "Bentayga", "bentley-bentayga");
+            PrepareGenerations(bentayga,
+                ("I (2015–2020)", "bentley-bentayga-i", 2015, 2020),
+                ("II (2020–)", "bentley-bentayga-ii", 2020, null));
             AddOrReplaceEngines(GetOrFixGeneration(bentayga, "I (2015–2020)", "bentley-bentayga-i", 2015, 2020), 400, [
                 new EngineVersion { EngineName = "6.0 W12 608 KM", PowerHP = 608, PowerKW = 447, Displacement = 5950, FuelTypeId = ben,
                     TorqueNm = 900, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
