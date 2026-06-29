@@ -113,23 +113,39 @@ public static class ComprehensiveSeeder
 
         void AddEngines(int generationId, List<EngineVersion> engines)
         {
+            var expectedNames = engines.Select(e => e.EngineName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var wrongNames = db.EngineVersions
+                .Where(e => e.GenerationId == generationId)
+                .ToList()
+                .Where(e => !expectedNames.Contains(e.EngineName))
+                .ToList();
+            if (wrongNames.Any())
+            {
+                db.EngineVersions.RemoveRange(wrongNames);
+                db.SaveChanges();
+                logger.LogInformation("[ComprehensiveSeeder] Removed {Count} unexpected engines from gen {Id}", wrongNames.Count, generationId);
+            }
             if (db.EngineVersions.Any(e => e.GenerationId == generationId && e.TorqueNm != null)) return;
             foreach (var e in engines) e.GenerationId = generationId;
             db.EngineVersions.AddRange(engines);
             db.SaveChanges();
         }
 
-        // Removes engines with HP below minExpectedHp (wrong data for this brand), then adds correct ones.
+        // Removes engines with HP below minExpectedHp OR with an unexpected name, then adds correct ones.
+        // This ensures wrong engines can never block the correct set, regardless of their TorqueNm state.
         void AddOrReplaceEngines(int generationId, int minExpectedHp, List<EngineVersion> engines)
         {
+            var expectedNames = engines.Select(e => e.EngineName).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var wrong = db.EngineVersions
-                .Where(e => e.GenerationId == generationId && e.PowerHP < minExpectedHp)
+                .Where(e => e.GenerationId == generationId)
+                .ToList()
+                .Where(e => e.PowerHP < minExpectedHp || !expectedNames.Contains(e.EngineName))
                 .ToList();
             if (wrong.Any())
             {
                 db.EngineVersions.RemoveRange(wrong);
                 db.SaveChanges();
-                logger.LogInformation("[ComprehensiveSeeder] Removed {Count} wrong engines (<{Min}HP) from gen {Id}", wrong.Count, minExpectedHp, generationId);
+                logger.LogInformation("[ComprehensiveSeeder] Removed {Count} wrong engines from gen {Id}", wrong.Count, generationId);
             }
             if (db.EngineVersions.Any(e => e.GenerationId == generationId && e.TorqueNm != null)) return;
             foreach (var e in engines) e.GenerationId = generationId;
