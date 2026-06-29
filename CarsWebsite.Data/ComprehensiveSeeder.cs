@@ -676,7 +676,7 @@ public static class ComprehensiveSeeder
             int bId = GetOrCreateBrand("MAN", "man", "ciezarowe");
 
             int tgx = GetOrCreateModel(bId, "TGX", "man-tgx");
-            AddEngines(GetOrCreateGeneration(tgx, "TGX (2020–)", "man-tgx-2020", 2020, null), [
+            AddEngines(GetOrCreateGeneration(tgx, "NEO (2020–)", "man-tgx-neo", 2020, null), [
                 new EngineVersion { EngineName = "D3876 640 KM", PowerHP = 640, PowerKW = 471, Displacement = 15247, FuelTypeId = die,
                     TorqueNm = 3000, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD" },
                 new EngineVersion { EngineName = "D3876 600 KM", PowerHP = 600, PowerKW = 441, Displacement = 15247, FuelTypeId = die,
@@ -688,7 +688,7 @@ public static class ComprehensiveSeeder
             ]);
 
             int tgs = GetOrCreateModel(bId, "TGS", "man-tgs");
-            AddEngines(GetOrCreateGeneration(tgs, "TGS (2020–)", "man-tgs-2020", 2020, null), [
+            AddEngines(GetOrCreateGeneration(tgs, "II (2020–)", "man-tgs-ii", 2020, null), [
                 new EngineVersion { EngineName = "D2676 480 KM", PowerHP = 480, PowerKW = 353, Displacement = 12419, FuelTypeId = die,
                     TorqueNm = 2400, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD" },
                 new EngineVersion { EngineName = "D2676 440 KM", PowerHP = 440, PowerKW = 324, Displacement = 12419, FuelTypeId = die,
@@ -1005,6 +1005,276 @@ public static class ComprehensiveSeeder
                 new EngineVersion { EngineName = "1200cc Parallel Twin R 104 KM", PowerHP = 104, PowerKW = 77, Displacement = 1200, FuelTypeId = ben,
                     TorqueNm = 112, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "RWD",
                     Cylinders = 2, TopSpeedKmh = 203, FuelConsumptionCombined = 5.5m },
+            ]);
+        }
+
+        // ── SCANIA (truck engines with full TorqueNm data) ───────────────────────
+        {
+            int bId = GetOrCreateBrand("Scania", "scania", "ciezarowe");
+
+            int rSeries = GetOrCreateModel(bId, "R-Series", "scania-r-series");
+            AddEngines(GetOrCreateGeneration(rSeries, "Next Gen (2016–)", "scania-r-nextgen", 2016, null), [
+                new EngineVersion { EngineName = "DC09 320 KM", PowerHP = 320, PowerKW = 235, Displacement = 9290, FuelTypeId = die,
+                    TorqueNm = 1600, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD" },
+                new EngineVersion { EngineName = "DC13 410 KM", PowerHP = 410, PowerKW = 302, Displacement = 12742, FuelTypeId = die,
+                    TorqueNm = 2000, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD" },
+                new EngineVersion { EngineName = "DC13 460 KM", PowerHP = 460, PowerKW = 338, Displacement = 12742, FuelTypeId = die,
+                    TorqueNm = 2300, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD" },
+                new EngineVersion { EngineName = "DC13 500 KM", PowerHP = 500, PowerKW = 368, Displacement = 12742, FuelTypeId = die,
+                    TorqueNm = 2500, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD" },
+                new EngineVersion { EngineName = "DC16 590 KM", PowerHP = 590, PowerKW = 434, Displacement = 15607, FuelTypeId = die,
+                    TorqueNm = 2950, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD" },
+            ]);
+
+            int sSeries = GetOrCreateModel(bId, "S-Series", "scania-s-series");
+            AddEngines(GetOrCreateGeneration(sSeries, "Next Gen (2016–)", "scania-s-nextgen", 2016, null), [
+                new EngineVersion { EngineName = "DC13 410 KM", PowerHP = 410, PowerKW = 302, Displacement = 12742, FuelTypeId = die,
+                    TorqueNm = 2000, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD" },
+                new EngineVersion { EngineName = "DC13 460 KM", PowerHP = 460, PowerKW = 338, Displacement = 12742, FuelTypeId = die,
+                    TorqueNm = 2300, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD" },
+                new EngineVersion { EngineName = "DC13 500 KM", PowerHP = 500, PowerKW = 368, Displacement = 12742, FuelTypeId = die,
+                    TorqueNm = 2500, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD" },
+                new EngineVersion { EngineName = "DC16 590 KM", PowerHP = 590, PowerKW = 434, Displacement = 15607, FuelTypeId = die,
+                    TorqueNm = 2950, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD" },
+            ]);
+        }
+
+        // ── JOHN DEERE (agricultural – TorqueNm enrichment) ──────────────────────
+        {
+            int bId = GetOrCreateBrand("John Deere", "john-deere", "rolnicze");
+
+            int seria6 = GetOrCreateModel(bId, "Seria 6", "jd-seria-6");
+            AddEngines(GetOrCreateGeneration(seria6, "6M/6R (2014–)", "jd-seria6-2014", 2014, null), [
+                new EngineVersion { EngineName = "6110R 110 KM", PowerHP = 110, PowerKW = 81, Displacement = 4530, FuelTypeId = die,
+                    TorqueNm = 410, EuroNorm = "Stage V", GearboxType = "automatic", DriveType = "AWD" },
+                new EngineVersion { EngineName = "6130R 130 KM", PowerHP = 130, PowerKW = 96, Displacement = 4530, FuelTypeId = die,
+                    TorqueNm = 470, EuroNorm = "Stage V", GearboxType = "automatic", DriveType = "AWD" },
+                new EngineVersion { EngineName = "6155R 155 KM", PowerHP = 155, PowerKW = 114, Displacement = 6800, FuelTypeId = die,
+                    TorqueNm = 560, EuroNorm = "Stage V", GearboxType = "automatic", DriveType = "AWD" },
+                new EngineVersion { EngineName = "6175R 175 KM", PowerHP = 175, PowerKW = 129, Displacement = 6800, FuelTypeId = die,
+                    TorqueNm = 635, EuroNorm = "Stage V", GearboxType = "automatic", DriveType = "AWD" },
+            ]);
+
+            int seria7 = GetOrCreateModel(bId, "Seria 7", "jd-seria-7");
+            AddEngines(GetOrCreateGeneration(seria7, "7R (2014–)", "jd-seria7-2014", 2014, null), [
+                new EngineVersion { EngineName = "7230R 230 KM", PowerHP = 230, PowerKW = 169, Displacement = 9000, FuelTypeId = die,
+                    TorqueNm = 850, EuroNorm = "Stage V", GearboxType = "automatic", DriveType = "AWD" },
+                new EngineVersion { EngineName = "7260R 260 KM", PowerHP = 260, PowerKW = 191, Displacement = 9000, FuelTypeId = die,
+                    TorqueNm = 975, EuroNorm = "Stage V", GearboxType = "automatic", DriveType = "AWD" },
+                new EngineVersion { EngineName = "7310R 310 KM", PowerHP = 310, PowerKW = 228, Displacement = 9000, FuelTypeId = die,
+                    TorqueNm = 1150, EuroNorm = "Stage V", GearboxType = "automatic", DriveType = "AWD" },
+            ]);
+        }
+
+        // ── FENDT (agricultural – TorqueNm enrichment) ───────────────────────────
+        {
+            int bId = GetOrCreateBrand("Fendt", "fendt", "rolnicze");
+
+            int vario700 = GetOrCreateModel(bId, "Vario 700", "fendt-vario-700");
+            AddEngines(GetOrCreateGeneration(vario700, "Gen6 (2014–)", "fendt-700-gen6", 2014, null), [
+                new EngineVersion { EngineName = "718 Vario 177 KM", PowerHP = 177, PowerKW = 130, Displacement = 6057, FuelTypeId = die,
+                    TorqueNm = 680, EuroNorm = "Stage V", GearboxType = "automatic", DriveType = "AWD" },
+                new EngineVersion { EngineName = "720 Vario 200 KM", PowerHP = 200, PowerKW = 147, Displacement = 6057, FuelTypeId = die,
+                    TorqueNm = 730, EuroNorm = "Stage V", GearboxType = "automatic", DriveType = "AWD" },
+                new EngineVersion { EngineName = "724 Vario 240 KM", PowerHP = 240, PowerKW = 177, Displacement = 6057, FuelTypeId = die,
+                    TorqueNm = 890, EuroNorm = "Stage V", GearboxType = "automatic", DriveType = "AWD" },
+                new EngineVersion { EngineName = "728 Vario 281 KM", PowerHP = 281, PowerKW = 207, Displacement = 6057, FuelTypeId = die,
+                    TorqueNm = 1100, EuroNorm = "Stage V", GearboxType = "automatic", DriveType = "AWD" },
+            ]);
+
+            int vario900 = GetOrCreateModel(bId, "Vario 900", "fendt-vario-900");
+            AddEngines(GetOrCreateGeneration(vario900, "Gen6 (2014–)", "fendt-900-gen6", 2014, null), [
+                new EngineVersion { EngineName = "927 Vario 270 KM", PowerHP = 270, PowerKW = 199, Displacement = 8400, FuelTypeId = die,
+                    TorqueNm = 1000, EuroNorm = "Stage V", GearboxType = "automatic", DriveType = "AWD" },
+                new EngineVersion { EngineName = "930 Vario 300 KM", PowerHP = 300, PowerKW = 221, Displacement = 8400, FuelTypeId = die,
+                    TorqueNm = 1100, EuroNorm = "Stage V", GearboxType = "automatic", DriveType = "AWD" },
+                new EngineVersion { EngineName = "936 Vario 360 KM", PowerHP = 360, PowerKW = 265, Displacement = 8400, FuelTypeId = die,
+                    TorqueNm = 1200, EuroNorm = "Stage V", GearboxType = "automatic", DriveType = "AWD" },
+                new EngineVersion { EngineName = "939 Vario 390 KM", PowerHP = 390, PowerKW = 287, Displacement = 8400, FuelTypeId = die,
+                    TorqueNm = 1350, EuroNorm = "Stage V", GearboxType = "automatic", DriveType = "AWD" },
+            ]);
+        }
+
+        // ── NEW HOLLAND (agricultural – TorqueNm enrichment) ─────────────────────
+        {
+            int bId = GetOrCreateBrand("New Holland", "new-holland", "rolnicze");
+
+            int t6 = GetOrCreateModel(bId, "T6", "nh-t6");
+            AddEngines(GetOrCreateGeneration(t6, "T6.xxx (2014–)", "nh-t6-2014", 2014, null), [
+                new EngineVersion { EngineName = "T6.140 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 4485, FuelTypeId = die,
+                    TorqueNm = 530, EuroNorm = "Stage V", GearboxType = "automatic", DriveType = "AWD" },
+                new EngineVersion { EngineName = "T6.160 160 KM", PowerHP = 160, PowerKW = 118, Displacement = 4485, FuelTypeId = die,
+                    TorqueNm = 590, EuroNorm = "Stage V", GearboxType = "automatic", DriveType = "AWD" },
+                new EngineVersion { EngineName = "T6.180 180 KM", PowerHP = 180, PowerKW = 132, Displacement = 6728, FuelTypeId = die,
+                    TorqueNm = 660, EuroNorm = "Stage V", GearboxType = "automatic", DriveType = "AWD" },
+            ]);
+
+            int t7 = GetOrCreateModel(bId, "T7", "nh-t7");
+            AddEngines(GetOrCreateGeneration(t7, "T7.xxx (2014–)", "nh-t7-2014", 2014, null), [
+                new EngineVersion { EngineName = "T7.175 175 KM", PowerHP = 175, PowerKW = 129, Displacement = 6728, FuelTypeId = die,
+                    TorqueNm = 650, EuroNorm = "Stage V", GearboxType = "automatic", DriveType = "AWD" },
+                new EngineVersion { EngineName = "T7.210 210 KM", PowerHP = 210, PowerKW = 154, Displacement = 6728, FuelTypeId = die,
+                    TorqueNm = 790, EuroNorm = "Stage V", GearboxType = "automatic", DriveType = "AWD" },
+                new EngineVersion { EngineName = "T7.260 260 KM", PowerHP = 260, PowerKW = 191, Displacement = 8728, FuelTypeId = die,
+                    TorqueNm = 975, EuroNorm = "Stage V", GearboxType = "automatic", DriveType = "AWD" },
+            ]);
+        }
+
+        // ── VW GOLF (TorqueNm enrichment for most popular car in Poland) ─────────
+        {
+            int bId = GetOrCreateBrand("Volkswagen", "volkswagen", "auta-osobowe");
+
+            int golf = GetOrCreateModel(bId, "Golf", "vw-golf");
+            AddEngines(GetOrCreateGeneration(golf, "Mk7 (2012–2019)", "vw-golf-mk7", 2012, 2019), [
+                new EngineVersion { EngineName = "1.4 TSI 125 KM", PowerHP = 125, PowerKW = 92, Displacement = 1395, FuelTypeId = ben,
+                    TorqueNm = 200, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.5m, TopSpeedKmh = 203, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "1.5 TSI 130 KM", PowerHP = 130, PowerKW = 96, Displacement = 1498, FuelTypeId = ben,
+                    TorqueNm = 200, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.4m, TopSpeedKmh = 210, FuelConsumptionCombined = 6.3m },
+                new EngineVersion { EngineName = "2.0 GTI TSI 220 KM", PowerHP = 220, PowerKW = 162, Displacement = 1984, FuelTypeId = ben,
+                    TorqueNm = 350, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.5m, TopSpeedKmh = 246, FuelConsumptionCombined = 7.5m },
+                new EngineVersion { EngineName = "1.6 TDI 115 KM", PowerHP = 115, PowerKW = 85, Displacement = 1598, FuelTypeId = die,
+                    TorqueNm = 250, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.5m, TopSpeedKmh = 198, FuelConsumptionCombined = 4.2m },
+                new EngineVersion { EngineName = "2.0 TDI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 340, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.5m, TopSpeedKmh = 215, FuelConsumptionCombined = 4.8m },
+            ]);
+            AddEngines(GetOrCreateGeneration(golf, "Mk8 (2019–)", "vw-golf-mk8", 2019, null), [
+                new EngineVersion { EngineName = "1.0 eTSI 110 KM", PowerHP = 110, PowerKW = 81, Displacement = 999, FuelTypeId = mild,
+                    TorqueNm = 200, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 9.8m, TopSpeedKmh = 194, FuelConsumptionCombined = 5.7m },
+                new EngineVersion { EngineName = "1.5 eTSI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1498, FuelTypeId = mild,
+                    TorqueNm = 250, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.3m, TopSpeedKmh = 224, FuelConsumptionCombined = 6.3m },
+                new EngineVersion { EngineName = "2.0 GTI TSI 245 KM", PowerHP = 245, PowerKW = 180, Displacement = 1984, FuelTypeId = ben,
+                    TorqueNm = 370, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.3m, TopSpeedKmh = 250, FuelConsumptionCombined = 7.5m },
+                new EngineVersion { EngineName = "2.0 TDI 115 KM", PowerHP = 115, PowerKW = 85, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 300, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 201, FuelConsumptionCombined = 4.2m },
+                new EngineVersion { EngineName = "2.0 TDI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 360, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.5m, TopSpeedKmh = 215, FuelConsumptionCombined = 4.5m },
+                new EngineVersion { EngineName = "GTE eHybrid 204 KM", PowerHP = 204, PowerKW = 150, Displacement = 1395, FuelTypeId = phev,
+                    TorqueNm = 350, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.4m, TopSpeedKmh = 222, FuelConsumptionCombined = 1.6m },
+            ]);
+
+            int passat = GetOrCreateModel(bId, "Passat", "vw-passat");
+            AddEngines(GetOrCreateGeneration(passat, "B8 (2014–2023)", "vw-passat-b8", 2014, 2023), [
+                new EngineVersion { EngineName = "1.5 TSI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1498, FuelTypeId = ben,
+                    TorqueNm = 250, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.6m, TopSpeedKmh = 217, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "2.0 TSI 220 KM", PowerHP = 220, PowerKW = 162, Displacement = 1984, FuelTypeId = ben,
+                    TorqueNm = 350, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.5m, TopSpeedKmh = 237, FuelConsumptionCombined = 7.4m },
+                new EngineVersion { EngineName = "2.0 TDI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 340, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.3m, TopSpeedKmh = 220, FuelConsumptionCombined = 4.5m },
+                new EngineVersion { EngineName = "2.0 TDI 190 KM", PowerHP = 190, PowerKW = 140, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 7.7m, TopSpeedKmh = 228, FuelConsumptionCombined = 5.3m },
+                new EngineVersion { EngineName = "GTE 218 KM", PowerHP = 218, PowerKW = 160, Displacement = 1395, FuelTypeId = phev,
+                    TorqueNm = 400, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.4m, TopSpeedKmh = 225, FuelConsumptionCombined = 1.7m },
+            ]);
+        }
+
+        // ── SKODA OCTAVIA (TorqueNm enrichment) ──────────────────────────────────
+        {
+            int bId = GetOrCreateBrand("Skoda", "skoda", "auta-osobowe");
+
+            int octavia = GetOrCreateModel(bId, "Octavia", "skoda-octavia");
+            AddEngines(GetOrCreateGeneration(octavia, "III (2012–2020)", "skoda-octavia-iii", 2012, 2020), [
+                new EngineVersion { EngineName = "1.4 TSI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1395, FuelTypeId = ben,
+                    TorqueNm = 250, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.0m, TopSpeedKmh = 220, FuelConsumptionCombined = 6.2m },
+                new EngineVersion { EngineName = "2.0 TSI RS 230 KM", PowerHP = 230, PowerKW = 169, Displacement = 1984, FuelTypeId = ben,
+                    TorqueNm = 350, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.8m, TopSpeedKmh = 250, FuelConsumptionCombined = 7.7m },
+                new EngineVersion { EngineName = "1.6 TDI 105 KM", PowerHP = 105, PowerKW = 77, Displacement = 1598, FuelTypeId = die,
+                    TorqueNm = 250, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.8m, TopSpeedKmh = 195, FuelConsumptionCombined = 3.9m },
+                new EngineVersion { EngineName = "2.0 TDI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 340, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.2m, TopSpeedKmh = 215, FuelConsumptionCombined = 4.5m },
+            ]);
+            AddEngines(GetOrCreateGeneration(octavia, "IV (2020–)", "skoda-octavia-iv", 2020, null), [
+                new EngineVersion { EngineName = "1.5 TSI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1498, FuelTypeId = mild,
+                    TorqueNm = 250, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.2m, TopSpeedKmh = 225, FuelConsumptionCombined = 6.1m },
+                new EngineVersion { EngineName = "2.0 TSI RS 245 KM", PowerHP = 245, PowerKW = 180, Displacement = 1984, FuelTypeId = ben,
+                    TorqueNm = 370, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.7m, TopSpeedKmh = 250, FuelConsumptionCombined = 7.5m },
+                new EngineVersion { EngineName = "2.0 TDI 115 KM", PowerHP = 115, PowerKW = 85, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 300, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.2m, TopSpeedKmh = 198, FuelConsumptionCombined = 4.0m },
+                new EngineVersion { EngineName = "2.0 TDI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 360, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.1m, TopSpeedKmh = 218, FuelConsumptionCombined = 4.3m },
+                new EngineVersion { EngineName = "iV PHEV 245 KM", PowerHP = 245, PowerKW = 180, Displacement = 1395, FuelTypeId = phev,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.3m, TopSpeedKmh = 220, FuelConsumptionCombined = 1.4m },
+            ]);
+        }
+
+        // ── FORD FOCUS / OPEL ASTRA (TorqueNm enrichment) ────────────────────────
+        {
+            int fordId = GetOrCreateBrand("Ford", "ford", "auta-osobowe");
+            int focus = GetOrCreateModel(fordId, "Focus", "ford-focus");
+            AddEngines(GetOrCreateGeneration(focus, "Mk4 (2018–)", "ford-focus-mk4", 2018, null), [
+                new EngineVersion { EngineName = "1.0 EcoBoost 125 KM", PowerHP = 125, PowerKW = 92, Displacement = 999, FuelTypeId = mild,
+                    TorqueNm = 170, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 9.5m, TopSpeedKmh = 200, FuelConsumptionCombined = 5.3m },
+                new EngineVersion { EngineName = "1.5 EcoBoost 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1499, FuelTypeId = mild,
+                    TorqueNm = 240, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.5m, TopSpeedKmh = 213, FuelConsumptionCombined = 6.2m },
+                new EngineVersion { EngineName = "2.3 ST 280 KM", PowerHP = 280, PowerKW = 206, Displacement = 2261, FuelTypeId = ben,
+                    TorqueNm = 420, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 5.8m, TopSpeedKmh = 250, FuelConsumptionCombined = 8.0m },
+                new EngineVersion { EngineName = "1.5 EcoBlue 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 1499, FuelTypeId = die,
+                    TorqueNm = 280, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.5m, TopSpeedKmh = 205, FuelConsumptionCombined = 4.5m },
+                new EngineVersion { EngineName = "2.0 EcoBlue 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 370, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.8m, TopSpeedKmh = 215, FuelConsumptionCombined = 4.8m },
+            ]);
+
+            int opelId = GetOrCreateBrand("Opel", "opel", "auta-osobowe");
+            int astra = GetOrCreateModel(opelId, "Astra", "opel-astra");
+            AddEngines(GetOrCreateGeneration(astra, "K (2015–2021)", "opel-astra-k", 2015, 2021), [
+                new EngineVersion { EngineName = "1.4 Turbo 125 KM", PowerHP = 125, PowerKW = 92, Displacement = 1399, FuelTypeId = ben,
+                    TorqueNm = 200, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.0m, TopSpeedKmh = 200, FuelConsumptionCombined = 6.2m },
+                new EngineVersion { EngineName = "1.4 Turbo 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1399, FuelTypeId = ben,
+                    TorqueNm = 236, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.7m, TopSpeedKmh = 217, FuelConsumptionCombined = 6.6m },
+                new EngineVersion { EngineName = "OPC 280 KM", PowerHP = 280, PowerKW = 206, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 400, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.0m, TopSpeedKmh = 250, FuelConsumptionCombined = 8.7m },
+                new EngineVersion { EngineName = "1.6 CDTi 110 KM", PowerHP = 110, PowerKW = 81, Displacement = 1598, FuelTypeId = die,
+                    TorqueNm = 280, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.2m, TopSpeedKmh = 193, FuelConsumptionCombined = 3.9m },
+                new EngineVersion { EngineName = "1.6 CDTi 136 KM", PowerHP = 136, PowerKW = 100, Displacement = 1598, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.3m, TopSpeedKmh = 212, FuelConsumptionCombined = 4.1m },
+            ]);
+            AddEngines(GetOrCreateGeneration(astra, "L (2021–)", "opel-astra-l", 2021, null), [
+                new EngineVersion { EngineName = "1.2 Turbo 130 KM", PowerHP = 130, PowerKW = 96, Displacement = 1199, FuelTypeId = ben,
+                    TorqueNm = 230, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 9.5m, TopSpeedKmh = 210, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "1.6 Hybrid 180 KM", PowerHP = 180, PowerKW = 132, Displacement = 1598, FuelTypeId = hyb,
+                    TorqueNm = 300, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.7m, TopSpeedKmh = 225, FuelConsumptionCombined = 5.4m },
+                new EngineVersion { EngineName = "PHEV 225 KM", PowerHP = 225, PowerKW = 165, Displacement = 1598, FuelTypeId = phev,
+                    TorqueNm = 360, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.5m, TopSpeedKmh = 225, FuelConsumptionCombined = 1.5m },
+                new EngineVersion { EngineName = "1.5 Diesel 130 KM", PowerHP = 130, PowerKW = 96, Displacement = 1499, FuelTypeId = die,
+                    TorqueNm = 300, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.8m, TopSpeedKmh = 205, FuelConsumptionCombined = 4.4m },
             ]);
         }
 
