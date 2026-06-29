@@ -22,22 +22,29 @@ public class PaymentService : IPaymentService
         { (ServiceType.EventFeatured, 7),  (9.99m,  "Wyróżnienie wydarzenia – 7 dni") },
         { (ServiceType.EventFeatured, 14), (17.99m, "Wyróżnienie wydarzenia – 14 dni") },
         { (ServiceType.EventFeatured, 30), (29.99m, "Wyróżnienie wydarzenia – 30 dni") },
+        // Subscription packages — key int = (int)SubscriptionTier
+        { (ServiceType.Subscription, (int)SubscriptionTier.Start),   (SubscriptionPlanConfig.GetBruttoPrice(SubscriptionTier.Start),   "Pakiet Start – 1 miesiąc") },
+        { (ServiceType.Subscription, (int)SubscriptionTier.Biznes),  (SubscriptionPlanConfig.GetBruttoPrice(SubscriptionTier.Biznes),  "Pakiet Biznes – 1 miesiąc") },
+        { (ServiceType.Subscription, (int)SubscriptionTier.Premium), (SubscriptionPlanConfig.GetBruttoPrice(SubscriptionTier.Premium), "Pakiet Premium – 1 miesiąc") },
     };
 
     private readonly AppDbContext _context;
     private readonly IConfiguration _config;
     private readonly INotificationService _notifications;
+    private readonly ISubscriptionService _subscriptionService;
     private readonly ILogger<PaymentService> _logger;
 
     public PaymentService(
         AppDbContext context,
         IConfiguration config,
         INotificationService notifications,
+        ISubscriptionService subscriptionService,
         ILogger<PaymentService> logger)
     {
         _context = context;
         _config = config;
         _notifications = notifications;
+        _subscriptionService = subscriptionService;
         _logger = logger;
     }
 
@@ -58,13 +65,27 @@ public class PaymentService : IPaymentService
     public async Task<PaymentInitiatedDto> InitiatePaymentAsync(InitiatePaymentDto dto, int userId)
     {
         _logger.LogInformation(
-            "[Payment/Initiate] userId={UserId} serviceType={ServiceType} durationDays={Days} advertId={AdvertId} eventId={EventId}",
-            userId, dto.ServiceType, dto.DurationDays, dto.AdvertId, dto.EventId);
+            "[Payment/Initiate] userId={UserId} serviceType={ServiceType} durationDays={Days} advertId={AdvertId} eventId={EventId} subTier={Tier}",
+            userId, dto.ServiceType, dto.DurationDays, dto.AdvertId, dto.EventId, dto.SubscriptionTier);
 
         var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId)
             ?? throw new KeyNotFoundException("Użytkownik nie istnieje.");
 
-        var priceInfo = await GetServicePriceAsync(dto.ServiceType, dto.DurationDays);
+        ServicePriceDto priceInfo;
+        if (dto.ServiceType == ServiceType.Subscription)
+        {
+            if (!dto.SubscriptionTier.HasValue || dto.SubscriptionTier == SubscriptionTier.None || dto.SubscriptionTier == SubscriptionTier.StartProgram || dto.SubscriptionTier == SubscriptionTier.Enterprise)
+                throw new ArgumentException("Wybierz pakiet: Start, Biznes lub Premium.");
+            if (user.AccountType != AccountType.Business)
+                throw new InvalidOperationException("Subskrypcje B2B są dostępne wyłącznie dla kont biznesowych.");
+            var tierKey = (int)dto.SubscriptionTier.Value;
+            priceInfo = await GetServicePriceAsync(ServiceType.Subscription, tierKey);
+            dto.DurationDays = 30;
+        }
+        else
+        {
+            priceInfo = await GetServicePriceAsync(dto.ServiceType, dto.DurationDays);
+        }
         _logger.LogInformation("[Payment/Initiate] price={Price} desc={Desc}", priceInfo.Price, priceInfo.Description);
 
         // K-1: Verify ownership before creating payment
@@ -92,6 +113,11 @@ public class PaymentService : IPaymentService
         var orderId = $"CARIZO-{userId}-{DateTime.UtcNow:yyyyMMddHHmmss}-{guidPart}";
         if (orderId.Length > 40) orderId = orderId[..40];
 
+        // For subscription payments, store tier int in DurationDays so ActivateSubscriptionServiceAsync can read it
+        var storedDurationDays = dto.ServiceType == ServiceType.Subscription && dto.SubscriptionTier.HasValue
+            ? (int)dto.SubscriptionTier.Value
+            : dto.DurationDays;
+
         var payment = new Payment
         {
             UserId = userId,
@@ -103,7 +129,7 @@ public class PaymentService : IPaymentService
             Currency = "PLN",
             Status = PaymentStatus.Pending,
             ImojeOrderId = orderId,
-            DurationDays = dto.DurationDays,
+            DurationDays = storedDurationDays,
             CreatedAt = DateTime.UtcNow,
             BillingName = dto.BillingName,
             BillingNip = dto.BillingNip,
@@ -345,6 +371,12 @@ public class PaymentService : IPaymentService
 
     private async Task ActivateServiceAsync(Payment payment)
     {
+        if (payment.ServiceType == ServiceType.Subscription)
+        {
+            await ActivateSubscriptionServiceAsync(payment);
+            return;
+        }
+
         if (payment.ServiceType == ServiceType.EventFeatured)
         {
             await ActivateEventServiceAsync(payment);
@@ -415,6 +447,23 @@ public class PaymentService : IPaymentService
             $"{typeName} aktywowane",
             $"Usługa \"{payment.ServiceDescription}\" została aktywowana na {payment.DurationDays} dni.",
             advertId: payment.AdvertId, paymentId: payment.Id);
+    }
+
+    private async Task ActivateSubscriptionServiceAsync(Payment payment)
+    {
+        var tier = (SubscriptionTier)(payment.DurationDays ?? (int)SubscriptionTier.None);
+        if (tier == SubscriptionTier.None)
+        {
+            _logger.LogWarning("[Subscription/Activate] Invalid tier in DurationDays for payment #{PaymentId}", payment.Id);
+            return;
+        }
+
+        await _subscriptionService.ActivateSubscriptionAsync(payment.UserId, tier);
+
+        _ = _notifications.NotifyAsync(payment.UserId, EmailNotificationType.PromotionActivated,
+            $"Pakiet {tier} aktywowany",
+            $"Twoja subskrypcja CARIZO {tier} została aktywowana. Możesz teraz korzystać ze wszystkich funkcji pakietu przez 30 dni.",
+            paymentId: payment.Id);
     }
 
     private async Task ActivateEventServiceAsync(Payment payment)

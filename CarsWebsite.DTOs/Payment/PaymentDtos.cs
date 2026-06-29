@@ -9,6 +9,9 @@ public class InitiatePaymentDto
     public int? EventId { get; set; }
     public int DurationDays { get; set; } = 7;
 
+    // For ServiceType.Subscription: which tier to purchase
+    public SubscriptionTier? SubscriptionTier { get; set; }
+
     // Billing data snapshot for invoice (optional — used for business accounts)
     public string? BillingName { get; set; }
     public string? BillingNip { get; set; }

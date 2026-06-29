@@ -149,6 +149,7 @@ internal class Program
         builder.Services.AddHttpClient<IPhotoAnalysisService, PhotoAnalysisService>();
         builder.Services.AddScoped<IEmailService, EmailService>();
         builder.Services.AddScoped<INotificationService, NotificationService>();
+        builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
         builder.Services.AddScoped<IPaymentService, PaymentService>();
         builder.Services.AddScoped<IInvoiceService, InvoiceService>();
         builder.Services.AddHttpClient<IKSeFService, KSeFService>();
