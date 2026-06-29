@@ -2095,6 +2095,277 @@ public static class ComprehensiveSeeder
                     TorqueNm = 138, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
                     Cylinders = 4, Acceleration0100 = 11.5m, TopSpeedKmh = 175, FuelConsumptionCombined = 5.2m },
             ]);
+
+            // ── TOYOTA YARIS XP150 + XP210, RAV4 V, C-HR X10 ────────────────────────
+            int toyotaId2 = GetOrCreateBrand("Toyota", "toyota", "auta-osobowe");
+            int yaris = GetOrCreateModel(toyotaId2, "Yaris", "toyota-yaris");
+            AddEngines(GetOrCreateGeneration(yaris, "XP150 (2011–2019)", "toyota-yaris-xp150", 2011, 2019), [
+                new EngineVersion { EngineName = "1.0 VVT-i 69 KM", PowerHP = 69, PowerKW = 51, Displacement = 998, FuelTypeId = ben,
+                    TorqueNm = 93, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 14.8m, TopSpeedKmh = 163, FuelConsumptionCombined = 5.6m },
+                new EngineVersion { EngineName = "1.33 VVT-i 99 KM", PowerHP = 99, PowerKW = 73, Displacement = 1329, FuelTypeId = ben,
+                    TorqueNm = 131, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.4m, TopSpeedKmh = 180, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "1.5 HEV 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 1497, FuelTypeId = hyb,
+                    TorqueNm = 111, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.8m, TopSpeedKmh = 165, FuelConsumptionCombined = 3.9m },
+                new EngineVersion { EngineName = "1.4 D-4D 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1364, FuelTypeId = die,
+                    TorqueNm = 205, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.2m, TopSpeedKmh = 175, FuelConsumptionCombined = 4.0m },
+            ]);
+            AddEngines(GetOrCreateGeneration(yaris, "XP210 (2019–)", "toyota-yaris-xp210", 2019, null), [
+                new EngineVersion { EngineName = "1.5 HEV 116 KM", PowerHP = 116, PowerKW = 85, Displacement = 1490, FuelTypeId = hyb,
+                    TorqueNm = 185, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 9.7m, TopSpeedKmh = 175, FuelConsumptionCombined = 3.8m },
+                new EngineVersion { EngineName = "GR Yaris 1.6 261 KM", PowerHP = 261, PowerKW = 192, Displacement = 1618, FuelTypeId = ben,
+                    TorqueNm = 360, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "AWD",
+                    Cylinders = 3, Acceleration0100 = 5.5m, TopSpeedKmh = 230, FuelConsumptionCombined = 8.5m },
+            ]);
+            int rav4 = GetOrCreateModel(toyotaId2, "RAV4", "toyota-rav4");
+            AddEngines(GetOrCreateGeneration(rav4, "V (2018–)", "toyota-rav4-v", 2018, null), [
+                new EngineVersion { EngineName = "2.0 VVT-i 175 KM", PowerHP = 175, PowerKW = 129, Displacement = 1987, FuelTypeId = ben,
+                    TorqueNm = 227, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.4m, TopSpeedKmh = 200, FuelConsumptionCombined = 7.0m },
+                new EngineVersion { EngineName = "2.5 HEV 218 KM", PowerHP = 218, PowerKW = 160, Displacement = 2487, FuelTypeId = hyb,
+                    TorqueNm = 221, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.1m, TopSpeedKmh = 180, FuelConsumptionCombined = 5.0m },
+                new EngineVersion { EngineName = "2.5 PHEV 306 KM", PowerHP = 306, PowerKW = 225, Displacement = 2487, FuelTypeId = phev,
+                    TorqueNm = 270, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 6.0m, TopSpeedKmh = 180, FuelConsumptionCombined = 1.0m },
+            ]);
+            int chr = GetOrCreateModel(toyotaId2, "C-HR", "toyota-chr");
+            AddEngines(GetOrCreateGeneration(chr, "X10 (2016–2023)", "toyota-chr-x10", 2016, 2023), [
+                new EngineVersion { EngineName = "1.2 T 116 KM", PowerHP = 116, PowerKW = 85, Displacement = 1197, FuelTypeId = ben,
+                    TorqueNm = 185, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.0m, TopSpeedKmh = 185, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "1.8 HEV 122 KM", PowerHP = 122, PowerKW = 90, Displacement = 1798, FuelTypeId = hyb,
+                    TorqueNm = 142, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.0m, TopSpeedKmh = 165, FuelConsumptionCombined = 4.5m },
+                new EngineVersion { EngineName = "2.0 HEV 184 KM", PowerHP = 184, PowerKW = 135, Displacement = 1987, FuelTypeId = hyb,
+                    TorqueNm = 190, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.2m, TopSpeedKmh = 180, FuelConsumptionCombined = 5.0m },
+            ]);
+
+            // ── FORD FIESTA Mk7/8 + KUGA Mk2/Mk3 ────────────────────────────────────
+            int fordId2 = GetOrCreateBrand("Ford", "ford", "auta-osobowe");
+            int fiesta = GetOrCreateModel(fordId2, "Fiesta", "ford-fiesta");
+            AddEngines(GetOrCreateGeneration(fiesta, "Mk7 (2008–2017)", "ford-fiesta-mk7", 2008, 2017), [
+                new EngineVersion { EngineName = "1.0 EcoBoost 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 170, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 10.4m, TopSpeedKmh = 192, FuelConsumptionCombined = 5.3m },
+                new EngineVersion { EngineName = "1.6 ST 182 KM", PowerHP = 182, PowerKW = 134, Displacement = 1596, FuelTypeId = ben,
+                    TorqueNm = 270, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.9m, TopSpeedKmh = 225, FuelConsumptionCombined = 7.3m },
+                new EngineVersion { EngineName = "1.4 TDCi 70 KM", PowerHP = 70, PowerKW = 51, Displacement = 1399, FuelTypeId = die,
+                    TorqueNm = 160, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.5m, TopSpeedKmh = 160, FuelConsumptionCombined = 3.7m },
+            ]);
+            AddEngines(GetOrCreateGeneration(fiesta, "Mk8 (2017–)", "ford-fiesta-mk8", 2017, null), [
+                new EngineVersion { EngineName = "1.0 EcoBoost 95 KM", PowerHP = 95, PowerKW = 70, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 170, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.0m, TopSpeedKmh = 183, FuelConsumptionCombined = 5.2m },
+                new EngineVersion { EngineName = "1.0 EcoBoost 125 KM", PowerHP = 125, PowerKW = 92, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 210, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 9.4m, TopSpeedKmh = 200, FuelConsumptionCombined = 5.3m },
+                new EngineVersion { EngineName = "1.5 ST 200 KM", PowerHP = 200, PowerKW = 147, Displacement = 1499, FuelTypeId = ben,
+                    TorqueNm = 290, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 6.5m, TopSpeedKmh = 232, FuelConsumptionCombined = 7.4m },
+                new EngineVersion { EngineName = "1.5 TDCi 85 KM", PowerHP = 85, PowerKW = 63, Displacement = 1499, FuelTypeId = die,
+                    TorqueNm = 215, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.5m, TopSpeedKmh = 177, FuelConsumptionCombined = 3.9m },
+            ]);
+            int kuga = GetOrCreateModel(fordId2, "Kuga", "ford-kuga");
+            AddEngines(GetOrCreateGeneration(kuga, "Mk2 (2012–2019)", "ford-kuga-mk2", 2012, 2019), [
+                new EngineVersion { EngineName = "1.5 EcoBoost 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1499, FuelTypeId = ben,
+                    TorqueNm = 240, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 9.7m, TopSpeedKmh = 196, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "2.0 EcoBoost 242 KM", PowerHP = 242, PowerKW = 178, Displacement = 1999, FuelTypeId = ben,
+                    TorqueNm = 340, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 7.5m, TopSpeedKmh = 220, FuelConsumptionCombined = 8.8m },
+                new EngineVersion { EngineName = "2.0 TDCi 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 370, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 9.5m, TopSpeedKmh = 196, FuelConsumptionCombined = 5.3m },
+            ]);
+            AddEngines(GetOrCreateGeneration(kuga, "Mk3 (2019–)", "ford-kuga-mk3", 2019, null), [
+                new EngineVersion { EngineName = "1.5 EcoBoost 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1499, FuelTypeId = mild,
+                    TorqueNm = 240, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 9.8m, TopSpeedKmh = 195, FuelConsumptionCombined = 6.7m },
+                new EngineVersion { EngineName = "2.5 PHEV 225 KM", PowerHP = 225, PowerKW = 165, Displacement = 2488, FuelTypeId = phev,
+                    TorqueNm = 200, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.2m, TopSpeedKmh = 200, FuelConsumptionCombined = 1.4m },
+                new EngineVersion { EngineName = "2.0 EcoBlue 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 370, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 10.0m, TopSpeedKmh = 198, FuelConsumptionCombined = 5.3m },
+            ]);
+
+            // ── HYUNDAI TUCSON III/IV + KONA I ────────────────────────────────────────
+            int hyundaiId2 = GetOrCreateBrand("Hyundai", "hyundai", "auta-osobowe");
+            int tucson = GetOrCreateModel(hyundaiId2, "Tucson", "hyundai-tucson");
+            AddEngines(GetOrCreateGeneration(tucson, "III (2015–2020)", "hyundai-tucson-iii", 2015, 2020), [
+                new EngineVersion { EngineName = "1.6 T-GDI 132 KM", PowerHP = 132, PowerKW = 97, Displacement = 1591, FuelTypeId = ben,
+                    TorqueNm = 265, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.0m, TopSpeedKmh = 188, FuelConsumptionCombined = 7.3m },
+                new EngineVersion { EngineName = "1.6 T-GDI 177 KM", PowerHP = 177, PowerKW = 130, Displacement = 1591, FuelTypeId = ben,
+                    TorqueNm = 265, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.0m, TopSpeedKmh = 205, FuelConsumptionCombined = 8.5m },
+                new EngineVersion { EngineName = "2.0 CRDi 136 KM", PowerHP = 136, PowerKW = 100, Displacement = 1995, FuelTypeId = die,
+                    TorqueNm = 373, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 10.2m, TopSpeedKmh = 190, FuelConsumptionCombined = 5.9m },
+                new EngineVersion { EngineName = "2.0 CRDi 185 KM", PowerHP = 185, PowerKW = 136, Displacement = 1995, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.5m, TopSpeedKmh = 208, FuelConsumptionCombined = 6.3m },
+            ]);
+            AddEngines(GetOrCreateGeneration(tucson, "IV (2020–)", "hyundai-tucson-iv", 2020, null), [
+                new EngineVersion { EngineName = "1.6 T-GDI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1591, FuelTypeId = mild,
+                    TorqueNm = 253, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.3m, TopSpeedKmh = 191, FuelConsumptionCombined = 7.2m },
+                new EngineVersion { EngineName = "1.6 T-GDI Hybrid 230 KM", PowerHP = 230, PowerKW = 169, Displacement = 1591, FuelTypeId = hyb,
+                    TorqueNm = 265, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 7.5m, TopSpeedKmh = 193, FuelConsumptionCombined = 5.6m },
+                new EngineVersion { EngineName = "1.6 CRDi 136 KM", PowerHP = 136, PowerKW = 100, Displacement = 1598, FuelTypeId = mild,
+                    TorqueNm = 320, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 11.4m, TopSpeedKmh = 193, FuelConsumptionCombined = 5.4m },
+                new EngineVersion { EngineName = "PHEV 265 KM", PowerHP = 265, PowerKW = 195, Displacement = 1591, FuelTypeId = phev,
+                    TorqueNm = 350, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.3m, TopSpeedKmh = 191, FuelConsumptionCombined = 1.3m },
+            ]);
+            int kona = GetOrCreateModel(hyundaiId2, "Kona", "hyundai-kona");
+            AddEngines(GetOrCreateGeneration(kona, "I (2017–)", "hyundai-kona-i", 2017, null), [
+                new EngineVersion { EngineName = "1.0 T-GDI 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 998, FuelTypeId = ben,
+                    TorqueNm = 172, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.0m, TopSpeedKmh = 183, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "1.6 T-GDI 177 KM", PowerHP = 177, PowerKW = 130, Displacement = 1591, FuelTypeId = ben,
+                    TorqueNm = 265, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 7.9m, TopSpeedKmh = 210, FuelConsumptionCombined = 8.3m },
+                new EngineVersion { EngineName = "1.6 CRDi 115 KM", PowerHP = 115, PowerKW = 85, Displacement = 1598, FuelTypeId = die,
+                    TorqueNm = 280, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.0m, TopSpeedKmh = 183, FuelConsumptionCombined = 4.5m },
+            ]);
+
+            // ── KIA SPORTAGE IV + V ───────────────────────────────────────────────────
+            int kiaId2 = GetOrCreateBrand("Kia", "kia", "auta-osobowe");
+            int sportage = GetOrCreateModel(kiaId2, "Sportage", "kia-sportage");
+            AddEngines(GetOrCreateGeneration(sportage, "IV (2015–2021)", "kia-sportage-iv", 2015, 2021), [
+                new EngineVersion { EngineName = "1.6 T-GDI 132 KM", PowerHP = 132, PowerKW = 97, Displacement = 1591, FuelTypeId = ben,
+                    TorqueNm = 265, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.3m, TopSpeedKmh = 188, FuelConsumptionCombined = 7.3m },
+                new EngineVersion { EngineName = "2.0 CRDi 136 KM", PowerHP = 136, PowerKW = 100, Displacement = 1999, FuelTypeId = die,
+                    TorqueNm = 373, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 10.2m, TopSpeedKmh = 190, FuelConsumptionCombined = 5.9m },
+                new EngineVersion { EngineName = "2.0 CRDi 185 KM", PowerHP = 185, PowerKW = 136, Displacement = 1999, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.3m, TopSpeedKmh = 208, FuelConsumptionCombined = 6.3m },
+            ]);
+            AddEngines(GetOrCreateGeneration(sportage, "V (2021–)", "kia-sportage-v", 2021, null), [
+                new EngineVersion { EngineName = "1.6 T-GDI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1591, FuelTypeId = mild,
+                    TorqueNm = 253, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.3m, TopSpeedKmh = 192, FuelConsumptionCombined = 7.2m },
+                new EngineVersion { EngineName = "1.6 T-GDI HEV 230 KM", PowerHP = 230, PowerKW = 169, Displacement = 1591, FuelTypeId = hyb,
+                    TorqueNm = 265, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 7.6m, TopSpeedKmh = 193, FuelConsumptionCombined = 5.6m },
+                new EngineVersion { EngineName = "1.6 CRDI 136 KM", PowerHP = 136, PowerKW = 100, Displacement = 1598, FuelTypeId = mild,
+                    TorqueNm = 320, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 11.4m, TopSpeedKmh = 193, FuelConsumptionCombined = 5.4m },
+                new EngineVersion { EngineName = "PHEV 265 KM", PowerHP = 265, PowerKW = 195, Displacement = 1591, FuelTypeId = phev,
+                    TorqueNm = 350, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.3m, TopSpeedKmh = 191, FuelConsumptionCombined = 1.3m },
+            ]);
+
+            // ── RENAULT CLIO IV + V ───────────────────────────────────────────────────
+            int renaultId2 = GetOrCreateBrand("Renault", "renault", "auta-osobowe");
+            int clio = GetOrCreateModel(renaultId2, "Clio", "renault-clio");
+            AddEngines(GetOrCreateGeneration(clio, "IV (2012–2019)", "renault-clio-iv", 2012, 2019), [
+                new EngineVersion { EngineName = "0.9 TCe 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 898, FuelTypeId = ben,
+                    TorqueNm = 135, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.5m, TopSpeedKmh = 181, FuelConsumptionCombined = 5.7m },
+                new EngineVersion { EngineName = "1.2 TCe 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 1197, FuelTypeId = ben,
+                    TorqueNm = 190, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.0m, TopSpeedKmh = 200, FuelConsumptionCombined = 6.1m },
+                new EngineVersion { EngineName = "RS 200 KM", PowerHP = 200, PowerKW = 147, Displacement = 1618, FuelTypeId = ben,
+                    TorqueNm = 240, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.7m, TopSpeedKmh = 235, FuelConsumptionCombined = 7.3m },
+                new EngineVersion { EngineName = "1.5 dCi 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1461, FuelTypeId = die,
+                    TorqueNm = 220, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.0m, TopSpeedKmh = 181, FuelConsumptionCombined = 3.5m },
+            ]);
+            AddEngines(GetOrCreateGeneration(clio, "V (2019–)", "renault-clio-v", 2019, null), [
+                new EngineVersion { EngineName = "1.0 TCe 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 160, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 12.7m, TopSpeedKmh = 178, FuelConsumptionCombined = 5.7m },
+                new EngineVersion { EngineName = "1.3 TCe 130 KM", PowerHP = 130, PowerKW = 96, Displacement = 1332, FuelTypeId = ben,
+                    TorqueNm = 240, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.0m, TopSpeedKmh = 205, FuelConsumptionCombined = 6.1m },
+                new EngineVersion { EngineName = "E-Tech HEV 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1598, FuelTypeId = hyb,
+                    TorqueNm = 205, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 180, FuelConsumptionCombined = 4.2m },
+                new EngineVersion { EngineName = "1.5 dCi 85 KM", PowerHP = 85, PowerKW = 63, Displacement = 1461, FuelTypeId = die,
+                    TorqueNm = 200, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.0m, TopSpeedKmh = 178, FuelConsumptionCombined = 3.5m },
+            ]);
+
+            // ── OPEL CORSA E/F + INSIGNIA B ──────────────────────────────────────────
+            int opelId2 = GetOrCreateBrand("Opel", "opel", "auta-osobowe");
+            int corsa = GetOrCreateModel(opelId2, "Corsa", "opel-corsa");
+            AddEngines(GetOrCreateGeneration(corsa, "E (2014–2019)", "opel-corsa-e", 2014, 2019), [
+                new EngineVersion { EngineName = "1.0 Turbo 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 170, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.5m, TopSpeedKmh = 178, FuelConsumptionCombined = 5.4m },
+                new EngineVersion { EngineName = "1.0 Turbo 115 KM", PowerHP = 115, PowerKW = 85, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 200, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 9.9m, TopSpeedKmh = 198, FuelConsumptionCombined = 5.5m },
+                new EngineVersion { EngineName = "OPC 1.6 Turbo 207 KM", PowerHP = 207, PowerKW = 152, Displacement = 1598, FuelTypeId = ben,
+                    TorqueNm = 280, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.8m, TopSpeedKmh = 240, FuelConsumptionCombined = 7.9m },
+                new EngineVersion { EngineName = "1.3 CDTi 95 KM", PowerHP = 95, PowerKW = 70, Displacement = 1248, FuelTypeId = die,
+                    TorqueNm = 190, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.5m, TopSpeedKmh = 182, FuelConsumptionCombined = 3.7m },
+            ]);
+            AddEngines(GetOrCreateGeneration(corsa, "F (2019–)", "opel-corsa-f", 2019, null), [
+                new EngineVersion { EngineName = "1.2 75 KM", PowerHP = 75, PowerKW = 55, Displacement = 1199, FuelTypeId = ben,
+                    TorqueNm = 118, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 14.5m, TopSpeedKmh = 165, FuelConsumptionCombined = 5.4m },
+                new EngineVersion { EngineName = "1.2 Turbo 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 1199, FuelTypeId = ben,
+                    TorqueNm = 205, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 10.7m, TopSpeedKmh = 188, FuelConsumptionCombined = 5.5m },
+                new EngineVersion { EngineName = "1.2 Turbo 130 KM", PowerHP = 130, PowerKW = 96, Displacement = 1199, FuelTypeId = ben,
+                    TorqueNm = 230, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 8.8m, TopSpeedKmh = 208, FuelConsumptionCombined = 5.6m },
+            ]);
+            int insignia = GetOrCreateModel(opelId2, "Insignia", "opel-insignia");
+            AddEngines(GetOrCreateGeneration(insignia, "B (2017–)", "opel-insignia-b", 2017, null), [
+                new EngineVersion { EngineName = "1.5 Turbo 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1490, FuelTypeId = ben,
+                    TorqueNm = 230, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 210, FuelConsumptionCombined = 7.1m },
+                new EngineVersion { EngineName = "2.0 Turbo 200 KM", PowerHP = 200, PowerKW = 147, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 300, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.0m, TopSpeedKmh = 230, FuelConsumptionCombined = 8.3m },
+                new EngineVersion { EngineName = "GSi 260 KM", PowerHP = 260, PowerKW = 191, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 6.3m, TopSpeedKmh = 250, FuelConsumptionCombined = 9.0m },
+                new EngineVersion { EngineName = "2.0 CDTi 170 KM", PowerHP = 170, PowerKW = 125, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.4m, TopSpeedKmh = 220, FuelConsumptionCombined = 5.4m },
+            ]);
+
+            // ── MITSUBISHI OUTLANDER III + IV ─────────────────────────────────────────
+            int mitId = GetOrCreateBrand("Mitsubishi", "mitsubishi", "auta-osobowe");
+            int outlander = GetOrCreateModel(mitId, "Outlander", "mitsubishi-outlander");
+            AddEngines(GetOrCreateGeneration(outlander, "III (2012–2021)", "mitsubishi-outlander-iii", 2012, 2021), [
+                new EngineVersion { EngineName = "2.0 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 196, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.5m, TopSpeedKmh = 192, FuelConsumptionCombined = 7.5m },
+                new EngineVersion { EngineName = "2.2 Di-D 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 2268, FuelTypeId = die,
+                    TorqueNm = 380, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 11.5m, TopSpeedKmh = 190, FuelConsumptionCombined = 5.7m },
+                new EngineVersion { EngineName = "PHEV 224 KM", PowerHP = 224, PowerKW = 165, Displacement = 2360, FuelTypeId = phev,
+                    TorqueNm = 332, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 11.0m, TopSpeedKmh = 170, FuelConsumptionCombined = 1.9m },
+            ]);
+            AddEngines(GetOrCreateGeneration(outlander, "IV (2021–)", "mitsubishi-outlander-iv", 2021, null), [
+                new EngineVersion { EngineName = "PHEV 2.4 302 KM", PowerHP = 302, PowerKW = 222, Displacement = 2360, FuelTypeId = phev,
+                    TorqueNm = 350, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 7.8m, TopSpeedKmh = 200, FuelConsumptionCombined = 1.8m },
+            ]);
         }
 
         logger.LogInformation("[ComprehensiveSeeder] Completed seeding premium cars, motorcycles, trucks.");
