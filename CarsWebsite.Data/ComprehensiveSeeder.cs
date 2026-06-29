@@ -1278,6 +1278,260 @@ public static class ComprehensiveSeeder
             ]);
         }
 
+        // ── BMW SERIA 3 / SERIA 5 (TorqueNm enrichment) ──────────────────────────
+        {
+            int bId = GetOrCreateBrand("BMW", "bmw", "auta-osobowe");
+
+            int s3 = GetOrCreateModel(bId, "Seria 3", "bmw-seria-3");
+            AddEngines(GetOrCreateGeneration(s3, "F30 (2011–2018)", "bmw-3-f30", 2011, 2018), [
+                new EngineVersion { EngineName = "318i 136 KM", PowerHP = 136, PowerKW = 100, Displacement = 1499, FuelTypeId = ben,
+                    TorqueNm = 220, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 8.8m, TopSpeedKmh = 210, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "320i 184 KM", PowerHP = 184, PowerKW = 135, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 270, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 7.0m, TopSpeedKmh = 236, FuelConsumptionCombined = 6.8m },
+                new EngineVersion { EngineName = "328i 245 KM", PowerHP = 245, PowerKW = 180, Displacement = 1997, FuelTypeId = ben,
+                    TorqueNm = 350, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 5.8m, TopSpeedKmh = 250, FuelConsumptionCombined = 7.5m },
+                new EngineVersion { EngineName = "M3 431 KM", PowerHP = 431, PowerKW = 317, Displacement = 2979, FuelTypeId = ben,
+                    TorqueNm = 550, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 4.1m, TopSpeedKmh = 250, FuelConsumptionCombined = 9.9m },
+                new EngineVersion { EngineName = "318d 143 KM", PowerHP = 143, PowerKW = 105, Displacement = 1995, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 9.0m, TopSpeedKmh = 210, FuelConsumptionCombined = 4.5m },
+                new EngineVersion { EngineName = "320d 190 KM", PowerHP = 190, PowerKW = 140, Displacement = 1995, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 7.5m, TopSpeedKmh = 231, FuelConsumptionCombined = 4.8m },
+                new EngineVersion { EngineName = "330d 258 KM", PowerHP = 258, PowerKW = 190, Displacement = 2993, FuelTypeId = die,
+                    TorqueNm = 560, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 5.5m, TopSpeedKmh = 250, FuelConsumptionCombined = 5.5m },
+            ]);
+            AddEngines(GetOrCreateGeneration(s3, "G20 (2018–)", "bmw-3-g20", 2018, null), [
+                new EngineVersion { EngineName = "318i 156 KM", PowerHP = 156, PowerKW = 115, Displacement = 1499, FuelTypeId = mild,
+                    TorqueNm = 250, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 8.5m, TopSpeedKmh = 215, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "320i 184 KM", PowerHP = 184, PowerKW = 135, Displacement = 1998, FuelTypeId = mild,
+                    TorqueNm = 300, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 7.0m, TopSpeedKmh = 235, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "330i 258 KM", PowerHP = 258, PowerKW = 190, Displacement = 1998, FuelTypeId = mild,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 5.8m, TopSpeedKmh = 250, FuelConsumptionCombined = 7.0m },
+                new EngineVersion { EngineName = "M340i 374 KM", PowerHP = 374, PowerKW = 275, Displacement = 2998, FuelTypeId = mild,
+                    TorqueNm = 500, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 4.4m, TopSpeedKmh = 250, FuelConsumptionCombined = 8.0m },
+                new EngineVersion { EngineName = "M3 Competition 510 KM", PowerHP = 510, PowerKW = 375, Displacement = 2993, FuelTypeId = ben,
+                    TorqueNm = 650, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 3.9m, TopSpeedKmh = 290, FuelConsumptionCombined = 10.9m },
+                new EngineVersion { EngineName = "318d 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1995, FuelTypeId = mild,
+                    TorqueNm = 360, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 8.8m, TopSpeedKmh = 215, FuelConsumptionCombined = 4.5m },
+                new EngineVersion { EngineName = "320d 190 KM", PowerHP = 190, PowerKW = 140, Displacement = 1995, FuelTypeId = mild,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 7.5m, TopSpeedKmh = 234, FuelConsumptionCombined = 4.8m },
+                new EngineVersion { EngineName = "330d 286 KM", PowerHP = 286, PowerKW = 210, Displacement = 2993, FuelTypeId = mild,
+                    TorqueNm = 580, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 5.5m, TopSpeedKmh = 250, FuelConsumptionCombined = 5.4m },
+                new EngineVersion { EngineName = "330e PHEV 292 KM", PowerHP = 292, PowerKW = 215, Displacement = 1998, FuelTypeId = phev,
+                    TorqueNm = 420, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 6.0m, TopSpeedKmh = 225, FuelConsumptionCombined = 1.7m },
+            ]);
+
+            int s5 = GetOrCreateModel(bId, "Seria 5", "bmw-seria-5");
+            AddEngines(GetOrCreateGeneration(s5, "G30 (2016–)", "bmw-5-g30", 2016, null), [
+                new EngineVersion { EngineName = "520i 184 KM", PowerHP = 184, PowerKW = 135, Displacement = 1998, FuelTypeId = mild,
+                    TorqueNm = 290, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 7.8m, TopSpeedKmh = 234, FuelConsumptionCombined = 6.8m },
+                new EngineVersion { EngineName = "530i 252 KM", PowerHP = 252, PowerKW = 185, Displacement = 1998, FuelTypeId = mild,
+                    TorqueNm = 350, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 6.2m, TopSpeedKmh = 250, FuelConsumptionCombined = 7.2m },
+                new EngineVersion { EngineName = "540i 333 KM", PowerHP = 333, PowerKW = 245, Displacement = 2998, FuelTypeId = mild,
+                    TorqueNm = 450, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 4.9m, TopSpeedKmh = 250, FuelConsumptionCombined = 8.2m },
+                new EngineVersion { EngineName = "M5 Competition 625 KM", PowerHP = 625, PowerKW = 460, Displacement = 4395, FuelTypeId = ben,
+                    TorqueNm = 750, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 3.3m, TopSpeedKmh = 305, FuelConsumptionCombined = 11.6m },
+                new EngineVersion { EngineName = "520d 190 KM", PowerHP = 190, PowerKW = 140, Displacement = 1995, FuelTypeId = mild,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 8.0m, TopSpeedKmh = 238, FuelConsumptionCombined = 4.8m },
+                new EngineVersion { EngineName = "530d 286 KM", PowerHP = 286, PowerKW = 210, Displacement = 2993, FuelTypeId = mild,
+                    TorqueNm = 580, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 5.7m, TopSpeedKmh = 250, FuelConsumptionCombined = 5.5m },
+                new EngineVersion { EngineName = "530e PHEV 292 KM", PowerHP = 292, PowerKW = 215, Displacement = 1998, FuelTypeId = phev,
+                    TorqueNm = 420, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 6.2m, TopSpeedKmh = 235, FuelConsumptionCombined = 1.9m },
+            ]);
+        }
+
+        // ── AUDI A4 B9 (TorqueNm enrichment) ─────────────────────────────────────
+        {
+            int bId = GetOrCreateBrand("Audi", "audi", "auta-osobowe");
+
+            int a4 = GetOrCreateModel(bId, "A4", "audi-a4");
+            AddEngines(GetOrCreateGeneration(a4, "B9 (2015–)", "audi-a4-b9", 2015, null), [
+                new EngineVersion { EngineName = "35 TFSI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1498, FuelTypeId = ben,
+                    TorqueNm = 250, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.6m, TopSpeedKmh = 218, FuelConsumptionCombined = 6.2m },
+                new EngineVersion { EngineName = "40 TFSI 204 KM", PowerHP = 204, PowerKW = 150, Displacement = 1984, FuelTypeId = mild,
+                    TorqueNm = 320, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 7.3m, TopSpeedKmh = 237, FuelConsumptionCombined = 7.0m },
+                new EngineVersion { EngineName = "45 TFSI 265 KM", PowerHP = 265, PowerKW = 195, Displacement = 1984, FuelTypeId = mild,
+                    TorqueNm = 370, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 5.7m, TopSpeedKmh = 250, FuelConsumptionCombined = 7.8m },
+                new EngineVersion { EngineName = "S4 TFSI 341 KM", PowerHP = 341, PowerKW = 251, Displacement = 2995, FuelTypeId = mild,
+                    TorqueNm = 500, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 4.7m, TopSpeedKmh = 250, FuelConsumptionCombined = 8.5m },
+                new EngineVersion { EngineName = "30 TDI 136 KM", PowerHP = 136, PowerKW = 100, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.3m, TopSpeedKmh = 208, FuelConsumptionCombined = 4.4m },
+                new EngineVersion { EngineName = "35 TDI 163 KM", PowerHP = 163, PowerKW = 120, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 380, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.4m, TopSpeedKmh = 225, FuelConsumptionCombined = 4.6m },
+                new EngineVersion { EngineName = "40 TDI 204 KM", PowerHP = 204, PowerKW = 150, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 7.5m, TopSpeedKmh = 237, FuelConsumptionCombined = 5.0m },
+            ]);
+        }
+
+        // ── MERCEDES-BENZ KLASA C / E (TorqueNm enrichment) ──────────────────────
+        {
+            int bId = GetOrCreateBrand("Mercedes-Benz", "mercedes-benz", "auta-osobowe");
+
+            int klasaC = GetOrCreateModel(bId, "Klasa C", "mb-klasa-c");
+            AddEngines(GetOrCreateGeneration(klasaC, "W205 (2014–2021)", "mb-c-w205", 2014, 2021), [
+                new EngineVersion { EngineName = "C180 156 KM", PowerHP = 156, PowerKW = 115, Displacement = 1595, FuelTypeId = ben,
+                    TorqueNm = 250, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 8.0m, TopSpeedKmh = 218, FuelConsumptionCombined = 6.4m },
+                new EngineVersion { EngineName = "C200 184 KM", PowerHP = 184, PowerKW = 135, Displacement = 1991, FuelTypeId = mild,
+                    TorqueNm = 300, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 7.3m, TopSpeedKmh = 235, FuelConsumptionCombined = 6.8m },
+                new EngineVersion { EngineName = "C300 258 KM", PowerHP = 258, PowerKW = 190, Displacement = 1991, FuelTypeId = mild,
+                    TorqueNm = 370, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 5.8m, TopSpeedKmh = 250, FuelConsumptionCombined = 7.5m },
+                new EngineVersion { EngineName = "C63 AMG 476 KM", PowerHP = 476, PowerKW = 350, Displacement = 3982, FuelTypeId = ben,
+                    TorqueNm = 650, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 4.0m, TopSpeedKmh = 250, FuelConsumptionCombined = 10.5m },
+                new EngineVersion { EngineName = "C200d 160 KM", PowerHP = 160, PowerKW = 118, Displacement = 1598, FuelTypeId = mild,
+                    TorqueNm = 360, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 8.5m, TopSpeedKmh = 222, FuelConsumptionCombined = 4.3m },
+                new EngineVersion { EngineName = "C220d 194 KM", PowerHP = 194, PowerKW = 143, Displacement = 1950, FuelTypeId = mild,
+                    TorqueNm = 400, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 7.6m, TopSpeedKmh = 234, FuelConsumptionCombined = 4.6m },
+                new EngineVersion { EngineName = "C300e PHEV 320 KM", PowerHP = 320, PowerKW = 235, Displacement = 1991, FuelTypeId = phev,
+                    TorqueNm = 700, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 5.7m, TopSpeedKmh = 250, FuelConsumptionCombined = 1.7m },
+            ]);
+            AddEngines(GetOrCreateGeneration(klasaC, "W206 (2021–)", "mb-c-w206", 2021, null), [
+                new EngineVersion { EngineName = "C180 170 KM", PowerHP = 170, PowerKW = 125, Displacement = 1496, FuelTypeId = mild,
+                    TorqueNm = 280, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 7.8m, TopSpeedKmh = 219, FuelConsumptionCombined = 6.6m },
+                new EngineVersion { EngineName = "C200 204 KM", PowerHP = 204, PowerKW = 150, Displacement = 1496, FuelTypeId = mild,
+                    TorqueNm = 300, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 7.3m, TopSpeedKmh = 236, FuelConsumptionCombined = 7.0m },
+                new EngineVersion { EngineName = "C300 258 KM", PowerHP = 258, PowerKW = 190, Displacement = 1999, FuelTypeId = mild,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 5.8m, TopSpeedKmh = 250, FuelConsumptionCombined = 7.5m },
+                new EngineVersion { EngineName = "C220d 200 KM", PowerHP = 200, PowerKW = 147, Displacement = 1993, FuelTypeId = mild,
+                    TorqueNm = 440, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 6.9m, TopSpeedKmh = 232, FuelConsumptionCombined = 4.6m },
+                new EngineVersion { EngineName = "C300e PHEV 313 KM", PowerHP = 313, PowerKW = 230, Displacement = 1496, FuelTypeId = phev,
+                    TorqueNm = 550, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 5.5m, TopSpeedKmh = 250, FuelConsumptionCombined = 1.5m },
+            ]);
+
+            int klasaE = GetOrCreateModel(bId, "Klasa E", "mb-klasa-e");
+            AddEngines(GetOrCreateGeneration(klasaE, "W213 (2016–2023)", "mb-e-w213", 2016, 2023), [
+                new EngineVersion { EngineName = "E200 197 KM", PowerHP = 197, PowerKW = 145, Displacement = 1991, FuelTypeId = mild,
+                    TorqueNm = 320, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 7.5m, TopSpeedKmh = 237, FuelConsumptionCombined = 7.0m },
+                new EngineVersion { EngineName = "E300 258 KM", PowerHP = 258, PowerKW = 190, Displacement = 1991, FuelTypeId = mild,
+                    TorqueNm = 370, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 6.1m, TopSpeedKmh = 250, FuelConsumptionCombined = 7.6m },
+                new EngineVersion { EngineName = "E63 AMG S 612 KM", PowerHP = 612, PowerKW = 450, Displacement = 3982, FuelTypeId = ben,
+                    TorqueNm = 850, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 3.4m, TopSpeedKmh = 300, FuelConsumptionCombined = 11.3m },
+                new EngineVersion { EngineName = "E220d 194 KM", PowerHP = 194, PowerKW = 143, Displacement = 1950, FuelTypeId = mild,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 7.3m, TopSpeedKmh = 240, FuelConsumptionCombined = 5.0m },
+                new EngineVersion { EngineName = "E400d 340 KM", PowerHP = 340, PowerKW = 250, Displacement = 2925, FuelTypeId = mild,
+                    TorqueNm = 700, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 5.2m, TopSpeedKmh = 250, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "E300e PHEV 320 KM", PowerHP = 320, PowerKW = 235, Displacement = 1991, FuelTypeId = phev,
+                    TorqueNm = 700, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 5.7m, TopSpeedKmh = 250, FuelConsumptionCombined = 1.7m },
+            ]);
+        }
+
+        // ── TOYOTA COROLLA / HYUNDAI i30 / KIA CEED / RENAULT MEGANE ────────────
+        {
+            int toyotaId = GetOrCreateBrand("Toyota", "toyota", "auta-osobowe");
+            int corolla = GetOrCreateModel(toyotaId, "Corolla", "toyota-corolla");
+            AddEngines(GetOrCreateGeneration(corolla, "E210 (2018–)", "toyota-corolla-e210", 2018, null), [
+                new EngineVersion { EngineName = "1.2 T 116 KM", PowerHP = 116, PowerKW = 85, Displacement = 1197, FuelTypeId = ben,
+                    TorqueNm = 185, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.2m, TopSpeedKmh = 193, FuelConsumptionCombined = 6.3m },
+                new EngineVersion { EngineName = "2.0 GR Sport 261 KM", PowerHP = 261, PowerKW = 192, Displacement = 1987, FuelTypeId = ben,
+                    TorqueNm = 360, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.5m, TopSpeedKmh = 235, FuelConsumptionCombined = 9.5m },
+                new EngineVersion { EngineName = "1.8 HEV 122 KM", PowerHP = 122, PowerKW = 90, Displacement = 1798, FuelTypeId = hyb,
+                    TorqueNm = 163, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.5m, TopSpeedKmh = 180, FuelConsumptionCombined = 4.3m },
+                new EngineVersion { EngineName = "2.0 HEV 196 KM", PowerHP = 196, PowerKW = 144, Displacement = 1987, FuelTypeId = hyb,
+                    TorqueNm = 190, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 6.5m, TopSpeedKmh = 200, FuelConsumptionCombined = 4.8m },
+            ]);
+
+            int hyundaiId = GetOrCreateBrand("Hyundai", "hyundai", "auta-osobowe");
+            int i30 = GetOrCreateModel(hyundaiId, "i30", "hyundai-i30");
+            AddEngines(GetOrCreateGeneration(i30, "PD (2016–)", "hyundai-i30-pd", 2016, null), [
+                new EngineVersion { EngineName = "1.0 T-GDI 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 998, FuelTypeId = ben,
+                    TorqueNm = 172, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.0m, TopSpeedKmh = 189, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "1.4 T-GDI 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1353, FuelTypeId = ben,
+                    TorqueNm = 242, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.0m, TopSpeedKmh = 205, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "N 275 KM", PowerHP = 275, PowerKW = 202, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 353, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.1m, TopSpeedKmh = 250, FuelConsumptionCombined = 8.1m },
+                new EngineVersion { EngineName = "1.6 CRDi 115 KM", PowerHP = 115, PowerKW = 85, Displacement = 1582, FuelTypeId = die,
+                    TorqueNm = 280, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.5m, TopSpeedKmh = 195, FuelConsumptionCombined = 4.2m },
+            ]);
+
+            int kiaId = GetOrCreateBrand("Kia", "kia", "auta-osobowe");
+            int ceed = GetOrCreateModel(kiaId, "Ceed", "kia-ceed");
+            AddEngines(GetOrCreateGeneration(ceed, "III (2018–)", "kia-ceed-iii", 2018, null), [
+                new EngineVersion { EngineName = "1.0 T-GDI 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 998, FuelTypeId = mild,
+                    TorqueNm = 172, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.2m, TopSpeedKmh = 188, FuelConsumptionCombined = 5.9m },
+                new EngineVersion { EngineName = "1.4 T-GDI 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1353, FuelTypeId = mild,
+                    TorqueNm = 242, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.0m, TopSpeedKmh = 205, FuelConsumptionCombined = 6.4m },
+                new EngineVersion { EngineName = "GT 1.6 T-GDI 204 KM", PowerHP = 204, PowerKW = 150, Displacement = 1591, FuelTypeId = ben,
+                    TorqueNm = 265, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.0m, TopSpeedKmh = 230, FuelConsumptionCombined = 7.5m },
+                new EngineVersion { EngineName = "1.6 CRDi 115 KM", PowerHP = 115, PowerKW = 85, Displacement = 1598, FuelTypeId = die,
+                    TorqueNm = 280, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.8m, TopSpeedKmh = 193, FuelConsumptionCombined = 4.1m },
+            ]);
+
+            int renaultId = GetOrCreateBrand("Renault", "renault", "auta-osobowe");
+            int megane = GetOrCreateModel(renaultId, "Megane", "renault-megane");
+            AddEngines(GetOrCreateGeneration(megane, "IV (2015–)", "renault-megane-iv", 2015, null), [
+                new EngineVersion { EngineName = "1.3 TCe 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1332, FuelTypeId = ben,
+                    TorqueNm = 260, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.8m, TopSpeedKmh = 209, FuelConsumptionCombined = 6.3m },
+                new EngineVersion { EngineName = "1.8 TCe RS 300 KM", PowerHP = 300, PowerKW = 221, Displacement = 1798, FuelTypeId = ben,
+                    TorqueNm = 390, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 5.7m, TopSpeedKmh = 260, FuelConsumptionCombined = 8.4m },
+                new EngineVersion { EngineName = "1.5 dCi 115 KM", PowerHP = 115, PowerKW = 85, Displacement = 1461, FuelTypeId = die,
+                    TorqueNm = 260, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.2m, TopSpeedKmh = 204, FuelConsumptionCombined = 4.0m },
+                new EngineVersion { EngineName = "E-Tech PHEV 160 KM", PowerHP = 160, PowerKW = 118, Displacement = 1618, FuelTypeId = phev,
+                    TorqueNm = 300, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.8m, TopSpeedKmh = 172, FuelConsumptionCombined = 1.4m },
+            ]);
+        }
+
         logger.LogInformation("[ComprehensiveSeeder] Completed seeding premium cars, motorcycles, trucks.");
     }
 }
