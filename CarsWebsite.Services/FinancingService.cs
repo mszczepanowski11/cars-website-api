@@ -63,7 +63,7 @@ public class FinancingService : IFinancingService
 
     private async Task SendEmailsFireAndForgetAsync(FinancingInquiry inq, string advertTitle)
     {
-        var siteUrl    = (_config["Imoje:SiteUrl"] ?? "https://carizo.pl").TrimEnd('/');
+        var siteUrl    = (_config["Imoje:SiteUrl"] ?? "https://carizo.eu").TrimEnd('/');
         var advertUrl  = $"{siteUrl}/advert/{inq.AdvertId}";
         var typeLabel  = inq.Type == "credit" ? "Kredyt" : "Leasing";
         var adminEmail = _config["Admin:Email"] ?? "kontakt@carizo.eu";

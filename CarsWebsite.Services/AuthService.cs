@@ -73,7 +73,7 @@ public class AuthService : IAuthService
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
-        var siteUrl = _configuration["SiteUrl"] ?? "https://carizo.pl";
+        var siteUrl = _configuration["SiteUrl"] ?? "https://carizo.eu";
         var subject = "Potwierdź swój adres email – CARIZO";
         var html = EmailService.BuildHtml(
             "Potwierdź adres email",
@@ -171,7 +171,7 @@ public class AuthService : IAuthService
         user.PasswordResetTokenExpires = DateTime.UtcNow.AddHours(1);
         await _context.SaveChangesAsync();
 
-        var siteUrl = _configuration["SiteUrl"] ?? "https://carizo.pl";
+        var siteUrl = _configuration["SiteUrl"] ?? "https://carizo.eu";
         var html = EmailService.BuildHtml("Resetowanie hasła",
             "Kliknij poniższy przycisk, aby ustawić nowe hasło. Link jest ważny przez 1 godzinę.",
             null,
@@ -221,7 +221,7 @@ public class AuthService : IAuthService
         user.EmailVerificationTokenExpires = DateTime.UtcNow.AddHours(24);
         await _context.SaveChangesAsync();
 
-        var siteUrl = _configuration["SiteUrl"] ?? "https://carizo.pl";
+        var siteUrl = _configuration["SiteUrl"] ?? "https://carizo.eu";
         var subject = "Potwierdź swój adres email – CARIZO";
         var html = EmailService.BuildHtml(
             "Potwierdź adres email",

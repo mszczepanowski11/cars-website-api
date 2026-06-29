@@ -662,7 +662,7 @@ public class AdminController : ControllerBase
         var user    = section["User"] ?? "";
         var pass    = section["Password"] ?? "";
         var fromCfg = (section["From"] ?? "").Trim();
-        var from    = !string.IsNullOrEmpty(fromCfg) ? fromCfg : (user.Length > 0 ? user : "test@carizo.pl");
+        var from    = !string.IsNullOrEmpty(fromCfg) ? fromCfg : (user.Length > 0 ? user : "test@carizo.eu");
 
         // Normalise host
         var host = rawHost.Contains("://") ? rawHost.Split("://", 2)[1].TrimEnd('/') : rawHost;

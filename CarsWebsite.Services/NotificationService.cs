@@ -127,7 +127,7 @@ public class NotificationService : INotificationService
         int? paymentId,
         int? invoiceId)
     {
-        const string siteUrl = "https://carizo.pl";
+        const string siteUrl = "https://carizo.eu";
         string? ctaUrl = null;
         string? ctaLabel = null;
 

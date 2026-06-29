@@ -269,7 +269,7 @@ public class PaymentService : IPaymentService
         var serviceKey = section["ServiceKey"] ?? section["ApiKey"] ?? "";
         var merchantId = section["MerchantId"] ?? "";
         var sandbox    = string.Equals(section["Environment"], "sandbox", StringComparison.OrdinalIgnoreCase);
-        var siteUrl    = section["SiteUrl"] ?? "https://carizo.pl";
+        var siteUrl    = section["SiteUrl"] ?? "https://carizo.eu";
         // Imoje__ApiUrl should point to the API server (Railway API URL) for webhook delivery.
         // If not set, falls back to siteUrl (only works if Nuxt proxy forwards /api/* to the API).
         var apiUrl     = section["ApiUrl"] ?? siteUrl;

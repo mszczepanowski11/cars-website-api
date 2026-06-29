@@ -66,7 +66,7 @@ public class NewsletterController : ControllerBase
 
         await _context.SaveChangesAsync();
 
-        var siteUrl = _config["SiteUrl"] ?? "https://carizo.pl";
+        var siteUrl = _config["SiteUrl"] ?? "https://carizo.eu";
         var confirmUrl = $"{siteUrl}/newsletter/potwierdz?token={token}";
         var html = EmailService.BuildHtml(
             title: "Potwierdź zapis na newsletter",

@@ -248,7 +248,7 @@ public class EmailService : IEmailService
         <span style=""font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:22px;font-weight:200;color:#ffffff;letter-spacing:4px"">CARIZO</span>
         <![endif]-->
         <!--[if !mso]><!-->
-        <img src=""https://carizo.pl/carizo-logo.svg"" alt=""CARIZO"" width=""110"" height=""20"" style=""height:20px;width:auto;display:block"">
+        <img src=""https://carizo.eu/carizo-logo.svg"" alt=""CARIZO"" width=""110"" height=""20"" style=""height:20px;width:auto;display:block"">
         <!--<![endif]-->
       </td></tr>
 
@@ -291,7 +291,7 @@ public class EmailService : IEmailService
             <span style=""font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:16px;font-weight:200;color:#333333;letter-spacing:3px"">CARIZO</span>
             <![endif]-->
             <!--[if !mso]><!-->
-            <img src=""https://carizo.pl/carizo-logo.svg"" alt=""CARIZO"" width=""80"" height=""15"" style=""height:15px;width:auto;display:block;opacity:0.4;filter:brightness(0.6)"">
+            <img src=""https://carizo.eu/carizo-logo.svg"" alt=""CARIZO"" width=""80"" height=""15"" style=""height:15px;width:auto;display:block;opacity:0.4;filter:brightness(0.6)"">
             <!--<![endif]-->
           </td></tr>
 
@@ -299,10 +299,10 @@ public class EmailService : IEmailService
           <tr><td style=""padding:0 0 14px 0"">
             <table role=""presentation"" cellpadding=""0"" cellspacing=""0"" border=""0"">
               <tr>
-                <td style=""padding-right:16px""><a href=""https://carizo.pl"" class=""ftr-link"" style=""font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:12px;color:#444444;text-decoration:none"">carizo.pl</a></td>
-                <td style=""padding-right:16px""><a href=""https://carizo.pl/dashboard/ustawienia"" class=""ftr-link"" style=""font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:12px;color:#444444;text-decoration:none"">Ustawienia powiadomień</a></td>
-                <td style=""padding-right:16px""><a href=""https://carizo.pl/dashboard"" class=""ftr-link"" style=""font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:12px;color:#444444;text-decoration:none"">Panel konta</a></td>
-                <td><a href=""https://carizo.pl/#contact"" class=""ftr-link"" style=""font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:12px;color:#444444;text-decoration:none"">Kontakt</a></td>
+                <td style=""padding-right:16px""><a href=""https://carizo.eu"" class=""ftr-link"" style=""font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:12px;color:#444444;text-decoration:none"">carizo.eu</a></td>
+                <td style=""padding-right:16px""><a href=""https://carizo.eu/dashboard/ustawienia"" class=""ftr-link"" style=""font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:12px;color:#444444;text-decoration:none"">Ustawienia powiadomień</a></td>
+                <td style=""padding-right:16px""><a href=""https://carizo.eu/dashboard"" class=""ftr-link"" style=""font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:12px;color:#444444;text-decoration:none"">Panel konta</a></td>
+                <td><a href=""https://carizo.eu/#contact"" class=""ftr-link"" style=""font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:12px;color:#444444;text-decoration:none"">Kontakt</a></td>
               </tr>
             </table>
           </td></tr>
@@ -311,7 +311,7 @@ public class EmailService : IEmailService
           <tr><td>
             <p style=""margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:11px;color:#2e2e2e;line-height:1.7"">
               Ta wiadomość została wysłana automatycznie — prosimy na nią nie odpowiadać.<br>
-              © {year} CARIZO. Wszelkie prawa zastrzeżone. · <a href=""https://carizo.pl/polityka-prywatnosci"" style=""color:#333333;text-decoration:none"">Polityka prywatności</a>
+              © {year} CARIZO. Wszelkie prawa zastrzeżone. · <a href=""https://carizo.eu/polityka-prywatnosci"" style=""color:#333333;text-decoration:none"">Polityka prywatności</a>
             </p>
           </td></tr>
 
