@@ -99,12 +99,12 @@ public class AdvertController : ControllerBase
         {
             var (activeCount, yearCount) = await _advertService.GetPersonalAdCountsAsync(userId);
             _logger.LogInformation("[Advert/Create] Personal account userId={UserId} activeCount={Active} yearCount={Year}", userId, activeCount, yearCount);
-            if (activeCount >= 1)
+            if (activeCount >= 2)
             {
                 _logger.LogWarning("[Advert/Create] Blocked: personal active limit reached userId={UserId} activeCount={Active}", userId, activeCount);
                 return BadRequest(new { error = "private_limit_active", message = "Wygląda na to, że prowadzisz działalność handlową. Załóż konto biznesowe." });
             }
-            if (yearCount >= 3)
+            if (yearCount >= 4)
             {
                 _logger.LogWarning("[Advert/Create] Blocked: personal yearly limit reached userId={UserId} yearCount={Year}", userId, yearCount);
                 return BadRequest(new { error = "private_limit_yearly", message = "Wygląda na to, że prowadzisz działalność handlową. Załóż konto biznesowe." });
