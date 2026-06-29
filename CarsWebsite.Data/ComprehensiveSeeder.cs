@@ -537,7 +537,7 @@ public static class ComprehensiveSeeder
             int bId = GetOrCreateBrand("Kawasaki", "kawasaki", "motocykle");
 
             int z900 = GetOrCreateModel(bId, "Z900", "kawasaki-z900");
-            AddEngines(GetOrCreateGeneration(z900, "Z900 (2017–)", "kawasaki-z900-2017", 2017, null), [
+            AddEngines(GetOrCreateGeneration(z900, "ZR900 (2017–)", "kawasaki-z900-zr900", 2017, null), [
                 new EngineVersion { EngineName = "948 cc I4 125 KM", PowerHP = 125, PowerKW = 92, Displacement = 948, FuelTypeId = ben,
                     TorqueNm = 99, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
                     Cylinders = 4, Acceleration0100 = 3.5m, TopSpeedKmh = 248, FuelConsumptionCombined = 5.8m },
@@ -560,8 +560,8 @@ public static class ComprehensiveSeeder
                     Cylinders = 4, TopSpeedKmh = 220, FuelConsumptionCombined = 5.9m },
             ]);
 
-            int zx10r = GetOrCreateModel(bId, "Ninja ZX-10R", "kawasaki-zx10r");
-            AddEngines(GetOrCreateGeneration(zx10r, "ZX-10R (2021–)", "kawasaki-zx10r-2021", 2021, null), [
+            int zx10r = GetOrCreateModel(bId, "ZX-10R", "kawasaki-zx10r");
+            AddEngines(GetOrCreateGeneration(zx10r, "2021– (ZX1002L)", "kawasaki-zx10r-2021", 2021, null), [
                 new EngineVersion { EngineName = "998 cc I4 203 KM", PowerHP = 203, PowerKW = 149, Displacement = 998, FuelTypeId = ben,
                     TorqueNm = 115, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
                     Cylinders = 4, Acceleration0100 = 3.0m, TopSpeedKmh = 299, FuelConsumptionCombined = 6.9m },
@@ -573,7 +573,7 @@ public static class ComprehensiveSeeder
             int bId = GetOrCreateBrand("Triumph", "triumph", "motocykle");
 
             int tiger900 = GetOrCreateModel(bId, "Tiger 900", "triumph-tiger900");
-            AddEngines(GetOrCreateGeneration(tiger900, "Tiger 900 (2020–)", "triumph-tiger900-2020", 2020, null), [
+            AddEngines(GetOrCreateGeneration(tiger900, "2020–", "triumph-tiger900-2020", 2020, null), [
                 new EngineVersion { EngineName = "888 cc Triple 95 KM", PowerHP = 95, PowerKW = 70, Displacement = 888, FuelTypeId = ben,
                     TorqueNm = 87, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
                     Cylinders = 3, Acceleration0100 = 4.5m, TopSpeedKmh = 210, FuelConsumptionCombined = 5.2m },
@@ -608,7 +608,7 @@ public static class ComprehensiveSeeder
             ]);
 
             int bonneville = GetOrCreateModel(bId, "Bonneville T120", "triumph-bonneville-t120");
-            AddEngines(GetOrCreateGeneration(bonneville, "T120 (2016–)", "triumph-t120-2016", 2016, null), [
+            AddEngines(GetOrCreateGeneration(bonneville, "2016–", "triumph-bonnie-t120-2016", 2016, null), [
                 new EngineVersion { EngineName = "1200 cc Parallel Twin 80 KM", PowerHP = 80, PowerKW = 59, Displacement = 1200, FuelTypeId = ben,
                     TorqueNm = 105, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
                     Cylinders = 2, TopSpeedKmh = 195, FuelConsumptionCombined = 5.1m },
@@ -952,7 +952,7 @@ public static class ComprehensiveSeeder
             int bId = GetOrCreateBrand("Suzuki", "suzuki", "auta-osobowe", "motocykle");
 
             int vstrom650 = GetOrCreateModel(bId, "V-Strom 650", "suzuki-v-strom-650");
-            AddEngines(GetOrCreateGeneration(vstrom650, "V-Strom 650 (2017–)", "suzuki-vstrom650-2017", 2017, null), [
+            AddEngines(GetOrCreateGeneration(vstrom650, "2017–", "suzuki-v-strom-650-2017", 2017, null), [
                 new EngineVersion { EngineName = "645cc V-Twin 71 KM", PowerHP = 71, PowerKW = 52, Displacement = 645, FuelTypeId = ben,
                     TorqueNm = 62, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "RWD",
                     Cylinders = 2, TopSpeedKmh = 193, FuelConsumptionCombined = 4.7m },
@@ -966,14 +966,14 @@ public static class ComprehensiveSeeder
             ]);
 
             int gsxs1000 = GetOrCreateModel(bId, "GSX-S1000", "suzuki-gsx-s1000");
-            AddEngines(GetOrCreateGeneration(gsxs1000, "GSX-S1000 (2021–)", "suzuki-gsx-s1000-2021", 2021, null), [
+            AddEngines(GetOrCreateGeneration(gsxs1000, "2021–", "suzuki-gsx-s1000-2021", 2021, null), [
                 new EngineVersion { EngineName = "999cc I4 152 KM", PowerHP = 152, PowerKW = 112, Displacement = 999, FuelTypeId = ben,
                     TorqueNm = 106, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
                     Cylinders = 4, Acceleration0100 = 3.3m, TopSpeedKmh = 250, FuelConsumptionCombined = 6.1m },
             ]);
 
             int hayabusa = GetOrCreateModel(bId, "Hayabusa", "suzuki-hayabusa");
-            AddEngines(GetOrCreateGeneration(hayabusa, "Hayabusa Gen3 (2021–)", "suzuki-hayabusa-gen3", 2021, null), [
+            AddEngines(GetOrCreateGeneration(hayabusa, "2021–", "suzuki-hayabusa-2021", 2021, null), [
                 new EngineVersion { EngineName = "1340cc I4 190 KM", PowerHP = 190, PowerKW = 140, Displacement = 1340, FuelTypeId = ben,
                     TorqueNm = 150, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
                     Cylinders = 4, Acceleration0100 = 2.5m, TopSpeedKmh = 299, FuelConsumptionCombined = 7.5m },
@@ -985,7 +985,7 @@ public static class ComprehensiveSeeder
             int bId = GetOrCreateBrand("Triumph", "triumph", "motocykle");
 
             int street = GetOrCreateModel(bId, "Street Triple 765", "triumph-street-triple-765");
-            AddEngines(GetOrCreateGeneration(street, "Street Triple 765 (2017–)", "triumph-st765-2017", 2017, null), [
+            AddEngines(GetOrCreateGeneration(street, "2017–", "triumph-street-triple-2017", 2017, null), [
                 new EngineVersion { EngineName = "765cc inline-3 R 118 KM", PowerHP = 118, PowerKW = 87, Displacement = 765, FuelTypeId = ben,
                     TorqueNm = 77, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
                     Cylinders = 3, Acceleration0100 = 3.5m, TopSpeedKmh = 240, FuelConsumptionCombined = 5.5m },
