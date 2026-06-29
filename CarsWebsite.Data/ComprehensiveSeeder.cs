@@ -59,20 +59,41 @@ public static class ComprehensiveSeeder
             return g.Id;
         }
 
+        static bool IsGenericGenName(string n) =>
+            n is "Generation I" or "Gen 1" or "I" or "Gen I"
+            || n.StartsWith("Gen ", StringComparison.OrdinalIgnoreCase);
+
         // Like GetOrCreateGeneration, but if the model has exactly one generation with a generic
         // placeholder name (e.g. "Generation I"), renames it in place to preserve existing FK refs.
+        // Also deletes any leftover generic-named orphan generations once the correct one exists.
         int GetOrFixGeneration(int modelId, string name, string slug, int yearFrom, int? yearTo)
         {
             var g = db.Generations.FirstOrDefault(x => x.ModelId == modelId && x.Name == name);
-            if (g != null) return g.Id;
+            if (g != null)
+            {
+                // Remove stale generic orphans that may have accumulated alongside the real generation
+                var orphans = db.Generations
+                    .Where(x => x.ModelId == modelId && x.Id != g.Id && IsGenericGenName(x.Name))
+                    .ToList();
+                if (orphans.Any())
+                {
+                    foreach (var o in orphans)
+                    {
+                        var orphanEngines = db.EngineVersions.Where(e => e.GenerationId == o.Id).ToList();
+                        db.EngineVersions.RemoveRange(orphanEngines);
+                        db.Generations.Remove(o);
+                        logger.LogInformation("[ComprehensiveSeeder] Deleted orphan generation '{Name}' (id={Id}) from model {ModelId}", o.Name, o.Id, modelId);
+                    }
+                    db.SaveChanges();
+                }
+                return g.Id;
+            }
 
             var allGens = db.Generations.Where(x => x.ModelId == modelId).ToList();
             if (allGens.Count == 1)
             {
                 var sole = allGens[0];
-                bool isGeneric = sole.Name is "Generation I" or "Gen 1" or "I" or "Gen I"
-                    || sole.Name.StartsWith("Gen ", StringComparison.OrdinalIgnoreCase);
-                if (isGeneric)
+                if (IsGenericGenName(sole.Name))
                 {
                     sole.Name    = name;
                     sole.Slug    = slug;
@@ -116,6 +137,25 @@ public static class ComprehensiveSeeder
             db.SaveChanges();
         }
 
+        // Removes ALL existing engines for the generation, then inserts the correct ones.
+        // Use for ultra-premium/exotic brands where any wrong engine is unambiguously wrong.
+        void ForceReplaceEngines(int generationId, List<EngineVersion> engines)
+        {
+            var existing = db.EngineVersions.Where(e => e.GenerationId == generationId).ToList();
+            bool alreadyCorrect = existing.Count == engines.Count
+                && existing.All(e => engines.Any(n => n.EngineName == e.EngineName && e.TorqueNm != null));
+            if (alreadyCorrect) return;
+            if (existing.Any())
+            {
+                db.EngineVersions.RemoveRange(existing);
+                db.SaveChanges();
+                logger.LogInformation("[ComprehensiveSeeder] ForceReplace: removed {Count} engines from gen {Id}", existing.Count, generationId);
+            }
+            foreach (var e in engines) e.GenerationId = generationId;
+            db.EngineVersions.AddRange(engines);
+            db.SaveChanges();
+        }
+
         bool BrandNeedsModels(int brandId) => !seededModelBrandIds.Contains(brandId);
 
         // ── BUGATTI ─────────────────────────────────────────────────────────────
@@ -124,7 +164,7 @@ public static class ComprehensiveSeeder
             if (BrandNeedsModels(bId)) { seededModelBrandIds.Add(bId); }
 
             int veyron = GetOrCreateModel(bId, "Veyron", "bugatti-veyron");
-            AddOrReplaceEngines(GetOrFixGeneration(veyron, "16.4 (2005–2015)", "bugatti-veyron-164", 2005, 2015), 900, [
+            ForceReplaceEngines(GetOrFixGeneration(veyron, "16.4 (2005–2015)", "bugatti-veyron-164", 2005, 2015), [
                 new EngineVersion { EngineName = "W16 8.0 1001 KM", PowerHP = 1001, PowerKW = 736, Displacement = 7993, FuelTypeId = ben,
                     TorqueNm = 1250, Co2EmissionGkm = 574, EuroNorm = "Euro 4", GearboxType = "dsg",
                     DriveType = "AWD", Cylinders = 16, Acceleration0100 = 2.5m, TopSpeedKmh = 407,
@@ -136,7 +176,7 @@ public static class ComprehensiveSeeder
             ]);
 
             int chiron = GetOrCreateModel(bId, "Chiron", "bugatti-chiron");
-            AddOrReplaceEngines(GetOrFixGeneration(chiron, "Chiron (2016–2023)", "bugatti-chiron-2016", 2016, 2023), 900, [
+            ForceReplaceEngines(GetOrFixGeneration(chiron, "Chiron (2016–2023)", "bugatti-chiron-2016", 2016, 2023), [
                 new EngineVersion { EngineName = "W16 8.0 1500 KM", PowerHP = 1500, PowerKW = 1103, Displacement = 7993, FuelTypeId = ben,
                     TorqueNm = 1600, Co2EmissionGkm = 516, EuroNorm = "Euro 6", GearboxType = "dsg",
                     DriveType = "AWD", Cylinders = 16, Acceleration0100 = 2.4m, TopSpeedKmh = 420,
@@ -152,11 +192,51 @@ public static class ComprehensiveSeeder
             ]);
 
             int bolide = GetOrCreateModel(bId, "Bolide", "bugatti-bolide");
-            AddOrReplaceEngines(GetOrFixGeneration(bolide, "Bolide (2024–)", "bugatti-bolide-2024", 2024, null), 900, [
+            ForceReplaceEngines(GetOrFixGeneration(bolide, "Bolide (2024–)", "bugatti-bolide-2024", 2024, null), [
                 new EngineVersion { EngineName = "W16 8.0 1825 KM", PowerHP = 1825, PowerKW = 1342, Displacement = 7993, FuelTypeId = ben,
                     TorqueNm = 1850, EuroNorm = "Euro 6d", GearboxType = "dsg",
                     DriveType = "AWD", Cylinders = 16, Acceleration0100 = 2.2m, TopSpeedKmh = 500,
                     FuelConsumptionCombined = 24.0m },
+            ]);
+
+            int divo = GetOrCreateModel(bId, "Divo", "bugatti-divo");
+            ForceReplaceEngines(GetOrFixGeneration(divo, "Divo (2019–2021)", "bugatti-divo-2019", 2019, 2021), [
+                new EngineVersion { EngineName = "W16 8.0 1479 KM", PowerHP = 1479, PowerKW = 1088, Displacement = 7993, FuelTypeId = ben,
+                    TorqueNm = 1600, EuroNorm = "Euro 6d", GearboxType = "dsg",
+                    DriveType = "AWD", Cylinders = 16, Acceleration0100 = 2.4m, TopSpeedKmh = 380,
+                    FuelConsumptionCombined = 23.0m },
+            ]);
+
+            int centodieci = GetOrCreateModel(bId, "Centodieci", "bugatti-centodieci");
+            ForceReplaceEngines(GetOrFixGeneration(centodieci, "Centodieci (2022–)", "bugatti-centodieci-2022", 2022, null), [
+                new EngineVersion { EngineName = "W16 8.0 1577 KM", PowerHP = 1577, PowerKW = 1161, Displacement = 7993, FuelTypeId = ben,
+                    TorqueNm = 1600, EuroNorm = "Euro 6d", GearboxType = "dsg",
+                    DriveType = "AWD", Cylinders = 16, Acceleration0100 = 2.4m, TopSpeedKmh = 380,
+                    FuelConsumptionCombined = 23.5m },
+            ]);
+
+            int laVoitureNoire = GetOrCreateModel(bId, "La Voiture Noire", "bugatti-la-voiture-noire");
+            ForceReplaceEngines(GetOrFixGeneration(laVoitureNoire, "La Voiture Noire (2021–)", "bugatti-la-voiture-noire-2021", 2021, null), [
+                new EngineVersion { EngineName = "W16 8.0 1479 KM", PowerHP = 1479, PowerKW = 1088, Displacement = 7993, FuelTypeId = ben,
+                    TorqueNm = 1600, EuroNorm = "Euro 6d", GearboxType = "dsg",
+                    DriveType = "AWD", Cylinders = 16, Acceleration0100 = 2.4m, TopSpeedKmh = 420,
+                    FuelConsumptionCombined = 23.0m },
+            ]);
+
+            int mistral = GetOrCreateModel(bId, "Mistral", "bugatti-mistral");
+            ForceReplaceEngines(GetOrFixGeneration(mistral, "Mistral (2024–)", "bugatti-mistral-2024", 2024, null), [
+                new EngineVersion { EngineName = "W16 8.0 1577 KM", PowerHP = 1577, PowerKW = 1161, Displacement = 7993, FuelTypeId = ben,
+                    TorqueNm = 1600, EuroNorm = "Euro 6d", GearboxType = "dsg",
+                    DriveType = "AWD", Cylinders = 16, Acceleration0100 = 2.3m, TopSpeedKmh = 420,
+                    FuelConsumptionCombined = 24.0m },
+            ]);
+
+            int tourbillon = GetOrCreateModel(bId, "Tourbillon", "bugatti-tourbillon");
+            ForceReplaceEngines(GetOrFixGeneration(tourbillon, "Tourbillon (2026–)", "bugatti-tourbillon-2026", 2026, null), [
+                new EngineVersion { EngineName = "V16 8.3 Hybrid 1800 KM", PowerHP = 1800, PowerKW = 1324, Displacement = 8260, FuelTypeId = hyb,
+                    TorqueNm = 1800, EuroNorm = "Euro 6d", GearboxType = "dsg",
+                    DriveType = "AWD", Cylinders = 16, Acceleration0100 = 2.0m, TopSpeedKmh = 445,
+                    FuelConsumptionCombined = 18.0m },
             ]);
         }
 
