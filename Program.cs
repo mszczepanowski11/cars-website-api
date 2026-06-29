@@ -280,6 +280,17 @@ internal class Program
             var startLogger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
             startLogger.LogInformation("[Cloudinary] cloud={Cloud} key={Key}", cloudName.Length > 0 ? cloudName : "(empty)", cloudApiKey.Length > 4 ? cloudApiKey[..4] + "****" : "(empty)");
 
+            // Email transport diagnostic: prints whether the app actually sees the Resend key
+            // and the SMTP From, so we can tell config-load issues from code issues at a glance.
+            var startCfg = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+            var resendKeyDiag = startCfg["Resend:ApiKey"] ?? "";
+            startLogger.LogInformation(
+                "[Email] transport={Transport} resendKeyLen={Len} resendKeyPrefix={Prefix} smtpFrom={From}",
+                string.IsNullOrEmpty(resendKeyDiag) ? "SMTP (fallback)" : "Resend HTTP",
+                resendKeyDiag.Length,
+                resendKeyDiag.Length >= 3 ? resendKeyDiag[..3] : "(empty)",
+                startCfg["Smtp:From"] ?? "(empty)");
+
             // Bootstrap EF Core migration history for databases that were created via
             // EnsureCreated before formal migrations were adopted. On a fresh DB,
             // EnsureCreated builds the schema; then MigrateAsync applies only the new
