@@ -73,7 +73,9 @@ public static class ComprehensiveSeeder
             {
                 // Remove stale generic orphans that may have accumulated alongside the real generation
                 var orphans = db.Generations
-                    .Where(x => x.ModelId == modelId && x.Id != g.Id && IsGenericGenName(x.Name))
+                    .Where(x => x.ModelId == modelId && x.Id != g.Id)
+                    .ToList()
+                    .Where(x => IsGenericGenName(x.Name))
                     .ToList();
                 if (orphans.Any())
                 {
