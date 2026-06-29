@@ -180,42 +180,152 @@ public class EmailService : IEmailService
             : string.Empty;
 
         var cta = ctaUrl != null
-            ? $"<p style=\"margin-top:20px\"><a href=\"{ctaUrl}\" class=\"btn\">{ctaLabel ?? "Przejdź"}</a></p>"
+            ? $@"<table role=""presentation"" cellpadding=""0"" cellspacing=""0"" style=""margin-top:28px"">
+                   <tr><td style=""border-radius:6px;background:#e53935"">
+                     <a href=""{ctaUrl}"" class=""btn"">{ctaLabel ?? "Przejdź"}</a>
+                   </td></tr>
+                 </table>"
             : string.Empty;
 
         return $@"<!DOCTYPE html>
-<html><head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1"">
+<html lang=""pl"">
+<head>
+<meta charset=""UTF-8"">
+<meta name=""viewport"" content=""width=device-width,initial-scale=1"">
+<meta name=""color-scheme"" content=""dark"">
+<meta name=""supported-color-schemes"" content=""dark"">
+<title>{title}</title>
 <style>
-*{{box-sizing:border-box;margin:0;padding:0}}
-body{{font-family:Arial,sans-serif;background:#0a0a0a;color:#e0e0e0;padding:20px}}
-.wrap{{max-width:580px;margin:0 auto;background:#111;border:1px solid #1e1e1e;border-radius:10px;overflow:hidden}}
-.hdr{{background:#0a0a0a;padding:20px 28px;border-bottom:1px solid #1e1e1e}}
-.logo{{font-size:20px;font-weight:900;color:#fff;letter-spacing:-0.5px}}
-.logo span{{color:#e53935}}
-.body{{padding:28px}}
-.title{{font-size:19px;font-weight:700;color:#fff;margin-bottom:12px}}
-.text{{font-size:14px;color:#aaa;line-height:1.65}}
-.highlight{{background:#171717;border:1px solid #1e1e1e;border-radius:7px;padding:14px 16px;margin:16px 0}}
-.highlight p{{font-size:13px;color:#ccc;margin:3px 0}}
-.highlight strong{{color:#fff}}
-.btn{{display:inline-block;background:#e53935;color:#fff;padding:11px 22px;border-radius:6px;text-decoration:none;font-weight:600;font-size:13px}}
-.ftr{{background:#0a0a0a;border-top:1px solid #1e1e1e;padding:14px 28px;font-size:11px;color:#444;line-height:1.6}}
-a.ftr-link{{color:#e53935;text-decoration:none}}
-</style></head>
+  *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  body {{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    background-color: #080808;
+    color: #c8c8c8;
+    padding: 32px 16px;
+    -webkit-font-smoothing: antialiased;
+  }}
+  .wrap {{
+    max-width: 560px;
+    margin: 0 auto;
+    background: #101010;
+    border: 1px solid #1f1f1f;
+    border-radius: 12px;
+    overflow: hidden;
+  }}
+  .accent-bar {{
+    height: 3px;
+    background: linear-gradient(90deg, #e53935 0%, #ff6659 100%);
+  }}
+  .hdr {{
+    background: #0c0c0c;
+    padding: 22px 32px;
+    border-bottom: 1px solid #1a1a1a;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }}
+  .logo-text {{
+    font-size: 18px;
+    font-weight: 900;
+    color: #ffffff;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }}
+  .logo-text span {{ color: #e53935; }}
+  .logo-dot {{
+    width: 6px;
+    height: 6px;
+    background: #e53935;
+    border-radius: 50%;
+    display: inline-block;
+    margin-left: 2px;
+    vertical-align: middle;
+  }}
+  .body {{ padding: 36px 32px 32px; }}
+  .eyebrow {{
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #e53935;
+    margin-bottom: 12px;
+  }}
+  .title {{
+    font-size: 22px;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.3;
+    margin-bottom: 16px;
+    letter-spacing: -0.3px;
+  }}
+  .text {{
+    font-size: 14px;
+    color: #888;
+    line-height: 1.75;
+  }}
+  .text strong {{ color: #ccc; }}
+  .highlight {{
+    background: #141414;
+    border: 1px solid #222;
+    border-left: 3px solid #e53935;
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin: 20px 0 0;
+  }}
+  .highlight p {{ font-size: 12px; color: #555; line-height: 1.6; margin: 0; }}
+  .btn {{
+    display: inline-block;
+    background: #e53935;
+    color: #ffffff !important;
+    padding: 13px 28px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.3px;
+  }}
+  .divider {{
+    height: 1px;
+    background: #1a1a1a;
+    margin: 28px 0 0;
+  }}
+  .ftr {{
+    background: #0c0c0c;
+    border-top: 1px solid #1a1a1a;
+    padding: 18px 32px;
+    font-size: 11px;
+    color: #3a3a3a;
+    line-height: 1.7;
+  }}
+  .ftr a {{ color: #555; text-decoration: none; }}
+  .ftr a:hover {{ color: #e53935; }}
+  @media (max-width: 480px) {{
+    .body {{ padding: 24px 20px 20px; }}
+    .hdr {{ padding: 18px 20px; }}
+    .ftr {{ padding: 14px 20px; }}
+    .title {{ font-size: 19px; }}
+  }}
+</style>
+</head>
 <body>
-<div class=""wrap"">
-  <div class=""hdr""><div class=""logo"">CARI<span>ZO</span></div></div>
-  <div class=""body"">
-    <p class=""title"">{title}</p>
-    <p class=""text"">{mainText}</p>
-    {details}
-    {cta}
+  <div class=""wrap"">
+    <div class=""accent-bar""></div>
+    <div class=""hdr"">
+      <span class=""logo-text"">CARI<span>ZO</span></span>
+    </div>
+    <div class=""body"">
+      <p class=""eyebrow"">Wiadomość od CARIZO</p>
+      <p class=""title"">{title}</p>
+      <p class=""text"">{mainText}</p>
+      {details}
+      {cta}
+    </div>
+    <div class=""ftr"">
+      Ta wiadomość została wysłana automatycznie · <a href=""https://carizo.pl"">carizo.pl</a><br>
+      Zarządzaj powiadomieniami w <a href=""https://carizo.pl/dashboard/ustawienia"">ustawieniach konta</a>.
+    </div>
   </div>
-  <div class=""ftr"">
-    Ta wiadomość została wysłana automatycznie przez system CARIZO · carizo.pl<br>
-    Możesz zarządzać powiadomieniami w <a href=""https://carizo.pl/dashboard"" class=""ftr-link"">ustawieniach konta</a>.
-  </div>
-</div>
-</body></html>";
+</body>
+</html>";
     }
 }
