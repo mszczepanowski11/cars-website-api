@@ -248,7 +248,7 @@ public class EmailService : IEmailService
         <span style=""font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:22px;font-weight:200;color:#ffffff;letter-spacing:4px"">CARIZO</span>
         <![endif]-->
         <!--[if !mso]><!-->
-        <img src=""https://carizo.eu/carizo-logo.svg"" alt=""CARIZO"" width=""110"" height=""20"" style=""height:20px;width:auto;display:block"">
+        <span style=""font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:22px;font-weight:200;color:#ffffff;letter-spacing:4px"">CARI<span style=""color:#8B0D1D"">Z</span>O</span>
         <!--<![endif]-->
       </td></tr>
 
@@ -291,7 +291,7 @@ public class EmailService : IEmailService
             <span style=""font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:16px;font-weight:200;color:#333333;letter-spacing:3px"">CARIZO</span>
             <![endif]-->
             <!--[if !mso]><!-->
-            <img src=""https://carizo.eu/carizo-logo.svg"" alt=""CARIZO"" width=""80"" height=""15"" style=""height:15px;width:auto;display:block;opacity:0.4;filter:brightness(0.6)"">
+            <span style=""font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:16px;font-weight:200;color:#444444;letter-spacing:3px"">CARI<span style=""color:#6b0f1a"">Z</span>O</span>
             <!--<![endif]-->
           </td></tr>
 
