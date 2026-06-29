@@ -256,6 +256,26 @@ public static class ComprehensiveSeeder
                     DriveType = "AWD", Cylinders = 16, Acceleration0100 = 2.0m, TopSpeedKmh = 445,
                     FuelConsumptionCombined = 18.0m },
             ]);
+
+            int eb110 = GetOrCreateModel(bId, "EB110", "bugatti-eb110");
+            ForceReplaceEngines(GetOrFixGeneration(eb110, "EB110 (1991–1995)", "bugatti-eb110-1991", 1991, 1995), [
+                new EngineVersion { EngineName = "V12 3.5 GT 553 KM", PowerHP = 553, PowerKW = 408, Displacement = 3499, FuelTypeId = ben,
+                    TorqueNm = 611, EuroNorm = "Euro 1", GearboxType = "manual",
+                    DriveType = "AWD", Cylinders = 12, Acceleration0100 = 4.4m, TopSpeedKmh = 342,
+                    FuelConsumptionCombined = 18.5m },
+                new EngineVersion { EngineName = "V12 3.5 SS 603 KM", PowerHP = 603, PowerKW = 444, Displacement = 3499, FuelTypeId = ben,
+                    TorqueNm = 650, EuroNorm = "Euro 1", GearboxType = "manual",
+                    DriveType = "AWD", Cylinders = 12, Acceleration0100 = 3.2m, TopSpeedKmh = 351,
+                    FuelConsumptionCombined = 19.0m },
+            ]);
+
+            int eb16 = GetOrCreateModel(bId, "EB16/4 Veyron", "bugatti-eb164-concept");
+            ForceReplaceEngines(GetOrFixGeneration(eb16, "EB16/4 Veyron (1999–2001)", "bugatti-eb164-1999", 1999, 2001), [
+                new EngineVersion { EngineName = "W16 7.3 Concept 736 KM", PowerHP = 736, PowerKW = 541, Displacement = 7300, FuelTypeId = ben,
+                    TorqueNm = 1000, EuroNorm = "Euro 3", GearboxType = "dsg",
+                    DriveType = "AWD", Cylinders = 16, Acceleration0100 = 3.0m, TopSpeedKmh = 400,
+                    FuelConsumptionCombined = 25.0m },
+            ]);
         }
 
         // ── ROLLS-ROYCE ─────────────────────────────────────────────────────────
