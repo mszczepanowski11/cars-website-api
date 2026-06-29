@@ -175,156 +175,156 @@ public class EmailService : IEmailService
         string? ctaUrl = null,
         string? ctaLabel = null)
     {
-        var details = detailsHtml != null
-            ? $"<div class=\"highlight\">{detailsHtml}</div>"
-            : string.Empty;
+        int year = DateTime.UtcNow.Year;
 
-        var cta = ctaUrl != null
-            ? $@"<table role=""presentation"" cellpadding=""0"" cellspacing=""0"" style=""margin-top:28px"">
-                   <tr><td style=""border-radius:6px;background:#e53935"">
-                     <a href=""{ctaUrl}"" class=""btn"">{ctaLabel ?? "Przejdź"}</a>
-                   </td></tr>
-                 </table>"
-            : string.Empty;
+        var detailsBlock = detailsHtml != null ? $@"
+              <!-- Details box -->
+              <tr><td style=""padding:20px 0 0 0"">
+                <table role=""presentation"" cellpadding=""0"" cellspacing=""0"" border=""0"" width=""100%"">
+                  <tr>
+                    <td width=""3"" style=""background:#8B0D1D;border-radius:3px 0 0 3px""></td>
+                    <td style=""background:#0a0a0a;border:1px solid #1a1a1a;border-left:none;border-radius:0 8px 8px 0;padding:14px 18px"">
+                      <div style=""font-size:13px;color:#555555;line-height:1.65;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif"">{detailsHtml}</div>
+                    </td>
+                  </tr>
+                </table>
+              </td></tr>" : string.Empty;
+
+        var ctaBlock = ctaUrl != null ? $@"
+              <!-- CTA button -->
+              <tr><td style=""padding:30px 0 0 0"">
+                <!--[if mso]><v:roundrect xmlns:v=""urn:schemas-microsoft-com:vml"" xmlns:w=""urn:schemas-microsoft-com:office:word"" href=""{ctaUrl}"" style=""height:46px;v-text-anchor:middle;width:200px;"" arcsize=""22%"" strokecolor=""#8B0D1D"" fillcolor=""#8B0D1D""><w:anchorlock/><center style=""color:#ffffff;font-family:Arial,sans-serif;font-size:14px;font-weight:700"">{ctaLabel ?? "Przejdź"}</center></v:roundrect><![endif]-->
+                <!--[if !mso]><!-->
+                <a href=""{ctaUrl}"" style=""display:inline-block;background:#8B0D1D;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:700;text-decoration:none;padding:14px 32px;border-radius:10px;letter-spacing:0.2px;line-height:1"">{ctaLabel ?? "Przejdź"}</a>
+                <!--<![endif]-->
+              </td></tr>" : string.Empty;
 
         return $@"<!DOCTYPE html>
-<html lang=""pl"">
+<html lang=""pl"" xmlns:v=""urn:schemas-microsoft-com:vml"" xmlns:o=""urn:schemas-microsoft-com:office:office"">
 <head>
-<meta charset=""UTF-8"">
-<meta name=""viewport"" content=""width=device-width,initial-scale=1"">
-<meta name=""color-scheme"" content=""dark"">
-<meta name=""supported-color-schemes"" content=""dark"">
-<title>{title}</title>
-<style>
-  *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-    background-color: #080808;
-    color: #c8c8c8;
-    padding: 32px 16px;
-    -webkit-font-smoothing: antialiased;
-  }}
-  .wrap {{
-    max-width: 560px;
-    margin: 0 auto;
-    background: #101010;
-    border: 1px solid #1f1f1f;
-    border-radius: 12px;
-    overflow: hidden;
-  }}
-  .accent-bar {{
-    height: 3px;
-    background: linear-gradient(90deg, #e53935 0%, #ff6659 100%);
-  }}
-  .hdr {{
-    background: #0c0c0c;
-    padding: 22px 32px;
-    border-bottom: 1px solid #1a1a1a;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }}
-  .logo-text {{
-    font-size: 18px;
-    font-weight: 900;
-    color: #ffffff;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }}
-  .logo-text span {{ color: #e53935; }}
-  .logo-dot {{
-    width: 6px;
-    height: 6px;
-    background: #e53935;
-    border-radius: 50%;
-    display: inline-block;
-    margin-left: 2px;
-    vertical-align: middle;
-  }}
-  .body {{ padding: 36px 32px 32px; }}
-  .eyebrow {{
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: #e53935;
-    margin-bottom: 12px;
-  }}
-  .title {{
-    font-size: 22px;
-    font-weight: 700;
-    color: #ffffff;
-    line-height: 1.3;
-    margin-bottom: 16px;
-    letter-spacing: -0.3px;
-  }}
-  .text {{
-    font-size: 14px;
-    color: #888;
-    line-height: 1.75;
-  }}
-  .text strong {{ color: #ccc; }}
-  .highlight {{
-    background: #141414;
-    border: 1px solid #222;
-    border-left: 3px solid #e53935;
-    border-radius: 6px;
-    padding: 14px 16px;
-    margin: 20px 0 0;
-  }}
-  .highlight p {{ font-size: 12px; color: #555; line-height: 1.6; margin: 0; }}
-  .btn {{
-    display: inline-block;
-    background: #e53935;
-    color: #ffffff !important;
-    padding: 13px 28px;
-    border-radius: 6px;
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 14px;
-    letter-spacing: 0.3px;
-  }}
-  .divider {{
-    height: 1px;
-    background: #1a1a1a;
-    margin: 28px 0 0;
-  }}
-  .ftr {{
-    background: #0c0c0c;
-    border-top: 1px solid #1a1a1a;
-    padding: 18px 32px;
-    font-size: 11px;
-    color: #3a3a3a;
-    line-height: 1.7;
-  }}
-  .ftr a {{ color: #555; text-decoration: none; }}
-  .ftr a:hover {{ color: #e53935; }}
-  @media (max-width: 480px) {{
-    .body {{ padding: 24px 20px 20px; }}
-    .hdr {{ padding: 18px 20px; }}
-    .ftr {{ padding: 14px 20px; }}
-    .title {{ font-size: 19px; }}
-  }}
-</style>
+  <meta charset=""UTF-8"">
+  <meta name=""viewport"" content=""width=device-width,initial-scale=1.0"">
+  <meta name=""x-apple-disable-message-reformatting"">
+  <meta name=""color-scheme"" content=""dark"">
+  <meta name=""supported-color-schemes"" content=""dark"">
+  <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
+  <title>{title}</title>
+  <style>
+    body,table,td,p,a,li{{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;margin:0;padding:0}}
+    table{{border-spacing:0;border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt}}
+    img{{border:0;height:auto;line-height:100%;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic;display:block}}
+    body{{background-color:#050505;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif}}
+    a.btn:hover{{opacity:0.88 !important}}
+    .ftr-link:hover{{color:#aaaaaa !important}}
+    @media only screen and (max-width:620px){{
+      .outer-pad{{padding:16px 0 !important}}
+      .card{{border-radius:12px !important}}
+      .hdr-cell{{padding:20px 24px !important}}
+      .body-cell{{padding:28px 24px 24px !important}}
+      .ftr-cell{{padding:22px 24px !important}}
+      .title-text{{font-size:20px !important}}
+      .btn-block{{display:block !important;text-align:center !important}}
+    }}
+  </style>
 </head>
-<body>
-  <div class=""wrap"">
-    <div class=""accent-bar""></div>
-    <div class=""hdr"">
-      <span class=""logo-text"">CARI<span>ZO</span></span>
-    </div>
-    <div class=""body"">
-      <p class=""eyebrow"">Wiadomość od CARIZO</p>
-      <p class=""title"">{title}</p>
-      <p class=""text"">{mainText}</p>
-      {details}
-      {cta}
-    </div>
-    <div class=""ftr"">
-      Ta wiadomość została wysłana automatycznie · <a href=""https://carizo.pl"">carizo.pl</a><br>
-      Zarządzaj powiadomieniami w <a href=""https://carizo.pl/dashboard/ustawienia"">ustawieniach konta</a>.
-    </div>
-  </div>
+<body style=""margin:0;padding:0;background-color:#050505"">
+
+<!-- Outer wrapper -->
+<table role=""presentation"" cellpadding=""0"" cellspacing=""0"" border=""0"" width=""100%"" bgcolor=""#050505"">
+  <tr><td class=""outer-pad"" style=""padding:40px 16px"" align=""center"">
+
+    <!-- Email card -->
+    <table role=""presentation"" cellpadding=""0"" cellspacing=""0"" border=""0"" width=""600"" style=""max-width:600px;width:100%"">
+
+      <!-- Top accent bar -->
+      <!--[if mso]><tr><td bgcolor=""#8B0D1D"" height=""3"" style=""font-size:3px;line-height:3px"">&nbsp;</td></tr><![endif]-->
+      <!--[if !mso]><!-->
+      <tr><td style=""background:linear-gradient(90deg,#8B0D1D 0%,#b01424 100%);height:3px;font-size:3px;line-height:3px"">&nbsp;</td></tr>
+      <!--<![endif]-->
+
+      <!-- Header -->
+      <tr><td class=""hdr-cell"" bgcolor=""#080808"" style=""background-color:#080808;padding:26px 40px;border-left:1px solid #1a1a1a;border-right:1px solid #1a1a1a;border-bottom:1px solid #141414"" align=""left"">
+        <!--[if mso]>
+        <span style=""font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:22px;font-weight:200;color:#ffffff;letter-spacing:4px"">CARIZO</span>
+        <![endif]-->
+        <!--[if !mso]><!-->
+        <img src=""https://carizo.pl/carizo-logo.svg"" alt=""CARIZO"" width=""110"" height=""20"" style=""height:20px;width:auto;display:block"">
+        <!--<![endif]-->
+      </td></tr>
+
+      <!-- Body -->
+      <tr><td class=""body-cell"" bgcolor=""#0d0d0d"" style=""background-color:#0d0d0d;padding:40px 40px 36px;border-left:1px solid #1a1a1a;border-right:1px solid #1a1a1a"">
+        <table role=""presentation"" cellpadding=""0"" cellspacing=""0"" border=""0"" width=""100%"">
+
+          <!-- Label -->
+          <tr><td style=""padding:0 0 14px 0"">
+            <span style=""font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:#8B0D1D"">Wiadomość od CARIZO</span>
+          </td></tr>
+
+          <!-- Title -->
+          <tr><td style=""padding:0 0 18px 0"">
+            <h1 class=""title-text"" style=""margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:24px;font-weight:700;color:#ffffff;line-height:1.3;letter-spacing:-0.3px"">{title}</h1>
+          </td></tr>
+
+          <!-- Main text -->
+          <tr><td>
+            <p style=""margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:15px;color:#888888;line-height:1.75"">{mainText}</p>
+          </td></tr>
+          {detailsBlock}
+          {ctaBlock}
+
+        </table>
+      </td></tr>
+
+      <!-- Divider -->
+      <tr><td bgcolor=""#0d0d0d"" style=""background-color:#0d0d0d;border-left:1px solid #1a1a1a;border-right:1px solid #1a1a1a"">
+        <table role=""presentation"" cellpadding=""0"" cellspacing=""0"" border=""0"" width=""100%""><tr><td style=""height:1px;background:#141414;font-size:1px;line-height:1px"">&nbsp;</td></tr></table>
+      </td></tr>
+
+      <!-- Footer -->
+      <tr><td class=""ftr-cell"" bgcolor=""#080808"" style=""background-color:#080808;padding:26px 40px 28px;border:1px solid #1a1a1a;border-top:none;border-radius:0 0 20px 20px"">
+        <table role=""presentation"" cellpadding=""0"" cellspacing=""0"" border=""0"" width=""100%"">
+
+          <!-- Footer logo -->
+          <tr><td style=""padding:0 0 14px 0"">
+            <!--[if mso]>
+            <span style=""font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:16px;font-weight:200;color:#333333;letter-spacing:3px"">CARIZO</span>
+            <![endif]-->
+            <!--[if !mso]><!-->
+            <img src=""https://carizo.pl/carizo-logo.svg"" alt=""CARIZO"" width=""80"" height=""15"" style=""height:15px;width:auto;display:block;opacity:0.4;filter:brightness(0.6)"">
+            <!--<![endif]-->
+          </td></tr>
+
+          <!-- Footer links -->
+          <tr><td style=""padding:0 0 14px 0"">
+            <table role=""presentation"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+              <tr>
+                <td style=""padding-right:16px""><a href=""https://carizo.pl"" class=""ftr-link"" style=""font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:12px;color:#444444;text-decoration:none"">carizo.pl</a></td>
+                <td style=""padding-right:16px""><a href=""https://carizo.pl/dashboard/ustawienia"" class=""ftr-link"" style=""font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:12px;color:#444444;text-decoration:none"">Ustawienia powiadomień</a></td>
+                <td style=""padding-right:16px""><a href=""https://carizo.pl/dashboard"" class=""ftr-link"" style=""font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:12px;color:#444444;text-decoration:none"">Panel konta</a></td>
+                <td><a href=""https://carizo.pl/#contact"" class=""ftr-link"" style=""font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:12px;color:#444444;text-decoration:none"">Kontakt</a></td>
+              </tr>
+            </table>
+          </td></tr>
+
+          <!-- Copyright + auto-message note -->
+          <tr><td>
+            <p style=""margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:11px;color:#2e2e2e;line-height:1.7"">
+              Ta wiadomość została wysłana automatycznie — prosimy na nią nie odpowiadać.<br>
+              © {year} CARIZO. Wszelkie prawa zastrzeżone. · <a href=""https://carizo.pl/polityka-prywatnosci"" style=""color:#333333;text-decoration:none"">Polityka prywatności</a>
+            </p>
+          </td></tr>
+
+        </table>
+      </td></tr>
+
+    </table>
+    <!-- / Email card -->
+
+  </td></tr>
+</table>
+<!-- / Outer wrapper -->
+
 </body>
 </html>";
     }
