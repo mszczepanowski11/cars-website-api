@@ -54,19 +54,17 @@ public class AdvertService : IAdvertService
         if (dto.Description != null)
             dto.Description = StripHtml(dto.Description.Trim());
 
-        // Validate VIN format: exactly 17 alphanumeric chars, no I/O/Q
-        if (!string.IsNullOrWhiteSpace(dto.Vin))
-        {
-            dto.Vin = dto.Vin.Trim().ToUpperInvariant();
-            if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Vin, @"^[A-HJ-NPR-Z0-9]{17}$"))
-                throw new ArgumentException("Numer VIN musi mieć dokładnie 17 znaków alfanumerycznych (bez liter I, O, Q).");
-
-            // Duplicate VIN check: reject if another non-deleted advert with same VIN exists for this user
-            var duplicateVin = await _context.CarAdverts
-                .AnyAsync(a => a.Vin == dto.Vin && a.UserId == userId && a.IsActive && !a.IsHidden);
-            if (duplicateVin)
-                throw new InvalidOperationException("Masz już aktywne ogłoszenie z tym numerem VIN.");
-        }
+        // Validate VIN — required per Regulamin §4 ust. 1
+        if (string.IsNullOrWhiteSpace(dto.Vin))
+            throw new ArgumentException("Numer VIN jest obowiązkowy (Regulamin §4 ust. 1).");
+        dto.Vin = dto.Vin.Trim().ToUpperInvariant();
+        if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Vin, @"^[A-HJ-NPR-Z0-9]{17}$"))
+            throw new ArgumentException("Numer VIN musi mieć dokładnie 17 znaków alfanumerycznych (bez liter I, O, Q).");
+        // Duplicate VIN check: reject if another non-deleted advert with same VIN exists for this user
+        var duplicateVin = await _context.CarAdverts
+            .AnyAsync(a => a.Vin == dto.Vin && a.UserId == userId && a.IsActive && !a.IsHidden);
+        if (duplicateVin)
+            throw new InvalidOperationException("Masz już aktywne ogłoszenie z tym numerem VIN.");
 
         if (dto.BrandId > 0 && dto.VehicleCategoryId.HasValue)
         {
