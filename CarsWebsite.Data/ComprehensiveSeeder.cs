@@ -728,6 +728,286 @@ public static class ComprehensiveSeeder
             ]);
         }
 
+        // ── ALFA ROMEO (classic/popular models missing from initial seed) ───────
+        {
+            int bId = GetOrCreateBrand("Alfa Romeo", "alfa-romeo", "auta-osobowe");
+
+            int m147 = GetOrCreateModel(bId, "147", "alfa-romeo-147");
+            AddEngines(GetOrCreateGeneration(m147, "I (2000–2010)", "alfa-147-i", 2000, 2010), [
+                new EngineVersion { EngineName = "1.4 TS 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 127, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.5m, TopSpeedKmh = 177, FuelConsumptionCombined = 7.8m },
+                new EngineVersion { EngineName = "1.6 TS 105 KM", PowerHP = 105, PowerKW = 77, Displacement = 1598, FuelTypeId = ben,
+                    TorqueNm = 144, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.5m, TopSpeedKmh = 190, FuelConsumptionCombined = 8.2m },
+                new EngineVersion { EngineName = "2.0 TS 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1970, FuelTypeId = ben,
+                    TorqueNm = 187, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.2m, TopSpeedKmh = 215, FuelConsumptionCombined = 9.5m },
+                new EngineVersion { EngineName = "GTA 3.2 V6 250 KM", PowerHP = 250, PowerKW = 184, Displacement = 3179, FuelTypeId = ben,
+                    TorqueNm = 300, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 6.3m, TopSpeedKmh = 250, FuelConsumptionCombined = 13.5m },
+                new EngineVersion { EngineName = "1.9 JTD 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 1910, FuelTypeId = die,
+                    TorqueNm = 200, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.8m, TopSpeedKmh = 185, FuelConsumptionCombined = 5.6m },
+                new EngineVersion { EngineName = "1.9 JTD 115 KM", PowerHP = 115, PowerKW = 85, Displacement = 1910, FuelTypeId = die,
+                    TorqueNm = 270, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.8m, TopSpeedKmh = 193, FuelConsumptionCombined = 5.4m },
+                new EngineVersion { EngineName = "1.9 JTD 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1910, FuelTypeId = die,
+                    TorqueNm = 305, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.9m, TopSpeedKmh = 210, FuelConsumptionCombined = 5.8m },
+            ]);
+
+            int m156 = GetOrCreateModel(bId, "156", "alfa-romeo-156");
+            AddEngines(GetOrCreateGeneration(m156, "932 (1997–2007)", "alfa-156-932", 1997, 2007), [
+                new EngineVersion { EngineName = "1.6 TS 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 1598, FuelTypeId = ben,
+                    TorqueNm = 144, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 195, FuelConsumptionCombined = 8.5m },
+                new EngineVersion { EngineName = "1.8 TS 144 KM", PowerHP = 144, PowerKW = 106, Displacement = 1747, FuelTypeId = ben,
+                    TorqueNm = 172, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.4m, TopSpeedKmh = 210, FuelConsumptionCombined = 9.2m },
+                new EngineVersion { EngineName = "2.0 TS 155 KM", PowerHP = 155, PowerKW = 114, Displacement = 1970, FuelTypeId = ben,
+                    TorqueNm = 187, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.9m, TopSpeedKmh = 215, FuelConsumptionCombined = 9.8m },
+                new EngineVersion { EngineName = "2.5 V6 24V 192 KM", PowerHP = 192, PowerKW = 141, Displacement = 2492, FuelTypeId = ben,
+                    TorqueNm = 222, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 7.0m, TopSpeedKmh = 230, FuelConsumptionCombined = 11.5m },
+                new EngineVersion { EngineName = "GTA 3.2 V6 250 KM", PowerHP = 250, PowerKW = 184, Displacement = 3179, FuelTypeId = ben,
+                    TorqueNm = 300, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 6.3m, TopSpeedKmh = 250, FuelConsumptionCombined = 12.8m },
+                new EngineVersion { EngineName = "1.9 JTD 105 KM", PowerHP = 105, PowerKW = 77, Displacement = 1910, FuelTypeId = die,
+                    TorqueNm = 200, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.7m, TopSpeedKmh = 190, FuelConsumptionCombined = 5.5m },
+                new EngineVersion { EngineName = "1.9 JTD 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1910, FuelTypeId = die,
+                    TorqueNm = 305, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.5m, TopSpeedKmh = 210, FuelConsumptionCombined = 5.7m },
+                new EngineVersion { EngineName = "2.4 JTD 175 KM", PowerHP = 175, PowerKW = 129, Displacement = 2387, FuelTypeId = die,
+                    TorqueNm = 370, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 5, Acceleration0100 = 7.6m, TopSpeedKmh = 220, FuelConsumptionCombined = 6.3m },
+            ]);
+
+            int mito = GetOrCreateModel(bId, "MiTo", "alfa-romeo-mito");
+            AddEngines(GetOrCreateGeneration(mito, "955 (2008–2018)", "alfa-mito-955", 2008, 2018), [
+                new EngineVersion { EngineName = "1.4 78 KM", PowerHP = 78, PowerKW = 57, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 118, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.5m, TopSpeedKmh = 167, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "1.4 T 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 178, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.2m, TopSpeedKmh = 200, FuelConsumptionCombined = 6.8m },
+                new EngineVersion { EngineName = "1.4 TB Quadrifoglio Verde 170 KM", PowerHP = 170, PowerKW = 125, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 230, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.5m, TopSpeedKmh = 230, FuelConsumptionCombined = 7.5m },
+                new EngineVersion { EngineName = "1.3 JTDm 95 KM", PowerHP = 95, PowerKW = 70, Displacement = 1248, FuelTypeId = die,
+                    TorqueNm = 200, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.5m, TopSpeedKmh = 183, FuelConsumptionCombined = 4.4m },
+            ]);
+
+            int m4c = GetOrCreateModel(bId, "4C", "alfa-romeo-4c");
+            AddEngines(GetOrCreateGeneration(m4c, "960 (2013–2020)", "alfa-4c-960", 2013, 2020), [
+                new EngineVersion { EngineName = "1.75 TB 240 KM", PowerHP = 240, PowerKW = 177, Displacement = 1742, FuelTypeId = ben,
+                    TorqueNm = 350, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 4.5m, TopSpeedKmh = 258, FuelConsumptionCombined = 7.1m },
+            ]);
+        }
+
+        // ── HARLEY-DAVIDSON (additional popular models) ──────────────────────────
+        {
+            int bId = GetOrCreateBrand("Harley-Davidson", "harley-davidson", "motocykle");
+
+            int iron883 = GetOrCreateModel(bId, "Iron 883", "hd-iron-883");
+            AddEngines(GetOrCreateGeneration(iron883, "XL883N (2009–)", "hd-iron883-xl883n", 2009, null), [
+                new EngineVersion { EngineName = "Sportster Evolution 883cc V-Twin 50 KM", PowerHP = 50, PowerKW = 37, Displacement = 883, FuelTypeId = ben,
+                    TorqueNm = 68, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 2, TopSpeedKmh = 165, FuelConsumptionCombined = 5.5m },
+            ]);
+
+            int iron1200 = GetOrCreateModel(bId, "Iron 1200", "hd-iron-1200");
+            AddEngines(GetOrCreateGeneration(iron1200, "XL1200NS (2018–)", "hd-iron1200-xl1200ns", 2018, null), [
+                new EngineVersion { EngineName = "Sportster Evolution 1200cc V-Twin 67 KM", PowerHP = 67, PowerKW = 49, Displacement = 1202, FuelTypeId = ben,
+                    TorqueNm = 98, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 2, TopSpeedKmh = 175, FuelConsumptionCombined = 5.8m },
+            ]);
+
+            int streetBob = GetOrCreateModel(bId, "Street Bob 114", "hd-street-bob-114");
+            AddEngines(GetOrCreateGeneration(streetBob, "FXBBS (2021–)", "hd-street-bob-fxbbs", 2021, null), [
+                new EngineVersion { EngineName = "Milwaukee-Eight 114 V-Twin 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 1868, FuelTypeId = ben,
+                    TorqueNm = 155, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 2, TopSpeedKmh = 185, FuelConsumptionCombined = 6.4m },
+            ]);
+
+            int heritage = GetOrCreateModel(bId, "Heritage Classic 114", "hd-heritage-classic-114");
+            AddEngines(GetOrCreateGeneration(heritage, "FLHCS (2018–)", "hd-heritage-flhcs", 2018, null), [
+                new EngineVersion { EngineName = "Milwaukee-Eight 114 V-Twin 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 1868, FuelTypeId = ben,
+                    TorqueNm = 155, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 2, TopSpeedKmh = 180, FuelConsumptionCombined = 7.0m },
+            ]);
+
+            int panAmerica = GetOrCreateModel(bId, "Pan America 1250", "hd-pan-america-1250");
+            AddEngines(GetOrCreateGeneration(panAmerica, "RA1250 (2021–)", "hd-pan-america-ra1250", 2021, null), [
+                new EngineVersion { EngineName = "Revolution Max 1250 V-Twin 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1252, FuelTypeId = ben,
+                    TorqueNm = 128, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "AWD",
+                    Cylinders = 2, Acceleration0100 = 4.5m, TopSpeedKmh = 220, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "Revolution Max 1250 Special 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1252, FuelTypeId = ben,
+                    TorqueNm = 128, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "AWD",
+                    Cylinders = 2, Acceleration0100 = 4.5m, TopSpeedKmh = 220, FuelConsumptionCombined = 6.5m },
+            ]);
+
+            int nightster = GetOrCreateModel(bId, "Nightster", "hd-nightster");
+            AddEngines(GetOrCreateGeneration(nightster, "RH975 (2022–)", "hd-nightster-rh975", 2022, null), [
+                new EngineVersion { EngineName = "Revolution Max 975T V-Twin 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 975, FuelTypeId = ben,
+                    TorqueNm = 95, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 2, TopSpeedKmh = 180, FuelConsumptionCombined = 5.8m },
+            ]);
+        }
+
+        // ── YAMAHA (additional moto models) ─────────────────────────────────────
+        {
+            int bId = GetOrCreateBrand("Yamaha", "yamaha", "motocykle");
+
+            int xsr900 = GetOrCreateModel(bId, "XSR900", "yamaha-xsr900");
+            AddEngines(GetOrCreateGeneration(xsr900, "XSR900 (2022–)", "yamaha-xsr900-2022", 2022, null), [
+                new EngineVersion { EngineName = "890cc CP3 119 KM", PowerHP = 119, PowerKW = 88, Displacement = 890, FuelTypeId = ben,
+                    TorqueNm = 93, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 3, Acceleration0100 = 3.8m, TopSpeedKmh = 225, FuelConsumptionCombined = 5.9m },
+            ]);
+
+            int r3 = GetOrCreateModel(bId, "YZF-R3", "yamaha-yzf-r3");
+            AddEngines(GetOrCreateGeneration(r3, "RH12 (2019–)", "yamaha-r3-rh12", 2019, null), [
+                new EngineVersion { EngineName = "321cc parallel twin 42 KM", PowerHP = 42, PowerKW = 31, Displacement = 321, FuelTypeId = ben,
+                    TorqueNm = 29, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 2, TopSpeedKmh = 180, FuelConsumptionCombined = 4.0m },
+            ]);
+
+            int yzfR6 = GetOrCreateModel(bId, "YZF-R6", "yamaha-yzf-r6");
+            AddEngines(GetOrCreateGeneration(yzfR6, "RJ27 (2017–2020)", "yamaha-r6-rj27", 2017, 2020), [
+                new EngineVersion { EngineName = "599cc I4 122 KM", PowerHP = 122, PowerKW = 90, Displacement = 599, FuelTypeId = ben,
+                    TorqueNm = 66, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 3.4m, TopSpeedKmh = 260, FuelConsumptionCombined = 6.0m },
+            ]);
+
+            int nmax = GetOrCreateModel(bId, "NMAX 125", "yamaha-nmax-125");
+            AddEngines(GetOrCreateGeneration(nmax, "NMAX (2021–)", "yamaha-nmax-2021", 2021, null), [
+                new EngineVersion { EngineName = "125cc single-cylinder 15 KM", PowerHP = 15, PowerKW = 11, Displacement = 125, FuelTypeId = ben,
+                    TorqueNm = 11, EuroNorm = "Euro 5", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 1, TopSpeedKmh = 100, FuelConsumptionCombined = 2.2m },
+            ]);
+        }
+
+        // ── DUCATI (additional models) ───────────────────────────────────────────
+        {
+            int bId = GetOrCreateBrand("Ducati", "ducati", "motocykle");
+
+            int desert = GetOrCreateModel(bId, "DesertX", "ducati-desertx");
+            AddEngines(GetOrCreateGeneration(desert, "DesertX (2022–)", "ducati-desertx-2022", 2022, null), [
+                new EngineVersion { EngineName = "937cc Testastretta 110 KM", PowerHP = 110, PowerKW = 81, Displacement = 937, FuelTypeId = ben,
+                    TorqueNm = 92, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 2, Acceleration0100 = 4.2m, TopSpeedKmh = 220, FuelConsumptionCombined = 5.9m },
+            ]);
+
+            int hyper = GetOrCreateModel(bId, "Hypermotard 698", "ducati-hypermotard-698");
+            AddEngines(GetOrCreateGeneration(hyper, "698 Mono (2024–)", "ducati-hyper698-2024", 2024, null), [
+                new EngineVersion { EngineName = "659cc single-cylinder 77 KM", PowerHP = 77, PowerKW = 57, Displacement = 659, FuelTypeId = ben,
+                    TorqueNm = 70, EuroNorm = "Euro 5+", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 1, Acceleration0100 = 3.9m, TopSpeedKmh = 235, FuelConsumptionCombined = 4.5m },
+            ]);
+
+            int diavel = GetOrCreateModel(bId, "Diavel V4", "ducati-diavel-v4");
+            AddEngines(GetOrCreateGeneration(diavel, "Diavel V4 (2023–)", "ducati-diavel-v4-2023", 2023, null), [
+                new EngineVersion { EngineName = "1158cc Granturismo V4 168 KM", PowerHP = 168, PowerKW = 124, Displacement = 1158, FuelTypeId = ben,
+                    TorqueNm = 126, EuroNorm = "Euro 5+", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 3.0m, TopSpeedKmh = 241, FuelConsumptionCombined = 7.0m },
+            ]);
+        }
+
+        // ── KTM (additional models) ──────────────────────────────────────────────
+        {
+            int bId = GetOrCreateBrand("KTM", "ktm", "motocykle");
+
+            int ktm890 = GetOrCreateModel(bId, "890 Duke R", "ktm-890-duke-r");
+            AddEngines(GetOrCreateGeneration(ktm890, "890 Duke R (2020–)", "ktm-890dr-2020", 2020, null), [
+                new EngineVersion { EngineName = "889cc LC8c Parallel Twin 121 KM", PowerHP = 121, PowerKW = 89, Displacement = 889, FuelTypeId = ben,
+                    TorqueNm = 99, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 2, Acceleration0100 = 3.7m, TopSpeedKmh = 240, FuelConsumptionCombined = 5.8m },
+            ]);
+
+            int ktm690 = GetOrCreateModel(bId, "690 Duke", "ktm-690-duke");
+            AddEngines(GetOrCreateGeneration(ktm690, "690 Duke (2019–)", "ktm-690duke-2019", 2019, null), [
+                new EngineVersion { EngineName = "693cc LC4 73 KM", PowerHP = 73, PowerKW = 54, Displacement = 693, FuelTypeId = ben,
+                    TorqueNm = 73, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 1, Acceleration0100 = 4.9m, TopSpeedKmh = 200, FuelConsumptionCombined = 4.1m },
+            ]);
+
+            int adventure890 = GetOrCreateModel(bId, "890 Adventure", "ktm-890-adventure");
+            AddEngines(GetOrCreateGeneration(adventure890, "890 Adventure (2021–)", "ktm-890adv-2021", 2021, null), [
+                new EngineVersion { EngineName = "889cc LC8c Parallel Twin 105 KM", PowerHP = 105, PowerKW = 77, Displacement = 889, FuelTypeId = ben,
+                    TorqueNm = 100, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 2, Acceleration0100 = 4.2m, TopSpeedKmh = 210, FuelConsumptionCombined = 5.0m },
+                new EngineVersion { EngineName = "889cc LC8c Adventure R 105 KM", PowerHP = 105, PowerKW = 77, Displacement = 889, FuelTypeId = ben,
+                    TorqueNm = 100, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 2, Acceleration0100 = 4.2m, TopSpeedKmh = 210, FuelConsumptionCombined = 5.0m },
+            ]);
+        }
+
+        // ── SUZUKI (additional moto models) ─────────────────────────────────────
+        {
+            int bId = GetOrCreateBrand("Suzuki", "suzuki", "auta-osobowe", "motocykle");
+
+            int vstrom650 = GetOrCreateModel(bId, "V-Strom 650", "suzuki-v-strom-650");
+            AddEngines(GetOrCreateGeneration(vstrom650, "V-Strom 650 (2017–)", "suzuki-vstrom650-2017", 2017, null), [
+                new EngineVersion { EngineName = "645cc V-Twin 71 KM", PowerHP = 71, PowerKW = 52, Displacement = 645, FuelTypeId = ben,
+                    TorqueNm = 62, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 2, TopSpeedKmh = 193, FuelConsumptionCombined = 4.7m },
+            ]);
+
+            int gsxs750 = GetOrCreateModel(bId, "GSX-S750", "suzuki-gsx-s750");
+            AddEngines(GetOrCreateGeneration(gsxs750, "GSX-S750 (2017–)", "suzuki-gsx-s750-2017", 2017, null), [
+                new EngineVersion { EngineName = "749cc I4 114 KM", PowerHP = 114, PowerKW = 84, Displacement = 749, FuelTypeId = ben,
+                    TorqueNm = 81, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 3.8m, TopSpeedKmh = 240, FuelConsumptionCombined = 5.8m },
+            ]);
+
+            int gsxs1000 = GetOrCreateModel(bId, "GSX-S1000", "suzuki-gsx-s1000");
+            AddEngines(GetOrCreateGeneration(gsxs1000, "GSX-S1000 (2021–)", "suzuki-gsx-s1000-2021", 2021, null), [
+                new EngineVersion { EngineName = "999cc I4 152 KM", PowerHP = 152, PowerKW = 112, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 106, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 3.3m, TopSpeedKmh = 250, FuelConsumptionCombined = 6.1m },
+            ]);
+
+            int hayabusa = GetOrCreateModel(bId, "Hayabusa", "suzuki-hayabusa");
+            AddEngines(GetOrCreateGeneration(hayabusa, "Hayabusa Gen3 (2021–)", "suzuki-hayabusa-gen3", 2021, null), [
+                new EngineVersion { EngineName = "1340cc I4 190 KM", PowerHP = 190, PowerKW = 140, Displacement = 1340, FuelTypeId = ben,
+                    TorqueNm = 150, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 2.5m, TopSpeedKmh = 299, FuelConsumptionCombined = 7.5m },
+            ]);
+        }
+
+        // ── TRIUMPH (additional models) ─────────────────────────────────────────
+        {
+            int bId = GetOrCreateBrand("Triumph", "triumph", "motocykle");
+
+            int street = GetOrCreateModel(bId, "Street Triple 765", "triumph-street-triple-765");
+            AddEngines(GetOrCreateGeneration(street, "Street Triple 765 (2017–)", "triumph-st765-2017", 2017, null), [
+                new EngineVersion { EngineName = "765cc inline-3 R 118 KM", PowerHP = 118, PowerKW = 87, Displacement = 765, FuelTypeId = ben,
+                    TorqueNm = 77, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 3, Acceleration0100 = 3.5m, TopSpeedKmh = 240, FuelConsumptionCombined = 5.5m },
+                new EngineVersion { EngineName = "765cc inline-3 RS 130 KM", PowerHP = 130, PowerKW = 96, Displacement = 765, FuelTypeId = ben,
+                    TorqueNm = 80, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 3, Acceleration0100 = 3.3m, TopSpeedKmh = 250, FuelConsumptionCombined = 5.6m },
+                new EngineVersion { EngineName = "765cc inline-3 Moto2 Edition 128 KM", PowerHP = 128, PowerKW = 94, Displacement = 765, FuelTypeId = ben,
+                    TorqueNm = 79, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 3, Acceleration0100 = 3.4m, TopSpeedKmh = 245, FuelConsumptionCombined = 5.5m },
+            ]);
+
+            int thruxton = GetOrCreateModel(bId, "Thruxton 1200", "triumph-thruxton-1200");
+            AddEngines(GetOrCreateGeneration(thruxton, "Thruxton 1200 (2016–)", "triumph-thruxton1200-2016", 2016, null), [
+                new EngineVersion { EngineName = "1200cc Parallel Twin 97 KM", PowerHP = 97, PowerKW = 71, Displacement = 1200, FuelTypeId = ben,
+                    TorqueNm = 112, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 2, TopSpeedKmh = 200, FuelConsumptionCombined = 5.5m },
+                new EngineVersion { EngineName = "1200cc Parallel Twin R 104 KM", PowerHP = 104, PowerKW = 77, Displacement = 1200, FuelTypeId = ben,
+                    TorqueNm = 112, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 2, TopSpeedKmh = 203, FuelConsumptionCombined = 5.5m },
+            ]);
+        }
+
         logger.LogInformation("[ComprehensiveSeeder] Completed seeding premium cars, motorcycles, trucks.");
     }
 }
