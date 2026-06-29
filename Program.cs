@@ -1214,14 +1214,29 @@ internal class Program
         app.MapControllers();
         app.MapHealthChecks("/health").AllowAnonymous();
 
-        // SMTP connectivity test — runs in background after startup so it appears in Railway logs
+        // Email transport test — runs in background after startup so it appears in Railway logs
         _ = Task.Run(async () =>
         {
             await Task.Delay(3000); // wait for app to fully start
             var cfg = app.Services.GetRequiredService<IConfiguration>();
             var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
+            // Resend is preferred — if configured, SMTP is not used at all.
+            var resendKey = (
+                cfg["Resend:ApiKey"] ?? cfg["RESEND_API_KEY"]
+                ?? Environment.GetEnvironmentVariable("Resend__ApiKey")
+                ?? Environment.GetEnvironmentVariable("RESEND_API_KEY")
+                ?? Environment.GetEnvironmentVariable("RESEND_APIKEY")
+                ?? ""
+            ).Trim();
+            if (!string.IsNullOrEmpty(resendKey))
+            {
+                logger.LogInformation("[EMAIL-TEST] Resend API skonfigurowany — transport HTTP/443 aktywny ✓");
+                return;
+            }
+
             var rawHost = (cfg["Smtp:Host"] ?? "").Trim();
-            if (string.IsNullOrEmpty(rawHost)) { logger.LogWarning("[SMTP-TEST] SMTP_HOST nie ustawiony — wysyłka e-mail wyłączona."); return; }
+            if (string.IsNullOrEmpty(rawHost)) { logger.LogWarning("[SMTP-TEST] Brak RESEND_API_KEY i brak Smtp:Host — wysyłka e-mail wyłączona."); return; }
             var host = rawHost.Contains("://") ? rawHost.Split("://", 2)[1].TrimEnd('/') : rawHost;
             if (!host.StartsWith("[") && host.Contains(':')) host = host.Split(':')[0];
             var port = int.TryParse(cfg["Smtp:Port"], out var sp) ? sp : 587;
@@ -1232,6 +1247,7 @@ internal class Program
             try
             {
                 using var client = new SmtpClient();
+                client.Timeout = 10000; // 10 s — Railway blocks SMTP so fail fast
                 await client.ConnectAsync(host, port, SecureSocketOptions.Auto);
                 logger.LogInformation("[SMTP-TEST] Połączenie OK. Serwer: {ServerCaps}", client.Capabilities);
                 if (!string.IsNullOrEmpty(user))
