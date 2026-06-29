@@ -1,3 +1,6 @@
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using cars_website_api.CarsWebsite.Interfaces;
 using MailKit.Net.Smtp;
@@ -9,6 +12,9 @@ public class EmailService : IEmailService
     private readonly IConfiguration _config;
     private readonly ILogger<EmailService> _logger;
 
+    // Shared HttpClient for the Resend transport (avoids socket exhaustion).
+    private static readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(20) };
+
     public EmailService(IConfiguration config, ILogger<EmailService> logger)
     {
         _config = config;
@@ -17,7 +23,57 @@ public class EmailService : IEmailService
 
     public async Task SendAsync(string to, string subject, string htmlBody)
     {
-        var section = _config.GetSection("Smtp");
+        var smtp = _config.GetSection("Smtp");
+        // From address shared by both transports. Priority: Smtp:From → Smtp:User → fallback.
+        var fromCfg = (smtp["From"] ?? "").Trim();
+        var from = !string.IsNullOrEmpty(fromCfg) ? fromCfg : (smtp["User"] ?? "kontakt@carizo.eu");
+
+        // Preferred transport: Resend HTTP API over port 443. SMTP egress (25/465/587) is
+        // blocked on many PaaS platforms (e.g. Railway), so SMTP ConnectAsync just times out.
+        var resendKey = (_config["Resend:ApiKey"] ?? "").Trim();
+        if (!string.IsNullOrEmpty(resendKey))
+        {
+            await SendViaResendAsync(resendKey, from, to, subject, htmlBody);
+            return;
+        }
+
+        await SendViaSmtpAsync(smtp, from, to, subject, htmlBody);
+    }
+
+    private async Task SendViaResendAsync(string apiKey, string from, string to, string subject, string htmlBody)
+    {
+        // Resend accepts "Name <addr>" or a bare address. Add a display name if missing.
+        var fromHeader = from.Contains('<') ? from : $"CARIZO <{from}>";
+        _logger.LogInformation("[Email] Sending '{Subject}' to {To} via Resend HTTP API", subject, to);
+        try
+        {
+            var payload = new
+            {
+                from = fromHeader,
+                to = new[] { to },
+                subject,
+                html = htmlBody,
+                text = HtmlToPlainText(htmlBody),
+            };
+            using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.resend.com/emails");
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+            using var resp = await _http.SendAsync(req);
+            var body = await resp.Content.ReadAsStringAsync();
+            if (resp.IsSuccessStatusCode)
+                _logger.LogInformation("[Email] Sent successfully to {To} via Resend", to);
+            else
+                _logger.LogError("[Email] Resend odrzucił e-mail do {To}: {Status} {Body}", to, (int)resp.StatusCode, body);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[Email] Błąd wysyłki e-mail (Resend) do {To}", to);
+        }
+    }
+
+    private async Task SendViaSmtpAsync(IConfigurationSection section, string from, string to, string subject, string htmlBody)
+    {
         var rawHost = (section["Host"] ?? "").Trim();
         if (string.IsNullOrEmpty(rawHost))
         {
@@ -33,10 +89,6 @@ public class EmailService : IEmailService
 
         var port = int.TryParse(section["Port"], out var p) ? p : 587;
         var user = section["User"];
-        // From must match the authenticated SMTP account (Hostinger requirement).
-        // Priority: SMTP_FROM env var → appsettings Smtp:From → SMTP_USER → hardcoded fallback.
-        var fromCfg = (section["From"] ?? "").Trim();
-        var from = !string.IsNullOrEmpty(fromCfg) ? fromCfg : (user ?? "powiadomienia@carizo.pl");
         var password = section["Password"];
 
         _logger.LogInformation("[Email] Sending '{Subject}' to {To} via {Host}:{Port}", subject, to, host, port);
