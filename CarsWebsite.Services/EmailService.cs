@@ -30,7 +30,16 @@ public class EmailService : IEmailService
 
         // Preferred transport: Resend HTTP API over port 443. SMTP egress (25/465/587) is
         // blocked on many PaaS platforms (e.g. Railway), so SMTP ConnectAsync just times out.
-        var resendKey = (_config["Resend:ApiKey"] ?? "").Trim();
+        // Read from several name variants so a single/double-underscore or casing slip in the
+        // host's env config does not silently disable Resend.
+        var resendKey = (
+            _config["Resend:ApiKey"]
+            ?? _config["RESEND_API_KEY"]
+            ?? Environment.GetEnvironmentVariable("Resend__ApiKey")
+            ?? Environment.GetEnvironmentVariable("RESEND_API_KEY")
+            ?? Environment.GetEnvironmentVariable("RESEND_APIKEY")
+            ?? ""
+        ).Trim();
         if (!string.IsNullOrEmpty(resendKey))
         {
             await SendViaResendAsync(resendKey, from, to, subject, htmlBody);

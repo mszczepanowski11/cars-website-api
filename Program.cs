@@ -283,13 +283,29 @@ internal class Program
             // Email transport diagnostic: prints whether the app actually sees the Resend key
             // and the SMTP From, so we can tell config-load issues from code issues at a glance.
             var startCfg = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-            var resendKeyDiag = startCfg["Resend:ApiKey"] ?? "";
+            var resendKeyDiag = startCfg["Resend:ApiKey"]
+                ?? Environment.GetEnvironmentVariable("RESEND_API_KEY")
+                ?? "";
             startLogger.LogInformation(
                 "[Email] transport={Transport} resendKeyLen={Len} resendKeyPrefix={Prefix} smtpFrom={From}",
                 string.IsNullOrEmpty(resendKeyDiag) ? "SMTP (fallback)" : "Resend HTTP",
                 resendKeyDiag.Length,
                 resendKeyDiag.Length >= 3 ? resendKeyDiag[..3] : "(empty)",
                 startCfg["Smtp:From"] ?? "(empty)");
+
+            // Dump exact OS env var names containing "esend" (quoted, so trailing spaces show)
+            // to expose a misnamed Railway variable that the config provider can't map.
+            try
+            {
+                var esendVars = Environment.GetEnvironmentVariables()
+                    .Cast<System.Collections.DictionaryEntry>()
+                    .Where(e => (e.Key?.ToString() ?? "").ToLowerInvariant().Contains("esend"))
+                    .Select(e => $"'{e.Key}'(valLen={((e.Value?.ToString()) ?? "").Length})")
+                    .ToList();
+                startLogger.LogInformation("[Email] env vars matching 'esend': {Vars}",
+                    esendVars.Count > 0 ? string.Join(", ", esendVars) : "(none found)");
+            }
+            catch (Exception ex) { startLogger.LogDebug("[Email] esend env dump failed: {Msg}", ex.Message); }
 
             // Bootstrap EF Core migration history for databases that were created via
             // EnsureCreated before formal migrations were adopted. On a fresh DB,
