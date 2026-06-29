@@ -453,6 +453,26 @@ public static class ComprehensiveSeeder
             ]);
 
             int flyingSpur = GetOrCreateModel(bId, "Flying Spur", "bentley-flying-spur");
+            PrepareGenerations(flyingSpur,
+                ("I (2003–2014)", "bentley-flying-spur-i", 2003, 2014),
+                ("II (2014–2019)", "bentley-flying-spur-ii", 2014, 2019),
+                ("III (2019–)", "bentley-flying-spur-iii", 2019, null));
+            AddOrReplaceEngines(GetOrFixGeneration(flyingSpur, "I (2003–2014)", "bentley-flying-spur-i", 2003, 2014), 400, [
+                new EngineVersion { EngineName = "6.0 W12 552 KM", PowerHP = 552, PowerKW = 406, Displacement = 5950, FuelTypeId = ben,
+                    TorqueNm = 650, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 12, Acceleration0100 = 4.9m, TopSpeedKmh = 318, FuelConsumptionCombined = 16.5m },
+                new EngineVersion { EngineName = "6.0 W12 Speed 600 KM", PowerHP = 600, PowerKW = 441, Displacement = 5950, FuelTypeId = ben,
+                    TorqueNm = 750, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 12, Acceleration0100 = 4.6m, TopSpeedKmh = 322, FuelConsumptionCombined = 17.0m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(flyingSpur, "II (2014–2019)", "bentley-flying-spur-ii", 2014, 2019), 400, [
+                new EngineVersion { EngineName = "6.0 W12 625 KM", PowerHP = 625, PowerKW = 460, Displacement = 5950, FuelTypeId = ben,
+                    TorqueNm = 800, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 12, Acceleration0100 = 4.3m, TopSpeedKmh = 322, FuelConsumptionCombined = 15.4m },
+                new EngineVersion { EngineName = "4.0 V8 500 KM", PowerHP = 500, PowerKW = 368, Displacement = 3993, FuelTypeId = ben,
+                    TorqueNm = 660, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 4.9m, TopSpeedKmh = 306, FuelConsumptionCombined = 11.9m },
+            ]);
             AddOrReplaceEngines(GetOrFixGeneration(flyingSpur, "III (2019–)", "bentley-flying-spur-iii", 2019, null), 400, [
                 new EngineVersion { EngineName = "6.0 W12 635 KM", PowerHP = 635, PowerKW = 467, Displacement = 5950, FuelTypeId = ben,
                     TorqueNm = 900, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
