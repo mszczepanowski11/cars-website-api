@@ -97,28 +97,31 @@ public class AdvertController : ControllerBase
         if (userId == 0) return Unauthorized();
 
         var user = await _userService.GetById(userId);
-        if (user != null && user.AccountType == AccountType.Personal)
+        if (!IsAdmin())
         {
-            var (activeCount, yearCount) = await _advertService.GetPersonalAdCountsAsync(userId);
-            _logger.LogInformation("[Advert/Create] Personal account userId={UserId} activeCount={Active} yearCount={Year}", userId, activeCount, yearCount);
-            if (activeCount >= 2)
+            if (user != null && user.AccountType == AccountType.Personal)
             {
-                _logger.LogWarning("[Advert/Create] Blocked: personal active limit reached userId={UserId} activeCount={Active}", userId, activeCount);
-                return BadRequest(new { error = "private_limit_active", message = "Wygląda na to, że prowadzisz działalność handlową. Załóż konto biznesowe." });
+                var (activeCount, yearCount) = await _advertService.GetPersonalAdCountsAsync(userId);
+                _logger.LogInformation("[Advert/Create] Personal account userId={UserId} activeCount={Active} yearCount={Year}", userId, activeCount, yearCount);
+                if (activeCount >= 2)
+                {
+                    _logger.LogWarning("[Advert/Create] Blocked: personal active limit reached userId={UserId} activeCount={Active}", userId, activeCount);
+                    return BadRequest(new { error = "private_limit_active", message = "Wygląda na to, że prowadzisz działalność handlową. Załóż konto biznesowe." });
+                }
+                if (yearCount >= 4)
+                {
+                    _logger.LogWarning("[Advert/Create] Blocked: personal yearly limit reached userId={UserId} yearCount={Year}", userId, yearCount);
+                    return BadRequest(new { error = "private_limit_yearly", message = "Wygląda na to, że prowadzisz działalność handlową. Załóż konto biznesowe." });
+                }
             }
-            if (yearCount >= 4)
+            else if (user != null && user.AccountType == AccountType.Business)
             {
-                _logger.LogWarning("[Advert/Create] Blocked: personal yearly limit reached userId={UserId} yearCount={Year}", userId, yearCount);
-                return BadRequest(new { error = "private_limit_yearly", message = "Wygląda na to, że prowadzisz działalność handlową. Załóż konto biznesowe." });
-            }
-        }
-        else if (user != null && user.AccountType == AccountType.Business)
-        {
-            var (canCreate, limitError) = await _subscriptionService.CheckActiveAdLimitAsync(userId);
-            if (!canCreate)
-            {
-                _logger.LogWarning("[Advert/Create] Blocked: B2B subscription limit userId={UserId} msg={Msg}", userId, limitError);
-                return BadRequest(new { error = "b2b_limit_active", message = limitError });
+                var (canCreate, limitError) = await _subscriptionService.CheckActiveAdLimitAsync(userId);
+                if (!canCreate)
+                {
+                    _logger.LogWarning("[Advert/Create] Blocked: B2B subscription limit userId={UserId} msg={Msg}", userId, limitError);
+                    return BadRequest(new { error = "b2b_limit_active", message = limitError });
+                }
             }
         }
 

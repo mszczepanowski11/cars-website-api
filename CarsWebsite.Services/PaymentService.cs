@@ -76,7 +76,7 @@ public class PaymentService : IPaymentService
         {
             if (!dto.SubscriptionTier.HasValue || dto.SubscriptionTier == SubscriptionTier.None || dto.SubscriptionTier == SubscriptionTier.StartProgram || dto.SubscriptionTier == SubscriptionTier.Enterprise)
                 throw new ArgumentException("Wybierz pakiet: Start, Biznes lub Premium.");
-            if (user.AccountType != AccountType.Business)
+            if (!user.IsAdmin && user.AccountType != AccountType.Business)
                 throw new InvalidOperationException("Subskrypcje B2B są dostępne wyłącznie dla kont biznesowych.");
             var tierKey = (int)dto.SubscriptionTier.Value;
             priceInfo = await GetServicePriceAsync(ServiceType.Subscription, tierKey);
@@ -88,25 +88,28 @@ public class PaymentService : IPaymentService
         }
         _logger.LogInformation("[Payment/Initiate] price={Price} desc={Desc}", priceInfo.Price, priceInfo.Description);
 
-        // K-1: Verify ownership before creating payment
-        if (dto.AdvertId.HasValue)
+        // K-1: Verify ownership before creating payment (admin bypasses ownership checks)
+        if (!user.IsAdmin)
         {
-            var ownerCheck = await _context.CarAdverts.AsNoTracking()
-                .FirstOrDefaultAsync(a => a.Id == dto.AdvertId.Value);
-            if (ownerCheck == null)
+            if (dto.AdvertId.HasValue)
             {
-                _logger.LogWarning("[Payment/Initiate] advertId={AdvertId} not found in CarAdverts", dto.AdvertId.Value);
-                throw new KeyNotFoundException("Ogłoszenie nie istnieje.");
+                var ownerCheck = await _context.CarAdverts.AsNoTracking()
+                    .FirstOrDefaultAsync(a => a.Id == dto.AdvertId.Value);
+                if (ownerCheck == null)
+                {
+                    _logger.LogWarning("[Payment/Initiate] advertId={AdvertId} not found in CarAdverts", dto.AdvertId.Value);
+                    throw new KeyNotFoundException("Ogłoszenie nie istnieje.");
+                }
+                if (ownerCheck.UserId != userId)
+                    throw new UnauthorizedAccessException("Nie jesteś właścicielem tego ogłoszenia.");
             }
-            if (ownerCheck.UserId != userId)
-                throw new UnauthorizedAccessException("Nie jesteś właścicielem tego ogłoszenia.");
-        }
-        if (dto.EventId.HasValue)
-        {
-            var eventCheck = await _context.Events.AsNoTracking()
-                .FirstOrDefaultAsync(e => e.Id == dto.EventId.Value);
-            if (eventCheck == null || eventCheck.CreatedByUserId != userId)
-                throw new UnauthorizedAccessException("Nie jesteś właścicielem tego wydarzenia.");
+            if (dto.EventId.HasValue)
+            {
+                var eventCheck = await _context.Events.AsNoTracking()
+                    .FirstOrDefaultAsync(e => e.Id == dto.EventId.Value);
+                if (eventCheck == null || eventCheck.CreatedByUserId != userId)
+                    throw new UnauthorizedAccessException("Nie jesteś właścicielem tego wydarzenia.");
+            }
         }
 
         var guidPart = Guid.NewGuid().ToString("N")[..8];
@@ -127,7 +130,7 @@ public class PaymentService : IPaymentService
             ServiceDescription = priceInfo.Description,
             Amount = priceInfo.Price,
             Currency = "PLN",
-            Status = PaymentStatus.Pending,
+            Status = user.IsAdmin ? PaymentStatus.Completed : PaymentStatus.Pending,
             ImojeOrderId = orderId,
             DurationDays = storedDurationDays,
             CreatedAt = DateTime.UtcNow,
@@ -150,6 +153,20 @@ public class PaymentService : IPaymentService
             throw new InvalidOperationException("Błąd zapisu płatności. Spróbuj ponownie.");
         }
         _logger.LogInformation("[Payment/Initiate] Payment #{PaymentId} saved", payment.Id);
+
+        // Admin: activate immediately without payment
+        if (user.IsAdmin)
+        {
+            await ActivateServiceAsync(payment);
+            _logger.LogInformation("[Payment/Initiate] Admin bypass — service activated instantly for userId={UserId}", userId);
+            return new PaymentInitiatedDto
+            {
+                PaymentId      = payment.Id,
+                Amount         = priceInfo.Price,
+                OrderId        = orderId,
+                AdminActivated = true
+            };
+        }
 
         var (actionUrl, formFields) = BuildImojeFormData(payment, user, orderId);
 

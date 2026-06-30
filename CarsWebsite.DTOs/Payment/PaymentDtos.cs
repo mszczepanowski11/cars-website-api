@@ -27,6 +27,7 @@ public class PaymentInitiatedDto
     public Dictionary<string, string> FormFields { get; set; } = new();
     public decimal Amount { get; set; }
     public string OrderId { get; set; } = string.Empty;
+    public bool AdminActivated { get; set; }
 }
 
 public class PaymentResponseDto
