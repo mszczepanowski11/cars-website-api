@@ -194,6 +194,8 @@ public class SubscriptionService : ISubscriptionService
         var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
         if (user == null) return (false, "Użytkownik nie istnieje.");
 
+        if (user.IsAdmin) return (true, null);
+
         if (user.AccountType != AccountType.Business) return (true, null); // personal handled separately
 
         var tier = user.SubscriptionExpiresAt.HasValue && user.SubscriptionExpiresAt < DateTime.UtcNow
@@ -222,6 +224,8 @@ public class SubscriptionService : ISubscriptionService
     {
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId)
             ?? throw new KeyNotFoundException("Użytkownik nie istnieje.");
+
+        if (user.IsAdmin) return;
 
         if (user.AccountType != AccountType.Business) return; // personal users have no quota
 
