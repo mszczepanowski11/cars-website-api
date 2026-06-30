@@ -154,6 +154,7 @@ internal class Program
         builder.Services.AddScoped<IInvoiceService, InvoiceService>();
         builder.Services.AddHttpClient<IKSeFService, KSeFService>();
         builder.Services.AddScoped<IFinancingService, FinancingService>();
+        builder.Services.AddHostedService<SubscriptionExpiryJob>();
         builder.Services.AddHostedService<MonthlyInvoiceJob>();
         builder.Services.AddHostedService<ExpiryReminderJob>();
         builder.Services.AddHostedService<BadgeExpiryJob>();

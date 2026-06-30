@@ -419,6 +419,13 @@ public class PaymentService : IPaymentService
             }
 
             await _context.SaveChangesAsync();
+
+            // Track monthly featured quota for business subscribers
+            if (payment.ServiceType is ServiceType.Top or ServiceType.Premium or ServiceType.Featured)
+            {
+                try { await _subscriptionService.ConsumeFeatureQuotaAsync(payment.UserId); }
+                catch (Exception ex) { _logger.LogWarning(ex, "ConsumeFeatureQuota failed userId={UserId} — ignorowane", payment.UserId); }
+            }
         }
         else
         {
