@@ -444,13 +444,40 @@ internal class Program
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `refreshtokens` ADD COLUMN `RevokedAt` datetime(6) NULL"); }
             catch (Exception ex) { logger.LogDebug("[Schema] refreshtokens.RevokedAt: {Msg}", ex.Message); }
 
-            // users — notification preference columns added after initial DB creation (no migration exists)
+            // users — columns added to User.cs without a corresponding migration
             foreach (var colDef in new[] {
-                "`EmailNotifications` tinyint(1) NOT NULL DEFAULT 1",
-                "`PriceChangeAlerts`  tinyint(1) NOT NULL DEFAULT 1",
-                "`NewMessageAlerts`   tinyint(1) NOT NULL DEFAULT 1",
-                "`NewsletterSubscribed` tinyint(1) NOT NULL DEFAULT 0" })
+                // notification preferences
+                "`EmailNotifications`             tinyint(1)   NOT NULL DEFAULT 1",
+                "`PriceChangeAlerts`              tinyint(1)   NOT NULL DEFAULT 1",
+                "`NewMessageAlerts`               tinyint(1)   NOT NULL DEFAULT 1",
+                "`NewsletterSubscribed`           tinyint(1)   NOT NULL DEFAULT 0",
+                // email verification & password reset tokens (never had a migration)
+                "`EmailVerificationToken`         longtext     NULL",
+                "`EmailVerificationTokenExpires`  datetime(6)  NULL",
+                "`PasswordResetToken`             longtext     NULL",
+                "`PasswordResetTokenExpires`      datetime(6)  NULL",
+                // subscription fields (covered by AddSubscriptionToUsers migration but guard
+                // is needed for DBs where that migration was bootstrapped without running)
+                "`SubscriptionTier`              int          NOT NULL DEFAULT 0",
+                "`SubscriptionExpiresAt`         datetime(6)  NULL",
+                "`SubscriptionStartedAt`         datetime(6)  NULL",
+                "`StartProgramActivatedAt`       datetime(6)  NULL",
+                "`FeaturedQuotaUsed`             int          NOT NULL DEFAULT 0",
+                "`FeaturedQuotaResetAt`          datetime(6)  NULL",
+                "`IsVerifiedDealer`              tinyint(1)   NOT NULL DEFAULT 0" })
             { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `users` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] users.{Col}: {Msg}", colDef, ex.Message); } }
+
+            // events — columns added to Event.cs without a corresponding migration
+            foreach (var colDef in new[] {
+                "`IsFeatured`       tinyint(1)   NOT NULL DEFAULT 0",
+                "`OrganizerName`    longtext     NULL",
+                "`OrganizerEmail`   longtext     NULL",
+                "`OrganizerPhone`   longtext     NULL",
+                "`TicketsUrl`       longtext     NULL",
+                "`WebsiteUrl`       longtext     NULL",
+                "`UpdatedAt`        datetime(6)  NULL",
+                "`FeaturedUntil`    datetime(6)  NULL" })
+            { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `events` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] events.{Col}: {Msg}", colDef, ex.Message); } }
 
             // AdvertViews.IpAddress — renamed from IpHash; try rename first, then plain ADD as fallback
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `advertviews` CHANGE COLUMN `IpHash` `IpAddress` longtext NULL"); }
