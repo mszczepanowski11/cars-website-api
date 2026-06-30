@@ -90,6 +90,9 @@ public static class ComprehensiveSeeder
             for (int i = toRename.Count; i < generics.Count; i++)
             {
                 var orphan = generics[i];
+                // Nullify FK in CarAdverts before deleting — the migration defined this FK without ON DELETE,
+                // so MySQL defaults to RESTRICT and would block the delete otherwise.
+                db.Database.ExecuteSqlRaw($"UPDATE `CarAdverts` SET `GenerationId` = NULL WHERE `GenerationId` = {orphan.Id}");
                 var engines = db.EngineVersions.Where(e => e.GenerationId == orphan.Id).ToList();
                 db.EngineVersions.RemoveRange(engines);
                 db.Generations.Remove(orphan);
@@ -117,6 +120,9 @@ public static class ComprehensiveSeeder
                 {
                     foreach (var o in orphans)
                     {
+                        // Nullify FK in CarAdverts before deleting — the migration defined this FK without ON DELETE,
+                        // so MySQL defaults to RESTRICT and would block the delete otherwise.
+                        db.Database.ExecuteSqlRaw($"UPDATE `CarAdverts` SET `GenerationId` = NULL WHERE `GenerationId` = {o.Id}");
                         var orphanEngines = db.EngineVersions.Where(e => e.GenerationId == o.Id).ToList();
                         db.EngineVersions.RemoveRange(orphanEngines);
                         db.Generations.Remove(o);
