@@ -7,5 +7,6 @@ public enum ServiceType
     Featured,
     Refresh,
     EventFeatured,
-    Other
+    Other,
+    Subscription,
 }

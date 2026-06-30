@@ -78,7 +78,18 @@ public class AdvertService : IAdvertService
         var advert = _mapper.Map<CarAdvert>(dto);
         advert.CreatedAt = DateTime.UtcNow;
         advert.UserId = userId;
-        advert.ExpiresAt = DateTime.UtcNow.AddDays(30);
+
+        // Emission duration: business accounts get tier-based days; personal accounts default 30 days
+        var advertUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+        int emissionDays = 30;
+        if (advertUser?.AccountType == AccountType.Business)
+        {
+            var tier = advertUser.SubscriptionExpiresAt.HasValue && advertUser.SubscriptionExpiresAt < DateTime.UtcNow
+                ? SubscriptionTier.None
+                : advertUser.SubscriptionTier;
+            emissionDays = SubscriptionPlanConfig.GetEmissionDays(tier);
+        }
+        advert.ExpiresAt = DateTime.UtcNow.AddDays(emissionDays);
         
         
         _context.CarAdverts.Add(advert);

@@ -14,13 +14,15 @@ public class AdvertController : ControllerBase
     private readonly IAdvertService _advertService;
     private readonly IAdvertImageService _imageService;
     private readonly IUserService _userService;
+    private readonly ISubscriptionService _subscriptionService;
     private readonly ILogger<AdvertController> _logger;
 
-    public AdvertController(IAdvertService advertService, IAdvertImageService imageService, IUserService userService, ILogger<AdvertController> logger)
+    public AdvertController(IAdvertService advertService, IAdvertImageService imageService, IUserService userService, ISubscriptionService subscriptionService, ILogger<AdvertController> logger)
     {
         _advertService = advertService;
         _imageService = imageService;
         _userService = userService;
+        _subscriptionService = subscriptionService;
         _logger = logger;
     }
 
@@ -108,6 +110,15 @@ public class AdvertController : ControllerBase
             {
                 _logger.LogWarning("[Advert/Create] Blocked: personal yearly limit reached userId={UserId} yearCount={Year}", userId, yearCount);
                 return BadRequest(new { error = "private_limit_yearly", message = "Wygląda na to, że prowadzisz działalność handlową. Załóż konto biznesowe." });
+            }
+        }
+        else if (user != null && user.AccountType == AccountType.Business)
+        {
+            var (canCreate, limitError) = await _subscriptionService.CheckActiveAdLimitAsync(userId);
+            if (!canCreate)
+            {
+                _logger.LogWarning("[Advert/Create] Blocked: B2B subscription limit userId={UserId} msg={Msg}", userId, limitError);
+                return BadRequest(new { error = "b2b_limit_active", message = limitError });
             }
         }
 

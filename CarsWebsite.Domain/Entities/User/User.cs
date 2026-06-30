@@ -38,6 +38,15 @@ namespace CarsWebsite
         public string? Country { get; set; }
         public string? About { get; set; }
 
+        // Subscription (B2B dealer packages)
+        public SubscriptionTier SubscriptionTier { get; set; } = SubscriptionTier.None;
+        public DateTime? SubscriptionExpiresAt { get; set; }
+        public DateTime? SubscriptionStartedAt { get; set; }
+        public DateTime? StartProgramActivatedAt { get; set; }
+        public int FeaturedQuotaUsed { get; set; } = 0;
+        public DateTime? FeaturedQuotaResetAt { get; set; }
+        public bool IsVerifiedDealer { get; set; } = false;
+
         // Notification settings
         public bool EmailNotifications { get; set; } = true;
         public bool PriceChangeAlerts { get; set; } = true;
