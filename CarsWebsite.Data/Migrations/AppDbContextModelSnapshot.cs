@@ -268,6 +268,9 @@ namespace cars_website_api.Migrations
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<DateTime?>("FeaturedUntil")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<bool>("IsFeatured")
                         .HasColumnType("tinyint(1)");
 
@@ -958,13 +961,28 @@ namespace cars_website_api.Migrations
                     b.Property<bool>("EmailNotifications")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<string>("EmailVerificationToken")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("EmailVerificationTokenExpires")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<bool>("EmailVerified")
                         .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("FeaturedQuotaUsed")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("FeaturedQuotaResetAt")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<bool>("IsAdmin")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("IsBlocked")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsVerifiedDealer")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<DateTime?>("LastLoginAt")
@@ -993,6 +1011,12 @@ namespace cars_website_api.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<string>("PasswordResetToken")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("PasswordResetTokenExpires")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -1006,8 +1030,20 @@ namespace cars_website_api.Migrations
                     b.Property<string>("Region")
                         .HasColumnType("longtext");
 
+                    b.Property<DateTime?>("StartProgramActivatedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("Street")
                         .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("SubscriptionExpiresAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("SubscriptionStartedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("SubscriptionTier")
+                        .HasColumnType("int");
 
                     b.Property<string>("Surname")
                         .IsRequired()
