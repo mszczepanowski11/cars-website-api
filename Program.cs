@@ -444,6 +444,14 @@ internal class Program
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `refreshtokens` ADD COLUMN `RevokedAt` datetime(6) NULL"); }
             catch (Exception ex) { logger.LogDebug("[Schema] refreshtokens.RevokedAt: {Msg}", ex.Message); }
 
+            // users — notification preference columns added after initial DB creation (no migration exists)
+            foreach (var colDef in new[] {
+                "`EmailNotifications` tinyint(1) NOT NULL DEFAULT 1",
+                "`PriceChangeAlerts`  tinyint(1) NOT NULL DEFAULT 1",
+                "`NewMessageAlerts`   tinyint(1) NOT NULL DEFAULT 1",
+                "`NewsletterSubscribed` tinyint(1) NOT NULL DEFAULT 0" })
+            { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `users` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] users.{Col}: {Msg}", colDef, ex.Message); } }
+
             // AdvertViews.IpAddress — renamed from IpHash; try rename first, then plain ADD as fallback
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `advertviews` CHANGE COLUMN `IpHash` `IpAddress` longtext NULL"); }
             catch (Exception ex) { logger.LogDebug("RENAME advertviews.IpHash→IpAddress skipped: {Message}", ex.Message); }
