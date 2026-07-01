@@ -170,9 +170,9 @@ def scrape_all(pw):
     return cars
 
 
-def _num(text, pattern, scale=1, is_float=False):
+def _num(text, pattern, scale=1, is_float=False, case_sensitive=False):
     """Wyciaga liczbe z tekstu na podstawie wzorca."""
-    m = re.search(pattern, text, re.I)
+    m = re.search(pattern, text, re.I if not case_sensitive else 0)
     if not m: return None
     raw = re.sub(r"\s", "", m.group(1)).replace(",", ".")
     try:
@@ -222,10 +222,13 @@ def parse_listing(html, url):
 
     # ── Rok ──
     # Whole-page regex matches copyright years/unrelated numbers in nav & footer first,
-    # so prefer a labeled "Rok produkcji" field, then the title (cars are usually
-    # titled "Marka Model 2021 ..."), and only fall back to a page-wide search.
+    # so prefer, in order: the SEO URL slug (autoplac embeds it as "...-2014r-...",
+    # very reliable when present), a labeled "Rok produkcji" field, the title (cars
+    # are usually titled "Marka Model 2021 ..."), and only then a page-wide search.
     YEAR_RE = r"(19[89]\d|20[012]\d)"
-    m = re.search(rf"rok\s*produkcji[:\s]+{YEAR_RE}", text, re.I)
+    m = re.search(rf"{YEAR_RE}r\b", url, re.I)
+    if not m:
+        m = re.search(rf"rok\s*produkcji[:\s]+{YEAR_RE}", text, re.I)
     if not m:
         m = re.search(rf"\brok[:\s]+{YEAR_RE}", text, re.I)
     if not m:
@@ -239,7 +242,10 @@ def parse_listing(html, url):
     car["mileage"] = int(re.sub(r"\s", "", m.group(1))) if m else 0
 
     # ── Moc ──
-    car["power_hp"] = _num(text, r"(\d+)\s*KM")
+    # "KM" (konie mechaniczne / horsepower) must stay case-sensitive here — matching
+    # case-insensitively also matches "km" (kilometres) elsewhere on the page and
+    # silently pulls in the wrong number (e.g. mileage or a "0 km" fragment).
+    car["power_hp"] = _num(text, r"(\d+)\s*KM", case_sensitive=True)
     car["power_kw"] = _num(text, r"(\d+)\s*kW")
 
     # ── Pojemnosc silnika ──
@@ -408,6 +414,17 @@ def parse_listing(html, url):
             t = el.get_text(strip=True)
             if 3 < len(t) < 80 and t not in equipment and is_real_equipment(t):
                 equipment.append(t)
+
+    # Dealer titles on autoplac often pack real per-car highlights after the first
+    # comma, e.g. "Nissan Juke I 1.2 LIFT, Kamera 360, Navi,Climatronic,TEKNA" — a
+    # far more reliable signal than the generic CSS selectors above, which can end
+    # up matching unrelated sidebar content instead of actual equipment.
+    title_segments = [p.strip() for p in car["title"].split(",")][1:]
+    for seg in title_segments:
+        for piece in re.split(r"\s*/\s*", seg):
+            piece = piece.strip(" .-")
+            if piece and 2 < len(piece) < 40 and is_real_equipment(piece) and piece not in equipment:
+                equipment.append(piece)
 
     car["equipment"] = list(dict.fromkeys(equipment))[:60]
 
