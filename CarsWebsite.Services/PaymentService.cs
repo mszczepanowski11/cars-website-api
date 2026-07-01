@@ -351,7 +351,6 @@ public class PaymentService : IPaymentService
             ["urlSuccess"]        = successUrl,
             ["urlFailure"]        = $"{siteUrl}/payment/return?status=failure&paymentId={payment.Id}",
             ["urlReturn"]         = $"{siteUrl}/payment/return?status=cancel&paymentId={payment.Id}",
-            ["urlNotification"]   = $"{apiUrl}/api/Payment/webhook",
             ["orderDescription"]  = payment.ServiceDescription,
             ["serviceId"]         = serviceId,
         };

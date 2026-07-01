@@ -91,7 +91,7 @@ namespace CarsWebsite
 
             modelBuilder.Entity<CarAdvert>().HasOne(a => a.Brand).WithMany().HasForeignKey(a => a.BrandId);
             modelBuilder.Entity<CarAdvert>().HasOne(a => a.Model).WithMany().HasForeignKey(a => a.ModelId);
-            modelBuilder.Entity<CarAdvert>().HasOne(a => a.Generation).WithMany().HasForeignKey(a => a.GenerationId);
+            modelBuilder.Entity<CarAdvert>().HasOne(a => a.Generation).WithMany().HasForeignKey(a => a.GenerationId).OnDelete(DeleteBehavior.SetNull);
             modelBuilder.Entity<CarAdvert>().HasOne(a => a.EngineVersion).WithMany().HasForeignKey(a => a.EngineVersionId);
             modelBuilder.Entity<CarAdvert>().HasOne(a => a.FuelType).WithMany().HasForeignKey(a => a.FuelTypeId);
             modelBuilder.Entity<CarAdvert>().HasOne(a => a.Gearbox).WithMany().HasForeignKey(a => a.GearboxId);

@@ -2262,7 +2262,8 @@ namespace cars_website_api.Migrations
 
                     b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.Generation", "Generation")
                         .WithMany()
-                        .HasForeignKey("GenerationId");
+                        .HasForeignKey("GenerationId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("CarsWebsite.Advert", null)
                         .WithOne()
