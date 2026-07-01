@@ -50,6 +50,10 @@ appsettings.*.local.json
 appsettings.Production.json
 secrets.json
 
+## Python (import_autoplac_v3.py)
+__pycache__/
+*.pyc
+
 ## OS
 .DS_Store
 Thumbs.db
