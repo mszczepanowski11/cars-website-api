@@ -221,7 +221,17 @@ def parse_listing(html, url):
     car["price"] = int(re.sub(r"\s", "", m.group(1))) if m else 0
 
     # ── Rok ──
-    m = re.search(r"\b(19[89]\d|20[012]\d)\b", text)
+    # Whole-page regex matches copyright years/unrelated numbers in nav & footer first,
+    # so prefer a labeled "Rok produkcji" field, then the title (cars are usually
+    # titled "Marka Model 2021 ..."), and only fall back to a page-wide search.
+    YEAR_RE = r"(19[89]\d|20[012]\d)"
+    m = re.search(rf"rok\s*produkcji[:\s]+{YEAR_RE}", text, re.I)
+    if not m:
+        m = re.search(rf"\brok[:\s]+{YEAR_RE}", text, re.I)
+    if not m:
+        m = re.search(rf"\b{YEAR_RE}\b", car["title"])
+    if not m:
+        m = re.search(rf"\b{YEAR_RE}\b", text)
     car["year"] = int(m.group(1)) if m else 2010
 
     # ── Przebieg ──
@@ -359,6 +369,20 @@ def parse_listing(html, url):
     car["owners"] = int(m.group(1)) if m else None
 
     # ── Wyposazenie — szukamy agresywniej ──
+    # The broad selectors below also match sidebar nav / "popular searches" lists
+    # (e.g. "Samochody do 150000 zl w Swietokrzyskie"), which are not real equipment.
+    # Filter those out so they don't end up saved as features or dumped into the
+    # advert description.
+    JUNK_EQUIP_RE = re.compile(
+        r"z[lł]\b|PLN|https?://|^(samochody|oferty|og[lł]oszeni|strona|kategori|menu|"
+        r"filtruj|sortuj|zobacz|wi[eę]cej|wszystkie|popularne|najcz[eę][sś]ciej|"
+        r"najpopularniejsze)\b",
+        re.I,
+    )
+
+    def is_real_equipment(t: str) -> bool:
+        return bool(t) and not JUNK_EQUIP_RE.search(t)
+
     equipment = []
     EQUIP_SELECTORS = [
         "ul.features li", "ul.equipment li", "ul.extras li",
@@ -372,7 +396,7 @@ def parse_listing(html, url):
         items = soup.select(sel)
         for item in items:
             t = item.get_text(strip=True)
-            if t and 2 < len(t) < 100:
+            if t and 2 < len(t) < 100 and is_real_equipment(t):
                 equipment.append(t)
         if len(equipment) >= 3:
             break
@@ -382,7 +406,7 @@ def parse_listing(html, url):
         for el in soup.find_all(["span", "div", "p"],
                                 class_=re.compile(r"feature|equipment|wyposaz|wyposa|param", re.I)):
             t = el.get_text(strip=True)
-            if 3 < len(t) < 80 and t not in equipment:
+            if 3 < len(t) < 80 and t not in equipment and is_real_equipment(t):
                 equipment.append(t)
 
     car["equipment"] = list(dict.fromkeys(equipment))[:60]
