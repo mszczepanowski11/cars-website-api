@@ -96,6 +96,8 @@ public class SearchCarAdvertDto
     [MaxLength(100)]
     public string? CatalogNumber { get; set; }
 
+    public int? PartCategoryId { get; set; }
+
     [MaxLength(100)]
     public string? City { get; set; }
 
