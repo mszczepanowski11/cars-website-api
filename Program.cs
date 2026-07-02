@@ -1196,98 +1196,115 @@ internal class Program
             db.Database.SetCommandTimeout(30);
             logger.LogWarning("[STARTUP-TRACE] FK constraint guards complete; calling MergeDuplicateBrands");
 
-            try
+            // Everything below is idempotent, self-healing data seeding/cleanup — never schema-
+            // critical for serving requests — but its cumulative runtime has grown with every
+            // brand batch added to ComprehensiveSeeder. Running it synchronously here blocked
+            // app.Run()/the health check from ever coming up once that runtime exceeded Railway's
+            // deploy timeout, causing a full outage (every request 502'd, not just seed-dependent
+            // ones). Moved to a background task with its own DI scope so Kestrel starts accepting
+            // connections immediately; seeding still runs to completion, just without blocking
+            // startup, matching how this section is already designed to be safe to (re)run at
+            // any time.
+            _ = Task.Run(() =>
             {
-                MergeDuplicateBrands(db, logger);
-                logger.LogWarning("[STARTUP-TRACE] MergeDuplicateBrands returned normally");
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "[Cleanup] MergeDuplicateBrands failed: {Msg}", ex.Message);
-            }
+                using var bgScope = app.Services.CreateScope();
+                var bgDb = bgScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var bgLogger = bgScope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
+                bgDb.Database.SetCommandTimeout(30);
 
-            logger.LogWarning("[STARTUP-TRACE] Calling SeedDataIfEmpty");
-            try
-            {
-                SeedDataIfEmpty(db, logger);
-                logger.LogWarning("[STARTUP-TRACE] SeedDataIfEmpty returned normally");
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "[Seeder] SeedDataIfEmpty failed — app will start without complete seed data: {Msg}", ex.Message);
-            }
-
-            // Fix confirmed cross-category leak: 6 FeatureCategory rows named "Specjalne - <type>"
-            // (created via the admin panel, not seeded by any code here) have a vehicle-type
-            // name but VehicleCategoryId = NULL, meaning they show up on EVERY category's
-            // equipment step instead of just their own — e.g. motorcycle-only equipment showing
-            // on a car listing. Confirmed via the AUDIT-FEATURES log added in #57. Self-heal by
-            // matching the name to the right VehicleCategory slug.
-            try
-            {
-                var vcatBySlug = db.VehicleCategories.ToDictionary(c => c.Slug, c => c.Id);
-                var specjalne = db.FeatureCategories
-                    .Where(fc => fc.VehicleCategoryId == null && fc.Name.StartsWith("Specjalne"))
-                    .ToList();
-                int fixedCount = 0;
-                foreach (var fc in specjalne)
+                try
                 {
-                    string? slug =
-                        fc.Name.Contains("Ciężarówki", StringComparison.OrdinalIgnoreCase) ? "ciezarowe" :
-                        fc.Name.Contains("Dostawcze", StringComparison.OrdinalIgnoreCase) ? "dostawcze" :
-                        fc.Name.Contains("budowlane", StringComparison.OrdinalIgnoreCase) ? "budowlane" :
-                        fc.Name.Contains("rolnicze", StringComparison.OrdinalIgnoreCase) ? "rolnicze" :
-                        fc.Name.Contains("Motocykle", StringComparison.OrdinalIgnoreCase) ? "motocykle" :
-                        fc.Name.Contains("Przyczepy", StringComparison.OrdinalIgnoreCase) ? "przyczepy" :
-                        null;
-                    if (slug != null && vcatBySlug.TryGetValue(slug, out var vcatId))
-                    {
-                        fc.VehicleCategoryId = vcatId;
-                        fixedCount++;
-                        logger.LogWarning("[STARTUP-TRACE] Fixed FeatureCategory '{Name}' (id={Id}) scope: ANY -> {Slug}", fc.Name, fc.Id, slug);
-                    }
+                    MergeDuplicateBrands(bgDb, bgLogger);
+                    bgLogger.LogWarning("[STARTUP-TRACE] MergeDuplicateBrands returned normally");
                 }
-                if (fixedCount > 0) db.SaveChanges();
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "[STARTUP-TRACE] FeatureCategory scope fix failed: {Msg}", ex.Message);
-            }
+                catch (Exception ex)
+                {
+                    bgLogger.LogError(ex, "[Cleanup] MergeDuplicateBrands failed: {Msg}", ex.Message);
+                }
 
-            // Audit: dump every FeatureCategory's scope (VehicleCategoryId/BrandId/ModelId) and
-            // feature count, so equipment leaking into the wrong vehicle category (e.g. car
-            // features showing on a motorcycle listing) can be spotted from the scope values
-            // directly instead of clicking through every category in the form by hand. A NULL
-            // scope field means "applies to everything" by design (see
-            // GetFeatureCategoriesByContextAsync) — that's expected for a handful of universal
-            // categories, but is a red flag if it shows up on something that reads as
-            // category-specific by name.
-            try
-            {
-                var vcatNames = db.VehicleCategories.ToDictionary(c => c.Id, c => c.Slug);
-                var fcDump = db.FeatureCategories.Include(fc => fc.Features)
-                    .AsEnumerable()
-                    .OrderBy(fc => fc.Name)
-                    .Select(fc =>
-                        $"{fc.Name} [vcat={(fc.VehicleCategoryId.HasValue ? vcatNames.GetValueOrDefault(fc.VehicleCategoryId.Value, "?") : "ANY")}, " +
-                        $"brand={(fc.BrandId?.ToString() ?? "ANY")}, model={(fc.ModelId?.ToString() ?? "ANY")}, features={fc.Features.Count}] (id={fc.Id})")
-                    .ToList();
-                logger.LogWarning("[STARTUP-TRACE] AUDIT-FEATURES: {Count} feature categories: {List}",
-                    fcDump.Count, string.Join(" | ", fcDump));
+                bgLogger.LogWarning("[STARTUP-TRACE] Calling SeedDataIfEmpty");
+                try
+                {
+                    SeedDataIfEmpty(bgDb, bgLogger);
+                    bgLogger.LogWarning("[STARTUP-TRACE] SeedDataIfEmpty returned normally");
+                }
+                catch (Exception ex)
+                {
+                    bgLogger.LogError(ex, "[Seeder] SeedDataIfEmpty failed — app will start without complete seed data: {Msg}", ex.Message);
+                }
 
-                var dupNames = db.FeatureCategories.AsEnumerable()
-                    .GroupBy(fc => fc.Name)
-                    .Where(g => g.Count() > 1)
-                    .Select(g => $"{g.Key} (x{g.Count()}, ids={string.Join(",", g.Select(fc => fc.Id))})")
-                    .ToList();
-                if (dupNames.Any())
-                    logger.LogWarning("[STARTUP-TRACE] AUDIT-FEATURES: {Count} feature-category names appear more than once (possible scope conflict): {List}",
-                        dupNames.Count, string.Join(" | ", dupNames));
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "[STARTUP-TRACE] AUDIT-FEATURES failed: {Msg}", ex.Message);
-            }
+                // Fix confirmed cross-category leak: 6 FeatureCategory rows named "Specjalne - <type>"
+                // (created via the admin panel, not seeded by any code here) have a vehicle-type
+                // name but VehicleCategoryId = NULL, meaning they show up on EVERY category's
+                // equipment step instead of just their own — e.g. motorcycle-only equipment showing
+                // on a car listing. Confirmed via the AUDIT-FEATURES log added in #57. Self-heal by
+                // matching the name to the right VehicleCategory slug.
+                try
+                {
+                    var vcatBySlug = bgDb.VehicleCategories.ToDictionary(c => c.Slug, c => c.Id);
+                    var specjalne = bgDb.FeatureCategories
+                        .Where(fc => fc.VehicleCategoryId == null && fc.Name.StartsWith("Specjalne"))
+                        .ToList();
+                    int fixedCount = 0;
+                    foreach (var fc in specjalne)
+                    {
+                        string? slug =
+                            fc.Name.Contains("Ciężarówki", StringComparison.OrdinalIgnoreCase) ? "ciezarowe" :
+                            fc.Name.Contains("Dostawcze", StringComparison.OrdinalIgnoreCase) ? "dostawcze" :
+                            fc.Name.Contains("budowlane", StringComparison.OrdinalIgnoreCase) ? "budowlane" :
+                            fc.Name.Contains("rolnicze", StringComparison.OrdinalIgnoreCase) ? "rolnicze" :
+                            fc.Name.Contains("Motocykle", StringComparison.OrdinalIgnoreCase) ? "motocykle" :
+                            fc.Name.Contains("Przyczepy", StringComparison.OrdinalIgnoreCase) ? "przyczepy" :
+                            null;
+                        if (slug != null && vcatBySlug.TryGetValue(slug, out var vcatId))
+                        {
+                            fc.VehicleCategoryId = vcatId;
+                            fixedCount++;
+                            bgLogger.LogWarning("[STARTUP-TRACE] Fixed FeatureCategory '{Name}' (id={Id}) scope: ANY -> {Slug}", fc.Name, fc.Id, slug);
+                        }
+                    }
+                    if (fixedCount > 0) bgDb.SaveChanges();
+                }
+                catch (Exception ex)
+                {
+                    bgLogger.LogError(ex, "[STARTUP-TRACE] FeatureCategory scope fix failed: {Msg}", ex.Message);
+                }
+
+                // Audit: dump every FeatureCategory's scope (VehicleCategoryId/BrandId/ModelId) and
+                // feature count, so equipment leaking into the wrong vehicle category (e.g. car
+                // features showing on a motorcycle listing) can be spotted from the scope values
+                // directly instead of clicking through every category in the form by hand. A NULL
+                // scope field means "applies to everything" by design (see
+                // GetFeatureCategoriesByContextAsync) — that's expected for a handful of universal
+                // categories, but is a red flag if it shows up on something that reads as
+                // category-specific by name.
+                try
+                {
+                    var vcatNames = bgDb.VehicleCategories.ToDictionary(c => c.Id, c => c.Slug);
+                    var fcDump = bgDb.FeatureCategories.Include(fc => fc.Features)
+                        .AsEnumerable()
+                        .OrderBy(fc => fc.Name)
+                        .Select(fc =>
+                            $"{fc.Name} [vcat={(fc.VehicleCategoryId.HasValue ? vcatNames.GetValueOrDefault(fc.VehicleCategoryId.Value, "?") : "ANY")}, " +
+                            $"brand={(fc.BrandId?.ToString() ?? "ANY")}, model={(fc.ModelId?.ToString() ?? "ANY")}, features={fc.Features.Count}] (id={fc.Id})")
+                        .ToList();
+                    bgLogger.LogWarning("[STARTUP-TRACE] AUDIT-FEATURES: {Count} feature categories: {List}",
+                        fcDump.Count, string.Join(" | ", fcDump));
+
+                    var dupNames = bgDb.FeatureCategories.AsEnumerable()
+                        .GroupBy(fc => fc.Name)
+                        .Where(g => g.Count() > 1)
+                        .Select(g => $"{g.Key} (x{g.Count()}, ids={string.Join(",", g.Select(fc => fc.Id))})")
+                        .ToList();
+                    if (dupNames.Any())
+                        bgLogger.LogWarning("[STARTUP-TRACE] AUDIT-FEATURES: {Count} feature-category names appear more than once (possible scope conflict): {List}",
+                            dupNames.Count, string.Join(" | ", dupNames));
+                }
+                catch (Exception ex)
+                {
+                    bgLogger.LogError(ex, "[STARTUP-TRACE] AUDIT-FEATURES failed: {Msg}", ex.Message);
+                }
+            });
 
             // Startup config diagnostics
             var imojeMid    = Environment.GetEnvironmentVariable("IMOJE_MERCHANT_ID") ?? "";
