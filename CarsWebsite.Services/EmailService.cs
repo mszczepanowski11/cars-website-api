@@ -216,6 +216,16 @@ public class EmailService : IEmailService
     body{{background-color:#050505;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif}}
     a.btn:hover{{opacity:0.88 !important}}
     .ftr-link:hover{{color:#aaaaaa !important}}
+    /* Gmail (esp. mobile apps) applies its own auto dark-mode colorization to messages it
+       doesn't fully trust as already dark-mode-aware, overriding our own dark palette with a
+       light/white one despite the color-scheme meta tags above. [data-ogsc] is the attribute
+       Gmail adds to the message body when this happens - re-asserting our real colors against
+       it forces Gmail back to the intended design instead of falling back to white. */
+    [data-ogsc] body, [data-ogsc] .wrap-bg{{background-color:#050505 !important}}
+    [data-ogsc] .hdr-cell, [data-ogsc] .ftr-cell{{background-color:#080808 !important}}
+    [data-ogsc] .body-cell{{background-color:#0d0d0d !important}}
+    [data-ogsc] .title-text{{color:#ffffff !important}}
+    [data-ogsc] .body-text{{color:#888888 !important}}
     @media only screen and (max-width:620px){{
       .outer-pad{{padding:16px 0 !important}}
       .card{{border-radius:12px !important}}
@@ -227,10 +237,10 @@ public class EmailService : IEmailService
     }}
   </style>
 </head>
-<body style=""margin:0;padding:0;background-color:#050505"">
+<body class=""wrap-bg"" style=""margin:0;padding:0;background-color:#050505"">
 
 <!-- Outer wrapper -->
-<table role=""presentation"" cellpadding=""0"" cellspacing=""0"" border=""0"" width=""100%"" bgcolor=""#050505"">
+<table role=""presentation"" cellpadding=""0"" cellspacing=""0"" border=""0"" width=""100%"" bgcolor=""#050505"" class=""wrap-bg"">
   <tr><td class=""outer-pad"" style=""padding:40px 16px"" align=""center"">
 
     <!-- Email card -->
@@ -268,7 +278,7 @@ public class EmailService : IEmailService
 
           <!-- Main text -->
           <tr><td>
-            <p style=""margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:15px;color:#888888;line-height:1.75"">{mainText}</p>
+            <p class=""body-text"" style=""margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:15px;color:#888888;line-height:1.75"">{mainText}</p>
           </td></tr>
           {detailsBlock}
           {ctaBlock}
