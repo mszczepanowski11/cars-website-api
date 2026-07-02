@@ -4791,6 +4791,75 @@ public static class ComprehensiveSeeder
                     Cylinders = 3, Acceleration0100 = 6.4m, TopSpeedKmh = 209, FuelConsumptionCombined = 1.8m },
             ]);
 
+            int rangeRover = GetOrCreateModel(lrId, "Range Rover", "lr-range-rover");
+            PrepareGenerations(rangeRover,
+                ("L405 (2012–2022)", "lr-range-rover-l405", 2012, 2022),
+                ("L460 (2022–)", "lr-range-rover-l460", 2022, null));
+            AddOrReplaceEngines(GetOrFixGeneration(rangeRover, "L405 (2012–2022)", "lr-range-rover-l405", 2012, 2022), 250, [
+                new EngineVersion { EngineName = "P400 3.0T 400 KM", PowerHP = 400, PowerKW = 294, Displacement = 2996, FuelTypeId = ben,
+                    TorqueNm = 550, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 6.4m, TopSpeedKmh = 225, FuelConsumptionCombined = 10.9m },
+                new EngineVersion { EngineName = "SVAutobiography 5.0 SC 565 KM", PowerHP = 565, PowerKW = 416, Displacement = 5000, FuelTypeId = ben,
+                    TorqueNm = 700, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 5.4m, TopSpeedKmh = 250, FuelConsumptionCombined = 14.5m },
+                new EngineVersion { EngineName = "D300 3.0D 300 KM", PowerHP = 300, PowerKW = 221, Displacement = 2997, FuelTypeId = die,
+                    TorqueNm = 650, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 6.5m, TopSpeedKmh = 225, FuelConsumptionCombined = 7.8m },
+                new EngineVersion { EngineName = "P400e PHEV 404 KM", PowerHP = 404, PowerKW = 297, Displacement = 1997, FuelTypeId = phev,
+                    TorqueNm = 640, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 6.8m, TopSpeedKmh = 220, FuelConsumptionCombined = 2.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(rangeRover, "L460 (2022–)", "lr-range-rover-l460", 2022, null), 300, [
+                new EngineVersion { EngineName = "P400 3.0T 400 KM", PowerHP = 400, PowerKW = 294, Displacement = 2996, FuelTypeId = mild,
+                    TorqueNm = 550, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 6.1m, TopSpeedKmh = 225, FuelConsumptionCombined = 10.5m },
+                new EngineVersion { EngineName = "P530 4.4 V8 530 KM", PowerHP = 530, PowerKW = 390, Displacement = 4395, FuelTypeId = ben,
+                    TorqueNm = 750, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 4.6m, TopSpeedKmh = 250, FuelConsumptionCombined = 13.0m },
+                new EngineVersion { EngineName = "D350 3.0D 350 KM", PowerHP = 350, PowerKW = 257, Displacement = 2997, FuelTypeId = die,
+                    TorqueNm = 700, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 5.8m, TopSpeedKmh = 225, FuelConsumptionCombined = 8.2m },
+                new EngineVersion { EngineName = "P510e PHEV 510 KM", PowerHP = 510, PowerKW = 375, Displacement = 2997, FuelTypeId = phev,
+                    TorqueNm = 700, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 5.2m, TopSpeedKmh = 220, FuelConsumptionCombined = 2.5m },
+            ]);
+
+            int velar = GetOrCreateModel(lrId, "Range Rover Velar", "lr-rr-velar");
+            AddOrReplaceEngines(GetOrFixGeneration(velar, "L560 (2017–)", "lr-velar-l560", 2017, null), 200, [
+                new EngineVersion { EngineName = "P250 2.0T 250 KM", PowerHP = 250, PowerKW = 184, Displacement = 1997, FuelTypeId = ben,
+                    TorqueNm = 365, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 7.5m, TopSpeedKmh = 217, FuelConsumptionCombined = 9.5m },
+                new EngineVersion { EngineName = "P400 3.0T 400 KM", PowerHP = 400, PowerKW = 294, Displacement = 2996, FuelTypeId = mild,
+                    TorqueNm = 550, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 5.7m, TopSpeedKmh = 250, FuelConsumptionCombined = 10.9m },
+                new EngineVersion { EngineName = "D200 2.0D 204 KM", PowerHP = 204, PowerKW = 150, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 430, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.4m, TopSpeedKmh = 209, FuelConsumptionCombined = 6.5m },
+            ]);
+
+            int discoverySport = GetOrCreateModel(lrId, "Discovery Sport", "lr-discovery-sport");
+            AddOrReplaceEngines(GetOrFixGeneration(discoverySport, "L550 (2014–)", "lr-discovery-sport-l550", 2014, null), 130, [
+                new EngineVersion { EngineName = "P200 2.0T 200 KM", PowerHP = 200, PowerKW = 147, Displacement = 1997, FuelTypeId = ben,
+                    TorqueNm = 320, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.2m, TopSpeedKmh = 201, FuelConsumptionCombined = 8.5m },
+                new EngineVersion { EngineName = "D165 2.0D 165 KM", PowerHP = 165, PowerKW = 121, Displacement = 1999, FuelTypeId = die,
+                    TorqueNm = 380, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 10.0m, TopSpeedKmh = 188, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "P300e PHEV 309 KM", PowerHP = 309, PowerKW = 227, Displacement = 1497, FuelTypeId = phev,
+                    TorqueNm = 540, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 3, Acceleration0100 = 6.6m, TopSpeedKmh = 209, FuelConsumptionCombined = 1.9m },
+            ]);
+
+            int freelander = GetOrCreateModel(lrId, "Freelander", "lr-freelander");
+            AddOrReplaceEngines(GetOrFixGeneration(freelander, "II (2006–2014)", "lr-freelander-ii", 2006, 2014), 100, [
+                new EngineVersion { EngineName = "2.2 TD4 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 2179, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 10.9m, TopSpeedKmh = 180, FuelConsumptionCombined = 7.0m },
+                new EngineVersion { EngineName = "2.0 Si4 240 KM", PowerHP = 240, PowerKW = 177, Displacement = 1999, FuelTypeId = ben,
+                    TorqueNm = 340, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.7m, TopSpeedKmh = 200, FuelConsumptionCombined = 9.5m },
+            ]);
+
             // ── JAGUAR XE + XF + F-PACE + I-PACE + F-TYPE ────────────────────────
             int jagId = GetOrCreateBrand("Jaguar", "jaguar", "auta-osobowe");
             int xe = GetOrCreateModel(jagId, "XE", "jaguar-xe");
