@@ -4246,6 +4246,304 @@ public static class ComprehensiveSeeder
                     TorqueNm = 300, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
                     Cylinders = 4, Acceleration0100 = 11.2m, TopSpeedKmh = 185, FuelConsumptionCombined = 4.1m },
             ]);
+
+            int c1 = GetOrCreateModel(citId, "C1", "citroen-c1");
+            PrepareGenerations(c1,
+                ("I (2005–2014)", "citroen-c1-i", 2005, 2014),
+                ("II (2014–)", "citroen-c1-ii", 2014, null));
+            AddOrReplaceEngines(GetOrFixGeneration(c1, "I (2005–2014)", "citroen-c1-i", 2005, 2014), 50, [
+                new EngineVersion { EngineName = "1.0 68 KM", PowerHP = 68, PowerKW = 50, Displacement = 998, FuelTypeId = ben,
+                    TorqueNm = 93, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 14.2m, TopSpeedKmh = 156, FuelConsumptionCombined = 4.6m },
+                new EngineVersion { EngineName = "1.4 HDi 54 KM", PowerHP = 54, PowerKW = 40, Displacement = 1398, FuelTypeId = die,
+                    TorqueNm = 96, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 16.8m, TopSpeedKmh = 150, FuelConsumptionCombined = 3.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(c1, "II (2014–)", "citroen-c1-ii", 2014, null), 50, [
+                new EngineVersion { EngineName = "1.0 68 KM", PowerHP = 68, PowerKW = 50, Displacement = 998, FuelTypeId = ben,
+                    TorqueNm = 93, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 14.3m, TopSpeedKmh = 158, FuelConsumptionCombined = 4.3m },
+                new EngineVersion { EngineName = "1.2 PureTech 82 KM", PowerHP = 82, PowerKW = 60, Displacement = 1199, FuelTypeId = ben,
+                    TorqueNm = 118, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.0m, TopSpeedKmh = 173, FuelConsumptionCombined = 4.9m },
+            ]);
+
+            int c2 = GetOrCreateModel(citId, "C2", "citroen-c2");
+            AddOrReplaceEngines(GetOrFixGeneration(c2, "I (2003–2009)", "citroen-c2-i", 2003, 2009), 55, [
+                new EngineVersion { EngineName = "1.1 60 KM", PowerHP = 60, PowerKW = 44, Displacement = 1124, FuelTypeId = ben,
+                    TorqueNm = 96, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 15.8m, TopSpeedKmh = 155, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "1.4 75 KM", PowerHP = 75, PowerKW = 55, Displacement = 1360, FuelTypeId = ben,
+                    TorqueNm = 118, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.8m, TopSpeedKmh = 165, FuelConsumptionCombined = 6.3m },
+                new EngineVersion { EngineName = "1.6 VTS 125 KM", PowerHP = 125, PowerKW = 92, Displacement = 1587, FuelTypeId = ben,
+                    TorqueNm = 147, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.3m, TopSpeedKmh = 200, FuelConsumptionCombined = 7.5m },
+                new EngineVersion { EngineName = "1.4 HDi 70 KM", PowerHP = 70, PowerKW = 51, Displacement = 1398, FuelTypeId = die,
+                    TorqueNm = 160, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 15.5m, TopSpeedKmh = 158, FuelConsumptionCombined = 4.3m },
+            ]);
+
+            int c3air = GetOrCreateModel(citId, "C3 Aircross", "citroen-c3-aircross");
+            AddOrReplaceEngines(GetOrFixGeneration(c3air, "I (2017–)", "citroen-c3-aircross-i", 2017, null), 90, [
+                new EngineVersion { EngineName = "1.2 PureTech 110 KM", PowerHP = 110, PowerKW = 81, Displacement = 1199, FuelTypeId = ben,
+                    TorqueNm = 205, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 10.2m, TopSpeedKmh = 187, FuelConsumptionCombined = 5.6m },
+                new EngineVersion { EngineName = "1.2 PureTech 130 KM", PowerHP = 130, PowerKW = 96, Displacement = 1199, FuelTypeId = ben,
+                    TorqueNm = 230, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 9.6m, TopSpeedKmh = 192, FuelConsumptionCombined = 5.9m },
+                new EngineVersion { EngineName = "1.5 BlueHDi 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 1499, FuelTypeId = die,
+                    TorqueNm = 250, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.6m, TopSpeedKmh = 178, FuelConsumptionCombined = 4.4m },
+                new EngineVersion { EngineName = "1.5 BlueHDi 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 1499, FuelTypeId = die,
+                    TorqueNm = 300, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.6m, TopSpeedKmh = 188, FuelConsumptionCombined = 4.5m },
+            ]);
+
+            int c3picasso = GetOrCreateModel(citId, "C3 Picasso", "citroen-c3-picasso");
+            AddOrReplaceEngines(GetOrFixGeneration(c3picasso, "I (2009–2017)", "citroen-c3-picasso-i", 2009, 2017), 90, [
+                new EngineVersion { EngineName = "1.4 95 KM", PowerHP = 95, PowerKW = 70, Displacement = 1360, FuelTypeId = ben,
+                    TorqueNm = 130, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.5m, TopSpeedKmh = 170, FuelConsumptionCombined = 6.6m },
+                new EngineVersion { EngineName = "1.6 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 1598, FuelTypeId = ben,
+                    TorqueNm = 160, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.9m, TopSpeedKmh = 185, FuelConsumptionCombined = 7.0m },
+                new EngineVersion { EngineName = "1.6 HDi 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1560, FuelTypeId = die,
+                    TorqueNm = 215, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.0m, TopSpeedKmh = 172, FuelConsumptionCombined = 4.5m },
+                new EngineVersion { EngineName = "1.6 HDi 115 KM", PowerHP = 115, PowerKW = 85, Displacement = 1560, FuelTypeId = die,
+                    TorqueNm = 270, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.5m, TopSpeedKmh = 182, FuelConsumptionCombined = 4.7m },
+            ]);
+
+            int c4picasso = GetOrCreateModel(citId, "C4 Picasso", "citroen-c4-picasso");
+            PrepareGenerations(c4picasso,
+                ("I (2006–2013)", "citroen-c4-picasso-i", 2006, 2013),
+                ("II (2013–2018)", "citroen-c4-picasso-ii", 2013, 2018));
+            AddOrReplaceEngines(GetOrFixGeneration(c4picasso, "I (2006–2013)", "citroen-c4-picasso-i", 2006, 2013), 90, [
+                new EngineVersion { EngineName = "1.6 16V 109 KM", PowerHP = 109, PowerKW = 80, Displacement = 1587, FuelTypeId = ben,
+                    TorqueNm = 147, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.9m, TopSpeedKmh = 180, FuelConsumptionCombined = 7.5m },
+                new EngineVersion { EngineName = "2.0 16V 143 KM", PowerHP = 143, PowerKW = 105, Displacement = 1997, FuelTypeId = ben,
+                    TorqueNm = 200, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.4m, TopSpeedKmh = 197, FuelConsumptionCombined = 8.5m },
+                new EngineVersion { EngineName = "1.6 HDi 110 KM", PowerHP = 110, PowerKW = 81, Displacement = 1560, FuelTypeId = die,
+                    TorqueNm = 240, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.0m, TopSpeedKmh = 185, FuelConsumptionCombined = 5.3m },
+                new EngineVersion { EngineName = "2.0 HDi 138 KM", PowerHP = 138, PowerKW = 101, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.6m, TopSpeedKmh = 200, FuelConsumptionCombined = 5.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(c4picasso, "II (2013–2018)", "citroen-c4-picasso-ii", 2013, 2018), 110, [
+                new EngineVersion { EngineName = "1.2 PureTech 130 KM", PowerHP = 130, PowerKW = 96, Displacement = 1199, FuelTypeId = ben,
+                    TorqueNm = 230, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 10.9m, TopSpeedKmh = 188, FuelConsumptionCombined = 5.6m },
+                new EngineVersion { EngineName = "1.6 THP 165 KM", PowerHP = 165, PowerKW = 121, Displacement = 1598, FuelTypeId = ben,
+                    TorqueNm = 240, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.9m, TopSpeedKmh = 210, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "1.6 BlueHDi 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 1560, FuelTypeId = die,
+                    TorqueNm = 300, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.0m, TopSpeedKmh = 190, FuelConsumptionCombined = 4.1m },
+                new EngineVersion { EngineName = "2.0 BlueHDi 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 370, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.3m, TopSpeedKmh = 200, FuelConsumptionCombined = 4.6m },
+            ]);
+
+            int c5 = GetOrCreateModel(citId, "C5", "citroen-c5");
+            PrepareGenerations(c5,
+                ("I (2001–2008)", "citroen-c5-i", 2001, 2008),
+                ("II (2008–2017)", "citroen-c5-ii", 2008, 2017));
+            AddOrReplaceEngines(GetOrFixGeneration(c5, "I (2001–2008)", "citroen-c5-i", 2001, 2008), 100, [
+                new EngineVersion { EngineName = "1.8 16V 116 KM", PowerHP = 116, PowerKW = 85, Displacement = 1749, FuelTypeId = ben,
+                    TorqueNm = 165, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.9m, TopSpeedKmh = 188, FuelConsumptionCombined = 8.5m },
+                new EngineVersion { EngineName = "2.0 16V 143 KM", PowerHP = 143, PowerKW = 105, Displacement = 1997, FuelTypeId = ben,
+                    TorqueNm = 202, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.3m, TopSpeedKmh = 205, FuelConsumptionCombined = 9.2m },
+                new EngineVersion { EngineName = "3.0 V6 210 KM", PowerHP = 210, PowerKW = 154, Displacement = 2946, FuelTypeId = ben,
+                    TorqueNm = 285, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 8.7m, TopSpeedKmh = 225, FuelConsumptionCombined = 11.5m },
+                new EngineVersion { EngineName = "2.0 HDi 109 KM", PowerHP = 109, PowerKW = 80, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 250, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.5m, TopSpeedKmh = 185, FuelConsumptionCombined = 5.8m },
+                new EngineVersion { EngineName = "2.2 HDi 133 KM", PowerHP = 133, PowerKW = 98, Displacement = 2179, FuelTypeId = die,
+                    TorqueNm = 315, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.5m, TopSpeedKmh = 200, FuelConsumptionCombined = 6.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(c5, "II (2008–2017)", "citroen-c5-ii", 2008, 2017), 100, [
+                new EngineVersion { EngineName = "1.6 THP 156 KM", PowerHP = 156, PowerKW = 115, Displacement = 1598, FuelTypeId = ben,
+                    TorqueNm = 240, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 210, FuelConsumptionCombined = 7.8m },
+                new EngineVersion { EngineName = "2.0 16V 143 KM", PowerHP = 143, PowerKW = 105, Displacement = 1997, FuelTypeId = ben,
+                    TorqueNm = 200, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.7m, TopSpeedKmh = 205, FuelConsumptionCombined = 8.7m },
+                new EngineVersion { EngineName = "2.0 HDi 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.8m, TopSpeedKmh = 202, FuelConsumptionCombined = 5.3m },
+                new EngineVersion { EngineName = "2.2 HDi 200 KM", PowerHP = 200, PowerKW = 147, Displacement = 2179, FuelTypeId = die,
+                    TorqueNm = 450, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.9m, TopSpeedKmh = 225, FuelConsumptionCombined = 6.1m },
+            ]);
+
+            int c6 = GetOrCreateModel(citId, "C6", "citroen-c6");
+            AddOrReplaceEngines(GetOrFixGeneration(c6, "I (2005–2012)", "citroen-c6-i", 2005, 2012), 150, [
+                new EngineVersion { EngineName = "3.0 V6 211 KM", PowerHP = 211, PowerKW = 155, Displacement = 2946, FuelTypeId = ben,
+                    TorqueNm = 285, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 9.3m, TopSpeedKmh = 227, FuelConsumptionCombined = 11.8m },
+                new EngineVersion { EngineName = "2.7 HDi V6 208 KM", PowerHP = 208, PowerKW = 153, Displacement = 2720, FuelTypeId = die,
+                    TorqueNm = 450, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 9.2m, TopSpeedKmh = 222, FuelConsumptionCombined = 7.8m },
+                new EngineVersion { EngineName = "2.2 HDi 170 KM", PowerHP = 170, PowerKW = 125, Displacement = 2179, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.4m, TopSpeedKmh = 210, FuelConsumptionCombined = 6.5m },
+            ]);
+
+            int grandC4Picasso = GetOrCreateModel(citId, "Grand C4 Picasso", "citroen-grand-c4-picasso");
+            PrepareGenerations(grandC4Picasso,
+                ("I (2006–2013)", "citroen-grand-c4-picasso-i", 2006, 2013),
+                ("II (2013–2018)", "citroen-grand-c4-picasso-ii", 2013, 2018));
+            AddOrReplaceEngines(GetOrFixGeneration(grandC4Picasso, "I (2006–2013)", "citroen-grand-c4-picasso-i", 2006, 2013), 90, [
+                new EngineVersion { EngineName = "1.6 16V 109 KM", PowerHP = 109, PowerKW = 80, Displacement = 1587, FuelTypeId = ben,
+                    TorqueNm = 147, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.5m, TopSpeedKmh = 178, FuelConsumptionCombined = 7.8m },
+                new EngineVersion { EngineName = "2.0 16V 143 KM", PowerHP = 143, PowerKW = 105, Displacement = 1997, FuelTypeId = ben,
+                    TorqueNm = 200, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.9m, TopSpeedKmh = 195, FuelConsumptionCombined = 8.8m },
+                new EngineVersion { EngineName = "1.6 HDi 110 KM", PowerHP = 110, PowerKW = 81, Displacement = 1560, FuelTypeId = die,
+                    TorqueNm = 240, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.6m, TopSpeedKmh = 183, FuelConsumptionCombined = 5.6m },
+                new EngineVersion { EngineName = "2.0 HDi 138 KM", PowerHP = 138, PowerKW = 101, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.0m, TopSpeedKmh = 198, FuelConsumptionCombined = 6.0m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(grandC4Picasso, "II (2013–2018)", "citroen-grand-c4-picasso-ii", 2013, 2018), 110, [
+                new EngineVersion { EngineName = "1.2 PureTech 130 KM", PowerHP = 130, PowerKW = 96, Displacement = 1199, FuelTypeId = ben,
+                    TorqueNm = 230, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.4m, TopSpeedKmh = 185, FuelConsumptionCombined = 5.8m },
+                new EngineVersion { EngineName = "1.6 THP 165 KM", PowerHP = 165, PowerKW = 121, Displacement = 1598, FuelTypeId = ben,
+                    TorqueNm = 240, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.3m, TopSpeedKmh = 207, FuelConsumptionCombined = 6.7m },
+                new EngineVersion { EngineName = "1.6 BlueHDi 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 1560, FuelTypeId = die,
+                    TorqueNm = 300, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.5m, TopSpeedKmh = 188, FuelConsumptionCombined = 4.3m },
+                new EngineVersion { EngineName = "2.0 BlueHDi 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 370, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.7m, TopSpeedKmh = 198, FuelConsumptionCombined = 4.8m },
+            ]);
+
+            int jumper = GetOrCreateModel(citId, "Jumper", "citroen-jumper");
+            PrepareGenerations(jumper,
+                ("I (2006–2014)", "citroen-jumper-i", 2006, 2014),
+                ("II (2014–)", "citroen-jumper-ii", 2014, null));
+            AddOrReplaceEngines(GetOrFixGeneration(jumper, "I (2006–2014)", "citroen-jumper-i", 2006, 2014), 90, [
+                new EngineVersion { EngineName = "2.2 HDi 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 2198, FuelTypeId = die,
+                    TorqueNm = 250, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 16.0m, TopSpeedKmh = 150, FuelConsumptionCombined = 8.0m },
+                new EngineVersion { EngineName = "2.2 HDi 130 KM", PowerHP = 130, PowerKW = 96, Displacement = 2198, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.5m, TopSpeedKmh = 165, FuelConsumptionCombined = 8.3m },
+                new EngineVersion { EngineName = "3.0 HDi 157 KM", PowerHP = 157, PowerKW = 115, Displacement = 2999, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.5m, TopSpeedKmh = 175, FuelConsumptionCombined = 9.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(jumper, "II (2014–)", "citroen-jumper-ii", 2014, null), 100, [
+                new EngineVersion { EngineName = "2.0 BlueHDi 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.5m, TopSpeedKmh = 158, FuelConsumptionCombined = 7.8m },
+                new EngineVersion { EngineName = "2.2 BlueHDi 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 2179, FuelTypeId = die,
+                    TorqueNm = 350, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.5m, TopSpeedKmh = 168, FuelConsumptionCombined = 8.0m },
+                new EngineVersion { EngineName = "2.2 BlueHDi 165 KM", PowerHP = 165, PowerKW = 121, Displacement = 2179, FuelTypeId = die,
+                    TorqueNm = 380, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.0m, TopSpeedKmh = 175, FuelConsumptionCombined = 8.2m },
+            ]);
+
+            int jumpy = GetOrCreateModel(citId, "Jumpy", "citroen-jumpy");
+            PrepareGenerations(jumpy,
+                ("I (1994–2006)", "citroen-jumpy-i", 1994, 2006),
+                ("II (2007–2016)", "citroen-jumpy-ii", 2007, 2016),
+                ("III (2016–)", "citroen-jumpy-iii", 2016, null));
+            AddOrReplaceEngines(GetOrFixGeneration(jumpy, "I (1994–2006)", "citroen-jumpy-i", 1994, 2006), 60, [
+                new EngineVersion { EngineName = "1.9D 71 KM", PowerHP = 71, PowerKW = 52, Displacement = 1905, FuelTypeId = die,
+                    TorqueNm = 127, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 19.0m, TopSpeedKmh = 140, FuelConsumptionCombined = 7.5m },
+                new EngineVersion { EngineName = "2.0 HDi 94 KM", PowerHP = 94, PowerKW = 69, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 205, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 15.5m, TopSpeedKmh = 158, FuelConsumptionCombined = 7.2m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(jumpy, "II (2007–2016)", "citroen-jumpy-ii", 2007, 2016), 80, [
+                new EngineVersion { EngineName = "1.6 HDi 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1560, FuelTypeId = die,
+                    TorqueNm = 215, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 15.5m, TopSpeedKmh = 160, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "2.0 HDi 128 KM", PowerHP = 128, PowerKW = 94, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.9m, TopSpeedKmh = 178, FuelConsumptionCombined = 6.8m },
+                new EngineVersion { EngineName = "2.0 HDi 163 KM", PowerHP = 163, PowerKW = 120, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 340, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.5m, TopSpeedKmh = 188, FuelConsumptionCombined = 7.2m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(jumpy, "III (2016–)", "citroen-jumpy-iii", 2016, null), 100, [
+                new EngineVersion { EngineName = "1.5 BlueHDi 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 1499, FuelTypeId = die,
+                    TorqueNm = 300, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.5m, TopSpeedKmh = 175, FuelConsumptionCombined = 5.5m },
+                new EngineVersion { EngineName = "2.0 BlueHDi 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 370, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.5m, TopSpeedKmh = 185, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "2.0 BlueHDi 180 KM", PowerHP = 180, PowerKW = 132, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.5m, TopSpeedKmh = 190, FuelConsumptionCombined = 6.3m },
+            ]);
+
+            int saxo = GetOrCreateModel(citId, "Saxo", "citroen-saxo");
+            AddOrReplaceEngines(GetOrFixGeneration(saxo, "I (1996–2004)", "citroen-saxo-i", 1996, 2004), 40, [
+                new EngineVersion { EngineName = "1.0 44 KM", PowerHP = 44, PowerKW = 32, Displacement = 954, FuelTypeId = ben,
+                    TorqueNm = 76, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 17.5m, TopSpeedKmh = 140, FuelConsumptionCombined = 5.8m },
+                new EngineVersion { EngineName = "1.1 60 KM", PowerHP = 60, PowerKW = 44, Displacement = 1124, FuelTypeId = ben,
+                    TorqueNm = 89, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.5m, TopSpeedKmh = 155, FuelConsumptionCombined = 6.2m },
+                new EngineVersion { EngineName = "1.6 VTS 118 KM", PowerHP = 118, PowerKW = 87, Displacement = 1587, FuelTypeId = ben,
+                    TorqueNm = 148, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.9m, TopSpeedKmh = 195, FuelConsumptionCombined = 7.5m },
+                new EngineVersion { EngineName = "1.5D 57 KM", PowerHP = 57, PowerKW = 42, Displacement = 1527, FuelTypeId = die,
+                    TorqueNm = 108, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 17.5m, TopSpeedKmh = 145, FuelConsumptionCombined = 4.8m },
+            ]);
+
+            int spaceTourer = GetOrCreateModel(citId, "SpaceTourer", "citroen-spacetourer");
+            AddOrReplaceEngines(GetOrFixGeneration(spaceTourer, "I (2016–)", "citroen-spacetourer-i", 2016, null), 100, [
+                new EngineVersion { EngineName = "1.5 BlueHDi 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 1499, FuelTypeId = die,
+                    TorqueNm = 300, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.0m, TopSpeedKmh = 178, FuelConsumptionCombined = 5.8m },
+                new EngineVersion { EngineName = "2.0 BlueHDi 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 370, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.0m, TopSpeedKmh = 188, FuelConsumptionCombined = 6.3m },
+                new EngineVersion { EngineName = "2.0 BlueHDi 180 KM", PowerHP = 180, PowerKW = 132, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.0m, TopSpeedKmh = 195, FuelConsumptionCombined = 6.6m },
+            ]);
+
+            int xsara = GetOrCreateModel(citId, "Xsara", "citroen-xsara");
+            AddOrReplaceEngines(GetOrFixGeneration(xsara, "I (1997–2006)", "citroen-xsara-i", 1997, 2006), 60, [
+                new EngineVersion { EngineName = "1.4 75 KM", PowerHP = 75, PowerKW = 55, Displacement = 1360, FuelTypeId = ben,
+                    TorqueNm = 118, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.5m, TopSpeedKmh = 165, FuelConsumptionCombined = 7.0m },
+                new EngineVersion { EngineName = "1.6 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1587, FuelTypeId = ben,
+                    TorqueNm = 132, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.5m, TopSpeedKmh = 180, FuelConsumptionCombined = 7.5m },
+                new EngineVersion { EngineName = "1.8 101 KM", PowerHP = 101, PowerKW = 74, Displacement = 1761, FuelTypeId = ben,
+                    TorqueNm = 152, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.8m, TopSpeedKmh = 187, FuelConsumptionCombined = 8.0m },
+                new EngineVersion { EngineName = "2.0 VTS 167 KM", PowerHP = 167, PowerKW = 123, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 190, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.8m, TopSpeedKmh = 210, FuelConsumptionCombined = 8.8m },
+                new EngineVersion { EngineName = "1.9D 69 KM", PowerHP = 69, PowerKW = 51, Displacement = 1905, FuelTypeId = die,
+                    TorqueNm = 122, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 17.0m, TopSpeedKmh = 155, FuelConsumptionCombined = 5.5m },
+                new EngineVersion { EngineName = "2.0 HDi 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 205, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.5m, TopSpeedKmh = 175, FuelConsumptionCombined = 5.2m },
+            ]);
         }
 
         // ── Mini ──────────────────────────────────────────────────────────────────
