@@ -1240,6 +1240,138 @@ internal class Program
                     bgLogger.LogError(ex, "[Seeder] SeedDataIfEmpty failed — app will start without complete seed data: {Msg}", ex.Message);
                 }
 
+                // Category expansion (10 -> 17): SeedDataIfEmpty above only seeds the original 10
+                // VehicleCategory rows on a genuinely empty DB, so these 7 new categories need
+                // their own idempotent guard, checked by slug so it's a no-op on every restart
+                // once seeded. Each gets a starter VehicleSubtype set and 1-2 FeatureCategories —
+                // deliberately not an attempt to match auta-osobowe's depth immediately; further
+                // depth is ongoing backlog via the admin panel (see PRZEBUDOWA plan, Phase 8/10).
+                try
+                {
+                    var newCategorySpecs = new[]
+                    {
+                        new {
+                            Slug = "lodzie-i-jachty", Name = "Łodzie i jachty",
+                            Description = "Łodzie motorowe, żaglówki, jachty i pontony", IconName = "mdi-sail-boat", SortOrder = 11,
+                            Subtypes = new (string Name, string Slug)[] {
+                                ("Łódź motorowa", "lodz-motorowa"), ("Jacht żaglowy", "jacht-zaglowy"),
+                                ("Jacht motorowy", "jacht-motorowy"), ("Ponton", "ponton"),
+                                ("Łódź wiosłowa / kajak", "lodz-wioslowa-kajak"), ("Houseboat", "houseboat"),
+                                ("Łódź rybacka", "lodz-rybacka"),
+                            },
+                            FeatureCats = new (string Name, string[] Features)[] {
+                                ("Nawigacja i elektronika", new[] { "GPS / plotter", "Sonar / echosonda", "Autopilot", "Radio VHF", "Radar" }),
+                                ("Wyposażenie pokładowe", new[] { "Kotwica", "Liny cumownicze", "Drabinka kąpielowa", "Prysznic pokładowy", "Markiza / bimini", "Kambuz" }),
+                            },
+                        },
+                        new {
+                            Slug = "kampery", Name = "Kampery",
+                            Description = "Kampery, autobusy kempingowe i pojazdy rekreacyjne", IconName = "mdi-caravan", SortOrder = 12,
+                            Subtypes = new (string Name, string Slug)[] {
+                                ("Kamper zabudowany", "kamper-zabudowany"), ("Kamper na podwoziu VAN", "kamper-van"),
+                                ("Autobus kempingowy", "autobus-kempingowy"), ("Kamper pickup (camper shell)", "kamper-pickup"),
+                            },
+                            FeatureCats = new (string Name, string[] Features)[] {
+                                ("Wyposażenie mieszkalne", new[] { "Kuchnia", "Lodówka", "Toaleta", "Prysznic", "Ogrzewanie postojowe", "Klimatyzacja postojowa", "Markiza" }),
+                                ("Instalacje", new[] { "Panel słoneczny", "Generator prądu", "Zbiornik wody czystej", "Zbiornik wody szarej", "Instalacja gazowa", "Falownik 230V" }),
+                            },
+                        },
+                        new {
+                            Slug = "quady-atv", Name = "Quady i ATV",
+                            Description = "Quady sportowe, użytkowe i pojazdy SSV/UTV", IconName = "mdi-quadbike", SortOrder = 13,
+                            Subtypes = new (string Name, string Slug)[] {
+                                ("Quad sportowy", "quad-sportowy"), ("Quad użytkowy", "quad-uzytkowy"),
+                                ("Quad dziecięcy", "quad-dzieciecy"), ("SSV / UTV (side-by-side)", "ssv-utv"),
+                            },
+                            FeatureCats = new (string Name, string[] Features)[] {
+                                ("Napęd i zawieszenie", new[] { "Napęd 4x4", "Reduktor", "Wspomaganie kierownicy (EPS)", "Zawieszenie niezależne" }),
+                                ("Wyposażenie", new[] { "Wyciągarka", "Bagażnik przedni/tylny", "Hak holowniczy", "Oświetlenie LED", "Skrzynia ładunkowa" }),
+                            },
+                        },
+                        new {
+                            Slug = "skutery-wodne", Name = "Skutery wodne",
+                            Description = "Skutery wodne jedno- i wieloosobowe", IconName = "mdi-jet-ski", SortOrder = 14,
+                            Subtypes = new (string Name, string Slug)[] {
+                                ("Skuter jednoosobowy", "skuter-jednoosobowy"), ("Skuter wieloosobowy", "skuter-wieloosobowy"),
+                                ("Skuter wyścigowy", "skuter-wyscigowy"),
+                            },
+                            FeatureCats = new (string Name, string[] Features)[] {
+                                ("Wyposażenie", new[] { "System zabezpieczający (kill switch)", "Hak holowniczy", "Schowek wodoszczelny", "Uchwyt do holowania", "Drabinka" }),
+                            },
+                        },
+                        new {
+                            Slug = "autobusy", Name = "Autobusy",
+                            Description = "Autobusy miejskie, turystyczne i minibusy", IconName = "mdi-bus", SortOrder = 15,
+                            Subtypes = new (string Name, string Slug)[] {
+                                ("Autobus miejski", "autobus-miejski"), ("Autobus turystyczny", "autobus-turystyczny"),
+                                ("Minibus", "minibus"), ("Autobus szkolny", "autobus-szkolny"),
+                            },
+                            FeatureCats = new (string Name, string[] Features)[] {
+                                ("Wyposażenie pasażerskie", new[] { "Klimatyzacja", "Monitoring", "System informacji pasażerskiej", "WiFi", "Gniazda USB przy siedzeniach", "Toaleta" }),
+                                ("Bezpieczeństwo", new[] { "ABS", "ESP", "System unikania kolizji", "Kamery cofania", "Pasy bezpieczeństwa na wszystkich miejscach" }),
+                            },
+                        },
+                        new {
+                            Slug = "naczepy", Name = "Naczepy",
+                            Description = "Naczepy ciągnięte przez ciągniki siodłowe", IconName = "mdi-truck-trailer", SortOrder = 16,
+                            Subtypes = new (string Name, string Slug)[] {
+                                ("Naczepa firanka", "naczepa-firanka"), ("Naczepa chłodnia", "naczepa-chlodnia"),
+                                ("Naczepa wywrotka", "naczepa-wywrotka"), ("Naczepa niskopodwoziowa", "naczepa-niskopodwoziowa"),
+                                ("Naczepa cysterna", "naczepa-cysterna"), ("Naczepa kontenerowa", "naczepa-kontenerowa"),
+                            },
+                            FeatureCats = new (string Name, string[] Features)[] {
+                                ("Wyposażenie", new[] { "ABS", "System podnoszenia osi", "Plandeka", "Klapy boczne", "Ogumienie bliźniacze", "Zawieszenie pneumatyczne" }),
+                            },
+                        },
+                        new {
+                            Slug = "wozki-widlowe", Name = "Wózki widłowe",
+                            Description = "Wózki widłowe spalinowe, elektryczne i magazynowe", IconName = "mdi-forklift", SortOrder = 17,
+                            Subtypes = new (string Name, string Slug)[] {
+                                ("Wózek widłowy spalinowy", "wozek-spalinowy"), ("Wózek widłowy elektryczny", "wozek-elektryczny"),
+                                ("Wózek widłowy gazowy (LPG)", "wozek-gazowy"), ("Wózek boczny", "wozek-boczny"),
+                                ("Wózek magazynowy (paleciak)", "wozek-magazynowy"),
+                            },
+                            FeatureCats = new (string Name, string[] Features)[] {
+                                ("Wyposażenie", new[] { "Maszt trójstopniowy (triplex)", "Przesuw boczny", "Kabina zamknięta", "Ogumienie pełne", "Widły teleskopowe" }),
+                            },
+                        },
+                    };
+
+                    var existingSlugs = bgDb.VehicleCategories.Select(c => c.Slug).ToHashSet();
+                    foreach (var spec in newCategorySpecs)
+                    {
+                        if (existingSlugs.Contains(spec.Slug)) continue;
+
+                        var vcat = new VehicleCategory {
+                            Slug = spec.Slug, Name = spec.Name, Description = spec.Description,
+                            IconName = spec.IconName, SortOrder = spec.SortOrder,
+                        };
+                        bgDb.VehicleCategories.Add(vcat);
+                        bgDb.SaveChanges(); // need vcat.Id for the children below
+
+                        var order = 0;
+                        foreach (var (name, slug) in spec.Subtypes)
+                            bgDb.VehicleSubtypes.Add(new VehicleSubtype { VehicleCategoryId = vcat.Id, Name = name, Slug = slug, SortOrder = order++ });
+
+                        foreach (var (fcName, features) in spec.FeatureCats)
+                        {
+                            bgDb.FeatureCategories.Add(new FeatureCategory {
+                                Name = fcName,
+                                VehicleCategoryId = vcat.Id,
+                                Features = features.Select(f => new Feature { Name = f }).ToList(),
+                            });
+                        }
+
+                        bgDb.SaveChanges();
+                        bgLogger.LogWarning("[STARTUP-TRACE] Seeded new vehicle category '{Slug}' ({SubCount} subtypes, {FcCount} feature categories)",
+                            spec.Slug, spec.Subtypes.Length, spec.FeatureCats.Length);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    bgLogger.LogError(ex, "[STARTUP-TRACE] New category expansion seeding failed: {Msg}", ex.Message);
+                }
+
                 // Fix confirmed cross-category leak, then harden the schema so it can't recur.
                 // History: 6 FeatureCategory rows named "Specjalne - <type>" (created via the
                 // admin panel, not seeded by any code here) had a vehicle-type name but
