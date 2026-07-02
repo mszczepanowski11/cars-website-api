@@ -2488,6 +2488,184 @@ public static class ComprehensiveSeeder
                     Cylinders = 3, Acceleration0100 = 9.7m, TopSpeedKmh = 172, FuelConsumptionCombined = 5.1m },
             ]);
 
+            int dokker = GetOrCreateModel(daciaId, "Dokker", "dacia-dokker");
+            AddOrReplaceEngines(GetOrFixGeneration(dokker, "I (2012–)", "dacia-dokker-i", 2012, null), 60, [
+                new EngineVersion { EngineName = "1.6 85 KM", PowerHP = 85, PowerKW = 63, Displacement = 1598, FuelTypeId = ben,
+                    TorqueNm = 148, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.5m, TopSpeedKmh = 158, FuelConsumptionCombined = 6.8m },
+                new EngineVersion { EngineName = "TCe 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 1197, FuelTypeId = ben,
+                    TorqueNm = 152, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.5m, TopSpeedKmh = 172, FuelConsumptionCombined = 6.2m },
+                new EngineVersion { EngineName = "1.5 dCi 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1461, FuelTypeId = die,
+                    TorqueNm = 220, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.5m, TopSpeedKmh = 165, FuelConsumptionCombined = 4.5m },
+                new EngineVersion { EngineName = "1.5 dCi 110 KM", PowerHP = 110, PowerKW = 81, Displacement = 1461, FuelTypeId = die,
+                    TorqueNm = 260, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.5m, TopSpeedKmh = 175, FuelConsumptionCombined = 4.7m },
+            ]);
+
+            int jogger = GetOrCreateModel(daciaId, "Jogger", "dacia-jogger");
+            AddOrReplaceEngines(GetOrFixGeneration(jogger, "I (2022–)", "dacia-jogger-i", 2022, null), 100, [
+                new EngineVersion { EngineName = "TCe 110 KM", PowerHP = 110, PowerKW = 81, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 200, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.5m, TopSpeedKmh = 168, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "Hybrid 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1598, FuelTypeId = hyb,
+                    TorqueNm = 144, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.1m, TopSpeedKmh = 160, FuelConsumptionCombined = 4.6m },
+            ]);
+
+            int lodgy = GetOrCreateModel(daciaId, "Lodgy", "dacia-lodgy");
+            AddOrReplaceEngines(GetOrFixGeneration(lodgy, "I (2012–2022)", "dacia-lodgy-i", 2012, 2022), 90, [
+                new EngineVersion { EngineName = "TCe 115 KM", PowerHP = 115, PowerKW = 85, Displacement = 1197, FuelTypeId = ben,
+                    TorqueNm = 190, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.4m, TopSpeedKmh = 175, FuelConsumptionCombined = 6.7m },
+                new EngineVersion { EngineName = "1.5 dCi 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1461, FuelTypeId = die,
+                    TorqueNm = 220, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.3m, TopSpeedKmh = 165, FuelConsumptionCombined = 4.6m },
+                new EngineVersion { EngineName = "1.5 dCi 110 KM", PowerHP = 110, PowerKW = 81, Displacement = 1461, FuelTypeId = die,
+                    TorqueNm = 260, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.7m, TopSpeedKmh = 175, FuelConsumptionCombined = 4.8m },
+            ]);
+
+            int logan = GetOrCreateModel(daciaId, "Logan", "dacia-logan");
+            PrepareGenerations(logan,
+                ("I (2004–2012)", "dacia-logan-i", 2004, 2012),
+                ("II (2012–2020)", "dacia-logan-ii", 2012, 2020),
+                ("III (2020–)", "dacia-logan-iii", 2020, null));
+            AddOrReplaceEngines(GetOrFixGeneration(logan, "I (2004–2012)", "dacia-logan-i", 2004, 2012), 60, [
+                new EngineVersion { EngineName = "1.4 75 KM", PowerHP = 75, PowerKW = 55, Displacement = 1390, FuelTypeId = ben,
+                    TorqueNm = 112, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 15.9m, TopSpeedKmh = 150, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "1.6 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1598, FuelTypeId = ben,
+                    TorqueNm = 128, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.0m, TopSpeedKmh = 165, FuelConsumptionCombined = 6.9m },
+                new EngineVersion { EngineName = "1.5 dCi 68 KM", PowerHP = 68, PowerKW = 50, Displacement = 1461, FuelTypeId = die,
+                    TorqueNm = 160, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 16.9m, TopSpeedKmh = 148, FuelConsumptionCombined = 4.5m },
+                new EngineVersion { EngineName = "1.5 dCi 85 KM", PowerHP = 85, PowerKW = 63, Displacement = 1461, FuelTypeId = die,
+                    TorqueNm = 200, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.4m, TopSpeedKmh = 160, FuelConsumptionCombined = 4.6m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(logan, "II (2012–2020)", "dacia-logan-ii", 2012, 2020), 60, [
+                new EngineVersion { EngineName = "1.2 75 KM", PowerHP = 75, PowerKW = 55, Displacement = 1149, FuelTypeId = ben,
+                    TorqueNm = 107, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.6m, TopSpeedKmh = 158, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "TCe 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 898, FuelTypeId = ben,
+                    TorqueNm = 135, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.1m, TopSpeedKmh = 173, FuelConsumptionCombined = 5.3m },
+                new EngineVersion { EngineName = "1.5 dCi 75 KM", PowerHP = 75, PowerKW = 55, Displacement = 1461, FuelTypeId = die,
+                    TorqueNm = 180, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 16.0m, TopSpeedKmh = 158, FuelConsumptionCombined = 4.0m },
+                new EngineVersion { EngineName = "1.5 dCi 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1461, FuelTypeId = die,
+                    TorqueNm = 220, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.4m, TopSpeedKmh = 168, FuelConsumptionCombined = 4.1m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(logan, "III (2020–)", "dacia-logan-iii", 2020, null), 80, [
+                new EngineVersion { EngineName = "TCe 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 160, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.7m, TopSpeedKmh = 169, FuelConsumptionCombined = 5.5m },
+                new EngineVersion { EngineName = "TCe 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 160, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.3m, TopSpeedKmh = 174, FuelConsumptionCombined = 5.4m },
+                new EngineVersion { EngineName = "Bi-Fuel LPG 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 999, FuelTypeId = lpg,
+                    TorqueNm = 170, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.5m, TopSpeedKmh = 172, FuelConsumptionCombined = 6.9m },
+            ]);
+
+            int loganMcv = GetOrCreateModel(daciaId, "Logan MCV", "dacia-logan-mcv");
+            PrepareGenerations(loganMcv,
+                ("I (2007–2012)", "dacia-logan-mcv-i", 2007, 2012),
+                ("II (2013–2020)", "dacia-logan-mcv-ii", 2013, 2020));
+            AddOrReplaceEngines(GetOrFixGeneration(loganMcv, "I (2007–2012)", "dacia-logan-mcv-i", 2007, 2012), 60, [
+                new EngineVersion { EngineName = "1.4 75 KM", PowerHP = 75, PowerKW = 55, Displacement = 1390, FuelTypeId = ben,
+                    TorqueNm = 112, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 16.4m, TopSpeedKmh = 148, FuelConsumptionCombined = 6.7m },
+                new EngineVersion { EngineName = "1.6 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1598, FuelTypeId = ben,
+                    TorqueNm = 128, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.5m, TopSpeedKmh = 163, FuelConsumptionCombined = 7.1m },
+                new EngineVersion { EngineName = "1.5 dCi 85 KM", PowerHP = 85, PowerKW = 63, Displacement = 1461, FuelTypeId = die,
+                    TorqueNm = 200, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.9m, TopSpeedKmh = 158, FuelConsumptionCombined = 4.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(loganMcv, "II (2013–2020)", "dacia-logan-mcv-ii", 2013, 2020), 60, [
+                new EngineVersion { EngineName = "TCe 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 898, FuelTypeId = ben,
+                    TorqueNm = 135, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.5m, TopSpeedKmh = 170, FuelConsumptionCombined = 5.5m },
+                new EngineVersion { EngineName = "1.5 dCi 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1461, FuelTypeId = die,
+                    TorqueNm = 220, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.9m, TopSpeedKmh = 165, FuelConsumptionCombined = 4.3m },
+            ]);
+
+            int sandero = GetOrCreateModel(daciaId, "Sandero", "dacia-sandero");
+            PrepareGenerations(sandero,
+                ("I (2008–2012)", "dacia-sandero-i", 2008, 2012),
+                ("II (2012–2020)", "dacia-sandero-ii", 2012, 2020),
+                ("III (2020–)", "dacia-sandero-iii", 2020, null));
+            AddOrReplaceEngines(GetOrFixGeneration(sandero, "I (2008–2012)", "dacia-sandero-i", 2008, 2012), 60, [
+                new EngineVersion { EngineName = "1.4 75 KM", PowerHP = 75, PowerKW = 55, Displacement = 1390, FuelTypeId = ben,
+                    TorqueNm = 112, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 15.9m, TopSpeedKmh = 150, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "1.6 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1598, FuelTypeId = ben,
+                    TorqueNm = 128, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.0m, TopSpeedKmh = 165, FuelConsumptionCombined = 6.9m },
+                new EngineVersion { EngineName = "1.5 dCi 70 KM", PowerHP = 70, PowerKW = 51, Displacement = 1461, FuelTypeId = die,
+                    TorqueNm = 160, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 16.4m, TopSpeedKmh = 149, FuelConsumptionCombined = 4.5m },
+                new EngineVersion { EngineName = "1.5 dCi 85 KM", PowerHP = 85, PowerKW = 63, Displacement = 1461, FuelTypeId = die,
+                    TorqueNm = 200, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.4m, TopSpeedKmh = 160, FuelConsumptionCombined = 4.6m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(sandero, "II (2012–2020)", "dacia-sandero-ii", 2012, 2020), 60, [
+                new EngineVersion { EngineName = "0.9 TCe 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 898, FuelTypeId = ben,
+                    TorqueNm = 135, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.1m, TopSpeedKmh = 173, FuelConsumptionCombined = 5.2m },
+                new EngineVersion { EngineName = "1.5 dCi 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1461, FuelTypeId = die,
+                    TorqueNm = 220, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.4m, TopSpeedKmh = 168, FuelConsumptionCombined = 4.1m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(sandero, "III (2020–)", "dacia-sandero-iii", 2020, null), 80, [
+                new EngineVersion { EngineName = "TCe 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 160, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.7m, TopSpeedKmh = 169, FuelConsumptionCombined = 5.5m },
+                new EngineVersion { EngineName = "TCe 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 160, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.3m, TopSpeedKmh = 174, FuelConsumptionCombined = 5.4m },
+                new EngineVersion { EngineName = "Bi-Fuel LPG 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 999, FuelTypeId = lpg,
+                    TorqueNm = 170, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.5m, TopSpeedKmh = 172, FuelConsumptionCombined = 6.9m },
+            ]);
+
+            int sanderoStepway = GetOrCreateModel(daciaId, "Sandero Stepway", "dacia-sandero-stepway");
+            PrepareGenerations(sanderoStepway,
+                ("I (2009–2012)", "dacia-sandero-stepway-i", 2009, 2012),
+                ("II (2013–2020)", "dacia-sandero-stepway-ii", 2013, 2020));
+            AddOrReplaceEngines(GetOrFixGeneration(sanderoStepway, "I (2009–2012)", "dacia-sandero-stepway-i", 2009, 2012), 60, [
+                new EngineVersion { EngineName = "1.6 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1598, FuelTypeId = ben,
+                    TorqueNm = 128, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.5m, TopSpeedKmh = 163, FuelConsumptionCombined = 7.1m },
+                new EngineVersion { EngineName = "1.5 dCi 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1461, FuelTypeId = die,
+                    TorqueNm = 200, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.8m, TopSpeedKmh = 158, FuelConsumptionCombined = 4.7m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(sanderoStepway, "II (2013–2020)", "dacia-sandero-stepway-ii", 2013, 2020), 60, [
+                new EngineVersion { EngineName = "TCe 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 898, FuelTypeId = ben,
+                    TorqueNm = 135, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.6m, TopSpeedKmh = 171, FuelConsumptionCombined = 5.4m },
+                new EngineVersion { EngineName = "1.5 dCi 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1461, FuelTypeId = die,
+                    TorqueNm = 220, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.9m, TopSpeedKmh = 165, FuelConsumptionCombined = 4.3m },
+            ]);
+
+            int spring = GetOrCreateModel(daciaId, "Spring", "dacia-spring");
+            AddOrReplaceEngines(GetOrFixGeneration(spring, "I (2021–)", "dacia-spring-i", 2021, null), 40, [
+                new EngineVersion { EngineName = "45 KM", PowerHP = 45, PowerKW = 33, Displacement = null, FuelTypeId = ev,
+                    TorqueNm = 125, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = null, Acceleration0100 = 19.1m, TopSpeedKmh = 125, FuelConsumptionCombined = null },
+                new EngineVersion { EngineName = "65 KM", PowerHP = 65, PowerKW = 48, Displacement = null, FuelTypeId = ev,
+                    TorqueNm = 125, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = null, Acceleration0100 = 13.7m, TopSpeedKmh = 125, FuelConsumptionCombined = null },
+            ]);
+
             // ── MAZDA CX-5 KF + MAZDA3 BP ────────────────────────────────────────────
             int mazdaId = GetOrCreateBrand("Mazda", "mazda", "auta-osobowe");
             int cx5 = GetOrCreateModel(mazdaId, "CX-5", "mazda-cx5");
@@ -5326,6 +5504,163 @@ public static class ComprehensiveSeeder
                 new EngineVersion { EngineName = "6.4 V8 SRT 475 KM", PowerHP = 475, PowerKW = 349, Displacement = 6417, FuelTypeId = ben,
                     TorqueNm = 637, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "AWD",
                     Cylinders = 8, Acceleration0100 = 4.4m, TopSpeedKmh = 265, FuelConsumptionCombined = 17.6m },
+            ]);
+
+            int avenger = GetOrCreateModel(dodgeId, "Avenger", "dodge-avenger");
+            AddOrReplaceEngines(GetOrFixGeneration(avenger, "I (2007–2014)", "dodge-avenger-i", 2007, 2014), 120, [
+                new EngineVersion { EngineName = "2.0 156 KM", PowerHP = 156, PowerKW = 115, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 190, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.5m, TopSpeedKmh = 195, FuelConsumptionCombined = 8.5m },
+                new EngineVersion { EngineName = "2.4 170 KM", PowerHP = 170, PowerKW = 125, Displacement = 2360, FuelTypeId = ben,
+                    TorqueNm = 220, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.5m, TopSpeedKmh = 200, FuelConsumptionCombined = 9.0m },
+                new EngineVersion { EngineName = "2.7 V6 190 KM", PowerHP = 190, PowerKW = 140, Displacement = 2736, FuelTypeId = ben,
+                    TorqueNm = 254, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 8.7m, TopSpeedKmh = 208, FuelConsumptionCombined = 10.2m },
+                new EngineVersion { EngineName = "2.0 CRD 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.7m, TopSpeedKmh = 195, FuelConsumptionCombined = 6.0m },
+            ]);
+
+            int caliber = GetOrCreateModel(dodgeId, "Caliber", "dodge-caliber");
+            AddOrReplaceEngines(GetOrFixGeneration(caliber, "I (2006–2012)", "dodge-caliber-i", 2006, 2012), 120, [
+                new EngineVersion { EngineName = "1.8 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1798, FuelTypeId = ben,
+                    TorqueNm = 172, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.9m, TopSpeedKmh = 190, FuelConsumptionCombined = 7.8m },
+                new EngineVersion { EngineName = "2.0 156 KM", PowerHP = 156, PowerKW = 115, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 190, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 198, FuelConsumptionCombined = 8.3m },
+                new EngineVersion { EngineName = "SRT4 2.4 Turbo 285 KM", PowerHP = 285, PowerKW = 210, Displacement = 2429, FuelTypeId = ben,
+                    TorqueNm = 400, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.3m, TopSpeedKmh = 240, FuelConsumptionCombined = 10.5m },
+                new EngineVersion { EngineName = "2.0 CRD 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 310, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.0m, TopSpeedKmh = 190, FuelConsumptionCombined = 6.0m },
+            ]);
+
+            int dakota = GetOrCreateModel(dodgeId, "Dakota", "dodge-dakota");
+            PrepareGenerations(dakota,
+                ("I (1987–1996)", "dodge-dakota-i", 1987, 1996),
+                ("II (1997–2004)", "dodge-dakota-ii", 1997, 2004),
+                ("III (2005–2011)", "dodge-dakota-iii", 2005, 2011));
+            AddOrReplaceEngines(GetOrFixGeneration(dakota, "I (1987–1996)", "dodge-dakota-i", 1987, 1996), 100, [
+                new EngineVersion { EngineName = "3.9 V6 125 KM", PowerHP = 125, PowerKW = 92, Displacement = 3908, FuelTypeId = ben,
+                    TorqueNm = 271, EuroNorm = "Euro 1", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 11.5m, TopSpeedKmh = 160, FuelConsumptionCombined = 14.0m },
+                new EngineVersion { EngineName = "5.2 V8 175 KM", PowerHP = 175, PowerKW = 129, Displacement = 5211, FuelTypeId = ben,
+                    TorqueNm = 366, EuroNorm = "Euro 1", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 9.5m, TopSpeedKmh = 170, FuelConsumptionCombined = 16.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(dakota, "II (1997–2004)", "dodge-dakota-ii", 1997, 2004), 130, [
+                new EngineVersion { EngineName = "3.9 V6 175 KM", PowerHP = 175, PowerKW = 129, Displacement = 3908, FuelTypeId = ben,
+                    TorqueNm = 305, EuroNorm = "Euro 3", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 10.0m, TopSpeedKmh = 175, FuelConsumptionCombined = 14.5m },
+                new EngineVersion { EngineName = "4.7 V8 235 KM", PowerHP = 235, PowerKW = 173, Displacement = 4701, FuelTypeId = ben,
+                    TorqueNm = 407, EuroNorm = "Euro 3", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 8.1m, TopSpeedKmh = 185, FuelConsumptionCombined = 16.0m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(dakota, "III (2005–2011)", "dodge-dakota-iii", 2005, 2011), 150, [
+                new EngineVersion { EngineName = "3.7 V6 210 KM", PowerHP = 210, PowerKW = 154, Displacement = 3701, FuelTypeId = ben,
+                    TorqueNm = 319, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 9.6m, TopSpeedKmh = 180, FuelConsumptionCombined = 13.8m },
+                new EngineVersion { EngineName = "4.7 V8 230 KM", PowerHP = 230, PowerKW = 169, Displacement = 4701, FuelTypeId = ben,
+                    TorqueNm = 407, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 8.5m, TopSpeedKmh = 190, FuelConsumptionCombined = 15.8m },
+            ]);
+
+            int journey = GetOrCreateModel(dodgeId, "Journey", "dodge-journey");
+            AddOrReplaceEngines(GetOrFixGeneration(journey, "I (2008–2020)", "dodge-journey-i", 2008, 2020), 130, [
+                new EngineVersion { EngineName = "2.4 170 KM", PowerHP = 170, PowerKW = 125, Displacement = 2360, FuelTypeId = ben,
+                    TorqueNm = 225, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.7m, TopSpeedKmh = 185, FuelConsumptionCombined = 9.0m },
+                new EngineVersion { EngineName = "3.6 V6 283 KM", PowerHP = 283, PowerKW = 208, Displacement = 3604, FuelTypeId = ben,
+                    TorqueNm = 348, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 8.2m, TopSpeedKmh = 200, FuelConsumptionCombined = 11.8m },
+                new EngineVersion { EngineName = "2.0 CRD 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.5m, TopSpeedKmh = 180, FuelConsumptionCombined = 6.3m },
+                new EngineVersion { EngineName = "2.0 CRD 170 KM", PowerHP = 170, PowerKW = 125, Displacement = 1956, FuelTypeId = die,
+                    TorqueNm = 350, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 195, FuelConsumptionCombined = 6.6m },
+            ]);
+
+            int neon = GetOrCreateModel(dodgeId, "Neon", "dodge-neon");
+            PrepareGenerations(neon,
+                ("I (1994–1999)", "dodge-neon-i", 1994, 1999),
+                ("II (1999–2005)", "dodge-neon-ii", 1999, 2005));
+            AddOrReplaceEngines(GetOrFixGeneration(neon, "I (1994–1999)", "dodge-neon-i", 1994, 1999), 100, [
+                new EngineVersion { EngineName = "2.0 132 KM", PowerHP = 132, PowerKW = 97, Displacement = 1996, FuelTypeId = ben,
+                    TorqueNm = 176, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.8m, TopSpeedKmh = 195, FuelConsumptionCombined = 8.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(neon, "II (1999–2005)", "dodge-neon-ii", 1999, 2005), 100, [
+                new EngineVersion { EngineName = "2.0 136 KM", PowerHP = 136, PowerKW = 100, Displacement = 1996, FuelTypeId = ben,
+                    TorqueNm = 180, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.5m, TopSpeedKmh = 198, FuelConsumptionCombined = 8.3m },
+                new EngineVersion { EngineName = "SRT-4 2.4 Turbo 230 KM", PowerHP = 230, PowerKW = 169, Displacement = 2429, FuelTypeId = ben,
+                    TorqueNm = 353, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.0m, TopSpeedKmh = 240, FuelConsumptionCombined = 10.0m },
+            ]);
+
+            int nitro = GetOrCreateModel(dodgeId, "Nitro", "dodge-nitro");
+            AddOrReplaceEngines(GetOrFixGeneration(nitro, "I (2006–2011)", "dodge-nitro-i", 2006, 2011), 130, [
+                new EngineVersion { EngineName = "2.8 CRD 177 KM", PowerHP = 177, PowerKW = 130, Displacement = 2777, FuelTypeId = die,
+                    TorqueNm = 360, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 10.8m, TopSpeedKmh = 175, FuelConsumptionCombined = 8.0m },
+                new EngineVersion { EngineName = "3.7 V6 210 KM", PowerHP = 210, PowerKW = 154, Displacement = 3701, FuelTypeId = ben,
+                    TorqueNm = 319, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 9.5m, TopSpeedKmh = 180, FuelConsumptionCombined = 13.5m },
+                new EngineVersion { EngineName = "4.0 V6 235 KM", PowerHP = 235, PowerKW = 173, Displacement = 3954, FuelTypeId = ben,
+                    TorqueNm = 342, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 8.6m, TopSpeedKmh = 190, FuelConsumptionCombined = 14.5m },
+            ]);
+
+            int ram1500 = GetOrCreateModel(dodgeId, "Ram 1500", "dodge-ram-1500");
+            PrepareGenerations(ram1500,
+                ("III (2001–2008)", "dodge-ram-1500-iii", 2001, 2008),
+                ("V (2019–)", "dodge-ram-1500-v", 2019, null));
+            AddOrReplaceEngines(GetOrFixGeneration(ram1500, "III (2001–2008)", "dodge-ram-1500-iii", 2001, 2008), 200, [
+                new EngineVersion { EngineName = "3.7 V6 215 KM", PowerHP = 215, PowerKW = 158, Displacement = 3701, FuelTypeId = ben,
+                    TorqueNm = 319, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 9.6m, TopSpeedKmh = 175, FuelConsumptionCombined = 15.5m },
+                new EngineVersion { EngineName = "4.7 V8 235 KM", PowerHP = 235, PowerKW = 173, Displacement = 4701, FuelTypeId = ben,
+                    TorqueNm = 407, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 8.5m, TopSpeedKmh = 185, FuelConsumptionCombined = 17.0m },
+                new EngineVersion { EngineName = "5.7 V8 Hemi 345 KM", PowerHP = 345, PowerKW = 254, Displacement = 5654, FuelTypeId = ben,
+                    TorqueNm = 529, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 7.2m, TopSpeedKmh = 195, FuelConsumptionCombined = 18.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(ram1500, "V (2019–)", "dodge-ram-1500-v", 2019, null), 250, [
+                new EngineVersion { EngineName = "3.6 V6 305 KM", PowerHP = 305, PowerKW = 224, Displacement = 3604, FuelTypeId = ben,
+                    TorqueNm = 361, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 7.9m, TopSpeedKmh = 180, FuelConsumptionCombined = 13.5m },
+                new EngineVersion { EngineName = "5.7 V8 Hemi 395 KM", PowerHP = 395, PowerKW = 290, Displacement = 5654, FuelTypeId = ben,
+                    TorqueNm = 556, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 6.3m, TopSpeedKmh = 200, FuelConsumptionCombined = 15.8m },
+                new EngineVersion { EngineName = "3.0 EcoDiesel 260 KM", PowerHP = 260, PowerKW = 191, Displacement = 2987, FuelTypeId = die,
+                    TorqueNm = 570, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 7.8m, TopSpeedKmh = 185, FuelConsumptionCombined = 9.5m },
+            ]);
+
+            int viper = GetOrCreateModel(dodgeId, "Viper", "dodge-viper");
+            PrepareGenerations(viper,
+                ("I (1992–2002)", "dodge-viper-i", 1992, 2002),
+                ("II (2003–2010)", "dodge-viper-ii", 2003, 2010),
+                ("III (2013–2017)", "dodge-viper-iii", 2013, 2017));
+            AddOrReplaceEngines(GetOrFixGeneration(viper, "I (1992–2002)", "dodge-viper-i", 1992, 2002), 350, [
+                new EngineVersion { EngineName = "8.0 V10 400 KM", PowerHP = 400, PowerKW = 294, Displacement = 7990, FuelTypeId = ben,
+                    TorqueNm = 630, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 10, Acceleration0100 = 4.6m, TopSpeedKmh = 266, FuelConsumptionCombined = 19.0m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(viper, "II (2003–2010)", "dodge-viper-ii", 2003, 2010), 450, [
+                new EngineVersion { EngineName = "8.3 V10 SRT-10 510 KM", PowerHP = 510, PowerKW = 375, Displacement = 8285, FuelTypeId = ben,
+                    TorqueNm = 712, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 10, Acceleration0100 = 3.9m, TopSpeedKmh = 314, FuelConsumptionCombined = 20.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(viper, "III (2013–2017)", "dodge-viper-iii", 2013, 2017), 550, [
+                new EngineVersion { EngineName = "8.4 V10 GTS 649 KM", PowerHP = 649, PowerKW = 477, Displacement = 8382, FuelTypeId = ben,
+                    TorqueNm = 813, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 10, Acceleration0100 = 3.4m, TopSpeedKmh = 330, FuelConsumptionCombined = 21.5m },
             ]);
         }
 
