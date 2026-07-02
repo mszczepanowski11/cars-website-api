@@ -384,6 +384,9 @@ public class AdvertService : IAdvertService
         if (!string.IsNullOrEmpty(dto.CatalogNumber))
             query = query.Where(a => a.CatalogNumber != null && a.CatalogNumber.Contains(dto.CatalogNumber));
 
+        if (dto.PartCategoryId.HasValue)
+            query = query.Where(a => a.PartCategoryId == dto.PartCategoryId);
+
         // Premium filters
         if (dto.HasVatInvoice.HasValue)
             query = query.Where(a => a.HasVatInvoice == dto.HasVatInvoice);
