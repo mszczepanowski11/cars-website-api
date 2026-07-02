@@ -4825,6 +4825,34 @@ public static class ComprehensiveSeeder
                     Cylinders = 4, Acceleration0100 = 5.2m, TopSpeedKmh = 255, FuelConsumptionCombined = 11.5m },
             ]);
 
+            int brz = GetOrCreateModel(subaruId, "BRZ", "subaru-brz");
+            AddOrReplaceEngines(GetOrFixGeneration(brz, "II (2021–)", "subaru-brz-ii", 2021, null), 200, [
+                new EngineVersion { EngineName = "2.4 Boxer 235 KM", PowerHP = 235, PowerKW = 173, Displacement = 2387, FuelTypeId = ben,
+                    TorqueNm = 250, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 6.3m, TopSpeedKmh = 226, FuelConsumptionCombined = 9.0m },
+            ]);
+
+            int levorg = GetOrCreateModel(subaruId, "Levorg", "subaru-levorg");
+            AddOrReplaceEngines(GetOrFixGeneration(levorg, "II (2020–)", "subaru-levorg-ii", 2020, null), 130, [
+                new EngineVersion { EngineName = "1.8 DIT 300 KM AWD", PowerHP = 300, PowerKW = 221, Displacement = 1795, FuelTypeId = ben,
+                    TorqueNm = 300, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 6.5m, TopSpeedKmh = 220, FuelConsumptionCombined = 8.5m },
+            ]);
+
+            int solterra = GetOrCreateModel(subaruId, "Solterra", "subaru-solterra");
+            AddOrReplaceEngines(GetOrFixGeneration(solterra, "I (2022–)", "subaru-solterra-i", 2022, null), 200, [
+                new EngineVersion { EngineName = "71.4 kWh AWD 218 KM", PowerHP = 218, PowerKW = 160, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 337, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 0, Acceleration0100 = 6.9m, TopSpeedKmh = 175, FuelConsumptionCombined = 18.1m },
+            ]);
+
+            int legacy = GetOrCreateModel(subaruId, "Legacy", "subaru-legacy");
+            AddOrReplaceEngines(GetOrFixGeneration(legacy, "VI (2014–2019)", "subaru-legacy-vi", 2014, 2019), 150, [
+                new EngineVersion { EngineName = "2.5i 175 KM AWD", PowerHP = 175, PowerKW = 129, Displacement = 2498, FuelTypeId = ben,
+                    TorqueNm = 235, EuroNorm = "Euro 6", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 195, FuelConsumptionCombined = 8.0m },
+            ]);
+
             // ── MAN TGX I + NEO + TGS I + II ─────────────────────────────────────
             int manId = GetOrCreateBrand("MAN", "man", "ciezarowki");
             int tgx = GetOrCreateModel(manId, "TGX", "man-tgx");
