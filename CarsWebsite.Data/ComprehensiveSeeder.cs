@@ -5044,6 +5044,78 @@ public static class ComprehensiveSeeder
                     TorqueNm = 1000, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
                     Cylinders = 12, Acceleration0100 = 2.5m, TopSpeedKmh = 350, FuelConsumptionCombined = 8.0m },
             ]);
+
+            int countach = GetOrCreateModel(lambId, "Countach", "lamborghini-countach");
+            AddOrReplaceEngines(GetOrFixGeneration(countach, "LP5000 QV (1985–1990)", "lamborghini-countach-lp5000qv", 1985, 1990), 380, [
+                new EngineVersion { EngineName = "5.2 V12 455 KM", PowerHP = 455, PowerKW = 335, Displacement = 5167, FuelTypeId = ben,
+                    TorqueNm = 500, EuroNorm = "Euro 0", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 12, Acceleration0100 = 4.7m, TopSpeedKmh = 295, FuelConsumptionCombined = 25.0m },
+            ]);
+
+            int diablo = GetOrCreateModel(lambId, "Diablo", "lamborghini-diablo");
+            PrepareGenerations(diablo,
+                ("I (1990–1998)", "lamborghini-diablo-i", 1990, 1998),
+                ("VT/SV (1998–2001)", "lamborghini-diablo-vt-sv", 1998, 2001));
+            AddOrReplaceEngines(GetOrFixGeneration(diablo, "I (1990–1998)", "lamborghini-diablo-i", 1990, 1998), 480, [
+                new EngineVersion { EngineName = "5.7 V12 492 KM", PowerHP = 492, PowerKW = 362, Displacement = 5707, FuelTypeId = ben,
+                    TorqueNm = 580, EuroNorm = "Euro 0", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 12, Acceleration0100 = 4.5m, TopSpeedKmh = 325, FuelConsumptionCombined = 26.0m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(diablo, "VT/SV (1998–2001)", "lamborghini-diablo-vt-sv", 1998, 2001), 500, [
+                new EngineVersion { EngineName = "6.0 V12 SV 550 KM", PowerHP = 550, PowerKW = 404, Displacement = 5992, FuelTypeId = ben,
+                    TorqueNm = 620, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "AWD",
+                    Cylinders = 12, Acceleration0100 = 4.0m, TopSpeedKmh = 337, FuelConsumptionCombined = 27.0m },
+            ]);
+
+            int espada = GetOrCreateModel(lambId, "Espada", "lamborghini-espada");
+            AddOrReplaceEngines(GetOrFixGeneration(espada, "Series III (1972–1978)", "lamborghini-espada-series3", 1972, 1978), 340, [
+                new EngineVersion { EngineName = "4.0 V12 350 KM", PowerHP = 350, PowerKW = 257, Displacement = 3929, FuelTypeId = ben,
+                    TorqueNm = 400, EuroNorm = "Euro 0", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 12, Acceleration0100 = 6.5m, TopSpeedKmh = 245, FuelConsumptionCombined = 22.0m },
+            ]);
+
+            int gallardo = GetOrCreateModel(lambId, "Gallardo", "lamborghini-gallardo");
+            PrepareGenerations(gallardo,
+                ("I (2003–2008)", "lamborghini-gallardo-i", 2003, 2008),
+                ("LP560 (2008–2013)", "lamborghini-gallardo-lp560", 2008, 2013));
+            AddOrReplaceEngines(GetOrFixGeneration(gallardo, "I (2003–2008)", "lamborghini-gallardo-i", 2003, 2008), 480, [
+                new EngineVersion { EngineName = "5.0 V10 500 KM", PowerHP = 500, PowerKW = 368, Displacement = 4961, FuelTypeId = ben,
+                    TorqueNm = 510, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "AWD",
+                    Cylinders = 10, Acceleration0100 = 4.2m, TopSpeedKmh = 309, FuelConsumptionCombined = 19.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(gallardo, "LP560 (2008–2013)", "lamborghini-gallardo-lp560", 2008, 2013), 550, [
+                new EngineVersion { EngineName = "5.2 V10 LP560-4 560 KM", PowerHP = 560, PowerKW = 412, Displacement = 5204, FuelTypeId = ben,
+                    TorqueNm = 540, EuroNorm = "Euro 5", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 10, Acceleration0100 = 3.7m, TopSpeedKmh = 325, FuelConsumptionCombined = 18.9m },
+                new EngineVersion { EngineName = "5.2 V10 LP570-4 Superleggera 570 KM", PowerHP = 570, PowerKW = 419, Displacement = 5204, FuelTypeId = ben,
+                    TorqueNm = 540, EuroNorm = "Euro 5", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 10, Acceleration0100 = 3.4m, TopSpeedKmh = 325, FuelConsumptionCombined = 18.9m },
+            ]);
+
+            int lm002 = GetOrCreateModel(lambId, "LM002", "lamborghini-lm002");
+            AddOrReplaceEngines(GetOrFixGeneration(lm002, "I (1986–1993)", "lamborghini-lm002-i", 1986, 1993), 400, [
+                new EngineVersion { EngineName = "5.2 V12 450 KM", PowerHP = 450, PowerKW = 331, Displacement = 5167, FuelTypeId = ben,
+                    TorqueNm = 500, EuroNorm = "Euro 0", GearboxType = "manual", DriveType = "AWD",
+                    Cylinders = 12, Acceleration0100 = 7.7m, TopSpeedKmh = 210, FuelConsumptionCombined = 35.0m },
+            ]);
+
+            int murcielago = GetOrCreateModel(lambId, "Murciélago", "lamborghini-murcielago");
+            PrepareGenerations(murcielago,
+                ("I (2001–2006)", "lamborghini-murcielago-i", 2001, 2006),
+                ("LP640 (2006–2010)", "lamborghini-murcielago-lp640", 2006, 2010));
+            AddOrReplaceEngines(GetOrFixGeneration(murcielago, "I (2001–2006)", "lamborghini-murcielago-i", 2001, 2006), 550, [
+                new EngineVersion { EngineName = "6.2 V12 580 KM", PowerHP = 580, PowerKW = 426, Displacement = 6192, FuelTypeId = ben,
+                    TorqueNm = 650, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "AWD",
+                    Cylinders = 12, Acceleration0100 = 3.8m, TopSpeedKmh = 330, FuelConsumptionCombined = 21.0m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(murcielago, "LP640 (2006–2010)", "lamborghini-murcielago-lp640", 2006, 2010), 620, [
+                new EngineVersion { EngineName = "6.5 V12 LP640 640 KM", PowerHP = 640, PowerKW = 471, Displacement = 6496, FuelTypeId = ben,
+                    TorqueNm = 660, EuroNorm = "Euro 4", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 12, Acceleration0100 = 3.4m, TopSpeedKmh = 340, FuelConsumptionCombined = 21.6m },
+                new EngineVersion { EngineName = "6.5 V12 LP670-4 SV 670 KM", PowerHP = 670, PowerKW = 493, Displacement = 6496, FuelTypeId = ben,
+                    TorqueNm = 660, EuroNorm = "Euro 4", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 12, Acceleration0100 = 3.2m, TopSpeedKmh = 342, FuelConsumptionCombined = 22.0m },
+            ]);
         }
 
         // ── Ferrari ──────────────────────────────────────────────────────────────
