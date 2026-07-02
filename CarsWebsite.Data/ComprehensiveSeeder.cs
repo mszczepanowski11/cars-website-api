@@ -6566,6 +6566,45 @@ public static class ComprehensiveSeeder
                     TorqueNm = 260, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
                     Cylinders = 0, Acceleration0100 = null, TopSpeedKmh = 120, FuelConsumptionCombined = null },
             ]);
+
+            int p508 = GetOrCreateModel(peugId, "508", "peugeot-508");
+            AddOrReplaceEngines(GetOrFixGeneration(p508, "II (2018–)", "peugeot-508-ii", 2018, null), 130, [
+                new EngineVersion { EngineName = "1.6 PureTech 180 KM", PowerHP = 180, PowerKW = 132, Displacement = 1598, FuelTypeId = ben,
+                    TorqueNm = 250, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.3m, TopSpeedKmh = 225, FuelConsumptionCombined = 6.1m },
+                new EngineVersion { EngineName = "PSE Hybrid4 360 KM AWD", PowerHP = 360, PowerKW = 265, Displacement = 1598, FuelTypeId = phev,
+                    TorqueNm = 520, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 5.2m, TopSpeedKmh = 250, FuelConsumptionCombined = 1.9m },
+                new EngineVersion { EngineName = "2.0 BlueHDi 160 KM", PowerHP = 160, PowerKW = 118, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.9m, TopSpeedKmh = 226, FuelConsumptionCombined = 4.8m },
+            ]);
+
+            int p5008 = GetOrCreateModel(peugId, "5008", "peugeot-5008");
+            AddOrReplaceEngines(GetOrFixGeneration(p5008, "II (2016–)", "peugeot-5008-ii", 2016, null), 130, [
+                new EngineVersion { EngineName = "1.2 PureTech 130 KM", PowerHP = 130, PowerKW = 96, Displacement = 1199, FuelTypeId = ben,
+                    TorqueNm = 230, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 10.9m, TopSpeedKmh = 188, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "1.6 PureTech 180 KM", PowerHP = 180, PowerKW = 132, Displacement = 1598, FuelTypeId = ben,
+                    TorqueNm = 250, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.9m, TopSpeedKmh = 213, FuelConsumptionCombined = 6.8m },
+                new EngineVersion { EngineName = "2.0 BlueHDi 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 370, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 202, FuelConsumptionCombined = 5.2m },
+            ]);
+
+            int partner = GetOrCreateModel(peugId, "Partner", "peugeot-partner");
+            AddOrReplaceEngines(GetOrFixGeneration(partner, "III (2018–)", "peugeot-partner-iii", 2018, null), 90, [
+                new EngineVersion { EngineName = "1.2 PureTech 110 KM", PowerHP = 110, PowerKW = 81, Displacement = 1199, FuelTypeId = ben,
+                    TorqueNm = 205, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.5m, TopSpeedKmh = 183, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "1.5 BlueHDi 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 1499, FuelTypeId = die,
+                    TorqueNm = 250, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.4m, TopSpeedKmh = 168, FuelConsumptionCombined = 4.7m },
+                new EngineVersion { EngineName = "e-Partner EV 136 KM", PowerHP = 136, PowerKW = 100, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 260, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 0, Acceleration0100 = 11.1m, TopSpeedKmh = 135, FuelConsumptionCombined = 16.7m },
+            ]);
         }
 
         // ── Yamaha Motorcycles ────────────────────────────────────────────────────
