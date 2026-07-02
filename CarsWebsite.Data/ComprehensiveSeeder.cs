@@ -1994,7 +1994,46 @@ public static class ComprehensiveSeeder
         {
             int fordId = GetOrCreateBrand("Ford", "ford", "auta-osobowe");
             int focus = GetOrCreateModel(fordId, "Focus", "ford-focus");
-            AddEngines(GetOrCreateGeneration(focus, "Mk4 (2018–)", "ford-focus-mk4", 2018, null), [
+            PrepareGenerations(focus,
+                ("Mk1 (1998–2004)", "ford-focus-mk1", 1998, 2004),
+                ("Mk2 (2004–2011)", "ford-focus-mk2", 2004, 2011),
+                ("Mk3 (2011–2018)", "ford-focus-mk3", 2011, 2018),
+                ("Mk4 (2018–)", "ford-focus-mk4", 2018, null));
+            AddOrReplaceEngines(GetOrFixGeneration(focus, "Mk1 (1998–2004)", "ford-focus-mk1", 1998, 2004), 60, [
+                new EngineVersion { EngineName = "1.4 75 KM", PowerHP = 75, PowerKW = 55, Displacement = 1388, FuelTypeId = ben,
+                    TorqueNm = 122, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 15.0m, TopSpeedKmh = 165, FuelConsumptionCombined = 7.0m },
+                new EngineVersion { EngineName = "1.6 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 1596, FuelTypeId = ben,
+                    TorqueNm = 145, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.5m, TopSpeedKmh = 180, FuelConsumptionCombined = 7.4m },
+                new EngineVersion { EngineName = "ST170 2.0 170 KM", PowerHP = 170, PowerKW = 125, Displacement = 1988, FuelTypeId = ben,
+                    TorqueNm = 200, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.0m, TopSpeedKmh = 217, FuelConsumptionCombined = 8.9m },
+                new EngineVersion { EngineName = "1.8 TDCi 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 1753, FuelTypeId = die,
+                    TorqueNm = 240, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.8m, TopSpeedKmh = 180, FuelConsumptionCombined = 5.3m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(focus, "Mk2 (2004–2011)", "ford-focus-mk2", 2004, 2011), 70, [
+                new EngineVersion { EngineName = "1.6 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 1596, FuelTypeId = ben,
+                    TorqueNm = 150, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.0m, TopSpeedKmh = 180, FuelConsumptionCombined = 7.0m },
+                new EngineVersion { EngineName = "2.0 145 KM", PowerHP = 145, PowerKW = 107, Displacement = 1999, FuelTypeId = ben,
+                    TorqueNm = 185, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.5m, TopSpeedKmh = 200, FuelConsumptionCombined = 8.0m },
+                new EngineVersion { EngineName = "ST 2.5 Turbo 225 KM", PowerHP = 225, PowerKW = 165, Displacement = 2522, FuelTypeId = ben,
+                    TorqueNm = 320, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 5, Acceleration0100 = 6.8m, TopSpeedKmh = 240, FuelConsumptionCombined = 10.5m },
+                new EngineVersion { EngineName = "RS 2.5 Turbo 305 KM", PowerHP = 305, PowerKW = 224, Displacement = 2522, FuelTypeId = ben,
+                    TorqueNm = 440, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 5, Acceleration0100 = 5.9m, TopSpeedKmh = 262, FuelConsumptionCombined = 12.0m },
+                new EngineVersion { EngineName = "1.6 TDCi 109 KM", PowerHP = 109, PowerKW = 80, Displacement = 1560, FuelTypeId = die,
+                    TorqueNm = 240, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.0m, TopSpeedKmh = 190, FuelConsumptionCombined = 4.5m },
+                new EngineVersion { EngineName = "2.0 TDCi 136 KM", PowerHP = 136, PowerKW = 100, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.2m, TopSpeedKmh = 205, FuelConsumptionCombined = 5.0m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(focus, "Mk4 (2018–)", "ford-focus-mk4", 2018, null), 90, [
                 new EngineVersion { EngineName = "1.0 EcoBoost 125 KM", PowerHP = 125, PowerKW = 92, Displacement = 999, FuelTypeId = mild,
                     TorqueNm = 170, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
                     Cylinders = 3, Acceleration0100 = 9.5m, TopSpeedKmh = 200, FuelConsumptionCombined = 5.3m },
@@ -2010,6 +2049,329 @@ public static class ComprehensiveSeeder
                 new EngineVersion { EngineName = "2.0 EcoBlue 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1997, FuelTypeId = die,
                     TorqueNm = 370, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
                     Cylinders = 4, Acceleration0100 = 8.8m, TopSpeedKmh = 215, FuelConsumptionCombined = 4.8m },
+            ]);
+
+            int bronco = GetOrCreateModel(fordId, "Bronco", "ford-bronco");
+            PrepareGenerations(bronco,
+                ("I (1966–1996)", "ford-bronco-i", 1966, 1996),
+                ("II (2021–)", "ford-bronco-ii", 2021, null));
+            AddOrReplaceEngines(GetOrFixGeneration(bronco, "I (1966–1996)", "ford-bronco-i", 1966, 1996), 180, [
+                new EngineVersion { EngineName = "5.0 V8 205 KM", PowerHP = 205, PowerKW = 151, Displacement = 4942, FuelTypeId = ben,
+                    TorqueNm = 366, EuroNorm = "Euro 0", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 9.5m, TopSpeedKmh = 165, FuelConsumptionCombined = 18.0m },
+                new EngineVersion { EngineName = "5.8 V8 210 KM", PowerHP = 210, PowerKW = 154, Displacement = 5766, FuelTypeId = ben,
+                    TorqueNm = 400, EuroNorm = "Euro 0", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 9.0m, TopSpeedKmh = 170, FuelConsumptionCombined = 19.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(bronco, "II (2021–)", "ford-bronco-ii", 2021, null), 250, [
+                new EngineVersion { EngineName = "2.3 EcoBoost 275 KM", PowerHP = 275, PowerKW = 202, Displacement = 2261, FuelTypeId = ben,
+                    TorqueNm = 415, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 7.4m, TopSpeedKmh = 160, FuelConsumptionCombined = 11.5m },
+                new EngineVersion { EngineName = "2.7 EcoBoost V6 335 KM", PowerHP = 335, PowerKW = 246, Displacement = 2694, FuelTypeId = ben,
+                    TorqueNm = 555, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 6.5m, TopSpeedKmh = 170, FuelConsumptionCombined = 13.0m },
+            ]);
+
+            int cmax = GetOrCreateModel(fordId, "C-Max", "ford-c-max");
+            PrepareGenerations(cmax,
+                ("I (2003–2010)", "ford-c-max-i", 2003, 2010),
+                ("II (2010–2019)", "ford-c-max-ii", 2010, 2019));
+            AddOrReplaceEngines(GetOrFixGeneration(cmax, "I (2003–2010)", "ford-c-max-i", 2003, 2010), 90, [
+                new EngineVersion { EngineName = "1.6 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 1596, FuelTypeId = ben,
+                    TorqueNm = 145, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.5m, TopSpeedKmh = 178, FuelConsumptionCombined = 7.4m },
+                new EngineVersion { EngineName = "1.8 125 KM", PowerHP = 125, PowerKW = 92, Displacement = 1798, FuelTypeId = ben,
+                    TorqueNm = 165, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.9m, TopSpeedKmh = 190, FuelConsumptionCombined = 7.8m },
+                new EngineVersion { EngineName = "2.0 145 KM", PowerHP = 145, PowerKW = 107, Displacement = 1999, FuelTypeId = ben,
+                    TorqueNm = 185, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.8m, TopSpeedKmh = 198, FuelConsumptionCombined = 8.2m },
+                new EngineVersion { EngineName = "1.6 TDCi 109 KM", PowerHP = 109, PowerKW = 80, Displacement = 1560, FuelTypeId = die,
+                    TorqueNm = 240, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.6m, TopSpeedKmh = 187, FuelConsumptionCombined = 4.8m },
+                new EngineVersion { EngineName = "2.0 TDCi 136 KM", PowerHP = 136, PowerKW = 100, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 200, FuelConsumptionCombined = 5.2m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(cmax, "II (2010–2019)", "ford-c-max-ii", 2010, 2019), 100, [
+                new EngineVersion { EngineName = "1.0 EcoBoost 125 KM", PowerHP = 125, PowerKW = 92, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 170, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.4m, TopSpeedKmh = 190, FuelConsumptionCombined = 5.8m },
+                new EngineVersion { EngineName = "1.6 TDCi 115 KM", PowerHP = 115, PowerKW = 85, Displacement = 1560, FuelTypeId = die,
+                    TorqueNm = 270, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.0m, TopSpeedKmh = 190, FuelConsumptionCombined = 4.4m },
+                new EngineVersion { EngineName = "2.0 TDCi 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 370, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.5m, TopSpeedKmh = 205, FuelConsumptionCombined = 4.9m },
+            ]);
+
+            int ecosport = GetOrCreateModel(fordId, "EcoSport", "ford-ecosport");
+            PrepareGenerations(ecosport,
+                ("I (2013–2017)", "ford-ecosport-i", 2013, 2017),
+                ("II (2017–2022)", "ford-ecosport-ii", 2017, 2022));
+            AddOrReplaceEngines(GetOrFixGeneration(ecosport, "I (2013–2017)", "ford-ecosport-i", 2013, 2017), 70, [
+                new EngineVersion { EngineName = "1.0 EcoBoost 125 KM", PowerHP = 125, PowerKW = 92, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 170, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.4m, TopSpeedKmh = 180, FuelConsumptionCombined = 5.8m },
+                new EngineVersion { EngineName = "1.5 82 KM", PowerHP = 82, PowerKW = 60, Displacement = 1499, FuelTypeId = ben,
+                    TorqueNm = 140, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.9m, TopSpeedKmh = 158, FuelConsumptionCombined = 6.2m },
+                new EngineVersion { EngineName = "1.5 TDCi 95 KM", PowerHP = 95, PowerKW = 70, Displacement = 1499, FuelTypeId = die,
+                    TorqueNm = 205, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.4m, TopSpeedKmh = 165, FuelConsumptionCombined = 4.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(ecosport, "II (2017–2022)", "ford-ecosport-ii", 2017, 2022), 90, [
+                new EngineVersion { EngineName = "1.0 EcoBoost 125 KM", PowerHP = 125, PowerKW = 92, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 170, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.4m, TopSpeedKmh = 180, FuelConsumptionCombined = 5.9m },
+                new EngineVersion { EngineName = "1.0 EcoBoost 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 200, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 3, Acceleration0100 = 9.8m, TopSpeedKmh = 188, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "1.5 TDCi 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 1499, FuelTypeId = die,
+                    TorqueNm = 240, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.7m, TopSpeedKmh = 172, FuelConsumptionCombined = 4.6m },
+                new EngineVersion { EngineName = "1.5 TDCi 125 KM", PowerHP = 125, PowerKW = 92, Displacement = 1499, FuelTypeId = die,
+                    TorqueNm = 300, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 10.7m, TopSpeedKmh = 182, FuelConsumptionCombined = 4.9m },
+            ]);
+
+            int edge = GetOrCreateModel(fordId, "Edge", "ford-edge");
+            PrepareGenerations(edge,
+                ("I (2015–2018)", "ford-edge-i", 2015, 2018),
+                ("II (2018–2023)", "ford-edge-ii", 2018, 2023));
+            AddOrReplaceEngines(GetOrFixGeneration(edge, "I (2015–2018)", "ford-edge-i", 2015, 2018), 150, [
+                new EngineVersion { EngineName = "2.0 TDCi 180 KM", PowerHP = 180, PowerKW = 132, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 200, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "2.0 TDCi Bi-Turbo 210 KM", PowerHP = 210, PowerKW = 154, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 450, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.7m, TopSpeedKmh = 210, FuelConsumptionCombined = 6.9m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(edge, "II (2018–2023)", "ford-edge-ii", 2018, 2023), 180, [
+                new EngineVersion { EngineName = "2.0 EcoBlue 190 KM", PowerHP = 190, PowerKW = 140, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 9.0m, TopSpeedKmh = 205, FuelConsumptionCombined = 6.6m },
+                new EngineVersion { EngineName = "2.0 EcoBlue Bi-Turbo 238 KM", PowerHP = 238, PowerKW = 175, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 470, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.0m, TopSpeedKmh = 212, FuelConsumptionCombined = 7.1m },
+            ]);
+
+            int explorer = GetOrCreateModel(fordId, "Explorer", "ford-explorer");
+            PrepareGenerations(explorer,
+                ("IV (2011–2019)", "ford-explorer-iv", 2011, 2019),
+                ("V (2020–)", "ford-explorer-v", 2020, null));
+            AddOrReplaceEngines(GetOrFixGeneration(explorer, "IV (2011–2019)", "ford-explorer-iv", 2011, 2019), 250, [
+                new EngineVersion { EngineName = "3.5 V6 294 KM", PowerHP = 294, PowerKW = 216, Displacement = 3496, FuelTypeId = ben,
+                    TorqueNm = 349, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 8.2m, TopSpeedKmh = 200, FuelConsumptionCombined = 13.5m },
+                new EngineVersion { EngineName = "2.3 EcoBoost 280 KM", PowerHP = 280, PowerKW = 206, Displacement = 2261, FuelTypeId = ben,
+                    TorqueNm = 425, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 7.9m, TopSpeedKmh = 195, FuelConsumptionCombined = 11.2m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(explorer, "V (2020–)", "ford-explorer-v", 2020, null), 280, [
+                new EngineVersion { EngineName = "3.0 EcoBoost PHEV 457 KM", PowerHP = 457, PowerKW = 336, Displacement = 2956, FuelTypeId = phev,
+                    TorqueNm = 678, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 5.9m, TopSpeedKmh = 220, FuelConsumptionCombined = 3.0m },
+                new EngineVersion { EngineName = "2.3 EcoBoost 300 KM", PowerHP = 300, PowerKW = 221, Displacement = 2261, FuelTypeId = ben,
+                    TorqueNm = 425, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 7.4m, TopSpeedKmh = 200, FuelConsumptionCombined = 11.0m },
+            ]);
+
+            int galaxy = GetOrCreateModel(fordId, "Galaxy", "ford-galaxy");
+            PrepareGenerations(galaxy,
+                ("III (2006–2015)", "ford-galaxy-iii", 2006, 2015),
+                ("IV (2015–)", "ford-galaxy-iv", 2015, null));
+            AddOrReplaceEngines(GetOrFixGeneration(galaxy, "III (2006–2015)", "ford-galaxy-iii", 2006, 2015), 130, [
+                new EngineVersion { EngineName = "1.6 EcoBoost 160 KM", PowerHP = 160, PowerKW = 118, Displacement = 1596, FuelTypeId = ben,
+                    TorqueNm = 240, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.9m, TopSpeedKmh = 195, FuelConsumptionCombined = 7.4m },
+                new EngineVersion { EngineName = "2.0 145 KM", PowerHP = 145, PowerKW = 107, Displacement = 1999, FuelTypeId = ben,
+                    TorqueNm = 185, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.5m, TopSpeedKmh = 195, FuelConsumptionCombined = 8.5m },
+                new EngineVersion { EngineName = "2.0 TDCi 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.9m, TopSpeedKmh = 195, FuelConsumptionCombined = 5.5m },
+                new EngineVersion { EngineName = "2.0 TDCi 163 KM", PowerHP = 163, PowerKW = 120, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 360, EuroNorm = "Euro 5", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 9.8m, TopSpeedKmh = 205, FuelConsumptionCombined = 6.0m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(galaxy, "IV (2015–)", "ford-galaxy-iv", 2015, null), 130, [
+                new EngineVersion { EngineName = "2.0 EcoBlue 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 370, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.5m, TopSpeedKmh = 197, FuelConsumptionCombined = 5.5m },
+                new EngineVersion { EngineName = "2.0 EcoBlue 190 KM", PowerHP = 190, PowerKW = 140, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 9.1m, TopSpeedKmh = 208, FuelConsumptionCombined = 6.2m },
+            ]);
+
+            int ka = GetOrCreateModel(fordId, "Ka", "ford-ka");
+            PrepareGenerations(ka,
+                ("I (1996–2008)", "ford-ka-i", 1996, 2008),
+                ("II (2008–2016)", "ford-ka-ii", 2008, 2016));
+            AddOrReplaceEngines(GetOrFixGeneration(ka, "I (1996–2008)", "ford-ka-i", 1996, 2008), 50, [
+                new EngineVersion { EngineName = "1.3 60 KM", PowerHP = 60, PowerKW = 44, Displacement = 1299, FuelTypeId = ben,
+                    TorqueNm = 104, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.7m, TopSpeedKmh = 150, FuelConsumptionCombined = 5.8m },
+                new EngineVersion { EngineName = "1.3 70 KM", PowerHP = 70, PowerKW = 51, Displacement = 1299, FuelTypeId = ben,
+                    TorqueNm = 110, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.4m, TopSpeedKmh = 157, FuelConsumptionCombined = 5.9m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(ka, "II (2008–2016)", "ford-ka-ii", 2008, 2016), 60, [
+                new EngineVersion { EngineName = "1.2 69 KM", PowerHP = 69, PowerKW = 51, Displacement = 1242, FuelTypeId = ben,
+                    TorqueNm = 102, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 15.0m, TopSpeedKmh = 155, FuelConsumptionCombined = 5.3m },
+                new EngineVersion { EngineName = "1.3 TDCi 75 KM", PowerHP = 75, PowerKW = 55, Displacement = 1248, FuelTypeId = die,
+                    TorqueNm = 190, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 15.5m, TopSpeedKmh = 155, FuelConsumptionCombined = 4.1m },
+            ]);
+
+            int maverick = GetOrCreateModel(fordId, "Maverick", "ford-maverick");
+            AddOrReplaceEngines(GetOrFixGeneration(maverick, "I (2022–)", "ford-maverick-i", 2022, null), 180, [
+                new EngineVersion { EngineName = "2.5 Hybrid 191 KM", PowerHP = 191, PowerKW = 140, Displacement = 2488, FuelTypeId = hyb,
+                    TorqueNm = 210, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.5m, TopSpeedKmh = 170, FuelConsumptionCombined = 6.2m },
+                new EngineVersion { EngineName = "2.0 EcoBoost 250 KM", PowerHP = 250, PowerKW = 184, Displacement = 1999, FuelTypeId = ben,
+                    TorqueNm = 380, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 7.2m, TopSpeedKmh = 180, FuelConsumptionCombined = 10.0m },
+            ]);
+
+            int mondeo = GetOrCreateModel(fordId, "Mondeo", "ford-mondeo");
+            PrepareGenerations(mondeo,
+                ("I (1993–2000)", "ford-mondeo-i", 1993, 2000),
+                ("III (2007–2014)", "ford-mondeo-iii", 2007, 2014),
+                ("V (2014–2022)", "ford-mondeo-v", 2014, 2022));
+            AddOrReplaceEngines(GetOrFixGeneration(mondeo, "I (1993–2000)", "ford-mondeo-i", 1993, 2000), 70, [
+                new EngineVersion { EngineName = "1.6 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1597, FuelTypeId = ben,
+                    TorqueNm = 133, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.5m, TopSpeedKmh = 175, FuelConsumptionCombined = 7.8m },
+                new EngineVersion { EngineName = "1.8 115 KM", PowerHP = 115, PowerKW = 85, Displacement = 1796, FuelTypeId = ben,
+                    TorqueNm = 155, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.8m, TopSpeedKmh = 195, FuelConsumptionCombined = 8.5m },
+                new EngineVersion { EngineName = "2.0 131 KM", PowerHP = 131, PowerKW = 96, Displacement = 1988, FuelTypeId = ben,
+                    TorqueNm = 175, EuroNorm = "Euro 2", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 205, FuelConsumptionCombined = 9.2m },
+                new EngineVersion { EngineName = "1.8 TD 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1753, FuelTypeId = die,
+                    TorqueNm = 190, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.5m, TopSpeedKmh = 170, FuelConsumptionCombined = 5.9m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(mondeo, "III (2007–2014)", "ford-mondeo-iii", 2007, 2014), 130, [
+                new EngineVersion { EngineName = "1.6 EcoBoost 160 KM", PowerHP = 160, PowerKW = 118, Displacement = 1596, FuelTypeId = ben,
+                    TorqueNm = 240, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.0m, TopSpeedKmh = 200, FuelConsumptionCombined = 6.9m },
+                new EngineVersion { EngineName = "2.0 145 KM", PowerHP = 145, PowerKW = 107, Displacement = 1999, FuelTypeId = ben,
+                    TorqueNm = 185, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 205, FuelConsumptionCombined = 8.0m },
+                new EngineVersion { EngineName = "2.0 TDCi 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 205, FuelConsumptionCombined = 5.0m },
+                new EngineVersion { EngineName = "2.2 TDCi 200 KM", PowerHP = 200, PowerKW = 147, Displacement = 2179, FuelTypeId = die,
+                    TorqueNm = 440, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.4m, TopSpeedKmh = 224, FuelConsumptionCombined = 5.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(mondeo, "V (2014–2022)", "ford-mondeo-v", 2014, 2022), 140, [
+                new EngineVersion { EngineName = "1.5 EcoBoost 160 KM", PowerHP = 160, PowerKW = 118, Displacement = 1499, FuelTypeId = ben,
+                    TorqueNm = 240, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.2m, TopSpeedKmh = 210, FuelConsumptionCombined = 6.3m },
+                new EngineVersion { EngineName = "2.0 EcoBlue 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 370, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.4m, TopSpeedKmh = 212, FuelConsumptionCombined = 4.5m },
+                new EngineVersion { EngineName = "2.0 EcoBlue 190 KM", PowerHP = 190, PowerKW = 140, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.2m, TopSpeedKmh = 227, FuelConsumptionCombined = 5.0m },
+                new EngineVersion { EngineName = "2.0 Hybrid 187 KM", PowerHP = 187, PowerKW = 138, Displacement = 1999, FuelTypeId = hyb,
+                    TorqueNm = 173, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.3m, TopSpeedKmh = 187, FuelConsumptionCombined = 4.3m },
+            ]);
+
+            int mustang = GetOrCreateModel(fordId, "Mustang", "ford-mustang");
+            AddOrReplaceEngines(GetOrFixGeneration(mustang, "V (2005–2014)", "ford-mustang-v", 2005, 2014), 200, [
+                new EngineVersion { EngineName = "4.0 V6 213 KM", PowerHP = 213, PowerKW = 157, Displacement = 3984, FuelTypeId = ben,
+                    TorqueNm = 325, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 7.5m, TopSpeedKmh = 195, FuelConsumptionCombined = 13.5m },
+                new EngineVersion { EngineName = "4.6 V8 GT 300 KM", PowerHP = 300, PowerKW = 221, Displacement = 4606, FuelTypeId = ben,
+                    TorqueNm = 420, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 5.8m, TopSpeedKmh = 250, FuelConsumptionCombined = 15.5m },
+                new EngineVersion { EngineName = "5.4 V8 Shelby GT500 500 KM", PowerHP = 500, PowerKW = 368, Displacement = 5408, FuelTypeId = ben,
+                    TorqueNm = 664, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 4.6m, TopSpeedKmh = 250, FuelConsumptionCombined = 17.5m },
+            ]);
+
+            int puma = GetOrCreateModel(fordId, "Puma", "ford-puma");
+            PrepareGenerations(puma,
+                ("I (1997–2002)", "ford-puma-i", 1997, 2002),
+                ("II (2019–)", "ford-puma-ii", 2019, null));
+            AddOrReplaceEngines(GetOrFixGeneration(puma, "I (1997–2002)", "ford-puma-i", 1997, 2002), 60, [
+                new EngineVersion { EngineName = "1.4 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1388, FuelTypeId = ben,
+                    TorqueNm = 124, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.1m, TopSpeedKmh = 175, FuelConsumptionCombined = 6.9m },
+                new EngineVersion { EngineName = "1.7 125 KM", PowerHP = 125, PowerKW = 92, Displacement = 1679, FuelTypeId = ben,
+                    TorqueNm = 152, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.2m, TopSpeedKmh = 195, FuelConsumptionCombined = 7.6m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(puma, "II (2019–)", "ford-puma-ii", 2019, null), 100, [
+                new EngineVersion { EngineName = "1.0 EcoBoost 125 KM", PowerHP = 125, PowerKW = 92, Displacement = 999, FuelTypeId = mild,
+                    TorqueNm = 210, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 9.8m, TopSpeedKmh = 193, FuelConsumptionCombined = 5.3m },
+                new EngineVersion { EngineName = "1.0 EcoBoost Hybrid 155 KM", PowerHP = 155, PowerKW = 114, Displacement = 999, FuelTypeId = mild,
+                    TorqueNm = 240, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 9.0m, TopSpeedKmh = 200, FuelConsumptionCombined = 5.4m },
+                new EngineVersion { EngineName = "ST 1.5 EcoBoost 200 KM", PowerHP = 200, PowerKW = 147, Displacement = 1497, FuelTypeId = ben,
+                    TorqueNm = 320, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 6.7m, TopSpeedKmh = 220, FuelConsumptionCombined = 7.0m },
+                new EngineVersion { EngineName = "1.5 EcoBlue 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 1499, FuelTypeId = die,
+                    TorqueNm = 300, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.0m, TopSpeedKmh = 188, FuelConsumptionCombined = 4.3m },
+            ]);
+
+            int ranger = GetOrCreateModel(fordId, "Ranger", "ford-ranger");
+            PrepareGenerations(ranger,
+                ("II (2006–2011)", "ford-ranger-ii", 2006, 2011),
+                ("III (2011–2022)", "ford-ranger-iii", 2011, 2022));
+            AddOrReplaceEngines(GetOrFixGeneration(ranger, "II (2006–2011)", "ford-ranger-ii", 2006, 2011), 120, [
+                new EngineVersion { EngineName = "2.5 TDCi 143 KM", PowerHP = 143, PowerKW = 105, Displacement = 2499, FuelTypeId = die,
+                    TorqueNm = 330, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 12.5m, TopSpeedKmh = 165, FuelConsumptionCombined = 9.0m },
+                new EngineVersion { EngineName = "3.0 TDCi 156 KM", PowerHP = 156, PowerKW = 115, Displacement = 2953, FuelTypeId = die,
+                    TorqueNm = 380, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 11.5m, TopSpeedKmh = 170, FuelConsumptionCombined = 9.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(ranger, "III (2011–2022)", "ford-ranger-iii", 2011, 2022), 150, [
+                new EngineVersion { EngineName = "2.2 TDCi 160 KM", PowerHP = 160, PowerKW = 118, Displacement = 2198, FuelTypeId = die,
+                    TorqueNm = 385, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 11.2m, TopSpeedKmh = 170, FuelConsumptionCombined = 7.8m },
+                new EngineVersion { EngineName = "3.2 TDCi 200 KM", PowerHP = 200, PowerKW = 147, Displacement = 3198, FuelTypeId = die,
+                    TorqueNm = 470, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 5, Acceleration0100 = 10.5m, TopSpeedKmh = 180, FuelConsumptionCombined = 8.9m },
+                new EngineVersion { EngineName = "2.0 EcoBlue Bi-Turbo 213 KM", PowerHP = 213, PowerKW = 157, Displacement = 1996, FuelTypeId = die,
+                    TorqueNm = 500, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 9.8m, TopSpeedKmh = 180, FuelConsumptionCombined = 8.2m },
+            ]);
+
+            int smax = GetOrCreateModel(fordId, "S-Max", "ford-s-max");
+            PrepareGenerations(smax,
+                ("I (2006–2015)", "ford-s-max-i", 2006, 2015),
+                ("II (2015–2023)", "ford-s-max-ii", 2015, 2023));
+            AddOrReplaceEngines(GetOrFixGeneration(smax, "I (2006–2015)", "ford-s-max-i", 2006, 2015), 130, [
+                new EngineVersion { EngineName = "2.0 145 KM", PowerHP = 145, PowerKW = 107, Displacement = 1999, FuelTypeId = ben,
+                    TorqueNm = 185, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.5m, TopSpeedKmh = 195, FuelConsumptionCombined = 8.5m },
+                new EngineVersion { EngineName = "2.5 Turbo 220 KM", PowerHP = 220, PowerKW = 162, Displacement = 2522, FuelTypeId = ben,
+                    TorqueNm = 310, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 5, Acceleration0100 = 8.4m, TopSpeedKmh = 220, FuelConsumptionCombined = 10.5m },
+                new EngineVersion { EngineName = "2.0 TDCi 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.9m, TopSpeedKmh = 195, FuelConsumptionCombined = 5.5m },
+                new EngineVersion { EngineName = "2.2 TDCi 200 KM", PowerHP = 200, PowerKW = 147, Displacement = 2179, FuelTypeId = die,
+                    TorqueNm = 440, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.7m, TopSpeedKmh = 220, FuelConsumptionCombined = 6.2m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(smax, "II (2015–2023)", "ford-s-max-ii", 2015, 2023), 130, [
+                new EngineVersion { EngineName = "2.0 EcoBlue 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 370, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.6m, TopSpeedKmh = 197, FuelConsumptionCombined = 5.5m },
+                new EngineVersion { EngineName = "2.0 EcoBlue 190 KM", PowerHP = 190, PowerKW = 140, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 9.2m, TopSpeedKmh = 208, FuelConsumptionCombined = 6.3m },
             ]);
 
             int opelId = GetOrCreateBrand("Opel", "opel", "auta-osobowe");
@@ -3441,7 +3803,19 @@ public static class ComprehensiveSeeder
                     Cylinders = 4, Acceleration0100 = 12.5m, TopSpeedKmh = 177, FuelConsumptionCombined = 3.9m },
             ]);
             int kuga = GetOrCreateModel(fordId2, "Kuga", "ford-kuga");
-            AddEngines(GetOrCreateGeneration(kuga, "Mk2 (2012–2019)", "ford-kuga-mk2", 2012, 2019), [
+            PrepareGenerations(kuga,
+                ("Mk1 (2008–2012)", "ford-kuga-mk1", 2008, 2012),
+                ("Mk2 (2012–2019)", "ford-kuga-mk2", 2012, 2019),
+                ("Mk3 (2019–)", "ford-kuga-mk3", 2019, null));
+            AddOrReplaceEngines(GetOrFixGeneration(kuga, "Mk1 (2008–2012)", "ford-kuga-mk1", 2008, 2012), 130, [
+                new EngineVersion { EngineName = "2.0 TDCi 136 KM", PowerHP = 136, PowerKW = 100, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 11.0m, TopSpeedKmh = 180, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "2.0 TDCi 163 KM", PowerHP = 163, PowerKW = 120, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 340, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 190, FuelConsumptionCombined = 6.7m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(kuga, "Mk2 (2012–2019)", "ford-kuga-mk2", 2012, 2019), 130, [
                 new EngineVersion { EngineName = "1.5 EcoBoost 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1499, FuelTypeId = ben,
                     TorqueNm = 240, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
                     Cylinders = 3, Acceleration0100 = 9.7m, TopSpeedKmh = 196, FuelConsumptionCombined = 6.5m },
@@ -3452,7 +3826,7 @@ public static class ComprehensiveSeeder
                     TorqueNm = 370, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
                     Cylinders = 4, Acceleration0100 = 9.5m, TopSpeedKmh = 196, FuelConsumptionCombined = 5.3m },
             ]);
-            AddEngines(GetOrCreateGeneration(kuga, "Mk3 (2019–)", "ford-kuga-mk3", 2019, null), [
+            AddOrReplaceEngines(GetOrFixGeneration(kuga, "Mk3 (2019–)", "ford-kuga-mk3", 2019, null), 130, [
                 new EngineVersion { EngineName = "1.5 EcoBoost 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1499, FuelTypeId = mild,
                     TorqueNm = 240, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
                     Cylinders = 3, Acceleration0100 = 9.8m, TopSpeedKmh = 195, FuelConsumptionCombined = 6.7m },
