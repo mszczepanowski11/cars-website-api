@@ -4893,6 +4893,49 @@ public static class ComprehensiveSeeder
                     Cylinders = 6, Acceleration0100 = 4.6m, TopSpeedKmh = 278, FuelConsumptionCombined = 3.0m },
             ]);
 
+            int m718 = GetOrCreateModel(porscheId, "718 Boxster/Cayman", "porsche-718");
+            AddOrReplaceEngines(GetOrFixGeneration(m718, "982 (2016–)", "porsche-718-982", 2016, null), 250, [
+                new EngineVersion { EngineName = "2.0 Turbo 300 KM", PowerHP = 300, PowerKW = 221, Displacement = 1988, FuelTypeId = ben,
+                    TorqueNm = 380, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 5.1m, TopSpeedKmh = 275, FuelConsumptionCombined = 8.0m },
+                new EngineVersion { EngineName = "2.5 S Turbo 350 KM", PowerHP = 350, PowerKW = 257, Displacement = 2497, FuelTypeId = ben,
+                    TorqueNm = 420, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 4.2m, TopSpeedKmh = 285, FuelConsumptionCombined = 8.5m },
+                new EngineVersion { EngineName = "GT4 4.0 420 KM", PowerHP = 420, PowerKW = 309, Displacement = 3995, FuelTypeId = ben,
+                    TorqueNm = 420, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 4.4m, TopSpeedKmh = 304, FuelConsumptionCombined = 11.6m },
+            ]);
+
+            int m918 = GetOrCreateModel(porscheId, "918 Spyder", "porsche-918-spyder");
+            AddOrReplaceEngines(GetOrFixGeneration(m918, "I (2013–2015)", "porsche-918-spyder-2013", 2013, 2015), 800, [
+                new EngineVersion { EngineName = "4.6 V8 + electric PHEV 887 KM", PowerHP = 887, PowerKW = 652, Displacement = 4593, FuelTypeId = phev,
+                    TorqueNm = 1280, EuroNorm = "Euro 5", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 2.6m, TopSpeedKmh = 345, FuelConsumptionCombined = 3.1m },
+            ]);
+
+            int p356 = GetOrCreateModel(porscheId, "356", "porsche-356");
+            AddOrReplaceEngines(GetOrFixGeneration(p356, "I (1948–1965)", "porsche-356-i", 1948, 1965), 60, [
+                new EngineVersion { EngineName = "1.6 60 KM", PowerHP = 60, PowerKW = 44, Displacement = 1582, FuelTypeId = ben,
+                    TorqueNm = 111, EuroNorm = "Euro 0", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 14.5m, TopSpeedKmh = 160, FuelConsumptionCombined = 9.5m },
+                new EngineVersion { EngineName = "1600 Super 90 75 KM", PowerHP = 75, PowerKW = 55, Displacement = 1582, FuelTypeId = ben,
+                    TorqueNm = 121, EuroNorm = "Euro 0", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 12.5m, TopSpeedKmh = 175, FuelConsumptionCombined = 9.8m },
+            ]);
+
+            int p944 = GetOrCreateModel(porscheId, "924/944", "porsche-924-944");
+            AddOrReplaceEngines(GetOrFixGeneration(p944, "I (1976–1991)", "porsche-924-944-i", 1976, 1991), 130, [
+                new EngineVersion { EngineName = "924 2.0 125 KM", PowerHP = 125, PowerKW = 92, Displacement = 1984, FuelTypeId = ben,
+                    TorqueNm = 165, EuroNorm = "Euro 0", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 10.0m, TopSpeedKmh = 188, FuelConsumptionCombined = 10.0m },
+                new EngineVersion { EngineName = "944 Turbo 2.5 220 KM", PowerHP = 220, PowerKW = 162, Displacement = 2479, FuelTypeId = ben,
+                    TorqueNm = 330, EuroNorm = "Euro 0", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 5.9m, TopSpeedKmh = 254, FuelConsumptionCombined = 11.5m },
+                new EngineVersion { EngineName = "944 S2 3.0 211 KM", PowerHP = 211, PowerKW = 155, Displacement = 2990, FuelTypeId = ben,
+                    TorqueNm = 280, EuroNorm = "Euro 1", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 6.5m, TopSpeedKmh = 240, FuelConsumptionCombined = 11.0m },
+            ]);
+
             // ── LAND ROVER DEFENDER + DISCOVERY + RR SPORT + EVOQUE ──────────────
             int lrId = GetOrCreateBrand("Land Rover", "land-rover", "auta-osobowe");
             int defender = GetOrCreateModel(lrId, "Defender", "lr-defender");
