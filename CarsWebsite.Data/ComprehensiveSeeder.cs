@@ -990,6 +990,34 @@ public static class ComprehensiveSeeder
                     TorqueNm = 630, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
                     Cylinders = 8, Acceleration0100 = 3.2m, TopSpeedKmh = 326, FuelConsumptionCombined = 13.1m },
             ]);
+
+            int m600lt = GetOrCreateModel(bId, "600LT", "mclaren-600lt");
+            AddOrReplaceEngines(GetOrFixGeneration(m600lt, "600LT (2018–2019)", "mclaren-600lt-2018", 2018, 2019), 550, [
+                new EngineVersion { EngineName = "3.8 V8 Bi-Turbo 600 KM", PowerHP = 600, PowerKW = 441, Displacement = 3799, FuelTypeId = ben,
+                    TorqueNm = 620, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 2.9m, TopSpeedKmh = 328, FuelConsumptionCombined = 13.5m },
+            ]);
+
+            int m675lt = GetOrCreateModel(bId, "675LT", "mclaren-675lt");
+            AddOrReplaceEngines(GetOrFixGeneration(m675lt, "675LT (2015–2017)", "mclaren-675lt-2015", 2015, 2017), 600, [
+                new EngineVersion { EngineName = "3.8 V8 Bi-Turbo 675 KM", PowerHP = 675, PowerKW = 496, Displacement = 3799, FuelTypeId = ben,
+                    TorqueNm = 700, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 2.9m, TopSpeedKmh = 330, FuelConsumptionCombined = 13.4m },
+            ]);
+
+            int p1 = GetOrCreateModel(bId, "P1", "mclaren-p1");
+            AddOrReplaceEngines(GetOrFixGeneration(p1, "P1 (2013–2015)", "mclaren-p1-2013", 2013, 2015), 700, [
+                new EngineVersion { EngineName = "3.8 V8 Bi-Turbo + electric 916 KM", PowerHP = 916, PowerKW = 674, Displacement = 3799, FuelTypeId = phev,
+                    TorqueNm = 900, EuroNorm = "Euro 5", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 2.8m, TopSpeedKmh = 350, FuelConsumptionCombined = 8.3m },
+            ]);
+
+            int senna = GetOrCreateModel(bId, "Senna", "mclaren-senna");
+            AddOrReplaceEngines(GetOrFixGeneration(senna, "Senna (2018–2019)", "mclaren-senna-2018", 2018, 2019), 700, [
+                new EngineVersion { EngineName = "4.0 V8 Bi-Turbo 800 KM", PowerHP = 800, PowerKW = 588, Displacement = 3994, FuelTypeId = ben,
+                    TorqueNm = 800, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 2.8m, TopSpeedKmh = 336, FuelConsumptionCombined = 14.5m },
+            ]);
         }
 
         // ── HONDA (motorcycles) ─────────────────────────────────────────────────
