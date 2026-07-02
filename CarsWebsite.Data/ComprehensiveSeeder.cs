@@ -5649,6 +5649,36 @@ public static class ComprehensiveSeeder
                     TorqueNm = 900, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
                     Cylinders = 0, Acceleration0100 = 2.7m, TopSpeedKmh = 325, FuelConsumptionCombined = null },
             ]);
+
+            int quattroporte = GetOrCreateModel(masId, "Quattroporte", "maserati-quattroporte");
+            AddOrReplaceEngines(GetOrFixGeneration(quattroporte, "M156 (2013–2023)", "maserati-quattroporte-m156", 2013, 2023), 300, [
+                new EngineVersion { EngineName = "3.0 V6 350 KM", PowerHP = 350, PowerKW = 257, Displacement = 2979, FuelTypeId = ben,
+                    TorqueNm = 500, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 5.1m, TopSpeedKmh = 267, FuelConsumptionCombined = 12.5m },
+                new EngineVersion { EngineName = "GTS 3.8 V8 530 KM", PowerHP = 530, PowerKW = 390, Displacement = 3799, FuelTypeId = ben,
+                    TorqueNm = 710, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 4.7m, TopSpeedKmh = 310, FuelConsumptionCombined = 15.0m },
+                new EngineVersion { EngineName = "3.0 V6 D 275 KM", PowerHP = 275, PowerKW = 202, Displacement = 2987, FuelTypeId = die,
+                    TorqueNm = 600, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 6.4m, TopSpeedKmh = 250, FuelConsumptionCombined = 6.8m },
+            ]);
+
+            int mc20 = GetOrCreateModel(masId, "MC20", "maserati-mc20");
+            AddOrReplaceEngines(GetOrFixGeneration(mc20, "I (2020–)", "maserati-mc20-i", 2020, null), 500, [
+                new EngineVersion { EngineName = "3.0 V6 Nettuno 630 KM", PowerHP = 630, PowerKW = 463, Displacement = 2992, FuelTypeId = ben,
+                    TorqueNm = 730, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 2.9m, TopSpeedKmh = 325, FuelConsumptionCombined = 11.5m },
+            ]);
+
+            int granCabrio = GetOrCreateModel(masId, "GranCabrio", "maserati-grancabrio");
+            AddOrReplaceEngines(GetOrFixGeneration(granCabrio, "M180 (2024–)", "maserati-grancabrio-m180", 2024, null), 490, [
+                new EngineVersion { EngineName = "3.0 V6 Nettuno 550 KM", PowerHP = 550, PowerKW = 404, Displacement = 2992, FuelTypeId = ben,
+                    TorqueNm = 650, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 3.9m, TopSpeedKmh = 300, FuelConsumptionCombined = 10.9m },
+                new EngineVersion { EngineName = "Folgore EV 761 KM AWD", PowerHP = 761, PowerKW = 560, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 900, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 0, Acceleration0100 = 2.8m, TopSpeedKmh = 289, FuelConsumptionCombined = null },
+            ]);
         }
 
         // ── Citroën ───────────────────────────────────────────────────────────────
