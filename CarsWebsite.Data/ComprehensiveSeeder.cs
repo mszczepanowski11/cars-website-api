@@ -136,9 +136,9 @@ public static class ComprehensiveSeeder
             for (int i = toRename.Count; i < generics.Count; i++)
             {
                 var orphan = generics[i];
-                // Nullify FK in CarAdverts before deleting — the migration defined this FK without ON DELETE,
-                // so MySQL defaults to RESTRICT and would block the delete otherwise.
-                db.Database.ExecuteSqlRaw($"UPDATE `CarAdverts` SET `GenerationId` = NULL WHERE `GenerationId` = {orphan.Id}");
+                // Nullify FK in CarAdverts before deleting via the tracked DbSet, not raw SQL with
+                // a hardcoded table name — see the identical fix in GetOrFixGeneration below for why.
+                foreach (var a in db.CarAdverts.Where(a => a.GenerationId == orphan.Id)) a.GenerationId = null;
                 var engines = db.EngineVersions.Where(e => e.GenerationId == orphan.Id).ToList();
                 db.EngineVersions.RemoveRange(engines);
                 db.Generations.Remove(orphan);
@@ -167,8 +167,12 @@ public static class ComprehensiveSeeder
                     foreach (var o in orphans)
                     {
                         // Nullify FK in CarAdverts before deleting — the migration defined this FK without ON DELETE,
-                        // so MySQL defaults to RESTRICT and would block the delete otherwise.
-                        db.Database.ExecuteSqlRaw($"UPDATE `CarAdverts` SET `GenerationId` = NULL WHERE `GenerationId` = {o.Id}");
+                        // so MySQL defaults to RESTRICT and would block the delete otherwise. Use the tracked
+                        // DbSet (not raw SQL with a hardcoded table name) — this codebase's live schema uses
+                        // lowercase table names that don't match the PascalCase migration history, so a
+                        // hardcoded "CarAdverts" string throws "Table 'railway.CarAdverts' doesn't exist" and
+                        // aborts every seeder queued after this one, same bug MergeDuplicateBrands had (#50).
+                        foreach (var a in db.CarAdverts.Where(a => a.GenerationId == o.Id)) a.GenerationId = null;
                         var orphanEngines = db.EngineVersions.Where(e => e.GenerationId == o.Id).ToList();
                         db.EngineVersions.RemoveRange(orphanEngines);
                         db.Generations.Remove(o);
