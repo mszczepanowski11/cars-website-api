@@ -254,25 +254,61 @@ public class AdminController : ControllerBase
     // ── Custom category requests ──────────────────────────────────────────────
 
     [HttpGet("custom-categories")]
-    public async Task<IActionResult> GetCustomCategories([FromQuery] string? status = null)
+    public async Task<IActionResult> GetCustomCategories([FromQuery] CustomCategoryRequestStatus? status = null)
     {
         var query = _db.CustomCategoryRequests.AsNoTracking().AsQueryable();
-        if (!string.IsNullOrEmpty(status))
-            query = query.Where(r => r.Status == status);
+        if (status.HasValue)
+            query = query.Where(r => r.Status == status.Value);
         var results = await query.OrderByDescending(r => r.CreatedAt).ToListAsync();
         return Ok(results);
     }
 
+    // Approval is a curation step, not a rubber stamp: the admin picks whether the request
+    // becomes a brand-new top-level VehicleCategory or a VehicleSubtype under an existing one,
+    // and supplies the actual Name/Slug — nothing is auto-created from the user's raw free text.
     [HttpPut("custom-categories/{id}/approve")]
-    public async Task<IActionResult> ApproveCustomCategory(int id, [FromBody] AdminReviewCustomCategoryDto dto)
+    public async Task<IActionResult> ApproveCustomCategory(int id, [FromBody] ApproveCustomCategoryDto dto)
     {
         var request = await _db.CustomCategoryRequests.FindAsync(id);
         if (request == null) return NotFound();
-        request.Status = "Approved";
+        if (request.Status != CustomCategoryRequestStatus.Pending)
+            return BadRequest(new { message = "Ten wniosek został już rozpatrzony." });
+        if (string.IsNullOrWhiteSpace(dto.Name))
+            return BadRequest(new { message = "Nazwa jest wymagana." });
+
+        var slug = dto.Slug ?? dto.Name.ToLowerInvariant()
+            .Replace(" ", "-").Replace("ę", "e").Replace("ą", "a").Replace("ó", "o")
+            .Replace("ś", "s").Replace("ł", "l").Replace("ź", "z").Replace("ż", "z")
+            .Replace("ć", "c").Replace("ń", "n");
+
+        if (dto.ResultType == "category")
+        {
+            if (await _db.VehicleCategories.AnyAsync(c => c.Slug == slug))
+                return BadRequest(new { message = $"Kategoria ze slugiem '{slug}' już istnieje." });
+            var category = new VehicleCategory { Name = dto.Name, Slug = slug, SortOrder = 999 };
+            _db.VehicleCategories.Add(category);
+            await _db.SaveChangesAsync();
+            request.ResultingVehicleCategoryId = category.Id;
+        }
+        else if (dto.ResultType == "subtype")
+        {
+            if (!dto.VehicleCategoryId.HasValue || !await _db.VehicleCategories.AnyAsync(c => c.Id == dto.VehicleCategoryId.Value))
+                return BadRequest(new { message = "Wybrana kategoria pojazdu nie istnieje." });
+            var subtype = new VehicleSubtype { Name = dto.Name, Slug = slug, VehicleCategoryId = dto.VehicleCategoryId.Value, SortOrder = 999 };
+            _db.VehicleSubtypes.Add(subtype);
+            await _db.SaveChangesAsync();
+            request.ResultingVehicleSubtypeId = subtype.Id;
+        }
+        else
+        {
+            return BadRequest(new { message = "Nieprawidłowy typ wyniku — oczekiwano 'category' lub 'subtype'." });
+        }
+
+        request.Status = CustomCategoryRequestStatus.Approved;
         request.AdminNotes = dto.Notes;
         request.ReviewedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
-        _logger.LogInformation("[Admin] ApproveCustomCategory requestId={Id} adminId={AdminId} notes={Notes}", id, GetUserId(), dto.Notes);
+        _logger.LogInformation("[Admin] ApproveCustomCategory requestId={Id} adminId={AdminId} resultType={ResultType} notes={Notes}", id, GetUserId(), dto.ResultType, dto.Notes);
         return Ok(request);
     }
 
@@ -281,7 +317,9 @@ public class AdminController : ControllerBase
     {
         var request = await _db.CustomCategoryRequests.FindAsync(id);
         if (request == null) return NotFound();
-        request.Status = "Rejected";
+        if (request.Status != CustomCategoryRequestStatus.Pending)
+            return BadRequest(new { message = "Ten wniosek został już rozpatrzony." });
+        request.Status = CustomCategoryRequestStatus.Rejected;
         request.AdminNotes = dto.Notes;
         request.ReviewedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();

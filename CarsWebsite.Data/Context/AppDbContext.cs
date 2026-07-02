@@ -324,6 +324,26 @@ namespace CarsWebsite
                 .HasForeignKey(x => x.FuelTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // CustomCategoryRequest.Status stays stored as the same varchar column it always was
+            // (HasConversion<string>() re-interprets it as an enum on the C# side) — no data
+            // migration needed for existing "Pending"/"Approved"/"Rejected" rows.
+            modelBuilder.Entity<CustomCategoryRequest>()
+                .Property(r => r.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            modelBuilder.Entity<CustomCategoryRequest>()
+                .HasOne(r => r.ResultingVehicleCategory)
+                .WithMany()
+                .HasForeignKey(r => r.ResultingVehicleCategoryId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<CustomCategoryRequest>()
+                .HasOne(r => r.ResultingVehicleSubtype)
+                .WithMany()
+                .HasForeignKey(r => r.ResultingVehicleSubtypeId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             // Trim
             modelBuilder.Entity<Trim>()
                 .HasOne(t => t.Generation)
