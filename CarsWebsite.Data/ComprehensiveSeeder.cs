@@ -8756,6 +8756,106 @@ public static class ComprehensiveSeeder
             ]);
         }
 
+        // ── VOLVO (passenger cars — brand previously only had truck models FH/FM) ──
+        {
+            int volvoId = GetOrCreateBrand("Volvo", "volvo", "ciezarowki", "auta-osobowe");
+            var volvoBrand = db.Brands.Include(b => b.Categories).First(b => b.Id == volvoId);
+            if (!volvoBrand.Categories.Any(c => c.Slug == "auta-osobowe"))
+            {
+                var autaCat = allVCats.FirstOrDefault(c => c.Slug == "auta-osobowe");
+                if (autaCat != null) { volvoBrand.Categories.Add(autaCat); db.SaveChanges(); }
+            }
+
+            int xc90 = GetOrCreateModel(volvoId, "XC90", "volvo-xc90");
+            AddOrReplaceEngines(GetOrFixGeneration(xc90, "II (2015–)", "volvo-xc90-ii", 2015, null), 200, [
+                new EngineVersion { EngineName = "B5 2.0 250 KM", PowerHP = 250, PowerKW = 184, Displacement = 1969, FuelTypeId = mild,
+                    TorqueNm = 350, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 7.8m, TopSpeedKmh = 220, FuelConsumptionCombined = 7.2m },
+                new EngineVersion { EngineName = "T8 Recharge PHEV 455 KM", PowerHP = 455, PowerKW = 335, Displacement = 1969, FuelTypeId = phev,
+                    TorqueNm = 709, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 5.4m, TopSpeedKmh = 180, FuelConsumptionCombined = 2.1m },
+                new EngineVersion { EngineName = "B5 2.0 Diesel 235 KM", PowerHP = 235, PowerKW = 173, Displacement = 1969, FuelTypeId = mild,
+                    TorqueNm = 480, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 7.7m, TopSpeedKmh = 220, FuelConsumptionCombined = 6.2m },
+            ]);
+
+            int xc60 = GetOrCreateModel(volvoId, "XC60", "volvo-xc60");
+            AddOrReplaceEngines(GetOrFixGeneration(xc60, "II (2017–)", "volvo-xc60-ii", 2017, null), 190, [
+                new EngineVersion { EngineName = "B4 2.0 197 KM", PowerHP = 197, PowerKW = 145, Displacement = 1969, FuelTypeId = mild,
+                    TorqueNm = 300, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.9m, TopSpeedKmh = 210, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "T8 Recharge PHEV 455 KM", PowerHP = 455, PowerKW = 335, Displacement = 1969, FuelTypeId = phev,
+                    TorqueNm = 709, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 4.9m, TopSpeedKmh = 180, FuelConsumptionCombined = 2.0m },
+                new EngineVersion { EngineName = "B4 2.0 Diesel 197 KM", PowerHP = 197, PowerKW = 145, Displacement = 1969, FuelTypeId = mild,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.9m, TopSpeedKmh = 210, FuelConsumptionCombined = 5.2m },
+            ]);
+
+            int xc40 = GetOrCreateModel(volvoId, "XC40", "volvo-xc40");
+            AddOrReplaceEngines(GetOrFixGeneration(xc40, "I (2018–)", "volvo-xc40-i", 2018, null), 150, [
+                new EngineVersion { EngineName = "T3 1.5 163 KM", PowerHP = 163, PowerKW = 120, Displacement = 1477, FuelTypeId = ben,
+                    TorqueNm = 265, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 9.9m, TopSpeedKmh = 195, FuelConsumptionCombined = 6.3m },
+                new EngineVersion { EngineName = "Recharge Pure Electric 82 kWh 408 KM AWD", PowerHP = 408, PowerKW = 300, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 660, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 0, Acceleration0100 = 4.9m, TopSpeedKmh = 180, FuelConsumptionCombined = 20.4m },
+                new EngineVersion { EngineName = "B4 2.0 Diesel 197 KM", PowerHP = 197, PowerKW = 145, Displacement = 1969, FuelTypeId = mild,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.6m, TopSpeedKmh = 205, FuelConsumptionCombined = 5.5m },
+            ]);
+
+            int s60 = GetOrCreateModel(volvoId, "S60", "volvo-s60");
+            AddOrReplaceEngines(GetOrFixGeneration(s60, "III (2018–)", "volvo-s60-iii", 2018, null), 150, [
+                new EngineVersion { EngineName = "B4 2.0 197 KM", PowerHP = 197, PowerKW = 145, Displacement = 1969, FuelTypeId = mild,
+                    TorqueNm = 300, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.3m, TopSpeedKmh = 210, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "T8 Recharge PHEV 455 KM", PowerHP = 455, PowerKW = 335, Displacement = 1969, FuelTypeId = phev,
+                    TorqueNm = 709, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 4.4m, TopSpeedKmh = 250, FuelConsumptionCombined = 2.0m },
+            ]);
+
+            int s90 = GetOrCreateModel(volvoId, "S90", "volvo-s90");
+            AddOrReplaceEngines(GetOrFixGeneration(s90, "I (2016–)", "volvo-s90-i", 2016, null), 190, [
+                new EngineVersion { EngineName = "B5 2.0 250 KM", PowerHP = 250, PowerKW = 184, Displacement = 1969, FuelTypeId = mild,
+                    TorqueNm = 350, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.4m, TopSpeedKmh = 230, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "T8 Recharge PHEV 455 KM AWD", PowerHP = 455, PowerKW = 335, Displacement = 1969, FuelTypeId = phev,
+                    TorqueNm = 709, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 4.4m, TopSpeedKmh = 250, FuelConsumptionCombined = 2.1m },
+            ]);
+
+            int v60 = GetOrCreateModel(volvoId, "V60", "volvo-v60");
+            AddOrReplaceEngines(GetOrFixGeneration(v60, "II (2018–)", "volvo-v60-ii", 2018, null), 150, [
+                new EngineVersion { EngineName = "B4 2.0 197 KM", PowerHP = 197, PowerKW = 145, Displacement = 1969, FuelTypeId = mild,
+                    TorqueNm = 300, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.4m, TopSpeedKmh = 210, FuelConsumptionCombined = 6.1m },
+                new EngineVersion { EngineName = "T6 Recharge PHEV 350 KM AWD", PowerHP = 350, PowerKW = 257, Displacement = 1969, FuelTypeId = phev,
+                    TorqueNm = 450, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 5.5m, TopSpeedKmh = 180, FuelConsumptionCombined = 1.9m },
+            ]);
+
+            int v90 = GetOrCreateModel(volvoId, "V90", "volvo-v90");
+            AddOrReplaceEngines(GetOrFixGeneration(v90, "I (2016–)", "volvo-v90-i", 2016, null), 190, [
+                new EngineVersion { EngineName = "B5 2.0 250 KM", PowerHP = 250, PowerKW = 184, Displacement = 1969, FuelTypeId = mild,
+                    TorqueNm = 350, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 7.4m, TopSpeedKmh = 230, FuelConsumptionCombined = 6.7m },
+                new EngineVersion { EngineName = "T8 Recharge PHEV 455 KM AWD", PowerHP = 455, PowerKW = 335, Displacement = 1969, FuelTypeId = phev,
+                    TorqueNm = 709, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 4.5m, TopSpeedKmh = 250, FuelConsumptionCombined = 2.2m },
+            ]);
+
+            int ex30 = GetOrCreateModel(volvoId, "EX30", "volvo-ex30");
+            AddOrReplaceEngines(GetOrFixGeneration(ex30, "I (2023–)", "volvo-ex30-i", 2023, null), 200, [
+                new EngineVersion { EngineName = "Single Motor Extended Range 272 KM", PowerHP = 272, PowerKW = 200, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 343, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "RWD",
+                    Cylinders = 0, Acceleration0100 = 5.7m, TopSpeedKmh = 180, FuelConsumptionCombined = 15.5m },
+                new EngineVersion { EngineName = "Twin Motor Performance 428 KM AWD", PowerHP = 428, PowerKW = 315, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 543, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 0, Acceleration0100 = 3.6m, TopSpeedKmh = 180, FuelConsumptionCombined = 17.4m },
+            ]);
+        }
+
         // ── AUDI A4 (older gens) / A5 / A6 / A7 / A8 / Q3 / Q7 / Q8 / TT ──────────
         {
             int bId = GetOrCreateBrand("Audi", "audi", "auta-osobowe");
