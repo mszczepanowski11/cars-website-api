@@ -16,6 +16,7 @@ public static class TrimSeeder
 {
     public static void SeedTrims(AppDbContext db, ILogger logger)
     {
+        logger.LogWarning("[STARTUP-TRACE] TrimSeeder.SeedTrims entered");
         if (db.Trims.Any())
         {
             logger.LogInformation("[TrimSeeder] Already seeded — skipping.");

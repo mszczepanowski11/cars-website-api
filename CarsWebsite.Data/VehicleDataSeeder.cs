@@ -13,6 +13,7 @@ public static class VehicleDataSeeder
 {
     public static void SeedVehicleData(AppDbContext db, ILogger logger)
     {
+        logger.LogWarning("[STARTUP-TRACE] VehicleDataSeeder.SeedVehicleData entered");
         // Idempotency guard: if any engine already has TorqueNm set, we already ran.
         if (db.EngineVersions.Any(e => e.TorqueNm != null))
         {
@@ -522,6 +523,7 @@ public static class VehicleDataSeeder
 
     public static void SeedTrimData(AppDbContext db, ILogger logger)
     {
+        logger.LogWarning("[STARTUP-TRACE] VehicleDataSeeder.SeedTrimData entered");
         if (db.Trims.Any())
         {
             logger.LogInformation("[VehicleDataSeeder] SeedTrimData — trims already seeded, skipping.");
@@ -759,6 +761,7 @@ public static class VehicleDataSeeder
 
     public static void SeedMotorcycleData(AppDbContext db, ILogger logger)
     {
+        logger.LogWarning("[STARTUP-TRACE] VehicleDataSeeder.SeedMotorcycleData entered");
         if (db.Models.Any(m => m.Brand.Name == "Yamaha"))
         {
             logger.LogInformation("[VehicleDataSeeder] SeedMotorcycleData — Yamaha already seeded, skipping.");

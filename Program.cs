@@ -366,6 +366,14 @@ internal class Program
             var logger = scope.ServiceProvider
                 .GetRequiredService<ILogger<AppDbContext>>();
 
+            // Short command timeout for the guard/seed section below: these statements are
+            // either trivial idempotent DDL (expected to fail fast with "already exists") or
+            // small idempotent seed batches. If a stray lock (e.g. leftover from a prior crash)
+            // blocks one of them, we want it to fail fast and get caught rather than hang the
+            // whole startup for minutes via retry-on-failure backoff.
+            db.Database.SetCommandTimeout(8);
+            logger.LogWarning("[STARTUP-TRACE] Schema guards starting (commandTimeout=8s)");
+
             // Explicit column guards — idempotent fallback for migrations that may have been
             // silently swallowed or pre-marked without running the DDL.
             // IMPORTANT: Each statement is plain ADD COLUMN (no IF NOT EXISTS) in its own
@@ -1169,6 +1177,8 @@ internal class Program
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `caradverts` ADD CONSTRAINT `FK_caradverts_partsubcategories_PartSubcategoryId` FOREIGN KEY (`PartSubcategoryId`) REFERENCES `partsubcategories`(`Id`) ON DELETE SET NULL"); }
             catch (Exception ex) { logger.LogDebug("FK caradverts.PartSubcategoryId skipped: {Message}", ex.Message); }
 
+            logger.LogWarning("[STARTUP-TRACE] Reached FK constraint guards");
+
             // Also guard FKs from migrations 20260623100000 and 20260623105000 which used
             // the unsupported ADD CONSTRAINT IF NOT EXISTS syntax on MySQL 8.0.
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `engineversions` ADD CONSTRAINT `FK_engineversions_trims_TrimId` FOREIGN KEY (`TrimId`) REFERENCES `trims`(`Id`) ON DELETE SET NULL"); }
@@ -1183,18 +1193,24 @@ internal class Program
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `FeatureCategories` ADD CONSTRAINT `FK_FeatureCategories_Models_ModelId` FOREIGN KEY (`ModelId`) REFERENCES `Models`(`Id`) ON DELETE SET NULL"); }
             catch (Exception ex) { logger.LogDebug("FK FeatureCategories.ModelId skipped: {Message}", ex.Message); }
 
+            db.Database.SetCommandTimeout(30);
+            logger.LogWarning("[STARTUP-TRACE] FK constraint guards complete; calling MergeDuplicateBrands");
+
             try
             {
                 MergeDuplicateBrands(db, logger);
+                logger.LogWarning("[STARTUP-TRACE] MergeDuplicateBrands returned normally");
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "[Cleanup] MergeDuplicateBrands failed: {Msg}", ex.Message);
             }
 
+            logger.LogWarning("[STARTUP-TRACE] Calling SeedDataIfEmpty");
             try
             {
                 SeedDataIfEmpty(db, logger);
+                logger.LogWarning("[STARTUP-TRACE] SeedDataIfEmpty returned normally");
             }
             catch (Exception ex)
             {
@@ -1320,11 +1336,16 @@ internal class Program
     // the entire seeding chain — including unrelated fixes — from running at all.
     private static void MergeDuplicateBrands(AppDbContext db, ILogger logger)
     {
+        logger.LogWarning("[STARTUP-TRACE] MergeDuplicateBrands entered");
         var duplicateGroups = db.Brands.Include(b => b.Categories).AsEnumerable()
             .GroupBy(b => b.Name)
             .Where(g => g.Count() > 1)
             .ToList();
-        if (duplicateGroups.Count == 0) return;
+        if (duplicateGroups.Count == 0)
+        {
+            logger.LogWarning("[STARTUP-TRACE] MergeDuplicateBrands: no duplicate brand names found, nothing to merge");
+            return;
+        }
 
         foreach (var group in duplicateGroups)
         {
@@ -1358,6 +1379,7 @@ internal class Program
 
     private static void SeedDataIfEmpty(AppDbContext db, ILogger logger)
     {
+        logger.LogWarning("[STARTUP-TRACE] SeedDataIfEmpty entered");
         // Vehicle Categories
         if (!db.VehicleCategories.Any())
         {
@@ -2359,12 +2381,19 @@ internal class Program
             logger.LogInformation("Seeded {Count} part categories with subcategories", partCategoriesData.Count);
         }
 
+        logger.LogWarning("[STARTUP-TRACE] Calling ModelSeeder.SeedModelsGenerationsEngines");
         ModelSeeder.SeedModelsGenerationsEngines(db, logger);
+        logger.LogWarning("[STARTUP-TRACE] Calling VehicleDataSeeder.SeedVehicleData");
         VehicleDataSeeder.SeedVehicleData(db, logger);
+        logger.LogWarning("[STARTUP-TRACE] Calling TrimSeeder.SeedTrims");
         TrimSeeder.SeedTrims(db, logger);
+        logger.LogWarning("[STARTUP-TRACE] Calling VehicleDataSeeder.SeedTrimData");
         VehicleDataSeeder.SeedTrimData(db, logger);
+        logger.LogWarning("[STARTUP-TRACE] Calling VehicleDataSeeder.SeedMotorcycleData");
         VehicleDataSeeder.SeedMotorcycleData(db, logger);
+        logger.LogWarning("[STARTUP-TRACE] Calling ComprehensiveSeeder.SeedComprehensiveData");
         ComprehensiveSeeder.SeedComprehensiveData(db, logger);
+        logger.LogWarning("[STARTUP-TRACE] SeedDataIfEmpty: all seeders completed");
     }
 }
 

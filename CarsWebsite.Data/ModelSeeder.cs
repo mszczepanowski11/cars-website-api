@@ -7,6 +7,7 @@ public static class ModelSeeder
 {
     public static void SeedModelsGenerationsEngines(AppDbContext db, ILogger logger)
     {
+        logger.LogWarning("[STARTUP-TRACE] ModelSeeder.SeedModelsGenerationsEngines entered");
         // GroupBy+First instead of ToDictionary: a duplicate Brand/FuelType name must not
         // crash the whole seeder chain (this runs first, before every other seeder).
         var brands = db.Brands.AsEnumerable()

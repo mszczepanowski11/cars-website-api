@@ -12,6 +12,7 @@ public static class ComprehensiveSeeder
 {
     public static void SeedComprehensiveData(AppDbContext db, ILogger logger)
     {
+        logger.LogWarning("[STARTUP-TRACE] ComprehensiveSeeder.SeedComprehensiveData entered");
         // GroupBy+First instead of ToDictionary: duplicate Brand/FuelType names (e.g. a
         // stray second "Krone" row) must not crash the whole seeder on the very first line.
         // Keep the lowest-Id row per name — the original, most likely to have existing
