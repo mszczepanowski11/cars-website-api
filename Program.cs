@@ -1334,9 +1334,13 @@ internal class Program
 
             foreach (var dup in duplicates)
             {
-                db.Database.ExecuteSqlRaw("UPDATE `Models` SET `BrandId` = {0} WHERE `BrandId` = {1}", canonical.Id, dup.Id);
-                db.Database.ExecuteSqlRaw("UPDATE `CarAdverts` SET `BrandId` = {0} WHERE `BrandId` = {1}", canonical.Id, dup.Id);
-                db.Database.ExecuteSqlRaw("UPDATE `FeatureCategories` SET `BrandId` = {0} WHERE `BrandId` = {1}", canonical.Id, dup.Id);
+                // Go through EF's own tracked entities/table metadata instead of raw SQL table
+                // names — this codebase's migration history has drifted from the live schema
+                // (see the many ALTER TABLE guards above), so a hardcoded table name here would
+                // just be guessing at casing that may not match what's actually deployed.
+                foreach (var m in db.Models.Where(m => m.BrandId == dup.Id)) m.BrandId = canonical.Id;
+                foreach (var a in db.CarAdverts.Where(a => a.BrandId == dup.Id)) a.BrandId = canonical.Id;
+                foreach (var fc in db.FeatureCategories.Where(fc => fc.BrandId == dup.Id)) fc.BrandId = canonical.Id;
 
                 foreach (var cat in dup.Categories)
                     if (!canonical.Categories.Any(c => c.Id == cat.Id))
