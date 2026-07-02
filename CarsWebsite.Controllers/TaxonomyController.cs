@@ -185,7 +185,11 @@ namespace cars_website_api.CarsWebsite.Controllers
         {
             var result = await _hierarchyValidationService.ValidateVehicleChainAsync(
                 dto.BrandId, dto.ModelId, dto.GenerationId, dto.TrimId, dto.EngineVersionId, dto.VehicleCategoryId);
-            return Ok(result);
+            if (!result.IsValid) return Ok(result);
+
+            var plausibility = await _hierarchyValidationService.ValidateEnginePlausibilityAsync(
+                dto.BrandId, dto.FuelTypeId, dto.EngineVersionId, dto.TrimId, dto.PowerHP);
+            return Ok(plausibility);
         }
     }
 }
