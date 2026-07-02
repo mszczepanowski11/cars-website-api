@@ -2574,6 +2574,105 @@ public static class ComprehensiveSeeder
                     Cylinders = 4, Acceleration0100 = 12.2m, TopSpeedKmh = 160, FuelConsumptionCombined = 5.3m },
             ]);
 
+            // ── KIA (Rio, Picanto, Niro, Stonic, XCeed, Sorento, EV9 — Ceed/Sportage/EV6 already seeded by ModelSeeder) ──
+            int kiaId3 = GetOrCreateBrand("Kia", "kia", "auta-osobowe");
+            int rio = GetOrCreateModel(kiaId3, "Rio", "kia-rio");
+            PrepareGenerations(rio,
+                ("IV (2017–2023)", "kia-rio-iv", 2017, 2023),
+                ("V (2023–)", "kia-rio-v", 2023, null));
+            AddOrReplaceEngines(GetOrFixGeneration(rio, "IV (2017–2023)", "kia-rio-iv", 2017, 2023), 70, [
+                new EngineVersion { EngineName = "1.0 T-GDI 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 998, FuelTypeId = ben,
+                    TorqueNm = 172, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 10.9m, TopSpeedKmh = 185, FuelConsumptionCombined = 4.9m },
+                new EngineVersion { EngineName = "1.2 84 KM", PowerHP = 84, PowerKW = 62, Displacement = 1248, FuelTypeId = ben,
+                    TorqueNm = 122, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.3m, TopSpeedKmh = 165, FuelConsumptionCombined = 5.5m },
+                new EngineVersion { EngineName = "1.4 CRDi 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1396, FuelTypeId = die,
+                    TorqueNm = 220, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.2m, TopSpeedKmh = 175, FuelConsumptionCombined = 4.0m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(rio, "V (2023–)", "kia-rio-v", 2023, null), 90, [
+                new EngineVersion { EngineName = "1.0 T-GDI 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 998, FuelTypeId = mild,
+                    TorqueNm = 172, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 10.7m, TopSpeedKmh = 185, FuelConsumptionCombined = 4.9m },
+            ]);
+
+            int picanto = GetOrCreateModel(kiaId3, "Picanto", "kia-picanto");
+            AddOrReplaceEngines(GetOrFixGeneration(picanto, "III (2017–)", "kia-picanto-iii", 2017, null), 55, [
+                new EngineVersion { EngineName = "1.0 67 KM", PowerHP = 67, PowerKW = 49, Displacement = 998, FuelTypeId = ben,
+                    TorqueNm = 96, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 14.8m, TopSpeedKmh = 155, FuelConsumptionCombined = 5.0m },
+                new EngineVersion { EngineName = "1.0 T-GDI GT-Line 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 998, FuelTypeId = ben,
+                    TorqueNm = 172, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 10.7m, TopSpeedKmh = 181, FuelConsumptionCombined = 5.1m },
+            ]);
+
+            int niro = GetOrCreateModel(kiaId3, "Niro", "kia-niro");
+            PrepareGenerations(niro,
+                ("I (2016–2022)", "kia-niro-i", 2016, 2022),
+                ("II (2022–)", "kia-niro-ii", 2022, null));
+            AddOrReplaceEngines(GetOrFixGeneration(niro, "I (2016–2022)", "kia-niro-i", 2016, 2022), 100, [
+                new EngineVersion { EngineName = "1.6 GDI HEV 141 KM", PowerHP = 141, PowerKW = 104, Displacement = 1580, FuelTypeId = hyb,
+                    TorqueNm = 265, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.8m, TopSpeedKmh = 162, FuelConsumptionCombined = 3.8m },
+                new EngineVersion { EngineName = "1.6 GDI PHEV 141 KM", PowerHP = 141, PowerKW = 104, Displacement = 1580, FuelTypeId = phev,
+                    TorqueNm = 265, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.8m, TopSpeedKmh = 172, FuelConsumptionCombined = 1.3m },
+                new EngineVersion { EngineName = "EV 64 kWh 204 KM", PowerHP = 204, PowerKW = 150, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 395, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 0, Acceleration0100 = 7.8m, TopSpeedKmh = 167, FuelConsumptionCombined = 15.9m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(niro, "II (2022–)", "kia-niro-ii", 2022, null), 105, [
+                new EngineVersion { EngineName = "1.6 GDI HEV 141 KM", PowerHP = 141, PowerKW = 104, Displacement = 1580, FuelTypeId = hyb,
+                    TorqueNm = 265, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.4m, TopSpeedKmh = 162, FuelConsumptionCombined = 3.9m },
+                new EngineVersion { EngineName = "EV 64.8 kWh 204 KM", PowerHP = 204, PowerKW = 150, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 255, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 0, Acceleration0100 = 7.8m, TopSpeedKmh = 167, FuelConsumptionCombined = 15.6m },
+            ]);
+
+            int stonic = GetOrCreateModel(kiaId3, "Stonic", "kia-stonic");
+            AddOrReplaceEngines(GetOrFixGeneration(stonic, "I (2017–)", "kia-stonic-i", 2017, null), 80, [
+                new EngineVersion { EngineName = "1.0 T-GDI 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 998, FuelTypeId = mild,
+                    TorqueNm = 172, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.1m, TopSpeedKmh = 181, FuelConsumptionCombined = 5.3m },
+                new EngineVersion { EngineName = "1.4 CRDi 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1396, FuelTypeId = die,
+                    TorqueNm = 240, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.5m, TopSpeedKmh = 174, FuelConsumptionCombined = 4.2m },
+            ]);
+
+            int xceed = GetOrCreateModel(kiaId3, "XCeed", "kia-xceed");
+            AddOrReplaceEngines(GetOrFixGeneration(xceed, "I (2019–)", "kia-xceed-i", 2019, null), 100, [
+                new EngineVersion { EngineName = "1.0 T-GDI 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 998, FuelTypeId = mild,
+                    TorqueNm = 200, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 10.4m, TopSpeedKmh = 188, FuelConsumptionCombined = 5.8m },
+                new EngineVersion { EngineName = "PHEV 1.6 141 KM", PowerHP = 141, PowerKW = 104, Displacement = 1580, FuelTypeId = phev,
+                    TorqueNm = 265, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.6m, TopSpeedKmh = 172, FuelConsumptionCombined = 1.4m },
+            ]);
+
+            int sorento = GetOrCreateModel(kiaId3, "Sorento", "kia-sorento");
+            PrepareGenerations(sorento,
+                ("IV (2020–)", "kia-sorento-iv", 2020, null));
+            AddOrReplaceEngines(GetOrFixGeneration(sorento, "IV (2020–)", "kia-sorento-iv", 2020, null), 180, [
+                new EngineVersion { EngineName = "2.2 CRDi 202 KM", PowerHP = 202, PowerKW = 148, Displacement = 2151, FuelTypeId = die,
+                    TorqueNm = 440, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 9.0m, TopSpeedKmh = 201, FuelConsumptionCombined = 6.4m },
+                new EngineVersion { EngineName = "1.6 T-GDI PHEV 265 KM", PowerHP = 265, PowerKW = 195, Displacement = 1598, FuelTypeId = phev,
+                    TorqueNm = 350, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.7m, TopSpeedKmh = 193, FuelConsumptionCombined = 1.6m },
+            ]);
+
+            int ev9 = GetOrCreateModel(kiaId3, "EV9", "kia-ev9");
+            AddOrReplaceEngines(GetOrFixGeneration(ev9, "I (2023–)", "kia-ev9-i", 2023, null), 200, [
+                new EngineVersion { EngineName = "76.1 kWh RWD 204 KM", PowerHP = 204, PowerKW = 150, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 350, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "RWD",
+                    Cylinders = 0, Acceleration0100 = 9.4m, TopSpeedKmh = 185, FuelConsumptionCombined = 18.9m },
+                new EngineVersion { EngineName = "99.8 kWh AWD 385 KM", PowerHP = 385, PowerKW = 283, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 700, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 0, Acceleration0100 = 5.3m, TopSpeedKmh = 200, FuelConsumptionCombined = 22.3m },
+            ]);
+
             int opelId = GetOrCreateBrand("Opel", "opel", "auta-osobowe");
             int astra = GetOrCreateModel(opelId, "Astra", "opel-astra");
             AddEngines(GetOrCreateGeneration(astra, "K (2015–2021)", "opel-astra-k", 2015, 2021), [
