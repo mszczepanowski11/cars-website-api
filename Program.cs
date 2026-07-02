@@ -1194,6 +1194,12 @@ internal class Program
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `FeatureCategories` ADD CONSTRAINT `FK_FeatureCategories_Models_ModelId` FOREIGN KEY (`ModelId`) REFERENCES `Models`(`Id`) ON DELETE SET NULL"); }
             catch (Exception ex) { logger.LogDebug("FK FeatureCategories.ModelId skipped: {Message}", ex.Message); }
 
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `customcategoryrequests` ADD CONSTRAINT `FK_customcategoryrequests_VehicleCategories_ResultingVehicleCategoryId` FOREIGN KEY (`ResultingVehicleCategoryId`) REFERENCES `VehicleCategories`(`Id`) ON DELETE SET NULL"); }
+            catch (Exception ex) { logger.LogDebug("FK customcategoryrequests.ResultingVehicleCategoryId skipped: {Message}", ex.Message); }
+
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `customcategoryrequests` ADD CONSTRAINT `FK_customcategoryrequests_VehicleSubtypes_ResultingVehicleSubtypeId` FOREIGN KEY (`ResultingVehicleSubtypeId`) REFERENCES `VehicleSubtypes`(`Id`) ON DELETE SET NULL"); }
+            catch (Exception ex) { logger.LogDebug("FK customcategoryrequests.ResultingVehicleSubtypeId skipped: {Message}", ex.Message); }
+
             db.Database.SetCommandTimeout(30);
             logger.LogWarning("[STARTUP-TRACE] FK constraint guards complete; calling MergeDuplicateBrands");
 
