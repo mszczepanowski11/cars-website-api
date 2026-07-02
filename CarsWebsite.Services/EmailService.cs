@@ -218,12 +218,14 @@ public class EmailService : IEmailService
     .ftr-link:hover{{color:#aaaaaa !important}}
     /* Gmail (esp. mobile apps) applies its own auto dark-mode colorization to messages it
        doesn't fully trust as already dark-mode-aware, overriding our own dark palette with a
-       light/white one despite the color-scheme meta tags above. [data-ogsc] is the attribute
-       Gmail adds to the message body when this happens - re-asserting our real colors against
-       it forces Gmail back to the intended design instead of falling back to white. */
-    [data-ogsc] body, [data-ogsc] .wrap-bg{{background-color:#050505 !important}}
-    [data-ogsc] .hdr-cell, [data-ogsc] .ftr-cell{{background-color:#080808 !important}}
-    [data-ogsc] .body-cell{{background-color:#0d0d0d !important}}
+       light/white one despite the color-scheme meta tags above. Gmail uses TWO separate
+       proprietary hooks for this - [data-ogsb] specifically for background-color overrides and
+       [data-ogsc] specifically for text/foreground-color overrides. Using [data-ogsc] alone
+       (as an earlier version of this file did) only re-asserts text color, not backgrounds,
+       which is why the card kept rendering white despite that fix. */
+    [data-ogsb] body, [data-ogsb] .wrap-bg{{background-color:#050505 !important}}
+    [data-ogsb] .hdr-cell, [data-ogsb] .ftr-cell{{background-color:#080808 !important}}
+    [data-ogsb] .body-cell{{background-color:#0d0d0d !important}}
     [data-ogsc] .title-text{{color:#ffffff !important}}
     [data-ogsc] .body-text{{color:#888888 !important}}
     /* Second signal for clients that check the actual media query instead of (or in addition
