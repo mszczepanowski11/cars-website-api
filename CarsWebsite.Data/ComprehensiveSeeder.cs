@@ -5553,6 +5553,50 @@ public static class ComprehensiveSeeder
                     TorqueNm = 300, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
                     Cylinders = 0, Acceleration0100 = 7.5m, TopSpeedKmh = 160, FuelConsumptionCombined = null },
             ]);
+
+            int es = GetOrCreateModel(lexId, "ES", "lexus-es");
+            AddOrReplaceEngines(GetOrFixGeneration(es, "XZ10 (2018–)", "lexus-es-xz10", 2018, null), 170, [
+                new EngineVersion { EngineName = "ES300h 2.5 HEV 218 KM", PowerHP = 218, PowerKW = 160, Displacement = 2487, FuelTypeId = hyb,
+                    TorqueNm = 221, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.9m, TopSpeedKmh = 180, FuelConsumptionCombined = 4.8m },
+            ]);
+
+            int ls = GetOrCreateModel(lexId, "LS", "lexus-ls");
+            AddOrReplaceEngines(GetOrFixGeneration(ls, "XF50 (2017–)", "lexus-ls-xf50", 2017, null), 250, [
+                new EngineVersion { EngineName = "LS500 3.5T 415 KM", PowerHP = 415, PowerKW = 305, Displacement = 3444, FuelTypeId = ben,
+                    TorqueNm = 600, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 5.0m, TopSpeedKmh = 250, FuelConsumptionCombined = 9.5m },
+                new EngineVersion { EngineName = "LS500h 3.5 HEV 359 KM", PowerHP = 359, PowerKW = 264, Displacement = 3456, FuelTypeId = hyb,
+                    TorqueNm = 348, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 5.5m, TopSpeedKmh = 250, FuelConsumptionCombined = 6.6m },
+            ]);
+
+            int lc = GetOrCreateModel(lexId, "LC", "lexus-lc");
+            AddOrReplaceEngines(GetOrFixGeneration(lc, "XZ100 (2017–)", "lexus-lc-xz100", 2017, null), 350, [
+                new EngineVersion { EngineName = "LC500 5.0 V8 477 KM", PowerHP = 477, PowerKW = 351, Displacement = 4969, FuelTypeId = ben,
+                    TorqueNm = 540, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 4.7m, TopSpeedKmh = 270, FuelConsumptionCombined = 11.6m },
+                new EngineVersion { EngineName = "LC500h 3.5 HEV 359 KM", PowerHP = 359, PowerKW = 264, Displacement = 3456, FuelTypeId = hyb,
+                    TorqueNm = 348, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 5.0m, TopSpeedKmh = 250, FuelConsumptionCombined = 6.7m },
+            ]);
+
+            int lx = GetOrCreateModel(lexId, "LX", "lexus-lx");
+            AddOrReplaceEngines(GetOrFixGeneration(lx, "URJ150 (2015–2021)", "lexus-lx-urj150", 2015, 2021), 250, [
+                new EngineVersion { EngineName = "LX570 5.7 V8 367 KM", PowerHP = 367, PowerKW = 270, Displacement = 5663, FuelTypeId = ben,
+                    TorqueNm = 530, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 6.9m, TopSpeedKmh = 210, FuelConsumptionCombined = 15.5m },
+            ]);
+
+            int rc = GetOrCreateModel(lexId, "RC", "lexus-rc");
+            AddOrReplaceEngines(GetOrFixGeneration(rc, "I (2014–)", "lexus-rc-i", 2014, null), 220, [
+                new EngineVersion { EngineName = "RC300h 2.5 HEV 223 KM", PowerHP = 223, PowerKW = 164, Displacement = 2494, FuelTypeId = hyb,
+                    TorqueNm = 221, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 8.6m, TopSpeedKmh = 190, FuelConsumptionCombined = 5.5m },
+                new EngineVersion { EngineName = "RC F 5.0 V8 477 KM", PowerHP = 477, PowerKW = 351, Displacement = 4969, FuelTypeId = ben,
+                    TorqueNm = 535, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 4.5m, TopSpeedKmh = 270, FuelConsumptionCombined = 11.6m },
+            ]);
         }
 
         // ── Maserati ──────────────────────────────────────────────────────────────
