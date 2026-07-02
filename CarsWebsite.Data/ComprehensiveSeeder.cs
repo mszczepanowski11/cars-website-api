@@ -4386,6 +4386,49 @@ public static class ComprehensiveSeeder
                     Cylinders = 4, Acceleration0100 = 11.5m, TopSpeedKmh = 175, FuelConsumptionCombined = 7.8m },
             ]);
 
+            int spaceStar = GetOrCreateModel(mitId2, "Space Star", "mitsubishi-space-star");
+            AddOrReplaceEngines(GetOrFixGeneration(spaceStar, "II (2013–)", "mitsubishi-space-star-ii", 2013, null), 70, [
+                new EngineVersion { EngineName = "1.0 71 KM", PowerHP = 71, PowerKW = 52, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 92, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 15.0m, TopSpeedKmh = 158, FuelConsumptionCombined = 4.9m },
+                new EngineVersion { EngineName = "1.2 80 KM", PowerHP = 80, PowerKW = 59, Displacement = 1193, FuelTypeId = ben,
+                    TorqueNm = 110, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 12.6m, TopSpeedKmh = 167, FuelConsumptionCombined = 5.0m },
+            ]);
+
+            int colt = GetOrCreateModel(mitId2, "Colt", "mitsubishi-colt");
+            AddOrReplaceEngines(GetOrFixGeneration(colt, "IV (2024–)", "mitsubishi-colt-iv", 2024, null), 90, [
+                new EngineVersion { EngineName = "1.0 T 91 KM", PowerHP = 91, PowerKW = 67, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 160, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.7m, TopSpeedKmh = 173, FuelConsumptionCombined = 5.3m },
+                new EngineVersion { EngineName = "e-Colt 122 KM", PowerHP = 122, PowerKW = 90, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 270, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 0, Acceleration0100 = 9.6m, TopSpeedKmh = 150, FuelConsumptionCombined = 15.5m },
+            ]);
+
+            int pajero = GetOrCreateModel(mitId2, "Pajero", "mitsubishi-pajero");
+            AddOrReplaceEngines(GetOrFixGeneration(pajero, "IV (2006–2021)", "mitsubishi-pajero-iv", 2006, 2021), 150, [
+                new EngineVersion { EngineName = "3.2 Di-D 190 KM", PowerHP = 190, PowerKW = 140, Displacement = 3200, FuelTypeId = die,
+                    TorqueNm = 441, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 10.7m, TopSpeedKmh = 180, FuelConsumptionCombined = 9.0m },
+                new EngineVersion { EngineName = "3.8 V6 250 KM", PowerHP = 250, PowerKW = 184, Displacement = 3828, FuelTypeId = ben,
+                    TorqueNm = 343, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 10.3m, TopSpeedKmh = 180, FuelConsumptionCombined = 13.5m },
+            ]);
+
+            int lancer = GetOrCreateModel(mitId2, "Lancer", "mitsubishi-lancer");
+            AddOrReplaceEngines(GetOrFixGeneration(lancer, "X (2007–2017)", "mitsubishi-lancer-x", 2007, 2017), 120, [
+                new EngineVersion { EngineName = "1.5 109 KM", PowerHP = 109, PowerKW = 80, Displacement = 1499, FuelTypeId = ben,
+                    TorqueNm = 141, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.6m, TopSpeedKmh = 185, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "Evolution X 2.0T 295 KM", PowerHP = 295, PowerKW = 217, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 366, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 4.7m, TopSpeedKmh = 240, FuelConsumptionCombined = 10.5m },
+                new EngineVersion { EngineName = "1.8 DI-D 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1798, FuelTypeId = die,
+                    TorqueNm = 300, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.6m, TopSpeedKmh = 200, FuelConsumptionCombined = 4.7m },
+            ]);
+
             // ── TOYOTA CAMRY XV70 + RAV4 IV ──────────────────────────────────────
             int toyotaId3 = GetOrCreateBrand("Toyota", "toyota", "auta-osobowe");
             int camry = GetOrCreateModel(toyotaId3, "Camry", "toyota-camry");
