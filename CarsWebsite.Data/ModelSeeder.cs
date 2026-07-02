@@ -26,6 +26,24 @@ public static class ModelSeeder
         int ben  = F("Benzyna"), die = F("Diesel"), hyb = F("Hybryda"),
             phev = F("Hybryda plug-in"), ev = F("Elektryczny"), mild = F("Hybryda mild");
 
+        logger.LogWarning(
+            "[STARTUP-TRACE] fuels in DB: [{DbFuels}] | lookups: Benzyna={Ben} Diesel={Die} Hybryda={Hyb} " +
+            "HybrydaPlugIn={Phev} Elektryczny={Ev} HybrydaMild={Mild} LPG={Lpg}",
+            string.Join(", ", fuels.Keys), ben, die, hyb, phev, ev, mild, F("LPG"));
+
+        // A missing fuel-type name must not crash the whole seeder via an FK violation on
+        // EngineVersion.FuelTypeId — fall back to Benzyna (always the first seeded type) and
+        // log loudly so the real gap in FuelTypes gets fixed, instead of blocking every seeder
+        // that runs after this one (including ComprehensiveSeeder).
+        if (ben == 0 && fuels.Count > 0) ben = fuels.Values.First();
+        if (die == 0) { logger.LogError("[STARTUP-TRACE] FuelType 'Diesel' missing from DB — falling back to Benzyna"); die = ben; }
+        if (hyb == 0) { logger.LogError("[STARTUP-TRACE] FuelType 'Hybryda' missing from DB — falling back to Benzyna"); hyb = ben; }
+        if (phev == 0) { logger.LogError("[STARTUP-TRACE] FuelType 'Hybryda plug-in' missing from DB — falling back to Benzyna"); phev = ben; }
+        if (ev == 0) { logger.LogError("[STARTUP-TRACE] FuelType 'Elektryczny' missing from DB — falling back to Benzyna"); ev = ben; }
+        if (mild == 0) { logger.LogError("[STARTUP-TRACE] FuelType 'Hybryda mild' missing from DB — falling back to Benzyna"); mild = ben; }
+        int lpg = F("LPG");
+        if (lpg == 0) { logger.LogError("[STARTUP-TRACE] FuelType 'LPG' missing from DB — falling back to Benzyna"); lpg = ben; }
+
         // Helper: create EngineVersion
         static EngineVersion E(string name, int hp, int kw, int? disp, int fuelId, decimal? fuelCity = null, decimal? fuelHwy = null, decimal? fuelMix = null) =>
             new() { EngineName = name, PowerHP = hp, PowerKW = kw, Displacement = disp, FuelTypeId = fuelId,
@@ -458,14 +476,14 @@ public static class ModelSeeder
                 G("II (2017–2023)", "dacia-duster-ii", 2017, 2023,
                     E("1.0 TCe 90 KM", 90, 66, 999, ben, 8.0m, 5.5m, 6.5m), E("1.3 TCe 130 KM", 130, 96, 1332, ben, 8.5m, 5.5m, 6.5m),
                     E("1.5 dCi 90 KM", 90, 66, 1461, die, 5.5m, 4.0m, 4.5m), E("1.5 dCi 115 KM", 115, 85, 1461, die, 5.5m, 4.0m, 4.5m),
-                    E("Bifuel LPG 100 KM", 100, 74, 999, F("LPG"), 8.0m, 5.5m, 6.5m)),
+                    E("Bifuel LPG 100 KM", 100, 74, 999, lpg, 8.0m, 5.5m, 6.5m)),
                 G("III (2023–)", "dacia-duster-iii", 2023, null,
                     E("1.2 TCe 130 KM", 130, 96, 1199, ben, 8.0m, 5.5m, 6.5m), E("1.2 TCe Hybrid 140 KM", 140, 103, 1199, hyb, 4.5m, 5.0m, 4.8m),
-                    E("Bifuel LPG 100 KM", 100, 74, 999, F("LPG"), 8.0m, 5.5m, 6.5m)) ]},
+                    E("Bifuel LPG 100 KM", 100, 74, 999, lpg, 8.0m, 5.5m, 6.5m)) ]},
             new Model { BrandId = B("Dacia"), Name = "Sandero", Slug = "dacia-sandero", Generations = [
                 G("III (2020–)", "dacia-sandero-iii", 2020, null,
                     E("1.0 SCe 65 KM", 65, 48, 999, ben, 8.0m, 5.5m, 6.5m), E("1.0 TCe 90 KM", 90, 66, 999, ben, 8.0m, 5.5m, 6.5m),
-                    E("1.0 TCe 100 KM", 100, 74, 999, ben, 8.0m, 5.5m, 6.5m), E("Bifuel LPG 100 KM", 100, 74, 999, F("LPG"), 8.0m, 5.5m, 6.5m),
+                    E("1.0 TCe 100 KM", 100, 74, 999, ben, 8.0m, 5.5m, 6.5m), E("Bifuel LPG 100 KM", 100, 74, 999, lpg, 8.0m, 5.5m, 6.5m),
                     E("Stepway TCe 110 KM", 110, 81, 999, ben, 8.0m, 5.5m, 6.5m)) ]},
             new Model { BrandId = B("Dacia"), Name = "Spring", Slug = "dacia-spring", Generations = [
                 G("I (2021–)", "dacia-spring-i", 2021, null,

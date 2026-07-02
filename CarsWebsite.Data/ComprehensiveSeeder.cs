@@ -35,6 +35,16 @@ public static class ComprehensiveSeeder
         int lpg  = GetFuel("LPG");
         int mild = GetFuel("Hybryda mild");
 
+        // A missing fuel-type name must not crash this seeder via an FK violation on
+        // EngineVersion.FuelTypeId — fall back to Benzyna and log loudly instead.
+        if (ben == 0 && fuelDict.Count > 0) ben = fuelDict.Values.First();
+        if (die == 0) { logger.LogError("[STARTUP-TRACE] ComprehensiveSeeder: FuelType 'Diesel' missing — falling back to Benzyna"); die = ben; }
+        if (hyb == 0) { logger.LogError("[STARTUP-TRACE] ComprehensiveSeeder: FuelType 'Hybryda' missing — falling back to Benzyna"); hyb = ben; }
+        if (phev == 0) { logger.LogError("[STARTUP-TRACE] ComprehensiveSeeder: FuelType 'Hybryda plug-in' missing — falling back to Benzyna"); phev = ben; }
+        if (ev == 0) { logger.LogError("[STARTUP-TRACE] ComprehensiveSeeder: FuelType 'Elektryczny' missing — falling back to Benzyna"); ev = ben; }
+        if (lpg == 0) { logger.LogError("[STARTUP-TRACE] ComprehensiveSeeder: FuelType 'LPG' missing — falling back to Benzyna"); lpg = ben; }
+        if (mild == 0) { logger.LogError("[STARTUP-TRACE] ComprehensiveSeeder: FuelType 'Hybryda mild' missing — falling back to Benzyna"); mild = ben; }
+
         int GetOrCreateBrand(string name, string slug, params string[] categorySlugs)
         {
             if (brandDict.TryGetValue(name, out var existing)) return existing.Id;
