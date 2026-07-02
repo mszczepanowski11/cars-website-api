@@ -10162,6 +10162,34 @@ public static class ComprehensiveSeeder
             ]);
         }
 
+        // Backfill: the "Części" (parts) VehicleCategory exists but no brand anywhere in this
+        // file or the initial Program.cs seed ever passes "czesci" as one of its category slugs
+        // to GetOrCreateBrand — that helper is get-or-create, not get-or-update, so it's a no-op
+        // for brands that already exist by the time this runs (i.e. nearly all of them). Result:
+        // the Części category's Marka dropdown was permanently empty. A part is compatible with
+        // any brand that has vehicles, so every brand that already belongs to at least one
+        // category should also belong to Części.
+        try
+        {
+            var czesciCat = allVCats.FirstOrDefault(c => c.Slug == "czesci");
+            if (czesciCat != null)
+            {
+                var brandsMissingCzesci = db.Brands.Include(b => b.Categories)
+                    .Where(b => b.Categories.Any() && !b.Categories.Any(c => c.Slug == "czesci"))
+                    .ToList();
+                foreach (var b in brandsMissingCzesci) b.Categories.Add(czesciCat);
+                if (brandsMissingCzesci.Count > 0)
+                {
+                    db.SaveChanges();
+                    logger.LogWarning("[STARTUP-TRACE] Backfilled 'czesci' category onto {Count} brands", brandsMissingCzesci.Count);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "[STARTUP-TRACE] Części brand backfill failed: {Msg}", ex.Message);
+        }
+
         logger.LogInformation("[ComprehensiveSeeder] Completed seeding premium cars, motorcycles, trucks.");
 
         // Audit: list every generation whose name still looks like scraper/import placeholder
