@@ -1217,6 +1217,41 @@ internal class Program
                 logger.LogError(ex, "[Seeder] SeedDataIfEmpty failed — app will start without complete seed data: {Msg}", ex.Message);
             }
 
+            // Audit: dump every FeatureCategory's scope (VehicleCategoryId/BrandId/ModelId) and
+            // feature count, so equipment leaking into the wrong vehicle category (e.g. car
+            // features showing on a motorcycle listing) can be spotted from the scope values
+            // directly instead of clicking through every category in the form by hand. A NULL
+            // scope field means "applies to everything" by design (see
+            // GetFeatureCategoriesByContextAsync) — that's expected for a handful of universal
+            // categories, but is a red flag if it shows up on something that reads as
+            // category-specific by name.
+            try
+            {
+                var vcatNames = db.VehicleCategories.ToDictionary(c => c.Id, c => c.Slug);
+                var fcDump = db.FeatureCategories.Include(fc => fc.Features)
+                    .AsEnumerable()
+                    .OrderBy(fc => fc.Name)
+                    .Select(fc =>
+                        $"{fc.Name} [vcat={(fc.VehicleCategoryId.HasValue ? vcatNames.GetValueOrDefault(fc.VehicleCategoryId.Value, "?") : "ANY")}, " +
+                        $"brand={(fc.BrandId?.ToString() ?? "ANY")}, model={(fc.ModelId?.ToString() ?? "ANY")}, features={fc.Features.Count}] (id={fc.Id})")
+                    .ToList();
+                logger.LogWarning("[STARTUP-TRACE] AUDIT-FEATURES: {Count} feature categories: {List}",
+                    fcDump.Count, string.Join(" | ", fcDump));
+
+                var dupNames = db.FeatureCategories.AsEnumerable()
+                    .GroupBy(fc => fc.Name)
+                    .Where(g => g.Count() > 1)
+                    .Select(g => $"{g.Key} (x{g.Count()}, ids={string.Join(",", g.Select(fc => fc.Id))})")
+                    .ToList();
+                if (dupNames.Any())
+                    logger.LogWarning("[STARTUP-TRACE] AUDIT-FEATURES: {Count} feature-category names appear more than once (possible scope conflict): {List}",
+                        dupNames.Count, string.Join(" | ", dupNames));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "[STARTUP-TRACE] AUDIT-FEATURES failed: {Msg}", ex.Message);
+            }
+
             // Startup config diagnostics
             var imojeMid    = Environment.GetEnvironmentVariable("IMOJE_MERCHANT_ID") ?? "";
             var imojeKey    = Environment.GetEnvironmentVariable("IMOJE_API_KEY") ?? "";
