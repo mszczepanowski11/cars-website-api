@@ -4382,6 +4382,60 @@ public static class ComprehensiveSeeder
                     Cylinders = 4, Acceleration0100 = 8.4m, TopSpeedKmh = 220, FuelConsumptionCombined = 5.4m },
             ]);
 
+            int mokka = GetOrCreateModel(opelId2, "Mokka", "opel-mokka");
+            PrepareGenerations(mokka,
+                ("I (2012–2019)", "opel-mokka-i", 2012, 2019),
+                ("II (2020–)", "opel-mokka-ii", 2020, null));
+            AddOrReplaceEngines(GetOrFixGeneration(mokka, "I (2012–2019)", "opel-mokka-i", 2012, 2019), 100, [
+                new EngineVersion { EngineName = "1.4 Turbo 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1364, FuelTypeId = ben,
+                    TorqueNm = 200, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 189, FuelConsumptionCombined = 6.8m },
+                new EngineVersion { EngineName = "1.6 CDTi 136 KM", PowerHP = 136, PowerKW = 100, Displacement = 1598, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 190, FuelConsumptionCombined = 5.2m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(mokka, "II (2020–)", "opel-mokka-ii", 2020, null), 100, [
+                new EngineVersion { EngineName = "1.2 Turbo 130 KM", PowerHP = 130, PowerKW = 96, Displacement = 1199, FuelTypeId = ben,
+                    TorqueNm = 230, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 9.2m, TopSpeedKmh = 202, FuelConsumptionCombined = 5.9m },
+                new EngineVersion { EngineName = "Mokka-e 136 KM", PowerHP = 136, PowerKW = 100, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 260, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 0, Acceleration0100 = 9.1m, TopSpeedKmh = 150, FuelConsumptionCombined = 16.4m },
+            ]);
+
+            int crossland = GetOrCreateModel(opelId2, "Crossland", "opel-crossland");
+            AddOrReplaceEngines(GetOrFixGeneration(crossland, "I (2017–)", "opel-crossland-i", 2017, null), 90, [
+                new EngineVersion { EngineName = "1.2 Turbo 110 KM", PowerHP = 110, PowerKW = 81, Displacement = 1199, FuelTypeId = ben,
+                    TorqueNm = 205, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 10.3m, TopSpeedKmh = 188, FuelConsumptionCombined = 5.6m },
+                new EngineVersion { EngineName = "1.5 Diesel 110 KM", PowerHP = 110, PowerKW = 81, Displacement = 1499, FuelTypeId = die,
+                    TorqueNm = 250, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.4m, TopSpeedKmh = 180, FuelConsumptionCombined = 4.2m },
+            ]);
+
+            int grandland = GetOrCreateModel(opelId2, "Grandland", "opel-grandland");
+            AddOrReplaceEngines(GetOrFixGeneration(grandland, "I (2017–)", "opel-grandland-i", 2017, null), 130, [
+                new EngineVersion { EngineName = "1.2 Turbo 130 KM", PowerHP = 130, PowerKW = 96, Displacement = 1199, FuelTypeId = ben,
+                    TorqueNm = 230, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 10.0m, TopSpeedKmh = 195, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "Hybrid4 300 KM PHEV AWD", PowerHP = 300, PowerKW = 221, Displacement = 1598, FuelTypeId = phev,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 5.9m, TopSpeedKmh = 235, FuelConsumptionCombined = 1.6m },
+                new EngineVersion { EngineName = "1.5 Diesel 130 KM", PowerHP = 130, PowerKW = 96, Displacement = 1499, FuelTypeId = die,
+                    TorqueNm = 300, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.2m, TopSpeedKmh = 205, FuelConsumptionCombined = 4.7m },
+            ]);
+
+            int vivaro = GetOrCreateModel(opelId2, "Vivaro", "opel-vivaro");
+            AddOrReplaceEngines(GetOrFixGeneration(vivaro, "C (2019–)", "opel-vivaro-c", 2019, null), 100, [
+                new EngineVersion { EngineName = "2.0 Diesel 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.0m, TopSpeedKmh = 174, FuelConsumptionCombined = 6.1m },
+                new EngineVersion { EngineName = "2.0 Diesel 177 KM", PowerHP = 177, PowerKW = 130, Displacement = 1997, FuelTypeId = die,
+                    TorqueNm = 380, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.0m, TopSpeedKmh = 187, FuelConsumptionCombined = 6.4m },
+            ]);
+
             // ── MITSUBISHI OUTLANDER III + IV ─────────────────────────────────────────
             int mitId = GetOrCreateBrand("Mitsubishi", "mitsubishi", "auta-osobowe");
             int outlander = GetOrCreateModel(mitId, "Outlander", "mitsubishi-outlander");
