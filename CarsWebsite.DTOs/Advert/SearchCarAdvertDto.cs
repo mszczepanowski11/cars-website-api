@@ -18,6 +18,7 @@ public class SearchCarAdvertDto
     public int? BodyTypeId { get; set; }
     public int? DriveTypeId { get; set; }
     public int? ColorId { get; set; }
+    public int? VehicleSubtypeId { get; set; }
 
     [Range(1900, 2100)]
     public int? YearFrom { get; set; }
