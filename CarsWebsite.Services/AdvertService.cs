@@ -1,6 +1,7 @@
 using AutoMapper;
 using cars_website_api.CarsWebsite.Domain.Entities;
 using cars_website_api.CarsWebsite.DTOs.Advert;
+using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
@@ -13,13 +14,15 @@ public class AdvertService : IAdvertService
     private readonly IMapper _mapper;
     private readonly ILogger<AdvertService> _logger;
     private readonly Cloudinary _cloudinary;
+    private readonly IHierarchyValidationService _hierarchyValidationService;
 
-    public AdvertService(AppDbContext context, IMapper mapper, ILogger<AdvertService> logger, Cloudinary cloudinary)
+    public AdvertService(AppDbContext context, IMapper mapper, ILogger<AdvertService> logger, Cloudinary cloudinary, IHierarchyValidationService hierarchyValidationService)
     {
         _context = context;
         _mapper = mapper;
         _logger = logger;
         _cloudinary = cloudinary;
+        _hierarchyValidationService = hierarchyValidationService;
     }
 
     // Extracts the Cloudinary public_id from a secure URL.
@@ -66,14 +69,10 @@ public class AdvertService : IAdvertService
         if (duplicateVin)
             throw new InvalidOperationException("Masz już aktywne ogłoszenie z tym numerem VIN.");
 
-        if (dto.BrandId > 0 && dto.VehicleCategoryId.HasValue)
-        {
-            var brandInCategory = await _context.Brands
-                .Where(b => b.Id == dto.BrandId)
-                .AnyAsync(b => b.Categories.Any(c => c.Id == dto.VehicleCategoryId.Value));
-            if (!brandInCategory)
-                throw new ArgumentException("Wybrana marka nie należy do tej kategorii pojazdu.");
-        }
+        var chainCheck = await _hierarchyValidationService.ValidateVehicleChainAsync(
+            dto.BrandId, dto.ModelId, dto.GenerationId, dto.TrimId, dto.EngineVersionId, dto.VehicleCategoryId);
+        if (!chainCheck.IsValid)
+            throw new ArgumentException(chainCheck.ErrorMessage);
 
         var advert = _mapper.Map<CarAdvert>(dto);
         advert.CreatedAt = DateTime.UtcNow;
@@ -143,6 +142,11 @@ public class AdvertService : IAdvertService
 
         if (advert.UserId != userId)
             throw new UnauthorizedAccessException("You do not own this advert");
+
+        var chainCheck = await _hierarchyValidationService.ValidateVehicleChainAsync(
+            dto.BrandId, dto.ModelId, dto.GenerationId, dto.TrimId, dto.EngineVersionId, dto.VehicleCategoryId);
+        if (!chainCheck.IsValid)
+            throw new ArgumentException(chainCheck.ErrorMessage);
 
         _mapper.Map(dto, advert);
 
