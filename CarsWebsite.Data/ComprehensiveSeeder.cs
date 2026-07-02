@@ -625,6 +625,86 @@ public static class ComprehensiveSeeder
                     TorqueNm = 800, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "RWD",
                     Cylinders = 8, Acceleration0100 = 3.5m, TopSpeedKmh = 325, FuelConsumptionCombined = 13.5m },
             ]);
+
+            int db7 = GetOrCreateModel(bId, "DB7", "aston-martin-db7");
+            AddOrReplaceEngines(GetOrFixGeneration(db7, "I (1994–2003)", "aston-db7-i", 1994, 2003), 300, [
+                new EngineVersion { EngineName = "3.2 I6 Supercharged 340 KM", PowerHP = 340, PowerKW = 250, Displacement = 3239, FuelTypeId = ben,
+                    TorqueNm = 490, EuroNorm = "Euro 3", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 5.8m, TopSpeedKmh = 265, FuelConsumptionCombined = 16.5m },
+                new EngineVersion { EngineName = "5.9 V12 Vantage 420 KM", PowerHP = 420, PowerKW = 309, Displacement = 5935, FuelTypeId = ben,
+                    TorqueNm = 542, EuroNorm = "Euro 3", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 12, Acceleration0100 = 5.0m, TopSpeedKmh = 298, FuelConsumptionCombined = 18.5m },
+            ]);
+
+            int db9 = GetOrCreateModel(bId, "DB9", "aston-martin-db9");
+            AddOrReplaceEngines(GetOrFixGeneration(db9, "I (2004–2016)", "aston-db9-i", 2004, 2016), 400, [
+                new EngineVersion { EngineName = "5.9 V12 470 KM", PowerHP = 470, PowerKW = 346, Displacement = 5935, FuelTypeId = ben,
+                    TorqueNm = 570, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 12, Acceleration0100 = 4.9m, TopSpeedKmh = 290, FuelConsumptionCombined = 16.9m },
+                new EngineVersion { EngineName = "5.9 V12 GT 517 KM", PowerHP = 517, PowerKW = 380, Displacement = 5935, FuelTypeId = ben,
+                    TorqueNm = 620, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 12, Acceleration0100 = 4.5m, TopSpeedKmh = 295, FuelConsumptionCombined = 15.8m },
+            ]);
+
+            // "DBS" here is the classic 2007–2012 DB9-based DBS and the later DBS Superleggera —
+            // a separate model row from "DBS Superleggera" above (which the DB stored under its
+            // own distinct model name), each with its own placeholder generation to fix.
+            int dbsClassic = GetOrCreateModel(bId, "DBS", "aston-martin-dbs-classic");
+            PrepareGenerations(dbsClassic,
+                ("I (2007–2012)", "aston-dbs-classic-i", 2007, 2012),
+                ("II (2018–2023)", "aston-dbs-classic-ii", 2018, 2023));
+            AddOrReplaceEngines(GetOrFixGeneration(dbsClassic, "I (2007–2012)", "aston-dbs-classic-i", 2007, 2012), 400, [
+                new EngineVersion { EngineName = "5.9 V12 517 KM", PowerHP = 517, PowerKW = 380, Displacement = 5935, FuelTypeId = ben,
+                    TorqueNm = 570, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 12, Acceleration0100 = 4.3m, TopSpeedKmh = 307, FuelConsumptionCombined = 18.0m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(dbsClassic, "II (2018–2023)", "aston-dbs-classic-ii", 2018, 2023), 400, [
+                new EngineVersion { EngineName = "5.2 V12 Bi-Turbo Superleggera 725 KM", PowerHP = 725, PowerKW = 533, Displacement = 5204, FuelTypeId = ben,
+                    TorqueNm = 900, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 12, Acceleration0100 = 3.4m, TopSpeedKmh = 340, FuelConsumptionCombined = 14.9m },
+            ]);
+
+            int one77 = GetOrCreateModel(bId, "One-77", "aston-martin-one-77");
+            AddOrReplaceEngines(GetOrFixGeneration(one77, "I (2010–2012)", "aston-one77-i", 2010, 2012), 700, [
+                new EngineVersion { EngineName = "7.3 V12 750 KM", PowerHP = 750, PowerKW = 552, Displacement = 7312, FuelTypeId = ben,
+                    TorqueNm = 750, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 12, Acceleration0100 = 3.7m, TopSpeedKmh = 354, FuelConsumptionCombined = 20.0m },
+            ]);
+
+            int rapide = GetOrCreateModel(bId, "Rapide", "aston-martin-rapide");
+            AddOrReplaceEngines(GetOrFixGeneration(rapide, "I (2010–2020)", "aston-rapide-i", 2010, 2020), 400, [
+                new EngineVersion { EngineName = "5.9 V12 477 KM", PowerHP = 477, PowerKW = 350, Displacement = 5935, FuelTypeId = ben,
+                    TorqueNm = 600, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 12, Acceleration0100 = 5.1m, TopSpeedKmh = 296, FuelConsumptionCombined = 16.9m },
+                new EngineVersion { EngineName = "6.0 V12 AMR 595 KM", PowerHP = 595, PowerKW = 438, Displacement = 5935, FuelTypeId = ben,
+                    TorqueNm = 630, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 12, Acceleration0100 = 4.4m, TopSpeedKmh = 315, FuelConsumptionCombined = 17.2m },
+            ]);
+
+            int vanquish = GetOrCreateModel(bId, "Vanquish", "aston-martin-vanquish");
+            PrepareGenerations(vanquish,
+                ("I (2001–2007)", "aston-vanquish-i", 2001, 2007),
+                ("II (2012–2018)", "aston-vanquish-ii", 2012, 2018));
+            AddOrReplaceEngines(GetOrFixGeneration(vanquish, "I (2001–2007)", "aston-vanquish-i", 2001, 2007), 400, [
+                new EngineVersion { EngineName = "5.9 V12 460 KM", PowerHP = 460, PowerKW = 338, Displacement = 5935, FuelTypeId = ben,
+                    TorqueNm = 542, EuroNorm = "Euro 3", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 12, Acceleration0100 = 5.0m, TopSpeedKmh = 306, FuelConsumptionCombined = 18.9m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(vanquish, "II (2012–2018)", "aston-vanquish-ii", 2012, 2018), 400, [
+                new EngineVersion { EngineName = "5.9 V12 573 KM", PowerHP = 573, PowerKW = 421, Displacement = 5935, FuelTypeId = ben,
+                    TorqueNm = 630, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 12, Acceleration0100 = 4.1m, TopSpeedKmh = 295, FuelConsumptionCombined = 17.4m },
+                new EngineVersion { EngineName = "5.9 V12 S 600 KM", PowerHP = 600, PowerKW = 441, Displacement = 5935, FuelTypeId = ben,
+                    TorqueNm = 630, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 12, Acceleration0100 = 3.5m, TopSpeedKmh = 324, FuelConsumptionCombined = 17.9m },
+            ]);
+
+            int virage = GetOrCreateModel(bId, "Virage", "aston-martin-virage");
+            AddOrReplaceEngines(GetOrFixGeneration(virage, "I (2011–2012)", "aston-virage-i", 2011, 2012), 400, [
+                new EngineVersion { EngineName = "5.9 V12 490 KM", PowerHP = 490, PowerKW = 360, Displacement = 5935, FuelTypeId = ben,
+                    TorqueNm = 570, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 12, Acceleration0100 = 4.6m, TopSpeedKmh = 300, FuelConsumptionCombined = 17.0m },
+            ]);
         }
 
         // ── McLAREN ─────────────────────────────────────────────────────────────
@@ -5695,6 +5775,246 @@ public static class ComprehensiveSeeder
                 new EngineVersion { EngineName = "TT RS 2.5 TFSI 400 KM", PowerHP = 400, PowerKW = 294, Displacement = 2480, FuelTypeId = ben,
                     TorqueNm = 480, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "quattro",
                     Cylinders = 5, Acceleration0100 = 3.7m, TopSpeedKmh = 250, FuelConsumptionCombined = 8.7m },
+            ]);
+
+            int a1 = GetOrCreateModel(bId, "A1", "audi-a1");
+            PrepareGenerations(a1,
+                ("I (2010–2018)", "audi-a1-i", 2010, 2018),
+                ("II (2018–)", "audi-a1-ii", 2018, null));
+            AddOrReplaceEngines(GetOrFixGeneration(a1, "I (2010–2018)", "audi-a1-i", 2010, 2018), 60, [
+                new EngineVersion { EngineName = "1.0 TFSI 95 KM", PowerHP = 95, PowerKW = 70, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 160, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 10.5m, TopSpeedKmh = 182, FuelConsumptionCombined = 5.0m },
+                new EngineVersion { EngineName = "1.4 TFSI 122 KM", PowerHP = 122, PowerKW = 90, Displacement = 1395, FuelTypeId = ben,
+                    TorqueNm = 200, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.9m, TopSpeedKmh = 203, FuelConsumptionCombined = 5.4m },
+                new EngineVersion { EngineName = "S1 2.0 TFSI quattro 231 KM", PowerHP = 231, PowerKW = 170, Displacement = 1984, FuelTypeId = ben,
+                    TorqueNm = 370, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "quattro",
+                    Cylinders = 4, Acceleration0100 = 5.8m, TopSpeedKmh = 246, FuelConsumptionCombined = 7.5m },
+                new EngineVersion { EngineName = "1.6 TDI 116 KM", PowerHP = 116, PowerKW = 85, Displacement = 1598, FuelTypeId = die,
+                    TorqueNm = 250, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.5m, TopSpeedKmh = 195, FuelConsumptionCombined = 3.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(a1, "II (2018–)", "audi-a1-ii", 2018, null), 60, [
+                new EngineVersion { EngineName = "25 TFSI 95 KM", PowerHP = 95, PowerKW = 70, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 175, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.0m, TopSpeedKmh = 182, FuelConsumptionCombined = 5.0m },
+                new EngineVersion { EngineName = "30 TFSI 116 KM", PowerHP = 116, PowerKW = 85, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 200, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 9.5m, TopSpeedKmh = 203, FuelConsumptionCombined = 5.1m },
+                new EngineVersion { EngineName = "35 TFSI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1498, FuelTypeId = ben,
+                    TorqueNm = 250, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.4m, TopSpeedKmh = 220, FuelConsumptionCombined = 5.4m },
+                new EngineVersion { EngineName = "S1 40 TFSI 231 KM", PowerHP = 231, PowerKW = 170, Displacement = 1984, FuelTypeId = ben,
+                    TorqueNm = 350, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.5m, TopSpeedKmh = 235, FuelConsumptionCombined = 6.8m },
+            ]);
+
+            int a2 = GetOrCreateModel(bId, "A2", "audi-a2");
+            AddOrReplaceEngines(GetOrFixGeneration(a2, "I (1999–2005)", "audi-a2-i", 1999, 2005), 55, [
+                new EngineVersion { EngineName = "1.4 75 KM", PowerHP = 75, PowerKW = 55, Displacement = 1390, FuelTypeId = ben,
+                    TorqueNm = 126, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.9m, TopSpeedKmh = 168, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "1.6 FSI 110 KM", PowerHP = 110, PowerKW = 81, Displacement = 1598, FuelTypeId = ben,
+                    TorqueNm = 155, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.8m, TopSpeedKmh = 195, FuelConsumptionCombined = 6.4m },
+                new EngineVersion { EngineName = "1.4 TDI 75 KM", PowerHP = 75, PowerKW = 55, Displacement = 1422, FuelTypeId = die,
+                    TorqueNm = 195, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 14.9m, TopSpeedKmh = 165, FuelConsumptionCombined = 4.2m },
+                new EngineVersion { EngineName = "1.4 TDI 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1422, FuelTypeId = die,
+                    TorqueNm = 210, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 12.0m, TopSpeedKmh = 178, FuelConsumptionCombined = 4.4m },
+            ]);
+
+            int etron = GetOrCreateModel(bId, "e-tron", "audi-e-tron");
+            AddOrReplaceEngines(GetOrFixGeneration(etron, "I (2018–2023)", "audi-e-tron-i", 2018, 2023), 300, [
+                new EngineVersion { EngineName = "50 quattro 313 KM", PowerHP = 313, PowerKW = 230, Displacement = null, FuelTypeId = ev,
+                    TorqueNm = 540, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = null, Acceleration0100 = 6.8m, TopSpeedKmh = 190, FuelConsumptionCombined = null },
+                new EngineVersion { EngineName = "55 quattro 408 KM", PowerHP = 408, PowerKW = 300, Displacement = null, FuelTypeId = ev,
+                    TorqueNm = 664, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = null, Acceleration0100 = 5.7m, TopSpeedKmh = 200, FuelConsumptionCombined = null },
+                new EngineVersion { EngineName = "S quattro 503 KM", PowerHP = 503, PowerKW = 370, Displacement = null, FuelTypeId = ev,
+                    TorqueNm = 973, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = null, Acceleration0100 = 4.5m, TopSpeedKmh = 210, FuelConsumptionCombined = null },
+            ]);
+
+            int q2 = GetOrCreateModel(bId, "Q2", "audi-q2");
+            AddOrReplaceEngines(GetOrFixGeneration(q2, "I (2016–)", "audi-q2-i", 2016, null), 100, [
+                new EngineVersion { EngineName = "30 TFSI 116 KM", PowerHP = 116, PowerKW = 85, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 200, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 10.3m, TopSpeedKmh = 189, FuelConsumptionCombined = 5.7m },
+                new EngineVersion { EngineName = "35 TFSI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1498, FuelTypeId = ben,
+                    TorqueNm = 250, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.3m, TopSpeedKmh = 210, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "40 TFSI quattro 190 KM", PowerHP = 190, PowerKW = 140, Displacement = 1984, FuelTypeId = ben,
+                    TorqueNm = 320, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 4, Acceleration0100 = 6.5m, TopSpeedKmh = 232, FuelConsumptionCombined = 7.2m },
+                new EngineVersion { EngineName = "SQ2 300 KM", PowerHP = 300, PowerKW = 221, Displacement = 1984, FuelTypeId = ben,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 4, Acceleration0100 = 4.9m, TopSpeedKmh = 235, FuelConsumptionCombined = 7.8m },
+                new EngineVersion { EngineName = "30 TDI 116 KM", PowerHP = 116, PowerKW = 85, Displacement = 1598, FuelTypeId = die,
+                    TorqueNm = 250, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.3m, TopSpeedKmh = 190, FuelConsumptionCombined = 4.3m },
+                new EngineVersion { EngineName = "35 TDI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 340, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.5m, TopSpeedKmh = 209, FuelConsumptionCombined = 4.6m },
+            ]);
+
+            int q5 = GetOrCreateModel(bId, "Q5", "audi-q5");
+            PrepareGenerations(q5,
+                ("I (2008–2017)", "audi-q5-i", 2008, 2017),
+                ("II (2017–)", "audi-q5-ii", 2017, null));
+            AddOrReplaceEngines(GetOrFixGeneration(q5, "I (2008–2017)", "audi-q5-i", 2008, 2017), 130, [
+                new EngineVersion { EngineName = "2.0 TFSI 211 KM", PowerHP = 211, PowerKW = 155, Displacement = 1984, FuelTypeId = ben,
+                    TorqueNm = 350, EuroNorm = "Euro 5", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 4, Acceleration0100 = 7.2m, TopSpeedKmh = 217, FuelConsumptionCombined = 8.5m },
+                new EngineVersion { EngineName = "SQ5 3.0 TFSI 354 KM", PowerHP = 354, PowerKW = 260, Displacement = 2995, FuelTypeId = ben,
+                    TorqueNm = 500, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 6, Acceleration0100 = 5.1m, TopSpeedKmh = 250, FuelConsumptionCombined = 8.7m },
+                new EngineVersion { EngineName = "2.0 TDI 143 KM", PowerHP = 143, PowerKW = 105, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "quattro",
+                    Cylinders = 4, Acceleration0100 = 9.6m, TopSpeedKmh = 197, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "2.0 TDI 177 KM", PowerHP = 177, PowerKW = 130, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 380, EuroNorm = "Euro 5", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 4, Acceleration0100 = 8.5m, TopSpeedKmh = 210, FuelConsumptionCombined = 6.2m },
+                new EngineVersion { EngineName = "3.0 V6 TDI 245 KM", PowerHP = 245, PowerKW = 180, Displacement = 2967, FuelTypeId = die,
+                    TorqueNm = 580, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 6, Acceleration0100 = 6.5m, TopSpeedKmh = 234, FuelConsumptionCombined = 6.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(q5, "II (2017–)", "audi-q5-ii", 2017, null), 130, [
+                new EngineVersion { EngineName = "40 TFSI 190 KM", PowerHP = 190, PowerKW = 140, Displacement = 1984, FuelTypeId = ben,
+                    TorqueNm = 320, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 4, Acceleration0100 = 7.9m, TopSpeedKmh = 213, FuelConsumptionCombined = 7.5m },
+                new EngineVersion { EngineName = "45 TFSI 245 KM", PowerHP = 245, PowerKW = 180, Displacement = 1984, FuelTypeId = ben,
+                    TorqueNm = 370, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 4, Acceleration0100 = 6.3m, TopSpeedKmh = 237, FuelConsumptionCombined = 8.0m },
+                new EngineVersion { EngineName = "SQ5 TFSI 354 KM", PowerHP = 354, PowerKW = 260, Displacement = 2995, FuelTypeId = ben,
+                    TorqueNm = 500, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 6, Acceleration0100 = 5.1m, TopSpeedKmh = 250, FuelConsumptionCombined = 9.0m },
+                new EngineVersion { EngineName = "40 TDI 204 KM", PowerHP = 204, PowerKW = 150, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 4, Acceleration0100 = 7.8m, TopSpeedKmh = 220, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "50 TDI 286 KM", PowerHP = 286, PowerKW = 210, Displacement = 2967, FuelTypeId = die,
+                    TorqueNm = 620, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 6, Acceleration0100 = 5.8m, TopSpeedKmh = 245, FuelConsumptionCombined = 6.7m },
+                new EngineVersion { EngineName = "SQ5 TDI 341 KM", PowerHP = 341, PowerKW = 251, Displacement = 2967, FuelTypeId = die,
+                    TorqueNm = 700, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 6, Acceleration0100 = 5.1m, TopSpeedKmh = 250, FuelConsumptionCombined = 7.2m },
+            ]);
+
+            int r8 = GetOrCreateModel(bId, "R8", "audi-r8");
+            PrepareGenerations(r8,
+                ("I (2007–2015)", "audi-r8-i", 2007, 2015),
+                ("II (2015–2023)", "audi-r8-ii", 2015, 2023));
+            AddOrReplaceEngines(GetOrFixGeneration(r8, "I (2007–2015)", "audi-r8-i", 2007, 2015), 400, [
+                new EngineVersion { EngineName = "4.2 V8 420 KM", PowerHP = 420, PowerKW = 309, Displacement = 4163, FuelTypeId = ben,
+                    TorqueNm = 430, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "quattro",
+                    Cylinders = 8, Acceleration0100 = 4.6m, TopSpeedKmh = 301, FuelConsumptionCombined = 13.0m },
+                new EngineVersion { EngineName = "5.2 V10 525 KM", PowerHP = 525, PowerKW = 386, Displacement = 5204, FuelTypeId = ben,
+                    TorqueNm = 530, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "quattro",
+                    Cylinders = 10, Acceleration0100 = 3.9m, TopSpeedKmh = 316, FuelConsumptionCombined = 14.9m },
+                new EngineVersion { EngineName = "5.2 V10 Plus 550 KM", PowerHP = 550, PowerKW = 404, Displacement = 5204, FuelTypeId = ben,
+                    TorqueNm = 540, EuroNorm = "Euro 5", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 10, Acceleration0100 = 3.5m, TopSpeedKmh = 317, FuelConsumptionCombined = 15.0m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(r8, "II (2015–2023)", "audi-r8-ii", 2015, 2023), 400, [
+                new EngineVersion { EngineName = "5.2 V10 540 KM", PowerHP = 540, PowerKW = 397, Displacement = 5204, FuelTypeId = ben,
+                    TorqueNm = 540, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 10, Acceleration0100 = 3.5m, TopSpeedKmh = 322, FuelConsumptionCombined = 12.3m },
+                new EngineVersion { EngineName = "5.2 V10 Plus 610 KM", PowerHP = 610, PowerKW = 449, Displacement = 5204, FuelTypeId = ben,
+                    TorqueNm = 560, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 10, Acceleration0100 = 3.2m, TopSpeedKmh = 330, FuelConsumptionCombined = 12.6m },
+                new EngineVersion { EngineName = "5.2 V10 Performance 620 KM", PowerHP = 620, PowerKW = 456, Displacement = 5204, FuelTypeId = ben,
+                    TorqueNm = 580, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 10, Acceleration0100 = 3.1m, TopSpeedKmh = 331, FuelConsumptionCombined = 12.9m },
+            ]);
+
+            int rs3 = GetOrCreateModel(bId, "RS3", "audi-rs3");
+            PrepareGenerations(rs3,
+                ("I (2011–2012)", "audi-rs3-i", 2011, 2012),
+                ("II (2015–2020)", "audi-rs3-ii", 2015, 2020),
+                ("III (2021–)", "audi-rs3-iii", 2021, null));
+            AddOrReplaceEngines(GetOrFixGeneration(rs3, "I (2011–2012)", "audi-rs3-i", 2011, 2012), 300, [
+                new EngineVersion { EngineName = "2.5 TFSI 340 KM", PowerHP = 340, PowerKW = 250, Displacement = 2480, FuelTypeId = ben,
+                    TorqueNm = 450, EuroNorm = "Euro 5", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 5, Acceleration0100 = 4.6m, TopSpeedKmh = 250, FuelConsumptionCombined = 9.1m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(rs3, "II (2015–2020)", "audi-rs3-ii", 2015, 2020), 300, [
+                new EngineVersion { EngineName = "2.5 TFSI 367 KM", PowerHP = 367, PowerKW = 270, Displacement = 2480, FuelTypeId = ben,
+                    TorqueNm = 465, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 5, Acceleration0100 = 4.3m, TopSpeedKmh = 250, FuelConsumptionCombined = 8.4m },
+                new EngineVersion { EngineName = "2.5 TFSI 400 KM", PowerHP = 400, PowerKW = 294, Displacement = 2480, FuelTypeId = ben,
+                    TorqueNm = 480, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 5, Acceleration0100 = 4.1m, TopSpeedKmh = 250, FuelConsumptionCombined = 8.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(rs3, "III (2021–)", "audi-rs3-iii", 2021, null), 300, [
+                new EngineVersion { EngineName = "2.5 TFSI 400 KM", PowerHP = 400, PowerKW = 294, Displacement = 2480, FuelTypeId = ben,
+                    TorqueNm = 500, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 5, Acceleration0100 = 3.8m, TopSpeedKmh = 250, FuelConsumptionCombined = 8.8m },
+            ]);
+
+            int rs5 = GetOrCreateModel(bId, "RS5", "audi-rs5");
+            PrepareGenerations(rs5,
+                ("I (2010–2016)", "audi-rs5-i", 2010, 2016),
+                ("II (2017–)", "audi-rs5-ii", 2017, null));
+            AddOrReplaceEngines(GetOrFixGeneration(rs5, "I (2010–2016)", "audi-rs5-i", 2010, 2016), 400, [
+                new EngineVersion { EngineName = "4.2 V8 450 KM", PowerHP = 450, PowerKW = 331, Displacement = 4163, FuelTypeId = ben,
+                    TorqueNm = 430, EuroNorm = "Euro 5", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 8, Acceleration0100 = 4.6m, TopSpeedKmh = 250, FuelConsumptionCombined = 10.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(rs5, "II (2017–)", "audi-rs5-ii", 2017, null), 400, [
+                new EngineVersion { EngineName = "2.9 TFSI 450 KM", PowerHP = 450, PowerKW = 331, Displacement = 2894, FuelTypeId = ben,
+                    TorqueNm = 600, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 6, Acceleration0100 = 3.9m, TopSpeedKmh = 250, FuelConsumptionCombined = 8.7m },
+            ]);
+
+            int s3 = GetOrCreateModel(bId, "S3", "audi-s3");
+            PrepareGenerations(s3,
+                ("I (1999–2003)", "audi-s3-i", 1999, 2003),
+                ("II (2006–2012)", "audi-s3-ii", 2006, 2012),
+                ("III (2013–2020)", "audi-s3-iii", 2013, 2020),
+                ("IV (2021–)", "audi-s3-iv", 2021, null));
+            AddOrReplaceEngines(GetOrFixGeneration(s3, "I (1999–2003)", "audi-s3-i", 1999, 2003), 180, [
+                new EngineVersion { EngineName = "1.8 T quattro 210 KM", PowerHP = 210, PowerKW = 154, Displacement = 1781, FuelTypeId = ben,
+                    TorqueNm = 280, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "quattro",
+                    Cylinders = 4, Acceleration0100 = 6.7m, TopSpeedKmh = 235, FuelConsumptionCombined = 9.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(s3, "II (2006–2012)", "audi-s3-ii", 2006, 2012), 240, [
+                new EngineVersion { EngineName = "2.0 TFSI quattro 265 KM", PowerHP = 265, PowerKW = 195, Displacement = 1984, FuelTypeId = ben,
+                    TorqueNm = 350, EuroNorm = "Euro 5", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 4, Acceleration0100 = 5.2m, TopSpeedKmh = 250, FuelConsumptionCombined = 8.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(s3, "III (2013–2020)", "audi-s3-iii", 2013, 2020), 280, [
+                new EngineVersion { EngineName = "2.0 TFSI quattro 300 KM", PowerHP = 300, PowerKW = 221, Displacement = 1984, FuelTypeId = ben,
+                    TorqueNm = 380, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 4, Acceleration0100 = 4.9m, TopSpeedKmh = 250, FuelConsumptionCombined = 7.1m },
+                new EngineVersion { EngineName = "2.0 TFSI quattro 310 KM", PowerHP = 310, PowerKW = 228, Displacement = 1984, FuelTypeId = ben,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 4, Acceleration0100 = 4.7m, TopSpeedKmh = 250, FuelConsumptionCombined = 7.3m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(s3, "IV (2021–)", "audi-s3-iv", 2021, null), 280, [
+                new EngineVersion { EngineName = "2.0 TFSI quattro 310 KM", PowerHP = 310, PowerKW = 228, Displacement = 1984, FuelTypeId = ben,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 4, Acceleration0100 = 4.8m, TopSpeedKmh = 250, FuelConsumptionCombined = 7.4m },
+            ]);
+
+            int sq5 = GetOrCreateModel(bId, "SQ5", "audi-sq5");
+            PrepareGenerations(sq5,
+                ("I (2013–2017)", "audi-sq5-i", 2013, 2017),
+                ("II (2017–)", "audi-sq5-ii", 2017, null));
+            AddOrReplaceEngines(GetOrFixGeneration(sq5, "I (2013–2017)", "audi-sq5-i", 2013, 2017), 250, [
+                new EngineVersion { EngineName = "3.0 TDI biturbo 313 KM", PowerHP = 313, PowerKW = 230, Displacement = 2967, FuelTypeId = die,
+                    TorqueNm = 650, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 6, Acceleration0100 = 5.1m, TopSpeedKmh = 250, FuelConsumptionCombined = 6.9m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(sq5, "II (2017–)", "audi-sq5-ii", 2017, null), 250, [
+                new EngineVersion { EngineName = "3.0 TFSI 354 KM", PowerHP = 354, PowerKW = 260, Displacement = 2995, FuelTypeId = ben,
+                    TorqueNm = 500, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 6, Acceleration0100 = 5.1m, TopSpeedKmh = 250, FuelConsumptionCombined = 9.0m },
+                new EngineVersion { EngineName = "3.0 TDI 341 KM", PowerHP = 341, PowerKW = 251, Displacement = 2967, FuelTypeId = die,
+                    TorqueNm = 700, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "quattro",
+                    Cylinders = 6, Acceleration0100 = 5.1m, TopSpeedKmh = 250, FuelConsumptionCombined = 7.2m },
             ]);
         }
 
