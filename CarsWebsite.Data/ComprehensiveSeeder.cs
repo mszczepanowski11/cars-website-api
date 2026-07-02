@@ -5047,7 +5047,18 @@ public static class ComprehensiveSeeder
                     Cylinders = 6, Acceleration0100 = 7.6m, TopSpeedKmh = 215, FuelConsumptionCombined = 7.6m },
             ]);
             int pacifica = GetOrCreateModel(chrId, "Pacifica", "chrysler-pacifica");
-            AddEngines(GetOrCreateGeneration(pacifica, "RU (2016–)", "chrysler-pacifica-ru", 2016, null), [
+            PrepareGenerations(pacifica,
+                ("I (2003–2008)", "chrysler-pacifica-i", 2003, 2008),
+                ("II (2016–)", "chrysler-pacifica-ii", 2016, null));
+            AddOrReplaceEngines(GetOrFixGeneration(pacifica, "I (2003–2008)", "chrysler-pacifica-i", 2003, 2008), 200, [
+                new EngineVersion { EngineName = "3.5 V6 250 KM", PowerHP = 250, PowerKW = 184, Displacement = 3518, FuelTypeId = ben,
+                    TorqueNm = 322, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 8.5m, TopSpeedKmh = 190, FuelConsumptionCombined = 13.5m },
+                new EngineVersion { EngineName = "4.0 V6 253 KM", PowerHP = 253, PowerKW = 186, Displacement = 3952, FuelTypeId = ben,
+                    TorqueNm = 346, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 8.2m, TopSpeedKmh = 195, FuelConsumptionCombined = 13.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(pacifica, "II (2016–)", "chrysler-pacifica-ii", 2016, null), 200, [
                 new EngineVersion { EngineName = "3.6 V6 Pentastar 287 KM", PowerHP = 287, PowerKW = 211, Displacement = 3604, FuelTypeId = ben,
                     TorqueNm = 353, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "FWD",
                     Cylinders = 6, Acceleration0100 = 7.8m, TopSpeedKmh = 195, FuelConsumptionCombined = 12.3m },
@@ -5055,12 +5066,174 @@ public static class ComprehensiveSeeder
                     TorqueNm = 353, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "FWD",
                     Cylinders = 6, Acceleration0100 = 8.5m, TopSpeedKmh = 185, FuelConsumptionCombined = 3.3m },
             ]);
+
+            int c300plain = GetOrCreateModel(chrId, "300", "chrysler-300");
+            PrepareGenerations(c300plain,
+                ("I (2005–2010)", "chrysler-300-i", 2005, 2010),
+                ("II (2011–2023)", "chrysler-300-ii", 2011, 2023));
+            AddOrReplaceEngines(GetOrFixGeneration(c300plain, "I (2005–2010)", "chrysler-300-i", 2005, 2010), 150, [
+                new EngineVersion { EngineName = "2.7 V6 190 KM", PowerHP = 190, PowerKW = 140, Displacement = 2736, FuelTypeId = ben,
+                    TorqueNm = 258, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 9.5m, TopSpeedKmh = 200, FuelConsumptionCombined = 12.0m },
+                new EngineVersion { EngineName = "3.5 V6 250 KM", PowerHP = 250, PowerKW = 184, Displacement = 3518, FuelTypeId = ben,
+                    TorqueNm = 340, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 7.7m, TopSpeedKmh = 220, FuelConsumptionCombined = 12.8m },
+                new EngineVersion { EngineName = "300C 5.7 V8 Hemi 340 KM", PowerHP = 340, PowerKW = 250, Displacement = 5654, FuelTypeId = ben,
+                    TorqueNm = 525, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 6.3m, TopSpeedKmh = 240, FuelConsumptionCombined = 15.5m },
+                new EngineVersion { EngineName = "SRT8 6.1 V8 425 KM", PowerHP = 425, PowerKW = 313, Displacement = 6059, FuelTypeId = ben,
+                    TorqueNm = 569, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 5.1m, TopSpeedKmh = 274, FuelConsumptionCombined = 17.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(c300plain, "II (2011–2023)", "chrysler-300-ii", 2011, 2023), 200, [
+                new EngineVersion { EngineName = "3.6 V6 292 KM", PowerHP = 292, PowerKW = 215, Displacement = 3604, FuelTypeId = ben,
+                    TorqueNm = 353, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 7.3m, TopSpeedKmh = 210, FuelConsumptionCombined = 11.5m },
+                new EngineVersion { EngineName = "300C 5.7 V8 Hemi 363 KM", PowerHP = 363, PowerKW = 267, Displacement = 5654, FuelTypeId = ben,
+                    TorqueNm = 530, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 6.1m, TopSpeedKmh = 225, FuelConsumptionCombined = 13.9m },
+                new EngineVersion { EngineName = "SRT 6.4 V8 485 KM", PowerHP = 485, PowerKW = 357, Displacement = 6417, FuelTypeId = ben,
+                    TorqueNm = 631, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 4.9m, TopSpeedKmh = 282, FuelConsumptionCombined = 16.0m },
+            ]);
+
+            int crossfire = GetOrCreateModel(chrId, "Crossfire", "chrysler-crossfire");
+            AddOrReplaceEngines(GetOrFixGeneration(crossfire, "I (2003–2008)", "chrysler-crossfire-i", 2003, 2008), 150, [
+                new EngineVersion { EngineName = "3.2 V6 215 KM", PowerHP = 215, PowerKW = 158, Displacement = 3199, FuelTypeId = ben,
+                    TorqueNm = 310, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 6.9m, TopSpeedKmh = 240, FuelConsumptionCombined = 11.0m },
+                new EngineVersion { EngineName = "SRT-6 3.2 Supercharged 335 KM", PowerHP = 335, PowerKW = 246, Displacement = 3199, FuelTypeId = ben,
+                    TorqueNm = 420, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 5.2m, TopSpeedKmh = 258, FuelConsumptionCombined = 12.8m },
+            ]);
+
+            int ptCruiser = GetOrCreateModel(chrId, "PT Cruiser", "chrysler-pt-cruiser");
+            AddOrReplaceEngines(GetOrFixGeneration(ptCruiser, "I (2000–2010)", "chrysler-pt-cruiser-i", 2000, 2010), 100, [
+                new EngineVersion { EngineName = "2.0 141 KM", PowerHP = 141, PowerKW = 104, Displacement = 1996, FuelTypeId = ben,
+                    TorqueNm = 180, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.5m, TopSpeedKmh = 178, FuelConsumptionCombined = 8.5m },
+                new EngineVersion { EngineName = "2.4 Turbo GT 223 KM", PowerHP = 223, PowerKW = 164, Displacement = 2429, FuelTypeId = ben,
+                    TorqueNm = 305, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.2m, TopSpeedKmh = 205, FuelConsumptionCombined = 9.8m },
+                new EngineVersion { EngineName = "2.2 CRD 121 KM", PowerHP = 121, PowerKW = 89, Displacement = 2148, FuelTypeId = die,
+                    TorqueNm = 300, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.6m, TopSpeedKmh = 175, FuelConsumptionCombined = 6.2m },
+            ]);
+
+            int sebring = GetOrCreateModel(chrId, "Sebring", "chrysler-sebring");
+            PrepareGenerations(sebring,
+                ("I (1995–2000)", "chrysler-sebring-i", 1995, 2000),
+                ("II (2001–2006)", "chrysler-sebring-ii", 2001, 2006),
+                ("III (2007–2010)", "chrysler-sebring-iii", 2007, 2010));
+            AddOrReplaceEngines(GetOrFixGeneration(sebring, "I (1995–2000)", "chrysler-sebring-i", 1995, 2000), 100, [
+                new EngineVersion { EngineName = "2.0 137 KM", PowerHP = 137, PowerKW = 101, Displacement = 1996, FuelTypeId = ben,
+                    TorqueNm = 176, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.8m, TopSpeedKmh = 195, FuelConsumptionCombined = 8.5m },
+                new EngineVersion { EngineName = "2.5 V6 168 KM", PowerHP = 168, PowerKW = 124, Displacement = 2497, FuelTypeId = ben,
+                    TorqueNm = 218, EuroNorm = "Euro 2", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 9.2m, TopSpeedKmh = 205, FuelConsumptionCombined = 9.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(sebring, "II (2001–2006)", "chrysler-sebring-ii", 2001, 2006), 130, [
+                new EngineVersion { EngineName = "2.4 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 2429, FuelTypeId = ben,
+                    TorqueNm = 216, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.0m, TopSpeedKmh = 195, FuelConsumptionCombined = 8.3m },
+                new EngineVersion { EngineName = "2.7 V6 200 KM", PowerHP = 200, PowerKW = 147, Displacement = 2736, FuelTypeId = ben,
+                    TorqueNm = 254, EuroNorm = "Euro 3", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 8.5m, TopSpeedKmh = 210, FuelConsumptionCombined = 9.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(sebring, "III (2007–2010)", "chrysler-sebring-iii", 2007, 2010), 150, [
+                new EngineVersion { EngineName = "2.4 173 KM", PowerHP = 173, PowerKW = 127, Displacement = 2360, FuelTypeId = ben,
+                    TorqueNm = 220, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 195, FuelConsumptionCombined = 8.5m },
+                new EngineVersion { EngineName = "2.7 V6 189 KM", PowerHP = 189, PowerKW = 139, Displacement = 2736, FuelTypeId = ben,
+                    TorqueNm = 252, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 9.0m, TopSpeedKmh = 205, FuelConsumptionCombined = 10.2m },
+                new EngineVersion { EngineName = "2.0 CRD 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.5m, TopSpeedKmh = 190, FuelConsumptionCombined = 6.2m },
+            ]);
+
+            int townCountry = GetOrCreateModel(chrId, "Town & Country", "chrysler-town-country");
+            PrepareGenerations(townCountry,
+                ("IV (2001–2007)", "chrysler-town-country-iv", 2001, 2007),
+                ("V (2008–2016)", "chrysler-town-country-v", 2008, 2016));
+            AddOrReplaceEngines(GetOrFixGeneration(townCountry, "IV (2001–2007)", "chrysler-town-country-iv", 2001, 2007), 150, [
+                new EngineVersion { EngineName = "3.3 V6 182 KM", PowerHP = 182, PowerKW = 134, Displacement = 3301, FuelTypeId = ben,
+                    TorqueNm = 265, EuroNorm = "Euro 3", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 11.0m, TopSpeedKmh = 175, FuelConsumptionCombined = 12.5m },
+                new EngineVersion { EngineName = "3.8 V6 215 KM", PowerHP = 215, PowerKW = 158, Displacement = 3778, FuelTypeId = ben,
+                    TorqueNm = 322, EuroNorm = "Euro 3", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 9.6m, TopSpeedKmh = 185, FuelConsumptionCombined = 13.2m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(townCountry, "V (2008–2016)", "chrysler-town-country-v", 2008, 2016), 200, [
+                new EngineVersion { EngineName = "3.6 V6 Pentastar 283 KM", PowerHP = 283, PowerKW = 208, Displacement = 3604, FuelTypeId = ben,
+                    TorqueNm = 350, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 8.4m, TopSpeedKmh = 195, FuelConsumptionCombined = 12.8m },
+                new EngineVersion { EngineName = "4.0 V6 251 KM", PowerHP = 251, PowerKW = 185, Displacement = 3952, FuelTypeId = ben,
+                    TorqueNm = 346, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 8.9m, TopSpeedKmh = 190, FuelConsumptionCombined = 13.5m },
+            ]);
+
+            int voyager = GetOrCreateModel(chrId, "Voyager", "chrysler-voyager");
+            PrepareGenerations(voyager,
+                ("I (1988–1995)", "chrysler-voyager-i", 1988, 1995),
+                ("IV (2001–2007)", "chrysler-voyager-iv", 2001, 2007));
+            AddOrReplaceEngines(GetOrFixGeneration(voyager, "I (1988–1995)", "chrysler-voyager-i", 1988, 1995), 80, [
+                new EngineVersion { EngineName = "2.5 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 2500, FuelTypeId = ben,
+                    TorqueNm = 183, EuroNorm = "Euro 1", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.0m, TopSpeedKmh = 160, FuelConsumptionCombined = 10.5m },
+                new EngineVersion { EngineName = "3.0 V6 142 KM", PowerHP = 142, PowerKW = 104, Displacement = 2972, FuelTypeId = ben,
+                    TorqueNm = 224, EuroNorm = "Euro 1", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 11.2m, TopSpeedKmh = 175, FuelConsumptionCombined = 11.8m },
+                new EngineVersion { EngineName = "2.5 TD 116 KM", PowerHP = 116, PowerKW = 85, Displacement = 2500, FuelTypeId = die,
+                    TorqueNm = 260, EuroNorm = "Euro 1", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.8m, TopSpeedKmh = 158, FuelConsumptionCombined = 8.0m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(voyager, "IV (2001–2007)", "chrysler-voyager-iv", 2001, 2007), 130, [
+                new EngineVersion { EngineName = "2.4 147 KM", PowerHP = 147, PowerKW = 108, Displacement = 2429, FuelTypeId = ben,
+                    TorqueNm = 217, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.0m, TopSpeedKmh = 175, FuelConsumptionCombined = 10.5m },
+                new EngineVersion { EngineName = "3.3 V6 180 KM", PowerHP = 180, PowerKW = 132, Displacement = 3301, FuelTypeId = ben,
+                    TorqueNm = 265, EuroNorm = "Euro 3", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 10.8m, TopSpeedKmh = 180, FuelConsumptionCombined = 12.5m },
+                new EngineVersion { EngineName = "2.5 CRD 141 KM", PowerHP = 141, PowerKW = 104, Displacement = 2477, FuelTypeId = die,
+                    TorqueNm = 300, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 5, Acceleration0100 = 12.5m, TopSpeedKmh = 170, FuelConsumptionCombined = 7.5m },
+                new EngineVersion { EngineName = "2.8 CRD 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 2776, FuelTypeId = die,
+                    TorqueNm = 315, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.0m, TopSpeedKmh = 172, FuelConsumptionCombined = 8.2m },
+            ]);
         }
 
         // ── Chevrolet ─────────────────────────────────────────────────────────────
         {
             int chevId = GetOrCreateBrand("Chevrolet", "chevrolet", "osobowe");
             int camaro = GetOrCreateModel(chevId, "Camaro", "chevrolet-camaro");
+            PrepareGenerations(camaro,
+                ("IV (1993–2002)", "chevrolet-camaro-iv", 1993, 2002),
+                ("V (2010–2015)", "chevrolet-camaro-v", 2010, 2015));
+            AddOrReplaceEngines(GetOrFixGeneration(camaro, "IV (1993–2002)", "chevrolet-camaro-iv", 1993, 2002), 150, [
+                new EngineVersion { EngineName = "3.4 V6 160 KM", PowerHP = 160, PowerKW = 118, Displacement = 3350, FuelTypeId = ben,
+                    TorqueNm = 285, EuroNorm = "Euro 2", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 9.0m, TopSpeedKmh = 190, FuelConsumptionCombined = 12.5m },
+                new EngineVersion { EngineName = "3.8 V6 200 KM", PowerHP = 200, PowerKW = 147, Displacement = 3791, FuelTypeId = ben,
+                    TorqueNm = 305, EuroNorm = "Euro 2", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 7.6m, TopSpeedKmh = 205, FuelConsumptionCombined = 13.2m },
+                new EngineVersion { EngineName = "5.7 V8 LS1 305 KM", PowerHP = 305, PowerKW = 224, Displacement = 5665, FuelTypeId = ben,
+                    TorqueNm = 461, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 5.5m, TopSpeedKmh = 250, FuelConsumptionCombined = 15.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(camaro, "V (2010–2015)", "chevrolet-camaro-v", 2010, 2015), 250, [
+                new EngineVersion { EngineName = "3.6 V6 312 KM", PowerHP = 312, PowerKW = 229, Displacement = 3564, FuelTypeId = ben,
+                    TorqueNm = 373, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 5.9m, TopSpeedKmh = 250, FuelConsumptionCombined = 11.5m },
+                new EngineVersion { EngineName = "6.2 V8 SS 432 KM", PowerHP = 432, PowerKW = 318, Displacement = 6162, FuelTypeId = ben,
+                    TorqueNm = 557, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 4.6m, TopSpeedKmh = 250, FuelConsumptionCombined = 15.6m },
+                new EngineVersion { EngineName = "6.2 V8 ZL1 580 KM", PowerHP = 580, PowerKW = 427, Displacement = 6162, FuelTypeId = ben,
+                    TorqueNm = 754, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 3.9m, TopSpeedKmh = 300, FuelConsumptionCombined = 16.2m },
+            ]);
             AddEngines(GetOrCreateGeneration(camaro, "VI (2015–)", "chevrolet-camaro-vi", 2015, null), [
                 new EngineVersion { EngineName = "2.0 Turbo 275 KM", PowerHP = 275, PowerKW = 202, Displacement = 1998, FuelTypeId = ben,
                     TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
@@ -5103,6 +5276,225 @@ public static class ComprehensiveSeeder
                 new EngineVersion { EngineName = "5.5 V8 Z06 680 KM", PowerHP = 680, PowerKW = 500, Displacement = 5532, FuelTypeId = ben,
                     TorqueNm = 637, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
                     Cylinders = 8, Acceleration0100 = 2.6m, TopSpeedKmh = 335, FuelConsumptionCombined = 16.5m },
+            ]);
+
+            int blazer = GetOrCreateModel(chevId, "Blazer", "chevrolet-blazer");
+            PrepareGenerations(blazer,
+                ("I (2019–2023)", "chevrolet-blazer-i", 2019, 2023),
+                ("II (2024–)", "chevrolet-blazer-ii", 2024, null));
+            AddOrReplaceEngines(GetOrFixGeneration(blazer, "I (2019–2023)", "chevrolet-blazer-i", 2019, 2023), 150, [
+                new EngineVersion { EngineName = "2.5 190 KM", PowerHP = 190, PowerKW = 140, Displacement = 2496, FuelTypeId = ben,
+                    TorqueNm = 250, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.0m, TopSpeedKmh = 190, FuelConsumptionCombined = 9.5m },
+                new EngineVersion { EngineName = "RS 2.0T 233 KM", PowerHP = 233, PowerKW = 171, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 353, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 7.2m, TopSpeedKmh = 200, FuelConsumptionCombined = 10.5m },
+                new EngineVersion { EngineName = "3.6 V6 308 KM", PowerHP = 308, PowerKW = 226, Displacement = 3649, FuelTypeId = ben,
+                    TorqueNm = 362, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 6.6m, TopSpeedKmh = 210, FuelConsumptionCombined = 11.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(blazer, "II (2024–)", "chevrolet-blazer-ii", 2024, null), 150, [
+                new EngineVersion { EngineName = "2.0T 233 KM", PowerHP = 233, PowerKW = 171, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 353, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 7.0m, TopSpeedKmh = 200, FuelConsumptionCombined = 10.2m },
+                new EngineVersion { EngineName = "3.6 V6 308 KM", PowerHP = 308, PowerKW = 226, Displacement = 3649, FuelTypeId = ben,
+                    TorqueNm = 362, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 6.5m, TopSpeedKmh = 210, FuelConsumptionCombined = 11.6m },
+            ]);
+
+            int colorado = GetOrCreateModel(chevId, "Colorado", "chevrolet-colorado");
+            PrepareGenerations(colorado,
+                ("I (2004–2012)", "chevrolet-colorado-i", 2004, 2012),
+                ("II (2012–)", "chevrolet-colorado-ii", 2012, null));
+            AddOrReplaceEngines(GetOrFixGeneration(colorado, "I (2004–2012)", "chevrolet-colorado-i", 2004, 2012), 130, [
+                new EngineVersion { EngineName = "2.8 I4 175 KM", PowerHP = 175, PowerKW = 129, Displacement = 2836, FuelTypeId = ben,
+                    TorqueNm = 244, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 10.5m, TopSpeedKmh = 170, FuelConsumptionCombined = 11.5m },
+                new EngineVersion { EngineName = "3.5 I5 220 KM", PowerHP = 220, PowerKW = 162, Displacement = 3456, FuelTypeId = ben,
+                    TorqueNm = 305, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 5, Acceleration0100 = 9.0m, TopSpeedKmh = 175, FuelConsumptionCombined = 13.0m },
+                new EngineVersion { EngineName = "5.3 V8 300 KM", PowerHP = 300, PowerKW = 221, Displacement = 5328, FuelTypeId = ben,
+                    TorqueNm = 460, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 7.8m, TopSpeedKmh = 180, FuelConsumptionCombined = 15.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(colorado, "II (2012–)", "chevrolet-colorado-ii", 2012, null), 150, [
+                new EngineVersion { EngineName = "2.5 I4 200 KM", PowerHP = 200, PowerKW = 147, Displacement = 2457, FuelTypeId = ben,
+                    TorqueNm = 258, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 9.8m, TopSpeedKmh = 175, FuelConsumptionCombined = 10.5m },
+                new EngineVersion { EngineName = "3.6 V6 305 KM", PowerHP = 305, PowerKW = 224, Displacement = 3564, FuelTypeId = ben,
+                    TorqueNm = 366, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 7.5m, TopSpeedKmh = 185, FuelConsumptionCombined = 12.8m },
+                new EngineVersion { EngineName = "2.8 Duramax Diesel 181 KM", PowerHP = 181, PowerKW = 133, Displacement = 2776, FuelTypeId = die,
+                    TorqueNm = 500, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 11.0m, TopSpeedKmh = 170, FuelConsumptionCombined = 8.5m },
+            ]);
+
+            int cruze = GetOrCreateModel(chevId, "Cruze", "chevrolet-cruze");
+            PrepareGenerations(cruze,
+                ("I (2009–2015)", "chevrolet-cruze-i", 2009, 2015),
+                ("II (2015–2019)", "chevrolet-cruze-ii", 2015, 2019));
+            AddOrReplaceEngines(GetOrFixGeneration(cruze, "I (2009–2015)", "chevrolet-cruze-i", 2009, 2015), 100, [
+                new EngineVersion { EngineName = "1.6 109 KM", PowerHP = 109, PowerKW = 80, Displacement = 1598, FuelTypeId = ben,
+                    TorqueNm = 150, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.1m, TopSpeedKmh = 185, FuelConsumptionCombined = 7.0m },
+                new EngineVersion { EngineName = "1.8 141 KM", PowerHP = 141, PowerKW = 104, Displacement = 1796, FuelTypeId = ben,
+                    TorqueNm = 176, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.8m, TopSpeedKmh = 200, FuelConsumptionCombined = 7.4m },
+                new EngineVersion { EngineName = "1.4T 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1364, FuelTypeId = ben,
+                    TorqueNm = 200, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.4m, TopSpeedKmh = 205, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "2.0D 163 KM", PowerHP = 163, PowerKW = 120, Displacement = 1956, FuelTypeId = die,
+                    TorqueNm = 360, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.7m, TopSpeedKmh = 210, FuelConsumptionCombined = 4.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(cruze, "II (2015–2019)", "chevrolet-cruze-ii", 2015, 2019), 100, [
+                new EngineVersion { EngineName = "1.4T 153 KM", PowerHP = 153, PowerKW = 113, Displacement = 1364, FuelTypeId = ben,
+                    TorqueNm = 240, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.0m, TopSpeedKmh = 210, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "1.6D 136 KM", PowerHP = 136, PowerKW = 100, Displacement = 1598, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.8m, TopSpeedKmh = 205, FuelConsumptionCombined = 4.3m },
+            ]);
+
+            int silverado = GetOrCreateModel(chevId, "Silverado", "chevrolet-silverado");
+            PrepareGenerations(silverado,
+                ("I (1999–2006)", "chevrolet-silverado-i", 1999, 2006),
+                ("II (2007–2013)", "chevrolet-silverado-ii", 2007, 2013),
+                ("III (2014–2018)", "chevrolet-silverado-iii", 2014, 2018),
+                ("IV (2019–)", "chevrolet-silverado-iv", 2019, null));
+            AddOrReplaceEngines(GetOrFixGeneration(silverado, "I (1999–2006)", "chevrolet-silverado-i", 1999, 2006), 200, [
+                new EngineVersion { EngineName = "4.8 V8 285 KM", PowerHP = 285, PowerKW = 210, Displacement = 4826, FuelTypeId = ben,
+                    TorqueNm = 407, EuroNorm = "Euro 3", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 8.5m, TopSpeedKmh = 170, FuelConsumptionCombined = 16.0m },
+                new EngineVersion { EngineName = "5.3 V8 295 KM", PowerHP = 295, PowerKW = 217, Displacement = 5327, FuelTypeId = ben,
+                    TorqueNm = 447, EuroNorm = "Euro 3", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 8.0m, TopSpeedKmh = 175, FuelConsumptionCombined = 16.5m },
+                new EngineVersion { EngineName = "6.0 V8 325 KM", PowerHP = 325, PowerKW = 239, Displacement = 5967, FuelTypeId = ben,
+                    TorqueNm = 542, EuroNorm = "Euro 3", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 7.5m, TopSpeedKmh = 180, FuelConsumptionCombined = 17.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(silverado, "II (2007–2013)", "chevrolet-silverado-ii", 2007, 2013), 250, [
+                new EngineVersion { EngineName = "4.8 V8 302 KM", PowerHP = 302, PowerKW = 222, Displacement = 4826, FuelTypeId = ben,
+                    TorqueNm = 434, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 8.2m, TopSpeedKmh = 175, FuelConsumptionCombined = 15.5m },
+                new EngineVersion { EngineName = "5.3 V8 315 KM", PowerHP = 315, PowerKW = 232, Displacement = 5327, FuelTypeId = ben,
+                    TorqueNm = 474, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 7.8m, TopSpeedKmh = 180, FuelConsumptionCombined = 16.0m },
+                new EngineVersion { EngineName = "6.2 V8 403 KM", PowerHP = 403, PowerKW = 296, Displacement = 6162, FuelTypeId = ben,
+                    TorqueNm = 583, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 6.8m, TopSpeedKmh = 190, FuelConsumptionCombined = 17.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(silverado, "III (2014–2018)", "chevrolet-silverado-iii", 2014, 2018), 250, [
+                new EngineVersion { EngineName = "4.3 V6 285 KM", PowerHP = 285, PowerKW = 210, Displacement = 4300, FuelTypeId = ben,
+                    TorqueNm = 373, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 8.6m, TopSpeedKmh = 175, FuelConsumptionCombined = 13.5m },
+                new EngineVersion { EngineName = "5.3 V8 355 KM", PowerHP = 355, PowerKW = 261, Displacement = 5328, FuelTypeId = ben,
+                    TorqueNm = 519, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 6.9m, TopSpeedKmh = 185, FuelConsumptionCombined = 14.8m },
+                new EngineVersion { EngineName = "6.2 V8 420 KM", PowerHP = 420, PowerKW = 309, Displacement = 6162, FuelTypeId = ben,
+                    TorqueNm = 624, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 6.2m, TopSpeedKmh = 195, FuelConsumptionCombined = 16.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(silverado, "IV (2019–)", "chevrolet-silverado-iv", 2019, null), 250, [
+                new EngineVersion { EngineName = "4.3 V6 285 KM", PowerHP = 285, PowerKW = 210, Displacement = 4300, FuelTypeId = ben,
+                    TorqueNm = 373, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 8.5m, TopSpeedKmh = 175, FuelConsumptionCombined = 13.2m },
+                new EngineVersion { EngineName = "5.3 V8 355 KM", PowerHP = 355, PowerKW = 261, Displacement = 5328, FuelTypeId = ben,
+                    TorqueNm = 519, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 6.8m, TopSpeedKmh = 185, FuelConsumptionCombined = 14.5m },
+                new EngineVersion { EngineName = "6.2 V8 420 KM", PowerHP = 420, PowerKW = 309, Displacement = 6162, FuelTypeId = ben,
+                    TorqueNm = 624, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 6.0m, TopSpeedKmh = 195, FuelConsumptionCombined = 16.2m },
+                new EngineVersion { EngineName = "3.0 Duramax Diesel 277 KM", PowerHP = 277, PowerKW = 204, Displacement = 2993, FuelTypeId = die,
+                    TorqueNm = 623, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 7.8m, TopSpeedKmh = 180, FuelConsumptionCombined = 9.5m },
+            ]);
+
+            int spark = GetOrCreateModel(chevId, "Spark", "chevrolet-spark");
+            PrepareGenerations(spark,
+                ("I (2009–2015)", "chevrolet-spark-i", 2009, 2015),
+                ("II (2015–2022)", "chevrolet-spark-ii", 2015, 2022));
+            AddOrReplaceEngines(GetOrFixGeneration(spark, "I (2009–2015)", "chevrolet-spark-i", 2009, 2015), 55, [
+                new EngineVersion { EngineName = "1.0 68 KM", PowerHP = 68, PowerKW = 50, Displacement = 995, FuelTypeId = ben,
+                    TorqueNm = 93, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 15.2m, TopSpeedKmh = 155, FuelConsumptionCombined = 5.0m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(spark, "II (2015–2022)", "chevrolet-spark-ii", 2015, 2022), 55, [
+                new EngineVersion { EngineName = "1.0 65 KM", PowerHP = 65, PowerKW = 48, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 92, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 15.5m, TopSpeedKmh = 154, FuelConsumptionCombined = 4.9m },
+                new EngineVersion { EngineName = "1.4 101 KM", PowerHP = 101, PowerKW = 74, Displacement = 1398, FuelTypeId = ben,
+                    TorqueNm = 130, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.6m, TopSpeedKmh = 170, FuelConsumptionCombined = 5.8m },
+            ]);
+
+            int tahoe = GetOrCreateModel(chevId, "Tahoe", "chevrolet-tahoe");
+            PrepareGenerations(tahoe,
+                ("I (1995–1999)", "chevrolet-tahoe-i", 1995, 1999),
+                ("III (2007–2014)", "chevrolet-tahoe-iii", 2007, 2014),
+                ("V (2021–)", "chevrolet-tahoe-v", 2021, null));
+            AddOrReplaceEngines(GetOrFixGeneration(tahoe, "I (1995–1999)", "chevrolet-tahoe-i", 1995, 1999), 200, [
+                new EngineVersion { EngineName = "5.7 V8 255 KM", PowerHP = 255, PowerKW = 187, Displacement = 5733, FuelTypeId = ben,
+                    TorqueNm = 407, EuroNorm = "Euro 2", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 9.5m, TopSpeedKmh = 170, FuelConsumptionCombined = 18.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(tahoe, "III (2007–2014)", "chevrolet-tahoe-iii", 2007, 2014), 280, [
+                new EngineVersion { EngineName = "5.3 V8 320 KM", PowerHP = 320, PowerKW = 235, Displacement = 5327, FuelTypeId = ben,
+                    TorqueNm = 468, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 8.5m, TopSpeedKmh = 180, FuelConsumptionCombined = 16.5m },
+                new EngineVersion { EngineName = "6.2 V8 403 KM", PowerHP = 403, PowerKW = 296, Displacement = 6162, FuelTypeId = ben,
+                    TorqueNm = 583, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 7.2m, TopSpeedKmh = 190, FuelConsumptionCombined = 17.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(tahoe, "V (2021–)", "chevrolet-tahoe-v", 2021, null), 280, [
+                new EngineVersion { EngineName = "5.3 V8 355 KM", PowerHP = 355, PowerKW = 261, Displacement = 5328, FuelTypeId = ben,
+                    TorqueNm = 519, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 7.0m, TopSpeedKmh = 190, FuelConsumptionCombined = 15.5m },
+                new EngineVersion { EngineName = "6.2 V8 420 KM", PowerHP = 420, PowerKW = 309, Displacement = 6162, FuelTypeId = ben,
+                    TorqueNm = 624, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 6.1m, TopSpeedKmh = 195, FuelConsumptionCombined = 16.9m },
+                new EngineVersion { EngineName = "3.0 Duramax Diesel 277 KM", PowerHP = 277, PowerKW = 204, Displacement = 2993, FuelTypeId = die,
+                    TorqueNm = 623, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 8.0m, TopSpeedKmh = 180, FuelConsumptionCombined = 9.8m },
+            ]);
+
+            int traverse = GetOrCreateModel(chevId, "Traverse", "chevrolet-traverse");
+            PrepareGenerations(traverse,
+                ("I (2009–2017)", "chevrolet-traverse-i", 2009, 2017),
+                ("II (2017–)", "chevrolet-traverse-ii", 2017, null));
+            AddOrReplaceEngines(GetOrFixGeneration(traverse, "I (2009–2017)", "chevrolet-traverse-i", 2009, 2017), 200, [
+                new EngineVersion { EngineName = "3.6 V6 288 KM", PowerHP = 288, PowerKW = 212, Displacement = 3564, FuelTypeId = ben,
+                    TorqueNm = 360, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 8.0m, TopSpeedKmh = 190, FuelConsumptionCombined = 12.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(traverse, "II (2017–)", "chevrolet-traverse-ii", 2017, null), 200, [
+                new EngineVersion { EngineName = "3.6 V6 314 KM", PowerHP = 314, PowerKW = 231, Displacement = 3649, FuelTypeId = ben,
+                    TorqueNm = 373, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 7.4m, TopSpeedKmh = 200, FuelConsumptionCombined = 12.2m },
+                new EngineVersion { EngineName = "2.0T 228 KM", PowerHP = 228, PowerKW = 168, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 350, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.6m, TopSpeedKmh = 195, FuelConsumptionCombined = 10.5m },
+            ]);
+
+            int trax = GetOrCreateModel(chevId, "Trax", "chevrolet-trax");
+            PrepareGenerations(trax,
+                ("I (2013–2016)", "chevrolet-trax-i", 2013, 2016),
+                ("II (2023–)", "chevrolet-trax-ii", 2023, null));
+            AddOrReplaceEngines(GetOrFixGeneration(trax, "I (2013–2016)", "chevrolet-trax-i", 2013, 2016), 100, [
+                new EngineVersion { EngineName = "1.4T 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1364, FuelTypeId = ben,
+                    TorqueNm = 200, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 9.7m, TopSpeedKmh = 187, FuelConsumptionCombined = 6.8m },
+                new EngineVersion { EngineName = "1.6 115 KM", PowerHP = 115, PowerKW = 85, Displacement = 1598, FuelTypeId = ben,
+                    TorqueNm = 155, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.7m, TopSpeedKmh = 172, FuelConsumptionCombined = 7.2m },
+                new EngineVersion { EngineName = "1.7D 130 KM", PowerHP = 130, PowerKW = 96, Displacement = 1686, FuelTypeId = die,
+                    TorqueNm = 300, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 10.1m, TopSpeedKmh = 180, FuelConsumptionCombined = 5.2m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(trax, "II (2023–)", "chevrolet-trax-ii", 2023, null), 100, [
+                new EngineVersion { EngineName = "1.2T 137 KM", PowerHP = 137, PowerKW = 101, Displacement = 1199, FuelTypeId = ben,
+                    TorqueNm = 220, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 9.5m, TopSpeedKmh = 190, FuelConsumptionCombined = 6.8m },
             ]);
         }
 
