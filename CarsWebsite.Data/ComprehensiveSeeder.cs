@@ -5814,6 +5814,30 @@ public static class ComprehensiveSeeder
                     TorqueNm = 1310, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
                     Cylinders = 0, Acceleration0100 = 2.6m, TopSpeedKmh = 262, FuelConsumptionCombined = null },
             ]);
+
+            int cybertruck = GetOrCreateModel(teslId, "Cybertruck", "tesla-cybertruck");
+            AddOrReplaceEngines(GetOrFixGeneration(cybertruck, "I (2023–)", "tesla-cybertruck-i", 2023, null), 400, [
+                new EngineVersion { EngineName = "AWD Dual Motor 600 KM", PowerHP = 600, PowerKW = 441, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 850, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 0, Acceleration0100 = 4.1m, TopSpeedKmh = 180, FuelConsumptionCombined = null },
+                new EngineVersion { EngineName = "Cyberbeast Tri Motor 845 KM", PowerHP = 845, PowerKW = 621, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 1330, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 0, Acceleration0100 = 2.6m, TopSpeedKmh = 209, FuelConsumptionCombined = null },
+            ]);
+
+            int roadster = GetOrCreateModel(teslId, "Roadster", "tesla-roadster");
+            AddOrReplaceEngines(GetOrFixGeneration(roadster, "I (2008–2012)", "tesla-roadster-i", 2008, 2012), 250, [
+                new EngineVersion { EngineName = "53 kWh 288 KM", PowerHP = 288, PowerKW = 212, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 370, EuroNorm = "Euro 5", GearboxType = "eAutomatic", DriveType = "RWD",
+                    Cylinders = 0, Acceleration0100 = 3.9m, TopSpeedKmh = 201, FuelConsumptionCombined = null },
+            ]);
+
+            int semi = GetOrCreateModel(teslId, "Semi", "tesla-semi");
+            AddOrReplaceEngines(GetOrFixGeneration(semi, "I (2022–)", "tesla-semi-i", 2022, null), 500, [
+                new EngineVersion { EngineName = "Tri Motor 1000 KM", PowerHP = 1000, PowerKW = 735, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 2000, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 0, Acceleration0100 = 20.0m, TopSpeedKmh = 105, FuelConsumptionCombined = null },
+            ]);
         }
 
         // ── Alfa Romeo ────────────────────────────────────────────────────────────
