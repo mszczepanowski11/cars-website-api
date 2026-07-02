@@ -2433,6 +2433,325 @@ public static class ComprehensiveSeeder
                     Cylinders = 4, Acceleration0100 = 9.8m, TopSpeedKmh = 205, FuelConsumptionCombined = 4.2m },
             ]);
 
+            int f124spider = GetOrCreateModel(fiatId, "124 Spider", "fiat-124-spider");
+            AddOrReplaceEngines(GetOrFixGeneration(f124spider, "II (2016–2019)", "fiat-124-spider-ii", 2016, 2019), 100, [
+                new EngineVersion { EngineName = "1.4 MultiAir Turbo 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 240, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 7.5m, TopSpeedKmh = 215, FuelConsumptionCombined = 6.4m },
+            ]);
+
+            int f500 = GetOrCreateModel(fiatId, "500", "fiat-500");
+            PrepareGenerations(f500,
+                ("II (2015–2020)", "fiat-500-ii", 2015, 2020),
+                ("III (2020–)", "fiat-500-iii", 2020, null));
+            AddOrReplaceEngines(GetOrFixGeneration(f500, "II (2015–2020)", "fiat-500-ii", 2015, 2020), 60, [
+                new EngineVersion { EngineName = "1.2 69 KM", PowerHP = 69, PowerKW = 51, Displacement = 1242, FuelTypeId = ben,
+                    TorqueNm = 102, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.0m, TopSpeedKmh = 160, FuelConsumptionCombined = 5.0m },
+                new EngineVersion { EngineName = "0.9 TwinAir 85 KM", PowerHP = 85, PowerKW = 63, Displacement = 875, FuelTypeId = ben,
+                    TorqueNm = 145, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 2, Acceleration0100 = 11.0m, TopSpeedKmh = 173, FuelConsumptionCombined = 4.2m },
+                new EngineVersion { EngineName = "1.3 MultiJet 95 KM", PowerHP = 95, PowerKW = 70, Displacement = 1248, FuelTypeId = die,
+                    TorqueNm = 200, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.3m, TopSpeedKmh = 165, FuelConsumptionCombined = 3.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(f500, "III (2020–)", "fiat-500-iii", 2020, null), 60, [
+                new EngineVersion { EngineName = "500e 70 KM", PowerHP = 70, PowerKW = 51, Displacement = null, FuelTypeId = ev,
+                    TorqueNm = 220, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = null, Acceleration0100 = 14.0m, TopSpeedKmh = 135, FuelConsumptionCombined = null },
+                new EngineVersion { EngineName = "500e 118 KM", PowerHP = 118, PowerKW = 87, Displacement = null, FuelTypeId = ev,
+                    TorqueNm = 220, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = null, Acceleration0100 = 9.0m, TopSpeedKmh = 150, FuelConsumptionCombined = null },
+            ]);
+
+            int f500l = GetOrCreateModel(fiatId, "500L", "fiat-500l");
+            AddOrReplaceEngines(GetOrFixGeneration(f500l, "I (2012–2020)", "fiat-500l-i", 2012, 2020), 70, [
+                new EngineVersion { EngineName = "1.4 95 KM", PowerHP = 95, PowerKW = 70, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 127, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.0m, TopSpeedKmh = 173, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "0.9 TwinAir 105 KM", PowerHP = 105, PowerKW = 77, Displacement = 875, FuelTypeId = ben,
+                    TorqueNm = 145, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 2, Acceleration0100 = 11.2m, TopSpeedKmh = 178, FuelConsumptionCombined = 5.0m },
+                new EngineVersion { EngineName = "1.3 MultiJet 95 KM", PowerHP = 95, PowerKW = 70, Displacement = 1248, FuelTypeId = die,
+                    TorqueNm = 200, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.4m, TopSpeedKmh = 165, FuelConsumptionCombined = 4.3m },
+                new EngineVersion { EngineName = "1.6 MultiJet 105 KM", PowerHP = 105, PowerKW = 77, Displacement = 1598, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.5m, TopSpeedKmh = 175, FuelConsumptionCombined = 4.5m },
+            ]);
+
+            int f500x = GetOrCreateModel(fiatId, "500X", "fiat-500x");
+            AddOrReplaceEngines(GetOrFixGeneration(f500x, "I (2015–)", "fiat-500x-i", 2015, null), 100, [
+                new EngineVersion { EngineName = "1.0 FireFly 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 190, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 10.8m, TopSpeedKmh = 182, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "1.3 FireFly Turbo 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1332, FuelTypeId = ben,
+                    TorqueNm = 270, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.9m, TopSpeedKmh = 195, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "1.6 MultiJet 130 KM", PowerHP = 130, PowerKW = 96, Displacement = 1598, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.8m, TopSpeedKmh = 190, FuelConsumptionCombined = 4.8m },
+                new EngineVersion { EngineName = "2.0 MultiJet 4x4 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1956, FuelTypeId = die,
+                    TorqueNm = 350, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 9.8m, TopSpeedKmh = 190, FuelConsumptionCombined = 5.5m },
+            ]);
+
+            int f600 = GetOrCreateModel(fiatId, "600", "fiat-600");
+            AddOrReplaceEngines(GetOrFixGeneration(f600, "II (2023–)", "fiat-600-ii", 2023, null), 90, [
+                new EngineVersion { EngineName = "1.2 Hybrid 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 1199, FuelTypeId = hyb,
+                    TorqueNm = 205, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 12.0m, TopSpeedKmh = 172, FuelConsumptionCombined = 5.4m },
+                new EngineVersion { EngineName = "La Prima Electric 156 KM", PowerHP = 156, PowerKW = 115, Displacement = null, FuelTypeId = ev,
+                    TorqueNm = 260, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = null, Acceleration0100 = 9.0m, TopSpeedKmh = 150, FuelConsumptionCombined = null },
+            ]);
+
+            int bravo = GetOrCreateModel(fiatId, "Bravo", "fiat-bravo");
+            PrepareGenerations(bravo,
+                ("I (1995–2001)", "fiat-bravo-i", 1995, 2001),
+                ("II (2007–2014)", "fiat-bravo-ii", 2007, 2014));
+            AddOrReplaceEngines(GetOrFixGeneration(bravo, "I (1995–2001)", "fiat-bravo-i", 1995, 2001), 70, [
+                new EngineVersion { EngineName = "1.4 80 KM", PowerHP = 80, PowerKW = 59, Displacement = 1370, FuelTypeId = ben,
+                    TorqueNm = 113, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.5m, TopSpeedKmh = 168, FuelConsumptionCombined = 7.2m },
+                new EngineVersion { EngineName = "1.6 103 KM", PowerHP = 103, PowerKW = 76, Displacement = 1581, FuelTypeId = ben,
+                    TorqueNm = 137, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.0m, TopSpeedKmh = 185, FuelConsumptionCombined = 7.8m },
+                new EngineVersion { EngineName = "1.8 113 KM", PowerHP = 113, PowerKW = 83, Displacement = 1747, FuelTypeId = ben,
+                    TorqueNm = 152, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.0m, TopSpeedKmh = 192, FuelConsumptionCombined = 8.3m },
+                new EngineVersion { EngineName = "1.9 TD 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 1929, FuelTypeId = die,
+                    TorqueNm = 200, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.5m, TopSpeedKmh = 178, FuelConsumptionCombined = 5.7m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(bravo, "II (2007–2014)", "fiat-bravo-ii", 2007, 2014), 80, [
+                new EngineVersion { EngineName = "1.4 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 127, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.5m, TopSpeedKmh = 178, FuelConsumptionCombined = 7.0m },
+                new EngineVersion { EngineName = "1.4 T-Jet 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 206, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.2m, TopSpeedKmh = 207, FuelConsumptionCombined = 7.4m },
+                new EngineVersion { EngineName = "1.6 MultiJet 105 KM", PowerHP = 105, PowerKW = 77, Displacement = 1598, FuelTypeId = die,
+                    TorqueNm = 280, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.0m, TopSpeedKmh = 187, FuelConsumptionCombined = 4.8m },
+                new EngineVersion { EngineName = "1.9 MultiJet 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1910, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.2m, TopSpeedKmh = 202, FuelConsumptionCombined = 5.5m },
+            ]);
+
+            int doblo = GetOrCreateModel(fiatId, "Doblo", "fiat-doblo");
+            PrepareGenerations(doblo,
+                ("I (2000–2010)", "fiat-doblo-i", 2000, 2010),
+                ("II (2010–2022)", "fiat-doblo-ii", 2010, 2022),
+                ("III (2022–)", "fiat-doblo-iii", 2022, null));
+            AddOrReplaceEngines(GetOrFixGeneration(doblo, "I (2000–2010)", "fiat-doblo-i", 2000, 2010), 55, [
+                new EngineVersion { EngineName = "1.6 103 KM", PowerHP = 103, PowerKW = 76, Displacement = 1596, FuelTypeId = ben,
+                    TorqueNm = 137, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.8m, TopSpeedKmh = 165, FuelConsumptionCombined = 8.0m },
+                new EngineVersion { EngineName = "1.9D 63 KM", PowerHP = 63, PowerKW = 46, Displacement = 1910, FuelTypeId = die,
+                    TorqueNm = 127, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 18.0m, TopSpeedKmh = 140, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "1.9 JTD 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 1910, FuelTypeId = die,
+                    TorqueNm = 200, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.5m, TopSpeedKmh = 160, FuelConsumptionCombined = 6.2m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(doblo, "II (2010–2022)", "fiat-doblo-ii", 2010, 2022), 70, [
+                new EngineVersion { EngineName = "1.4 95 KM", PowerHP = 95, PowerKW = 70, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 127, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.0m, TopSpeedKmh = 165, FuelConsumptionCombined = 7.5m },
+                new EngineVersion { EngineName = "1.6 MultiJet 105 KM", PowerHP = 105, PowerKW = 77, Displacement = 1598, FuelTypeId = die,
+                    TorqueNm = 280, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.5m, TopSpeedKmh = 170, FuelConsumptionCombined = 5.0m },
+                new EngineVersion { EngineName = "2.0 MultiJet 135 KM", PowerHP = 135, PowerKW = 99, Displacement = 1956, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.5m, TopSpeedKmh = 180, FuelConsumptionCombined = 5.7m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(doblo, "III (2022–)", "fiat-doblo-iii", 2022, null), 90, [
+                new EngineVersion { EngineName = "1.5 BlueHDi 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 1499, FuelTypeId = die,
+                    TorqueNm = 250, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.5m, TopSpeedKmh = 168, FuelConsumptionCombined = 4.8m },
+                new EngineVersion { EngineName = "1.5 BlueHDi 130 KM", PowerHP = 130, PowerKW = 96, Displacement = 1499, FuelTypeId = die,
+                    TorqueNm = 300, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.0m, TopSpeedKmh = 178, FuelConsumptionCombined = 5.0m },
+            ]);
+
+            int ducato = GetOrCreateModel(fiatId, "Ducato", "fiat-ducato");
+            PrepareGenerations(ducato,
+                ("II (2006–2014)", "fiat-ducato-ii", 2006, 2014),
+                ("III (2014–)", "fiat-ducato-iii", 2014, null));
+            AddOrReplaceEngines(GetOrFixGeneration(ducato, "II (2006–2014)", "fiat-ducato-ii", 2006, 2014), 100, [
+                new EngineVersion { EngineName = "2.3 MultiJet 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 2287, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 15.5m, TopSpeedKmh = 155, FuelConsumptionCombined = 8.5m },
+                new EngineVersion { EngineName = "3.0 MultiJet 157 KM", PowerHP = 157, PowerKW = 115, Displacement = 2999, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.0m, TopSpeedKmh = 175, FuelConsumptionCombined = 9.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(ducato, "III (2014–)", "fiat-ducato-iii", 2014, null), 120, [
+                new EngineVersion { EngineName = "2.3 MultiJet 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 2287, FuelTypeId = die,
+                    TorqueNm = 350, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.5m, TopSpeedKmh = 158, FuelConsumptionCombined = 7.8m },
+                new EngineVersion { EngineName = "2.3 MultiJet 180 KM", PowerHP = 180, PowerKW = 132, Displacement = 2287, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.5m, TopSpeedKmh = 168, FuelConsumptionCombined = 8.2m },
+            ]);
+
+            int idea = GetOrCreateModel(fiatId, "Idea", "fiat-idea");
+            AddOrReplaceEngines(GetOrFixGeneration(idea, "I (2003–2012)", "fiat-idea-i", 2003, 2012), 55, [
+                new EngineVersion { EngineName = "1.2 65 KM", PowerHP = 65, PowerKW = 48, Displacement = 1242, FuelTypeId = ben,
+                    TorqueNm = 102, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 16.5m, TopSpeedKmh = 155, FuelConsumptionCombined = 6.2m },
+                new EngineVersion { EngineName = "1.4 77 KM", PowerHP = 77, PowerKW = 57, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 115, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.5m, TopSpeedKmh = 165, FuelConsumptionCombined = 6.6m },
+                new EngineVersion { EngineName = "1.3 MultiJet 70 KM", PowerHP = 70, PowerKW = 51, Displacement = 1248, FuelTypeId = die,
+                    TorqueNm = 145, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 15.5m, TopSpeedKmh = 155, FuelConsumptionCombined = 4.6m },
+                new EngineVersion { EngineName = "1.9 MultiJet 105 KM", PowerHP = 105, PowerKW = 77, Displacement = 1910, FuelTypeId = die,
+                    TorqueNm = 260, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.9m, TopSpeedKmh = 180, FuelConsumptionCombined = 5.2m },
+            ]);
+
+            int multipla = GetOrCreateModel(fiatId, "Multipla", "fiat-multipla");
+            AddOrReplaceEngines(GetOrFixGeneration(multipla, "I (1998–2010)", "fiat-multipla-i", 1998, 2010), 70, [
+                new EngineVersion { EngineName = "1.6 103 KM", PowerHP = 103, PowerKW = 76, Displacement = 1581, FuelTypeId = ben,
+                    TorqueNm = 143, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.0m, TopSpeedKmh = 165, FuelConsumptionCombined = 8.5m },
+                new EngineVersion { EngineName = "1.9 JTD 105 KM", PowerHP = 105, PowerKW = 77, Displacement = 1910, FuelTypeId = die,
+                    TorqueNm = 255, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.5m, TopSpeedKmh = 165, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "1.9 JTD 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 1910, FuelTypeId = die,
+                    TorqueNm = 280, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.3m, TopSpeedKmh = 172, FuelConsumptionCombined = 6.2m },
+            ]);
+
+            int panda = GetOrCreateModel(fiatId, "Panda", "fiat-panda");
+            PrepareGenerations(panda,
+                ("I (1980–2003)", "fiat-panda-i", 1980, 2003),
+                ("II (2003–2012)", "fiat-panda-ii", 2003, 2012),
+                ("III (2012–)", "fiat-panda-iii", 2012, null));
+            AddOrReplaceEngines(GetOrFixGeneration(panda, "I (1980–2003)", "fiat-panda-i", 1980, 2003), 30, [
+                new EngineVersion { EngineName = "900 45 KM", PowerHP = 45, PowerKW = 33, Displacement = 903, FuelTypeId = ben,
+                    TorqueNm = 65, EuroNorm = "Euro 1", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 18.0m, TopSpeedKmh = 140, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "1.1 50 KM", PowerHP = 50, PowerKW = 37, Displacement = 1108, FuelTypeId = ben,
+                    TorqueNm = 84, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 16.0m, TopSpeedKmh = 145, FuelConsumptionCombined = 6.3m },
+                new EngineVersion { EngineName = "1.3D 45 KM", PowerHP = 45, PowerKW = 33, Displacement = 1301, FuelTypeId = die,
+                    TorqueNm = 88, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 21.0m, TopSpeedKmh = 132, FuelConsumptionCombined = 4.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(panda, "II (2003–2012)", "fiat-panda-ii", 2003, 2012), 40, [
+                new EngineVersion { EngineName = "1.1 54 KM", PowerHP = 54, PowerKW = 40, Displacement = 1108, FuelTypeId = ben,
+                    TorqueNm = 88, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 16.4m, TopSpeedKmh = 148, FuelConsumptionCombined = 5.8m },
+                new EngineVersion { EngineName = "1.2 69 KM", PowerHP = 69, PowerKW = 51, Displacement = 1242, FuelTypeId = ben,
+                    TorqueNm = 102, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.5m, TopSpeedKmh = 157, FuelConsumptionCombined = 5.6m },
+                new EngineVersion { EngineName = "1.3 MultiJet 70 KM", PowerHP = 70, PowerKW = 51, Displacement = 1248, FuelTypeId = die,
+                    TorqueNm = 145, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.9m, TopSpeedKmh = 155, FuelConsumptionCombined = 4.2m },
+                new EngineVersion { EngineName = "1.3 MultiJet 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1248, FuelTypeId = die,
+                    TorqueNm = 200, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 12.8m, TopSpeedKmh = 165, FuelConsumptionCombined = 4.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(panda, "III (2012–)", "fiat-panda-iii", 2012, null), 50, [
+                new EngineVersion { EngineName = "1.2 69 KM", PowerHP = 69, PowerKW = 51, Displacement = 1242, FuelTypeId = ben,
+                    TorqueNm = 102, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.5m, TopSpeedKmh = 160, FuelConsumptionCombined = 5.2m },
+                new EngineVersion { EngineName = "0.9 TwinAir 85 KM", PowerHP = 85, PowerKW = 63, Displacement = 875, FuelTypeId = ben,
+                    TorqueNm = 145, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "AWD",
+                    Cylinders = 2, Acceleration0100 = 11.2m, TopSpeedKmh = 173, FuelConsumptionCombined = 4.5m },
+                new EngineVersion { EngineName = "1.3 MultiJet 95 KM", PowerHP = 95, PowerKW = 70, Displacement = 1248, FuelTypeId = die,
+                    TorqueNm = 200, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.5m, TopSpeedKmh = 168, FuelConsumptionCombined = 4.0m },
+            ]);
+
+            int punto = GetOrCreateModel(fiatId, "Punto", "fiat-punto");
+            AddOrReplaceEngines(GetOrFixGeneration(punto, "I (1993–1999)", "fiat-punto-i", 1993, 1999), 45, [
+                new EngineVersion { EngineName = "1.1 54 KM", PowerHP = 54, PowerKW = 40, Displacement = 1108, FuelTypeId = ben,
+                    TorqueNm = 84, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 16.0m, TopSpeedKmh = 150, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "1.2 60 KM", PowerHP = 60, PowerKW = 44, Displacement = 1242, FuelTypeId = ben,
+                    TorqueNm = 100, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.0m, TopSpeedKmh = 160, FuelConsumptionCombined = 6.3m },
+                new EngineVersion { EngineName = "1.4 GT Turbo 136 KM", PowerHP = 136, PowerKW = 100, Displacement = 1372, FuelTypeId = ben,
+                    TorqueNm = 186, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.1m, TopSpeedKmh = 195, FuelConsumptionCombined = 8.5m },
+                new EngineVersion { EngineName = "1.7 TD 71 KM", PowerHP = 71, PowerKW = 52, Displacement = 1698, FuelTypeId = die,
+                    TorqueNm = 137, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 15.5m, TopSpeedKmh = 158, FuelConsumptionCombined = 5.0m },
+            ]);
+
+            int qubo = GetOrCreateModel(fiatId, "Qubo", "fiat-qubo");
+            AddOrReplaceEngines(GetOrFixGeneration(qubo, "I (2008–2021)", "fiat-qubo-i", 2008, 2021), 55, [
+                new EngineVersion { EngineName = "1.4 77 KM", PowerHP = 77, PowerKW = 57, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 118, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.5m, TopSpeedKmh = 158, FuelConsumptionCombined = 6.4m },
+                new EngineVersion { EngineName = "1.3 MultiJet 75 KM", PowerHP = 75, PowerKW = 55, Displacement = 1248, FuelTypeId = die,
+                    TorqueNm = 190, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 15.0m, TopSpeedKmh = 155, FuelConsumptionCombined = 4.5m },
+                new EngineVersion { EngineName = "1.3 MultiJet 95 KM", PowerHP = 95, PowerKW = 70, Displacement = 1248, FuelTypeId = die,
+                    TorqueNm = 200, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.8m, TopSpeedKmh = 165, FuelConsumptionCombined = 4.7m },
+            ]);
+
+            int seicento = GetOrCreateModel(fiatId, "Seicento", "fiat-seicento");
+            AddOrReplaceEngines(GetOrFixGeneration(seicento, "I (1998–2010)", "fiat-seicento-i", 1998, 2010), 35, [
+                new EngineVersion { EngineName = "900 41 KM", PowerHP = 41, PowerKW = 30, Displacement = 899, FuelTypeId = ben,
+                    TorqueNm = 64, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 18.5m, TopSpeedKmh = 137, FuelConsumptionCombined = 5.6m },
+                new EngineVersion { EngineName = "1.1 54 KM", PowerHP = 54, PowerKW = 40, Displacement = 1108, FuelTypeId = ben,
+                    TorqueNm = 88, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.5m, TopSpeedKmh = 150, FuelConsumptionCombined = 5.9m },
+                new EngineVersion { EngineName = "1.1 Sporting 60 KM", PowerHP = 60, PowerKW = 44, Displacement = 1108, FuelTypeId = ben,
+                    TorqueNm = 93, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.5m, TopSpeedKmh = 158, FuelConsumptionCombined = 6.1m },
+            ]);
+
+            int stilo = GetOrCreateModel(fiatId, "Stilo", "fiat-stilo");
+            AddOrReplaceEngines(GetOrFixGeneration(stilo, "I (2001–2010)", "fiat-stilo-i", 2001, 2010), 70, [
+                new EngineVersion { EngineName = "1.4 95 KM", PowerHP = 95, PowerKW = 70, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 122, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.0m, TopSpeedKmh = 175, FuelConsumptionCombined = 7.2m },
+                new EngineVersion { EngineName = "1.6 103 KM", PowerHP = 103, PowerKW = 76, Displacement = 1596, FuelTypeId = ben,
+                    TorqueNm = 145, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.5m, TopSpeedKmh = 185, FuelConsumptionCombined = 7.9m },
+                new EngineVersion { EngineName = "1.8 133 KM", PowerHP = 133, PowerKW = 98, Displacement = 1747, FuelTypeId = ben,
+                    TorqueNm = 165, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 197, FuelConsumptionCombined = 8.5m },
+                new EngineVersion { EngineName = "1.9 JTD 115 KM", PowerHP = 115, PowerKW = 85, Displacement = 1910, FuelTypeId = die,
+                    TorqueNm = 255, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.2m, TopSpeedKmh = 188, FuelConsumptionCombined = 5.8m },
+                new EngineVersion { EngineName = "1.9 JTD 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1910, FuelTypeId = die,
+                    TorqueNm = 305, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.7m, TopSpeedKmh = 197, FuelConsumptionCombined = 6.0m },
+            ]);
+
+            int uno = GetOrCreateModel(fiatId, "Uno", "fiat-uno");
+            PrepareGenerations(uno,
+                ("I (1983–1995)", "fiat-uno-i", 1983, 1995),
+                ("II (2010–2021)", "fiat-uno-ii", 2010, 2021));
+            AddOrReplaceEngines(GetOrFixGeneration(uno, "I (1983–1995)", "fiat-uno-i", 1983, 1995), 30, [
+                new EngineVersion { EngineName = "900 45 KM", PowerHP = 45, PowerKW = 33, Displacement = 903, FuelTypeId = ben,
+                    TorqueNm = 65, EuroNorm = "Euro 1", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 18.5m, TopSpeedKmh = 140, FuelConsumptionCombined = 6.2m },
+                new EngineVersion { EngineName = "1.1 55 KM", PowerHP = 55, PowerKW = 40, Displacement = 1108, FuelTypeId = ben,
+                    TorqueNm = 85, EuroNorm = "Euro 1", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 15.5m, TopSpeedKmh = 150, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "1.4 Turbo i.e. 118 KM", PowerHP = 118, PowerKW = 87, Displacement = 1372, FuelTypeId = ben,
+                    TorqueNm = 190, EuroNorm = "Euro 1", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.6m, TopSpeedKmh = 195, FuelConsumptionCombined = 8.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(uno, "II (2010–2021)", "fiat-uno-ii", 2010, 2021), 55, [
+                new EngineVersion { EngineName = "1.0 Fire 75 KM", PowerHP = 75, PowerKW = 55, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 91, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.5m, TopSpeedKmh = 155, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "1.4 Fire 88 KM", PowerHP = 88, PowerKW = 65, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 122, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.0m, TopSpeedKmh = 165, FuelConsumptionCombined = 7.5m },
+            ]);
+
             // ── NISSAN QASHQAI J11 + J12 ─────────────────────────────────────────────
             int nissanId = GetOrCreateBrand("Nissan", "nissan", "auta-osobowe");
             int qashqai = GetOrCreateModel(nissanId, "Qashqai", "nissan-qashqai");
