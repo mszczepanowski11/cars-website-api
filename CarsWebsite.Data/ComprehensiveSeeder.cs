@@ -2374,6 +2374,91 @@ public static class ComprehensiveSeeder
                     Cylinders = 4, Acceleration0100 = 9.2m, TopSpeedKmh = 208, FuelConsumptionCombined = 6.3m },
             ]);
 
+            // ── HONDA (Accord, HR-V, Jazz, e, ZR-V — Civic/CR-V already seeded by ModelSeeder) ──
+            int hondaId2 = GetOrCreateBrand("Honda", "honda", "auta-osobowe");
+            int accord = GetOrCreateModel(hondaId2, "Accord", "honda-accord");
+            PrepareGenerations(accord,
+                ("VIII (2008–2015)", "honda-accord-viii", 2008, 2015),
+                ("IX (2015–2022)", "honda-accord-ix", 2015, 2022));
+            AddOrReplaceEngines(GetOrFixGeneration(accord, "VIII (2008–2015)", "honda-accord-viii", 2008, 2015), 130, [
+                new EngineVersion { EngineName = "2.0 i-VTEC 156 KM", PowerHP = 156, PowerKW = 115, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 190, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.8m, TopSpeedKmh = 210, FuelConsumptionCombined = 7.5m },
+                new EngineVersion { EngineName = "2.4 i-VTEC 201 KM", PowerHP = 201, PowerKW = 148, Displacement = 2354, FuelTypeId = ben,
+                    TorqueNm = 233, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.2m, TopSpeedKmh = 225, FuelConsumptionCombined = 8.9m },
+                new EngineVersion { EngineName = "2.2 i-DTEC 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 2199, FuelTypeId = die,
+                    TorqueNm = 350, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.4m, TopSpeedKmh = 215, FuelConsumptionCombined = 5.4m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(accord, "IX (2015–2022)", "honda-accord-ix", 2015, 2022), 140, [
+                new EngineVersion { EngineName = "1.5 VTEC Turbo 173 KM", PowerHP = 173, PowerKW = 127, Displacement = 1498, FuelTypeId = ben,
+                    TorqueNm = 220, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.1m, TopSpeedKmh = 210, FuelConsumptionCombined = 6.7m },
+                new EngineVersion { EngineName = "2.0 e:HEV 215 KM", PowerHP = 215, PowerKW = 158, Displacement = 1993, FuelTypeId = hyb,
+                    TorqueNm = 315, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.3m, TopSpeedKmh = 180, FuelConsumptionCombined = 5.2m },
+            ]);
+
+            int hrv = GetOrCreateModel(hondaId2, "HR-V", "honda-hrv");
+            PrepareGenerations(hrv,
+                ("II (2015–2021)", "honda-hrv-ii", 2015, 2021),
+                ("III (2021–)", "honda-hrv-iii", 2021, null));
+            AddOrReplaceEngines(GetOrFixGeneration(hrv, "II (2015–2021)", "honda-hrv-ii", 2015, 2021), 100, [
+                new EngineVersion { EngineName = "1.5 i-VTEC 130 KM", PowerHP = 130, PowerKW = 96, Displacement = 1498, FuelTypeId = ben,
+                    TorqueNm = 155, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.2m, TopSpeedKmh = 190, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "1.6 i-DTEC 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 1597, FuelTypeId = die,
+                    TorqueNm = 300, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.5m, TopSpeedKmh = 192, FuelConsumptionCombined = 4.2m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(hrv, "III (2021–)", "honda-hrv-iii", 2021, null), 100, [
+                new EngineVersion { EngineName = "e:HEV 1.5 131 KM", PowerHP = 131, PowerKW = 96, Displacement = 1498, FuelTypeId = hyb,
+                    TorqueNm = 253, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.6m, TopSpeedKmh = 175, FuelConsumptionCombined = 5.4m },
+            ]);
+
+            int jazz = GetOrCreateModel(hondaId2, "Jazz", "honda-jazz");
+            PrepareGenerations(jazz,
+                ("III (2015–2020)", "honda-jazz-iii", 2015, 2020),
+                ("IV (2020–)", "honda-jazz-iv", 2020, null));
+            AddOrReplaceEngines(GetOrFixGeneration(jazz, "III (2015–2020)", "honda-jazz-iii", 2015, 2020), 90, [
+                new EngineVersion { EngineName = "1.3 i-VTEC 102 KM", PowerHP = 102, PowerKW = 75, Displacement = 1317, FuelTypeId = ben,
+                    TorqueNm = 123, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.5m, TopSpeedKmh = 175, FuelConsumptionCombined = 5.4m },
+                new EngineVersion { EngineName = "1.5 i-VTEC 130 KM", PowerHP = 130, PowerKW = 96, Displacement = 1497, FuelTypeId = ben,
+                    TorqueNm = 155, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.9m, TopSpeedKmh = 195, FuelConsumptionCombined = 5.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(jazz, "IV (2020–)", "honda-jazz-iv", 2020, null), 100, [
+                new EngineVersion { EngineName = "e:HEV 1.5 109 KM", PowerHP = 109, PowerKW = 80, Displacement = 1498, FuelTypeId = hyb,
+                    TorqueNm = 253, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.5m, TopSpeedKmh = 175, FuelConsumptionCombined = 4.5m },
+                new EngineVersion { EngineName = "Crosstar e:HEV 1.5 109 KM", PowerHP = 109, PowerKW = 80, Displacement = 1498, FuelTypeId = hyb,
+                    TorqueNm = 253, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.5m, TopSpeedKmh = 175, FuelConsumptionCombined = 4.6m },
+            ]);
+
+            int hondaE = GetOrCreateModel(hondaId2, "e", "honda-e");
+            AddOrReplaceEngines(GetOrFixGeneration(hondaE, "I (2020–2023)", "honda-e-i", 2020, 2023), 100, [
+                new EngineVersion { EngineName = "35.5 kWh 136 KM", PowerHP = 136, PowerKW = 100, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 315, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "RWD",
+                    Cylinders = 0, Acceleration0100 = 9.0m, TopSpeedKmh = 145, FuelConsumptionCombined = 17.2m },
+                new EngineVersion { EngineName = "35.5 kWh Advance 154 KM", PowerHP = 154, PowerKW = 113, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 315, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "RWD",
+                    Cylinders = 0, Acceleration0100 = 8.3m, TopSpeedKmh = 145, FuelConsumptionCombined = 17.5m },
+            ]);
+
+            int zrv = GetOrCreateModel(hondaId2, "ZR-V", "honda-zrv");
+            AddOrReplaceEngines(GetOrFixGeneration(zrv, "I (2023–)", "honda-zrv-i", 2023, null), 130, [
+                new EngineVersion { EngineName = "e:HEV 2.0 184 KM", PowerHP = 184, PowerKW = 135, Displacement = 1993, FuelTypeId = hyb,
+                    TorqueNm = 190, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.7m, TopSpeedKmh = 200, FuelConsumptionCombined = 5.3m },
+                new EngineVersion { EngineName = "e:HEV Advance 2.0 184 KM AWD", PowerHP = 184, PowerKW = 135, Displacement = 1993, FuelTypeId = hyb,
+                    TorqueNm = 190, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.7m, TopSpeedKmh = 200, FuelConsumptionCombined = 5.7m },
+            ]);
+
             int opelId = GetOrCreateBrand("Opel", "opel", "auta-osobowe");
             int astra = GetOrCreateModel(opelId, "Astra", "opel-astra");
             AddEngines(GetOrCreateGeneration(astra, "K (2015–2021)", "opel-astra-k", 2015, 2021), [
