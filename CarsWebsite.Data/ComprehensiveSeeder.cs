@@ -4338,6 +4338,77 @@ public static class ComprehensiveSeeder
                     Cylinders = 4, Acceleration0100 = 12.0m, TopSpeedKmh = 178, FuelConsumptionCombined = 3.5m },
             ]);
 
+            int captur = GetOrCreateModel(renaultId2, "Captur", "renault-captur");
+            PrepareGenerations(captur,
+                ("I (2013–2019)", "renault-captur-i", 2013, 2019),
+                ("II (2019–)", "renault-captur-ii", 2019, null));
+            AddOrReplaceEngines(GetOrFixGeneration(captur, "I (2013–2019)", "renault-captur-i", 2013, 2019), 90, [
+                new EngineVersion { EngineName = "0.9 TCe 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 898, FuelTypeId = ben,
+                    TorqueNm = 135, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 12.0m, TopSpeedKmh = 174, FuelConsumptionCombined = 5.7m },
+                new EngineVersion { EngineName = "1.5 dCi 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1461, FuelTypeId = die,
+                    TorqueNm = 220, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.6m, TopSpeedKmh = 174, FuelConsumptionCombined = 3.6m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(captur, "II (2019–)", "renault-captur-ii", 2019, null), 100, [
+                new EngineVersion { EngineName = "1.0 TCe 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 160, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.8m, TopSpeedKmh = 173, FuelConsumptionCombined = 5.9m },
+                new EngineVersion { EngineName = "E-Tech PHEV 160 KM", PowerHP = 160, PowerKW = 118, Displacement = 1598, FuelTypeId = phev,
+                    TorqueNm = 205, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.1m, TopSpeedKmh = 175, FuelConsumptionCombined = 1.5m },
+                new EngineVersion { EngineName = "1.5 dCi 95 KM", PowerHP = 95, PowerKW = 70, Displacement = 1461, FuelTypeId = die,
+                    TorqueNm = 260, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.9m, TopSpeedKmh = 179, FuelConsumptionCombined = 4.0m },
+            ]);
+
+            int kadjar = GetOrCreateModel(renaultId2, "Kadjar", "renault-kadjar");
+            AddOrReplaceEngines(GetOrFixGeneration(kadjar, "I (2015–2022)", "renault-kadjar-i", 2015, 2022), 100, [
+                new EngineVersion { EngineName = "1.3 TCe 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1332, FuelTypeId = ben,
+                    TorqueNm = 240, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.7m, TopSpeedKmh = 200, FuelConsumptionCombined = 6.3m },
+                new EngineVersion { EngineName = "1.5 dCi 115 KM", PowerHP = 115, PowerKW = 85, Displacement = 1461, FuelTypeId = die,
+                    TorqueNm = 260, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.1m, TopSpeedKmh = 187, FuelConsumptionCombined = 4.2m },
+            ]);
+
+            int scenic = GetOrCreateModel(renaultId2, "Scenic", "renault-scenic");
+            AddOrReplaceEngines(GetOrFixGeneration(scenic, "IV (2016–2023)", "renault-scenic-iv", 2016, 2023), 110, [
+                new EngineVersion { EngineName = "1.3 TCe 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1332, FuelTypeId = ben,
+                    TorqueNm = 240, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 200, FuelConsumptionCombined = 6.7m },
+                new EngineVersion { EngineName = "1.5 dCi 110 KM", PowerHP = 110, PowerKW = 81, Displacement = 1461, FuelTypeId = die,
+                    TorqueNm = 260, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.5m, TopSpeedKmh = 188, FuelConsumptionCombined = 4.3m },
+            ]);
+
+            int twingo = GetOrCreateModel(renaultId2, "Twingo", "renault-twingo");
+            AddOrReplaceEngines(GetOrFixGeneration(twingo, "III (2014–)", "renault-twingo-iii", 2014, null), 65, [
+                new EngineVersion { EngineName = "1.0 SCe 70 KM", PowerHP = 70, PowerKW = 51, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 91, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 3, Acceleration0100 = 14.5m, TopSpeedKmh = 156, FuelConsumptionCombined = 4.6m },
+                new EngineVersion { EngineName = "Z.E. Electric 82 KM", PowerHP = 82, PowerKW = 60, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 160, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "RWD",
+                    Cylinders = 0, Acceleration0100 = 12.9m, TopSpeedKmh = 135, FuelConsumptionCombined = 16.1m },
+            ]);
+
+            int zoe = GetOrCreateModel(renaultId2, "Zoe", "renault-zoe");
+            AddOrReplaceEngines(GetOrFixGeneration(zoe, "II (2019–)", "renault-zoe-ii", 2019, null), 100, [
+                new EngineVersion { EngineName = "Z.E.50 52 kWh 135 KM", PowerHP = 135, PowerKW = 100, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 245, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 0, Acceleration0100 = 9.5m, TopSpeedKmh = 140, FuelConsumptionCombined = 17.2m },
+            ]);
+
+            int austral = GetOrCreateModel(renaultId2, "Austral", "renault-austral");
+            AddOrReplaceEngines(GetOrFixGeneration(austral, "I (2022–)", "renault-austral-i", 2022, null), 140, [
+                new EngineVersion { EngineName = "E-Tech Hybrid 200 KM", PowerHP = 200, PowerKW = 147, Displacement = 1199, FuelTypeId = hyb,
+                    TorqueNm = 205, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 8.4m, TopSpeedKmh = 175, FuelConsumptionCombined = 4.9m },
+                new EngineVersion { EngineName = "TCe 140 KM Mild Hybrid", PowerHP = 140, PowerKW = 103, Displacement = 1332, FuelTypeId = mild,
+                    TorqueNm = 240, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.4m, TopSpeedKmh = 195, FuelConsumptionCombined = 6.4m },
+            ]);
+
             // ── OPEL CORSA E/F + INSIGNIA B ──────────────────────────────────────────
             int opelId2 = GetOrCreateBrand("Opel", "opel", "auta-osobowe");
             int corsa = GetOrCreateModel(opelId2, "Corsa", "opel-corsa");
