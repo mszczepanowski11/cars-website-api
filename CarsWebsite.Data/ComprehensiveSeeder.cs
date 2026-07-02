@@ -99,15 +99,17 @@ public static class ComprehensiveSeeder
             return m.Id;
         }
 
+        // GetOrCreateGeneration used to be a plain exact-name lookup with no fallback: if a model
+        // already had a broken placeholder generation (e.g. "Generation I") under a different
+        // name, this created a brand-new duplicate generation and silently left the placeholder —
+        // and its wrong engine data — untouched and still visible in the form. Confirmed via the
+        // AUDIT log: models with real curated data here (Giulia, Stelvio, Tonale, Giulietta, 147,
+        // 156, MiTo, and surely many more throughout this file) were STILL showing up as broken
+        // because of this. GetOrFixGeneration is a strict superset of the old behavior — identical
+        // when there's no existing generation to fix, but correctly reuses/renames a placeholder
+        // in place instead of duplicating it — so every existing call site benefits automatically.
         int GetOrCreateGeneration(int modelId, string name, string slug, int yearFrom, int? yearTo)
-        {
-            var g = db.Generations.FirstOrDefault(x => x.ModelId == modelId && x.Name == name);
-            if (g != null) return g.Id;
-            g = new Generation { ModelId = modelId, Name = name, Slug = slug, YearFrom = yearFrom, YearTo = yearTo };
-            db.Generations.Add(g);
-            db.SaveChanges();
-            return g.Id;
-        }
+            => GetOrFixGeneration(modelId, name, slug, yearFrom, yearTo);
 
         static bool IsGenericGenName(string n) => GenericGenNameRegex.IsMatch(n.Trim());
 
@@ -1000,56 +1002,84 @@ public static class ComprehensiveSeeder
             int bId = GetOrCreateBrand("Alfa Romeo", "alfa-romeo", "auta-osobowe");
 
             int m147 = GetOrCreateModel(bId, "147", "alfa-romeo-147");
-            AddEngines(GetOrCreateGeneration(m147, "I (2000–2010)", "alfa-147-i", 2000, 2010), [
-                new EngineVersion { EngineName = "1.4 TS 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1368, FuelTypeId = ben,
-                    TorqueNm = 127, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
-                    Cylinders = 4, Acceleration0100 = 12.5m, TopSpeedKmh = 177, FuelConsumptionCombined = 7.8m },
+            PrepareGenerations(m147,
+                ("I (2000–2004)", "alfa-147-i", 2000, 2004),
+                ("II (2004–2010)", "alfa-147-ii", 2004, 2010));
+            AddOrReplaceEngines(GetOrFixGeneration(m147, "I (2000–2004)", "alfa-147-i", 2000, 2004), 85, [
                 new EngineVersion { EngineName = "1.6 TS 105 KM", PowerHP = 105, PowerKW = 77, Displacement = 1598, FuelTypeId = ben,
-                    TorqueNm = 144, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    TorqueNm = 144, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
                     Cylinders = 4, Acceleration0100 = 10.5m, TopSpeedKmh = 190, FuelConsumptionCombined = 8.2m },
                 new EngineVersion { EngineName = "2.0 TS 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1970, FuelTypeId = ben,
-                    TorqueNm = 187, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    TorqueNm = 187, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
                     Cylinders = 4, Acceleration0100 = 8.2m, TopSpeedKmh = 215, FuelConsumptionCombined = 9.5m },
                 new EngineVersion { EngineName = "GTA 3.2 V6 250 KM", PowerHP = 250, PowerKW = 184, Displacement = 3179, FuelTypeId = ben,
-                    TorqueNm = 300, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    TorqueNm = 300, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
                     Cylinders = 6, Acceleration0100 = 6.3m, TopSpeedKmh = 250, FuelConsumptionCombined = 13.5m },
-                new EngineVersion { EngineName = "1.9 JTD 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 1910, FuelTypeId = die,
-                    TorqueNm = 200, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
-                    Cylinders = 4, Acceleration0100 = 11.8m, TopSpeedKmh = 185, FuelConsumptionCombined = 5.6m },
                 new EngineVersion { EngineName = "1.9 JTD 115 KM", PowerHP = 115, PowerKW = 85, Displacement = 1910, FuelTypeId = die,
-                    TorqueNm = 270, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    TorqueNm = 270, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
                     Cylinders = 4, Acceleration0100 = 10.8m, TopSpeedKmh = 193, FuelConsumptionCombined = 5.4m },
-                new EngineVersion { EngineName = "1.9 JTD 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1910, FuelTypeId = die,
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(m147, "II (2004–2010)", "alfa-147-ii", 2004, 2010), 85, [
+                new EngineVersion { EngineName = "1.6 TS 105 KM", PowerHP = 105, PowerKW = 77, Displacement = 1598, FuelTypeId = ben,
+                    TorqueNm = 144, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.5m, TopSpeedKmh = 190, FuelConsumptionCombined = 8.0m },
+                new EngineVersion { EngineName = "2.0 JTS 165 KM", PowerHP = 165, PowerKW = 121, Displacement = 1970, FuelTypeId = ben,
+                    TorqueNm = 205, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.9m, TopSpeedKmh = 218, FuelConsumptionCombined = 9.2m },
+                new EngineVersion { EngineName = "1.9 JTDm 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 1910, FuelTypeId = die,
+                    TorqueNm = 280, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.3m, TopSpeedKmh = 195, FuelConsumptionCombined = 5.3m },
+                new EngineVersion { EngineName = "1.9 JTDm 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1910, FuelTypeId = die,
                     TorqueNm = 305, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
-                    Cylinders = 4, Acceleration0100 = 8.9m, TopSpeedKmh = 210, FuelConsumptionCombined = 5.8m },
+                    Cylinders = 4, Acceleration0100 = 8.9m, TopSpeedKmh = 210, FuelConsumptionCombined = 5.6m },
             ]);
 
             int m156 = GetOrCreateModel(bId, "156", "alfa-romeo-156");
-            AddEngines(GetOrCreateGeneration(m156, "932 (1997–2007)", "alfa-156-932", 1997, 2007), [
+            PrepareGenerations(m156,
+                ("I (1997–2003)", "alfa-156-i", 1997, 2003),
+                ("II (2003–2007)", "alfa-156-ii", 2003, 2007));
+            AddOrReplaceEngines(GetOrFixGeneration(m156, "I (1997–2003)", "alfa-156-i", 1997, 2003), 100, [
                 new EngineVersion { EngineName = "1.6 TS 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 1598, FuelTypeId = ben,
-                    TorqueNm = 144, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    TorqueNm = 144, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
                     Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 195, FuelConsumptionCombined = 8.5m },
                 new EngineVersion { EngineName = "1.8 TS 144 KM", PowerHP = 144, PowerKW = 106, Displacement = 1747, FuelTypeId = ben,
-                    TorqueNm = 172, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    TorqueNm = 172, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
                     Cylinders = 4, Acceleration0100 = 8.4m, TopSpeedKmh = 210, FuelConsumptionCombined = 9.2m },
                 new EngineVersion { EngineName = "2.0 TS 155 KM", PowerHP = 155, PowerKW = 114, Displacement = 1970, FuelTypeId = ben,
-                    TorqueNm = 187, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    TorqueNm = 187, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
                     Cylinders = 4, Acceleration0100 = 7.9m, TopSpeedKmh = 215, FuelConsumptionCombined = 9.8m },
                 new EngineVersion { EngineName = "2.5 V6 24V 192 KM", PowerHP = 192, PowerKW = 141, Displacement = 2492, FuelTypeId = ben,
-                    TorqueNm = 222, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    TorqueNm = 222, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
                     Cylinders = 6, Acceleration0100 = 7.0m, TopSpeedKmh = 230, FuelConsumptionCombined = 11.5m },
                 new EngineVersion { EngineName = "GTA 3.2 V6 250 KM", PowerHP = 250, PowerKW = 184, Displacement = 3179, FuelTypeId = ben,
-                    TorqueNm = 300, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    TorqueNm = 300, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
                     Cylinders = 6, Acceleration0100 = 6.3m, TopSpeedKmh = 250, FuelConsumptionCombined = 12.8m },
                 new EngineVersion { EngineName = "1.9 JTD 105 KM", PowerHP = 105, PowerKW = 77, Displacement = 1910, FuelTypeId = die,
-                    TorqueNm = 200, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    TorqueNm = 200, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
                     Cylinders = 4, Acceleration0100 = 10.7m, TopSpeedKmh = 190, FuelConsumptionCombined = 5.5m },
                 new EngineVersion { EngineName = "1.9 JTD 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1910, FuelTypeId = die,
-                    TorqueNm = 305, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    TorqueNm = 305, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
                     Cylinders = 4, Acceleration0100 = 8.5m, TopSpeedKmh = 210, FuelConsumptionCombined = 5.7m },
-                new EngineVersion { EngineName = "2.4 JTD 175 KM", PowerHP = 175, PowerKW = 129, Displacement = 2387, FuelTypeId = die,
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(m156, "II (2003–2007)", "alfa-156-ii", 2003, 2007), 100, [
+                new EngineVersion { EngineName = "1.6 TS 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 1598, FuelTypeId = ben,
+                    TorqueNm = 144, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 195, FuelConsumptionCombined = 8.3m },
+                new EngineVersion { EngineName = "2.0 JTS 165 KM", PowerHP = 165, PowerKW = 121, Displacement = 1970, FuelTypeId = ben,
+                    TorqueNm = 205, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.7m, TopSpeedKmh = 218, FuelConsumptionCombined = 9.4m },
+                new EngineVersion { EngineName = "2.5 V6 24V 192 KM", PowerHP = 192, PowerKW = 141, Displacement = 2492, FuelTypeId = ben,
+                    TorqueNm = 222, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 7.0m, TopSpeedKmh = 230, FuelConsumptionCombined = 11.3m },
+                new EngineVersion { EngineName = "1.9 JTDm 115 KM", PowerHP = 115, PowerKW = 85, Displacement = 1910, FuelTypeId = die,
+                    TorqueNm = 275, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.5m, TopSpeedKmh = 193, FuelConsumptionCombined = 5.3m },
+                new EngineVersion { EngineName = "1.9 JTDm 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1910, FuelTypeId = die,
+                    TorqueNm = 305, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.5m, TopSpeedKmh = 210, FuelConsumptionCombined = 5.6m },
+                new EngineVersion { EngineName = "2.4 JTDm 175 KM", PowerHP = 175, PowerKW = 129, Displacement = 2387, FuelTypeId = die,
                     TorqueNm = 370, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
-                    Cylinders = 5, Acceleration0100 = 7.6m, TopSpeedKmh = 220, FuelConsumptionCombined = 6.3m },
+                    Cylinders = 5, Acceleration0100 = 7.6m, TopSpeedKmh = 220, FuelConsumptionCombined = 6.1m },
             ]);
 
             int mito = GetOrCreateModel(bId, "MiTo", "alfa-romeo-mito");
@@ -1073,6 +1103,160 @@ public static class ComprehensiveSeeder
                 new EngineVersion { EngineName = "1.75 TB 240 KM", PowerHP = 240, PowerKW = 177, Displacement = 1742, FuelTypeId = ben,
                     TorqueNm = 350, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "RWD",
                     Cylinders = 4, Acceleration0100 = 4.5m, TopSpeedKmh = 258, FuelConsumptionCombined = 7.1m },
+            ]);
+
+            int m145 = GetOrCreateModel(bId, "145", "alfa-romeo-145");
+            AddOrReplaceEngines(GetOrFixGeneration(m145, "I (1994–2001)", "alfa-145-i", 1994, 2001), 60, [
+                new EngineVersion { EngineName = "1.6 TS 103 KM", PowerHP = 103, PowerKW = 76, Displacement = 1598, FuelTypeId = ben,
+                    TorqueNm = 137, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.8m, TopSpeedKmh = 187, FuelConsumptionCombined = 8.0m },
+                new EngineVersion { EngineName = "1.8 TS 144 KM", PowerHP = 144, PowerKW = 106, Displacement = 1747, FuelTypeId = ben,
+                    TorqueNm = 169, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.0m, TopSpeedKmh = 205, FuelConsumptionCombined = 8.6m },
+                new EngineVersion { EngineName = "2.0 TS 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1970, FuelTypeId = ben,
+                    TorqueNm = 181, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.0m, TopSpeedKmh = 210, FuelConsumptionCombined = 9.3m },
+                new EngineVersion { EngineName = "1.9 TD 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1929, FuelTypeId = die,
+                    TorqueNm = 181, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.2m, TopSpeedKmh = 178, FuelConsumptionCombined = 5.9m },
+            ]);
+
+            int m146 = GetOrCreateModel(bId, "146", "alfa-romeo-146");
+            AddOrReplaceEngines(GetOrFixGeneration(m146, "I (1994–2001)", "alfa-146-i", 1994, 2001), 60, [
+                new EngineVersion { EngineName = "1.6 TS 103 KM", PowerHP = 103, PowerKW = 76, Displacement = 1598, FuelTypeId = ben,
+                    TorqueNm = 137, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.0m, TopSpeedKmh = 186, FuelConsumptionCombined = 8.1m },
+                new EngineVersion { EngineName = "1.8 TS 144 KM", PowerHP = 144, PowerKW = 106, Displacement = 1747, FuelTypeId = ben,
+                    TorqueNm = 169, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.2m, TopSpeedKmh = 204, FuelConsumptionCombined = 8.7m },
+                new EngineVersion { EngineName = "2.0 TS 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1970, FuelTypeId = ben,
+                    TorqueNm = 181, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.2m, TopSpeedKmh = 209, FuelConsumptionCombined = 9.4m },
+                new EngineVersion { EngineName = "1.9 TD 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1929, FuelTypeId = die,
+                    TorqueNm = 181, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.4m, TopSpeedKmh = 177, FuelConsumptionCombined = 6.0m },
+            ]);
+
+            int m159 = GetOrCreateModel(bId, "159", "alfa-romeo-159");
+            AddOrReplaceEngines(GetOrFixGeneration(m159, "I (2005–2011)", "alfa-159-i", 2005, 2011), 115, [
+                new EngineVersion { EngineName = "1.9 JTS 160 KM", PowerHP = 160, PowerKW = 118, Displacement = 1859, FuelTypeId = ben,
+                    TorqueNm = 190, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.3m, TopSpeedKmh = 210, FuelConsumptionCombined = 9.1m },
+                new EngineVersion { EngineName = "1.8 TBi 200 KM", PowerHP = 200, PowerKW = 147, Displacement = 1742, FuelTypeId = ben,
+                    TorqueNm = 320, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.0m, TopSpeedKmh = 220, FuelConsumptionCombined = 8.7m },
+                new EngineVersion { EngineName = "3.2 JTS V6 260 KM", PowerHP = 260, PowerKW = 191, Displacement = 3195, FuelTypeId = ben,
+                    TorqueNm = 322, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 6.6m, TopSpeedKmh = 245, FuelConsumptionCombined = 11.9m },
+                new EngineVersion { EngineName = "1.9 JTDm 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 1910, FuelTypeId = die,
+                    TorqueNm = 280, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.9m, TopSpeedKmh = 195, FuelConsumptionCombined = 5.9m },
+                new EngineVersion { EngineName = "2.4 JTDm 200 KM", PowerHP = 200, PowerKW = 147, Displacement = 2387, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 5, Acceleration0100 = 8.0m, TopSpeedKmh = 222, FuelConsumptionCombined = 6.7m },
+            ]);
+
+            int m166 = GetOrCreateModel(bId, "166", "alfa-romeo-166");
+            PrepareGenerations(m166,
+                ("I (1998–2003)", "alfa-166-i", 1998, 2003),
+                ("II (2003–2007)", "alfa-166-ii", 2003, 2007));
+            AddOrReplaceEngines(GetOrFixGeneration(m166, "I (1998–2003)", "alfa-166-i", 1998, 2003), 130, [
+                new EngineVersion { EngineName = "2.0 TS 155 KM", PowerHP = 155, PowerKW = 114, Displacement = 1970, FuelTypeId = ben,
+                    TorqueNm = 187, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 210, FuelConsumptionCombined = 10.2m },
+                new EngineVersion { EngineName = "2.5 V6 190 KM", PowerHP = 190, PowerKW = 140, Displacement = 2492, FuelTypeId = ben,
+                    TorqueNm = 222, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 8.2m, TopSpeedKmh = 226, FuelConsumptionCombined = 11.8m },
+                new EngineVersion { EngineName = "3.0 V6 226 KM", PowerHP = 226, PowerKW = 166, Displacement = 2959, FuelTypeId = ben,
+                    TorqueNm = 275, EuroNorm = "Euro 3", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 7.3m, TopSpeedKmh = 240, FuelConsumptionCombined = 12.7m },
+                new EngineVersion { EngineName = "2.4 JTD 136 KM", PowerHP = 136, PowerKW = 100, Displacement = 2387, FuelTypeId = die,
+                    TorqueNm = 304, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 5, Acceleration0100 = 10.9m, TopSpeedKmh = 200, FuelConsumptionCombined = 6.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(m166, "II (2003–2007)", "alfa-166-ii", 2003, 2007), 130, [
+                new EngineVersion { EngineName = "2.0 TS 165 KM", PowerHP = 165, PowerKW = 121, Displacement = 1970, FuelTypeId = ben,
+                    TorqueNm = 191, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.5m, TopSpeedKmh = 212, FuelConsumptionCombined = 10.0m },
+                new EngineVersion { EngineName = "3.2 V6 240 KM", PowerHP = 240, PowerKW = 177, Displacement = 3179, FuelTypeId = ben,
+                    TorqueNm = 300, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 7.0m, TopSpeedKmh = 244, FuelConsumptionCombined = 12.9m },
+                new EngineVersion { EngineName = "2.4 JTD 175 KM", PowerHP = 175, PowerKW = 129, Displacement = 2387, FuelTypeId = die,
+                    TorqueNm = 380, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 5, Acceleration0100 = 9.0m, TopSpeedKmh = 213, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "2.4 JTD 200 KM", PowerHP = 200, PowerKW = 147, Displacement = 2387, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 5, Acceleration0100 = 8.3m, TopSpeedKmh = 222, FuelConsumptionCombined = 6.9m },
+            ]);
+
+            int brera = GetOrCreateModel(bId, "Brera", "alfa-romeo-brera");
+            AddOrReplaceEngines(GetOrFixGeneration(brera, "I (2005–2010)", "alfa-brera-i", 2005, 2010), 175, [
+                new EngineVersion { EngineName = "2.2 JTS 185 KM", PowerHP = 185, PowerKW = 136, Displacement = 2198, FuelTypeId = ben,
+                    TorqueNm = 216, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.9m, TopSpeedKmh = 220, FuelConsumptionCombined = 10.5m },
+                new EngineVersion { EngineName = "3.2 V6 260 KM", PowerHP = 260, PowerKW = 191, Displacement = 3195, FuelTypeId = ben,
+                    TorqueNm = 322, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 6.8m, TopSpeedKmh = 245, FuelConsumptionCombined = 12.7m },
+                new EngineVersion { EngineName = "3.2 V6 Q4 260 KM", PowerHP = 260, PowerKW = 191, Displacement = 3195, FuelTypeId = ben,
+                    TorqueNm = 322, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 6.6m, TopSpeedKmh = 242, FuelConsumptionCombined = 13.2m },
+                new EngineVersion { EngineName = "2.4 JTDm 200 KM", PowerHP = 200, PowerKW = 147, Displacement = 2387, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 5, Acceleration0100 = 8.0m, TopSpeedKmh = 222, FuelConsumptionCombined = 6.8m },
+                new EngineVersion { EngineName = "2.4 JTDm Q4 210 KM", PowerHP = 210, PowerKW = 154, Displacement = 2387, FuelTypeId = die,
+                    TorqueNm = 400, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 5, Acceleration0100 = 7.9m, TopSpeedKmh = 220, FuelConsumptionCombined = 7.1m },
+            ]);
+
+            int gt = GetOrCreateModel(bId, "GT", "alfa-romeo-gt");
+            AddOrReplaceEngines(GetOrFixGeneration(gt, "I (2003–2010)", "alfa-gt-i", 2003, 2010), 130, [
+                new EngineVersion { EngineName = "1.8 TS 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1747, FuelTypeId = ben,
+                    TorqueNm = 165, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.6m, TopSpeedKmh = 205, FuelConsumptionCombined = 9.2m },
+                new EngineVersion { EngineName = "2.0 JTS 165 KM", PowerHP = 165, PowerKW = 121, Displacement = 1970, FuelTypeId = ben,
+                    TorqueNm = 206, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.0m, TopSpeedKmh = 220, FuelConsumptionCombined = 9.6m },
+                new EngineVersion { EngineName = "3.2 V6 240 KM", PowerHP = 240, PowerKW = 177, Displacement = 3179, FuelTypeId = ben,
+                    TorqueNm = 300, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 6.5m, TopSpeedKmh = 245, FuelConsumptionCombined = 12.5m },
+                new EngineVersion { EngineName = "1.9 JTD 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1910, FuelTypeId = die,
+                    TorqueNm = 305, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.0m, TopSpeedKmh = 210, FuelConsumptionCombined = 5.8m },
+                new EngineVersion { EngineName = "2.0 JTD 170 KM", PowerHP = 170, PowerKW = 125, Displacement = 1998, FuelTypeId = die,
+                    TorqueNm = 360, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.6m, TopSpeedKmh = 215, FuelConsumptionCombined = 6.2m },
+            ]);
+
+            int gtv = GetOrCreateModel(bId, "GTV", "alfa-romeo-gtv");
+            AddOrReplaceEngines(GetOrFixGeneration(gtv, "I (1995–2005)", "alfa-gtv-i", 1995, 2005), 130, [
+                new EngineVersion { EngineName = "2.0 TS 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1970, FuelTypeId = ben,
+                    TorqueNm = 181, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.9m, TopSpeedKmh = 210, FuelConsumptionCombined = 9.8m },
+                new EngineVersion { EngineName = "2.0 V6 TB 202 KM", PowerHP = 202, PowerKW = 149, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 270, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 6.8m, TopSpeedKmh = 240, FuelConsumptionCombined = 11.2m },
+                new EngineVersion { EngineName = "3.0 V6 24V 220 KM", PowerHP = 220, PowerKW = 162, Displacement = 2959, FuelTypeId = ben,
+                    TorqueNm = 260, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 6.5m, TopSpeedKmh = 245, FuelConsumptionCombined = 12.6m },
+                new EngineVersion { EngineName = "3.2 V6 24V 240 KM", PowerHP = 240, PowerKW = 177, Displacement = 3179, FuelTypeId = ben,
+                    TorqueNm = 300, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 6.3m, TopSpeedKmh = 250, FuelConsumptionCombined = 12.9m },
+            ]);
+
+            int spider = GetOrCreateModel(bId, "Spider", "alfa-romeo-spider");
+            AddOrReplaceEngines(GetOrFixGeneration(spider, "I (1995–2005)", "alfa-spider-i", 1995, 2005), 130, [
+                new EngineVersion { EngineName = "2.0 TS 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1970, FuelTypeId = ben,
+                    TorqueNm = 181, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.0m, TopSpeedKmh = 208, FuelConsumptionCombined = 9.9m },
+                new EngineVersion { EngineName = "2.0 V6 TB 202 KM", PowerHP = 202, PowerKW = 149, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 270, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 7.0m, TopSpeedKmh = 235, FuelConsumptionCombined = 11.4m },
+                new EngineVersion { EngineName = "3.0 V6 24V 220 KM", PowerHP = 220, PowerKW = 162, Displacement = 2959, FuelTypeId = ben,
+                    TorqueNm = 260, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 6.7m, TopSpeedKmh = 242, FuelConsumptionCombined = 12.8m },
+                new EngineVersion { EngineName = "3.2 V6 24V 240 KM", PowerHP = 240, PowerKW = 177, Displacement = 3179, FuelTypeId = ben,
+                    TorqueNm = 300, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 6, Acceleration0100 = 6.4m, TopSpeedKmh = 248, FuelConsumptionCombined = 13.1m },
             ]);
         }
 
@@ -3527,19 +3711,48 @@ public static class ComprehensiveSeeder
                     Cylinders = 4, Acceleration0100 = 10.2m, TopSpeedKmh = 195, FuelConsumptionCombined = 5.2m },
             ]);
             int giulietta = GetOrCreateModel(alfaId, "Giulietta", "alfa-romeo-giulietta");
-            AddEngines(GetOrCreateGeneration(giulietta, "940 (2010–2020)", "alfa-giulietta-940", 2010, 2020), [
+            PrepareGenerations(giulietta,
+                ("I (2010–2016)", "alfa-giulietta-i", 2010, 2016),
+                ("II (2016–2020)", "alfa-giulietta-ii", 2016, 2020));
+            AddOrReplaceEngines(GetOrFixGeneration(giulietta, "I (2010–2016)", "alfa-giulietta-i", 2010, 2016), 100, [
                 new EngineVersion { EngineName = "1.4 MultiAir Turbo 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 1368, FuelTypeId = ben,
                     TorqueNm = 215, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
                     Cylinders = 4, Acceleration0100 = 9.8m, TopSpeedKmh = 195, FuelConsumptionCombined = 5.9m },
                 new EngineVersion { EngineName = "1.4 MultiAir Turbo 170 KM", PowerHP = 170, PowerKW = 125, Displacement = 1368, FuelTypeId = ben,
                     TorqueNm = 250, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
                     Cylinders = 4, Acceleration0100 = 7.7m, TopSpeedKmh = 218, FuelConsumptionCombined = 6.0m },
-                new EngineVersion { EngineName = "1.75 TBi Quadrifoglio 240 KM", PowerHP = 240, PowerKW = 177, Displacement = 1742, FuelTypeId = ben,
-                    TorqueNm = 340, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
-                    Cylinders = 4, Acceleration0100 = 6.8m, TopSpeedKmh = 245, FuelConsumptionCombined = 8.1m },
-                new EngineVersion { EngineName = "2.0 JTDm 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1956, FuelTypeId = die,
+                new EngineVersion { EngineName = "1.75 TBi Quadrifoglio Verde 235 KM", PowerHP = 235, PowerKW = 173, Displacement = 1742, FuelTypeId = ben,
+                    TorqueNm = 340, EuroNorm = "Euro 5", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.8m, TopSpeedKmh = 244, FuelConsumptionCombined = 8.2m },
+                new EngineVersion { EngineName = "1.6 JTDm 105 KM", PowerHP = 105, PowerKW = 77, Displacement = 1598, FuelTypeId = die,
                     TorqueNm = 320, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
-                    Cylinders = 4, Acceleration0100 = 8.8m, TopSpeedKmh = 210, FuelConsumptionCombined = 4.7m },
+                    Cylinders = 4, Acceleration0100 = 11.7m, TopSpeedKmh = 185, FuelConsumptionCombined = 4.2m },
+                new EngineVersion { EngineName = "2.0 JTDm 140 KM", PowerHP = 140, PowerKW = 103, Displacement = 1956, FuelTypeId = die,
+                    TorqueNm = 350, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.2m, TopSpeedKmh = 206, FuelConsumptionCombined = 4.5m },
+                new EngineVersion { EngineName = "2.0 JTDm 175 KM", PowerHP = 175, PowerKW = 129, Displacement = 1956, FuelTypeId = die,
+                    TorqueNm = 380, EuroNorm = "Euro 5", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.2m, TopSpeedKmh = 218, FuelConsumptionCombined = 4.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(giulietta, "II (2016–2020)", "alfa-giulietta-ii", 2016, 2020), 100, [
+                new EngineVersion { EngineName = "1.4 MultiAir Turbo 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 215, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.8m, TopSpeedKmh = 195, FuelConsumptionCombined = 5.8m },
+                new EngineVersion { EngineName = "1.4 MultiAir Turbo 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 230, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.3m, TopSpeedKmh = 210, FuelConsumptionCombined = 5.9m },
+                new EngineVersion { EngineName = "1.75 TBi Veloce 240 KM", PowerHP = 240, PowerKW = 177, Displacement = 1742, FuelTypeId = ben,
+                    TorqueNm = 340, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.6m, TopSpeedKmh = 246, FuelConsumptionCombined = 8.0m },
+                new EngineVersion { EngineName = "1.6 JTDm 120 KM", PowerHP = 120, PowerKW = 88, Displacement = 1598, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.6m, TopSpeedKmh = 195, FuelConsumptionCombined = 4.1m },
+                new EngineVersion { EngineName = "2.0 JTDm 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1956, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.8m, TopSpeedKmh = 210, FuelConsumptionCombined = 4.6m },
+                new EngineVersion { EngineName = "2.0 JTDm 175 KM", PowerHP = 175, PowerKW = 129, Displacement = 1956, FuelTypeId = die,
+                    TorqueNm = 380, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.0m, TopSpeedKmh = 218, FuelConsumptionCombined = 4.7m },
             ]);
         }
 
@@ -4339,14 +4552,117 @@ public static class ComprehensiveSeeder
         // ── Abarth ────────────────────────────────────────────────────────────────
         {
             int abaId = GetOrCreateBrand("Abarth", "abarth", "osobowe");
+
+            int ab500 = GetOrCreateModel(abaId, "500", "abarth-500");
+            PrepareGenerations(ab500,
+                ("I (2008–2015)", "abarth-500-i", 2008, 2015),
+                ("II (2015–2016)", "abarth-500-ii", 2015, 2016));
+            AddOrReplaceEngines(GetOrFixGeneration(ab500, "I (2008–2015)", "abarth-500-i", 2008, 2015), 130, [
+                new EngineVersion { EngineName = "1.4 T-Jet 135 KM", PowerHP = 135, PowerKW = 99, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 180, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.9m, TopSpeedKmh = 205, FuelConsumptionCombined = 6.5m },
+                new EngineVersion { EngineName = "1.4 T-Jet Esseesse 160 KM", PowerHP = 160, PowerKW = 118, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 230, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.4m, TopSpeedKmh = 213, FuelConsumptionCombined = 6.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(ab500, "II (2015–2016)", "abarth-500-ii", 2015, 2016), 130, [
+                new EngineVersion { EngineName = "1.4 T-Jet 145 KM", PowerHP = 145, PowerKW = 107, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 206, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.5m, TopSpeedKmh = 213, FuelConsumptionCombined = 6.6m },
+            ]);
+
+            int ab500c = GetOrCreateModel(abaId, "500C", "abarth-500c");
+            PrepareGenerations(ab500c,
+                ("I (2010–2015)", "abarth-500c-i", 2010, 2015),
+                ("II (2015–2016)", "abarth-500c-ii", 2015, 2016));
+            AddOrReplaceEngines(GetOrFixGeneration(ab500c, "I (2010–2015)", "abarth-500c-i", 2010, 2015), 130, [
+                new EngineVersion { EngineName = "1.4 T-Jet 135 KM", PowerHP = 135, PowerKW = 99, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 180, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.1m, TopSpeedKmh = 202, FuelConsumptionCombined = 6.6m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(ab500c, "II (2015–2016)", "abarth-500c-ii", 2015, 2016), 130, [
+                new EngineVersion { EngineName = "1.4 T-Jet 145 KM", PowerHP = 145, PowerKW = 107, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 206, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.7m, TopSpeedKmh = 210, FuelConsumptionCombined = 6.7m },
+            ]);
+
             int ab595 = GetOrCreateModel(abaId, "595", "abarth-595");
-            AddEngines(GetOrCreateGeneration(ab595, "312 (2008–)", "abarth-595-312", 2008, null), [
+            PrepareGenerations(ab595,
+                ("I (2016–2020)", "abarth-595-i", 2016, 2020),
+                ("II (2020–2024)", "abarth-595-ii", 2020, 2024));
+            AddOrReplaceEngines(GetOrFixGeneration(ab595, "I (2016–2020)", "abarth-595-i", 2016, 2020), 140, [
+                new EngineVersion { EngineName = "1.4 T-Jet 145 KM", PowerHP = 145, PowerKW = 107, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 206, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.5m, TopSpeedKmh = 215, FuelConsumptionCombined = 6.9m },
+                new EngineVersion { EngineName = "1.4 T-Jet Turismo 165 KM", PowerHP = 165, PowerKW = 121, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 230, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.0m, TopSpeedKmh = 218, FuelConsumptionCombined = 7.0m },
+                new EngineVersion { EngineName = "1.4 T-Jet Competizione 180 KM", PowerHP = 180, PowerKW = 132, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 250, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.7m, TopSpeedKmh = 225, FuelConsumptionCombined = 7.4m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(ab595, "II (2020–2024)", "abarth-595-ii", 2020, 2024), 140, [
                 new EngineVersion { EngineName = "1.4 T-Jet 145 KM", PowerHP = 145, PowerKW = 107, Displacement = 1368, FuelTypeId = ben,
                     TorqueNm = 206, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
-                    Cylinders = 4, Acceleration0100 = 7.5m, TopSpeedKmh = 215, FuelConsumptionCombined = 6.9m },
+                    Cylinders = 4, Acceleration0100 = 7.4m, TopSpeedKmh = 216, FuelConsumptionCombined = 6.8m },
+                new EngineVersion { EngineName = "1.4 T-Jet Turismo 165 KM", PowerHP = 165, PowerKW = 121, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 230, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.9m, TopSpeedKmh = 219, FuelConsumptionCombined = 6.9m },
                 new EngineVersion { EngineName = "1.4 T-Jet Competizione 180 KM", PowerHP = 180, PowerKW = 132, Displacement = 1368, FuelTypeId = ben,
                     TorqueNm = 250, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.7m, TopSpeedKmh = 225, FuelConsumptionCombined = 7.3m },
+            ]);
+
+            int ab595c = GetOrCreateModel(abaId, "595C", "abarth-595c");
+            AddOrReplaceEngines(GetOrFixGeneration(ab595c, "I (2016–2024)", "abarth-595c-i", 2016, 2024), 140, [
+                new EngineVersion { EngineName = "1.4 T-Jet 145 KM", PowerHP = 145, PowerKW = 107, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 206, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.6m, TopSpeedKmh = 213, FuelConsumptionCombined = 7.0m },
+                new EngineVersion { EngineName = "1.4 T-Jet Competizione 180 KM", PowerHP = 180, PowerKW = 132, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 250, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.9m, TopSpeedKmh = 222, FuelConsumptionCombined = 7.5m },
+            ]);
+
+            int ab695 = GetOrCreateModel(abaId, "695", "abarth-695");
+            PrepareGenerations(ab695,
+                ("I (2018–2020)", "abarth-695-i", 2018, 2020),
+                ("II (2020–2024)", "abarth-695-ii", 2020, 2024));
+            AddOrReplaceEngines(GetOrFixGeneration(ab695, "I (2018–2020)", "abarth-695-i", 2018, 2020), 160, [
+                new EngineVersion { EngineName = "1.4 T-Jet 70° Anniversario 180 KM", PowerHP = 180, PowerKW = 132, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 250, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
                     Cylinders = 4, Acceleration0100 = 6.7m, TopSpeedKmh = 225, FuelConsumptionCombined = 7.4m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(ab695, "II (2020–2024)", "abarth-695-ii", 2020, 2024), 160, [
+                new EngineVersion { EngineName = "1.4 T-Jet Turismo 165 KM", PowerHP = 165, PowerKW = 121, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 230, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.9m, TopSpeedKmh = 219, FuelConsumptionCombined = 6.9m },
+                new EngineVersion { EngineName = "1.4 T-Jet Esseesse 180 KM", PowerHP = 180, PowerKW = 132, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 250, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.7m, TopSpeedKmh = 225, FuelConsumptionCombined = 7.3m },
+            ]);
+
+            int abGrandePunto = GetOrCreateModel(abaId, "Grande Punto", "abarth-grande-punto");
+            AddOrReplaceEngines(GetOrFixGeneration(abGrandePunto, "I (2007–2010)", "abarth-grande-punto-i", 2007, 2010), 130, [
+                new EngineVersion { EngineName = "1.4 T-Jet 155 KM", PowerHP = 155, PowerKW = 114, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 206, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.9m, TopSpeedKmh = 208, FuelConsumptionCombined = 7.2m },
+                new EngineVersion { EngineName = "1.4 T-Jet SS 180 KM", PowerHP = 180, PowerKW = 132, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 270, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.5m, TopSpeedKmh = 215, FuelConsumptionCombined = 7.6m },
+            ]);
+
+            int abPuntoEvo = GetOrCreateModel(abaId, "Punto Evo", "abarth-punto-evo");
+            AddOrReplaceEngines(GetOrFixGeneration(abPuntoEvo, "I (2010–2012)", "abarth-punto-evo-i", 2010, 2012), 130, [
+                new EngineVersion { EngineName = "1.4 T-Jet 165 KM", PowerHP = 165, PowerKW = 121, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 230, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 7.8m, TopSpeedKmh = 210, FuelConsumptionCombined = 7.1m },
+            ]);
+
+            int ab124Spider = GetOrCreateModel(abaId, "124 Spider", "abarth-124-spider");
+            AddOrReplaceEngines(GetOrFixGeneration(ab124Spider, "I (2016–2019)", "abarth-124-spider-i", 2016, 2019), 150, [
+                new EngineVersion { EngineName = "1.4 MultiAir Turbo 170 KM", PowerHP = 170, PowerKW = 125, Displacement = 1368, FuelTypeId = ben,
+                    TorqueNm = 250, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 6.8m, TopSpeedKmh = 232, FuelConsumptionCombined = 6.4m },
             ]);
         }
 
