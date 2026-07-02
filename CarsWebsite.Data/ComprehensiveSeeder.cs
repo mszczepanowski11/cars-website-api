@@ -3101,6 +3101,42 @@ public static class ComprehensiveSeeder
                     Cylinders = 4, Acceleration0100 = 7.4m, TopSpeedKmh = 225, FuelConsumptionCombined = 1.4m },
             ]);
 
+            int arona = GetOrCreateModel(seatId, "Arona", "seat-arona");
+            AddOrReplaceEngines(GetOrFixGeneration(arona, "KJ7 (2017–)", "seat-arona-kj7", 2017, null), 90, [
+                new EngineVersion { EngineName = "1.0 TSI 95 KM", PowerHP = 95, PowerKW = 70, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 175, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.4m, TopSpeedKmh = 173, FuelConsumptionCombined = 5.3m },
+                new EngineVersion { EngineName = "1.0 TSI 115 KM", PowerHP = 115, PowerKW = 85, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 200, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 9.7m, TopSpeedKmh = 191, FuelConsumptionCombined = 5.4m },
+                new EngineVersion { EngineName = "FR 1.5 TSI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1498, FuelTypeId = ben,
+                    TorqueNm = 250, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.5m, TopSpeedKmh = 202, FuelConsumptionCombined = 5.8m },
+            ]);
+
+            int tarraco = GetOrCreateModel(seatId, "Tarraco", "seat-tarraco");
+            AddOrReplaceEngines(GetOrFixGeneration(tarraco, "KH7 (2018–)", "seat-tarraco-kh7", 2018, null), 130, [
+                new EngineVersion { EngineName = "1.5 TSI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1498, FuelTypeId = ben,
+                    TorqueNm = 250, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.7m, TopSpeedKmh = 199, FuelConsumptionCombined = 6.9m },
+                new EngineVersion { EngineName = "2.0 TSI 190 KM", PowerHP = 190, PowerKW = 140, Displacement = 1984, FuelTypeId = ben,
+                    TorqueNm = 320, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 7.9m, TopSpeedKmh = 210, FuelConsumptionCombined = 8.1m },
+                new EngineVersion { EngineName = "2.0 TDI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 340, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.9m, TopSpeedKmh = 199, FuelConsumptionCombined = 5.7m },
+            ]);
+
+            int alhambra = GetOrCreateModel(seatId, "Alhambra", "seat-alhambra");
+            AddOrReplaceEngines(GetOrFixGeneration(alhambra, "II (2010–2020)", "seat-alhambra-ii", 2010, 2020), 130, [
+                new EngineVersion { EngineName = "1.4 TSI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1395, FuelTypeId = ben,
+                    TorqueNm = 250, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.9m, TopSpeedKmh = 190, FuelConsumptionCombined = 7.6m },
+                new EngineVersion { EngineName = "2.0 TDI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 340, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.5m, TopSpeedKmh = 192, FuelConsumptionCombined = 5.6m },
+            ]);
+
             // ── FIAT TIPO 356 ────────────────────────────────────────────────────────
             int fiatId = GetOrCreateBrand("Fiat", "fiat", "auta-osobowe");
             int tipo = GetOrCreateModel(fiatId, "Tipo", "fiat-tipo");
