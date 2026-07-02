@@ -67,6 +67,67 @@ public class HierarchyValidationService : IHierarchyValidationService
         return ChainValidationResult.Ok();
     }
 
+    public async Task<ChainValidationResult> ValidateEnginePlausibilityAsync(
+        int brandId,
+        int? fuelTypeId,
+        int? engineVersionId,
+        int? trimId,
+        int? powerHP)
+    {
+        if (fuelTypeId.HasValue)
+        {
+            var brandHasRestriction = await _context.BrandAllowedFuelTypes.AnyAsync(x => x.BrandId == brandId);
+            if (brandHasRestriction)
+            {
+                var allowed = await _context.BrandAllowedFuelTypes
+                    .AnyAsync(x => x.BrandId == brandId && x.FuelTypeId == fuelTypeId.Value);
+                if (!allowed)
+                    return ChainValidationResult.Fail("fuelType", "Wybrany rodzaj paliwa nie jest dostępny dla tej marki.");
+            }
+        }
+
+        string? engineName = null;
+        string? trimName = null;
+        var effectivePower = powerHP;
+
+        if (engineVersionId.HasValue)
+        {
+            var engine = await _context.EngineVersions.AsNoTracking()
+                .Where(e => e.Id == engineVersionId.Value)
+                .Select(e => new { e.EngineName, e.PowerHP })
+                .FirstOrDefaultAsync();
+            if (engine != null)
+            {
+                engineName = engine.EngineName;
+                effectivePower ??= engine.PowerHP;
+            }
+        }
+
+        if (trimId.HasValue)
+        {
+            trimName = await _context.Trims.AsNoTracking()
+                .Where(t => t.Id == trimId.Value)
+                .Select(t => t.Name)
+                .FirstOrDefaultAsync();
+        }
+
+        if (effectivePower.HasValue && (engineName != null || trimName != null))
+        {
+            var rules = await _context.ModelNamePlausibilityRules.AsNoTracking().ToListAsync();
+            foreach (var rule in rules)
+            {
+                var matches =
+                    (engineName != null && engineName.Contains(rule.NamePattern, StringComparison.OrdinalIgnoreCase)) ||
+                    (trimName != null && trimName.Contains(rule.NamePattern, StringComparison.OrdinalIgnoreCase));
+                if (matches && effectivePower.Value < rule.MinPowerHP)
+                    return ChainValidationResult.Fail("power",
+                        $"Wersja \"{rule.NamePattern}\" nie powinna mieć mniej niż {rule.MinPowerHP} KM (podano {effectivePower.Value} KM).");
+            }
+        }
+
+        return ChainValidationResult.Ok();
+    }
+
     public async Task<TaxonomyAuditReport> GetAuditReportAsync()
     {
         var report = new TaxonomyAuditReport();

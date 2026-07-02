@@ -8,4 +8,6 @@ public class ValidateChainDto
     public int? TrimId { get; set; }
     public int? EngineVersionId { get; set; }
     public int? VehicleCategoryId { get; set; }
+    public int? FuelTypeId { get; set; }
+    public int? PowerHP { get; set; }
 }

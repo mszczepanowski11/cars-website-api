@@ -91,6 +91,11 @@ public class AdvertService : IAdvertService
         if (!chainCheck.IsValid)
             throw new ArgumentException(chainCheck.ErrorMessage);
 
+        var plausibilityCheck = await _hierarchyValidationService.ValidateEnginePlausibilityAsync(
+            dto.BrandId, dto.FuelTypeId, dto.EngineVersionId, dto.TrimId, dto.PowerHP);
+        if (!plausibilityCheck.IsValid)
+            throw new ArgumentException(plausibilityCheck.ErrorMessage);
+
         var advert = _mapper.Map<CarAdvert>(dto);
         advert.CreatedAt = DateTime.UtcNow;
         advert.UserId = userId;
@@ -169,6 +174,11 @@ public class AdvertService : IAdvertService
             dto.BrandId, dto.ModelId, dto.GenerationId, dto.TrimId, dto.EngineVersionId, dto.VehicleCategoryId);
         if (!chainCheck.IsValid)
             throw new ArgumentException(chainCheck.ErrorMessage);
+
+        var plausibilityCheck = await _hierarchyValidationService.ValidateEnginePlausibilityAsync(
+            dto.BrandId, dto.FuelTypeId, dto.EngineVersionId, dto.TrimId, dto.PowerHP);
+        if (!plausibilityCheck.IsValid)
+            throw new ArgumentException(plausibilityCheck.ErrorMessage);
 
         var newCompatibilities = await BuildPartCompatibilitiesAsync(dto.Compatibilities);
 

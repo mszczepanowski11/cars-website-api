@@ -1301,6 +1301,45 @@ internal class Program
                     bgLogger.LogError(ex, "[STARTUP-TRACE] Could not make FeatureCategories.VehicleCategoryId NOT NULL yet (some row may still be unscoped): {Msg}", ex.Message);
                 }
 
+                // Starter engine-plausibility rules: a small, high-confidence allowlist for a
+                // handful of petrol/hybrid-only exotic brands (fail-open — any other brand has no
+                // restriction). Idempotent: only inserts a (brand, fuel type) pair that isn't
+                // already present. Deliberately NOT an attempt at exhaustive coverage — see
+                // BrandAllowedFuelType's doc comment.
+                try
+                {
+                    var exoticBrandIds = bgDb.Brands
+                        .Where(b => new[] { "ferrari", "lamborghini", "bugatti", "mclaren" }.Contains(b.Slug))
+                        .Select(b => b.Id)
+                        .ToList();
+                    var petrolHybridFuelIds = bgDb.FuelTypes
+                        .Where(f => new[] { "Benzyna", "Hybryda", "Hybryda mild", "Hybryda plug-in" }.Contains(f.Name))
+                        .Select(f => f.Id)
+                        .ToList();
+                    if (exoticBrandIds.Count > 0 && petrolHybridFuelIds.Count > 0)
+                    {
+                        var existing = bgDb.BrandAllowedFuelTypes
+                            .Where(x => exoticBrandIds.Contains(x.BrandId))
+                            .Select(x => new { x.BrandId, x.FuelTypeId })
+                            .ToList();
+                        var toAdd = new List<BrandAllowedFuelType>();
+                        foreach (var brandId in exoticBrandIds)
+                            foreach (var fuelId in petrolHybridFuelIds)
+                                if (!existing.Any(x => x.BrandId == brandId && x.FuelTypeId == fuelId))
+                                    toAdd.Add(new BrandAllowedFuelType { BrandId = brandId, FuelTypeId = fuelId });
+                        if (toAdd.Count > 0)
+                        {
+                            bgDb.BrandAllowedFuelTypes.AddRange(toAdd);
+                            bgDb.SaveChanges();
+                            bgLogger.LogWarning("[STARTUP-TRACE] Seeded {Count} starter BrandAllowedFuelType rows", toAdd.Count);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    bgLogger.LogError(ex, "[STARTUP-TRACE] Starter engine-plausibility seed failed: {Msg}", ex.Message);
+                }
+
                 // Audit: dump every FeatureCategory's scope (VehicleCategoryId/BrandId/ModelId) and
                 // feature count, so equipment leaking into the wrong vehicle category (e.g. car
                 // features showing on a motorcycle listing) can be spotted from the scope values

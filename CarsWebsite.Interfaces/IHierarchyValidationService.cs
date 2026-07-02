@@ -31,5 +31,15 @@ public interface IHierarchyValidationService
         int? engineVersionId,
         int? vehicleCategoryId);
 
+    // Fail-open: a brand/name pattern with no matching rule is never rejected. Only meant to
+    // catch a handful of obvious cases (e.g. an exotic petrol-only brand marked Diesel, or a
+    // performance-badged trim claiming implausibly low power) — not exhaustive coverage.
+    Task<ChainValidationResult> ValidateEnginePlausibilityAsync(
+        int brandId,
+        int? fuelTypeId,
+        int? engineVersionId,
+        int? trimId,
+        int? powerHP);
+
     Task<TaxonomyAuditReport> GetAuditReportAsync();
 }

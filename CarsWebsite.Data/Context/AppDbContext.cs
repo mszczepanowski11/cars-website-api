@@ -71,6 +71,10 @@ namespace CarsWebsite
         // Part compatibility (advert <-> Brand/Model/Generation)
         public DbSet<PartCompatibility> PartCompatibilities { get; set; }
 
+        // Engine plausibility rules
+        public DbSet<BrandAllowedFuelType> BrandAllowedFuelTypes { get; set; }
+        public DbSet<ModelNamePlausibilityRule> ModelNamePlausibilityRules { get; set; }
+
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -304,6 +308,21 @@ namespace CarsWebsite
                 .HasForeignKey(pc => pc.GenerationId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired(false);
+
+            // BrandAllowedFuelType: cascades with its brand (a brand can only be deleted once it
+            // has no models left, so by then this rule is meaningless anyway); restrict on
+            // FuelType since that's a small, essentially-static reference table.
+            modelBuilder.Entity<BrandAllowedFuelType>()
+                .HasOne(x => x.Brand)
+                .WithMany()
+                .HasForeignKey(x => x.BrandId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<BrandAllowedFuelType>()
+                .HasOne(x => x.FuelType)
+                .WithMany()
+                .HasForeignKey(x => x.FuelTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Trim
             modelBuilder.Entity<Trim>()
