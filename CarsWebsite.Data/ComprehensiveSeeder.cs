@@ -4194,6 +4194,23 @@ public static class ComprehensiveSeeder
                     Cylinders = 4, Acceleration0100 = 11.5m, TopSpeedKmh = 175, FuelConsumptionCombined = 5.2m },
             ]);
 
+            int ignis = GetOrCreateModel(suzukiId2, "Ignis", "suzuki-ignis");
+            AddOrReplaceEngines(GetOrFixGeneration(ignis, "II (2016–)", "suzuki-ignis-ii", 2016, null), 80, [
+                new EngineVersion { EngineName = "1.2 DualJet 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1242, FuelTypeId = hyb,
+                    TorqueNm = 120, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.7m, TopSpeedKmh = 165, FuelConsumptionCombined = 4.9m },
+                new EngineVersion { EngineName = "1.2 DualJet 4WD AllGrip 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1242, FuelTypeId = hyb,
+                    TorqueNm = 120, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 12.7m, TopSpeedKmh = 160, FuelConsumptionCombined = 5.1m },
+            ]);
+
+            int across = GetOrCreateModel(suzukiId2, "Across", "suzuki-across");
+            AddOrReplaceEngines(GetOrFixGeneration(across, "I (2020–)", "suzuki-across-i", 2020, null), 220, [
+                new EngineVersion { EngineName = "2.5 PHEV 306 KM AWD", PowerHP = 306, PowerKW = 225, Displacement = 2487, FuelTypeId = phev,
+                    TorqueNm = 270, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 6.0m, TopSpeedKmh = 180, FuelConsumptionCombined = 1.0m },
+            ]);
+
             // ── TOYOTA YARIS XP150 + XP210, RAV4 V, C-HR X10 ────────────────────────
             int toyotaId2 = GetOrCreateBrand("Toyota", "toyota", "auta-osobowe");
             int yaris = GetOrCreateModel(toyotaId2, "Yaris", "toyota-yaris");
