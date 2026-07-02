@@ -343,6 +343,9 @@ public class AdvertService : IAdvertService
         if (dto.CategoryId.HasValue)
             query = query.Where(a => a.VehicleCategoryId == dto.CategoryId);
 
+        if (dto.VehicleSubtypeId.HasValue)
+            query = query.Where(a => a.VehicleSubtypeId == dto.VehicleSubtypeId);
+
         if (!string.IsNullOrWhiteSpace(dto.TextSearch))
         {
             var textSearch = dto.TextSearch.Trim();
