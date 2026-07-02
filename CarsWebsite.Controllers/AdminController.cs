@@ -432,6 +432,30 @@ public class AdminController : ControllerBase
             .Take(50)
             .ToListAsync();
 
+        // ── Post-rebuild checks (added after the form/DB rebuild, Phases 1-9) ──────
+        var categoriesWithoutFeatureCategories = await _db.VehicleCategories
+            .Where(vc => !_db.FeatureCategories.Any(fc => fc.VehicleCategoryId == vc.Id))
+            .Select(vc => new { vc.Id, vc.Name, vc.Slug })
+            .OrderBy(vc => vc.Name)
+            .ToListAsync();
+
+        var categoriesWithoutSubtypes = await _db.VehicleCategories
+            .Where(vc => !vc.Subtypes.Any())
+            .Select(vc => new { vc.Id, vc.Name, vc.Slug })
+            .OrderBy(vc => vc.Name)
+            .ToListAsync();
+
+        var partAdvertsMissingStructuredCategory = await _db.CarAdverts
+            .Where(ca => ca.VehicleCategory != null && ca.VehicleCategory.Slug == "czesci" && ca.PartCategoryId == null)
+            .Select(ca => new { ca.Id, ca.Title, ca.CreatedAt })
+            .OrderByDescending(ca => ca.CreatedAt)
+            .Take(50)
+            .ToListAsync();
+
+        var enginePlausibilityRuleCount = await _db.BrandAllowedFuelTypes.CountAsync() + await _db.ModelNamePlausibilityRules.CountAsync();
+        var pendingCustomCategoryRequestCount = await _db.CustomCategoryRequests.CountAsync(r => r.Status == CustomCategoryRequestStatus.Pending);
+        var vehicleCategoryCount = await _db.VehicleCategories.CountAsync();
+
         return Ok(new
         {
             summary = new
@@ -446,6 +470,9 @@ public class AdminController : ControllerBase
                 duplicateModelsCount          = duplicateModels.Count,
                 advertsBlankTitleCount        = advertsWithBlankTitle.Count,
                 advertsNoImagesCount          = advertsNoImages.Count,
+                categoriesWithoutFeatureCategoriesCount = categoriesWithoutFeatureCategories.Count,
+                categoriesWithoutSubtypesCount          = categoriesWithoutSubtypes.Count,
+                partAdvertsMissingStructuredCategoryCount = partAdvertsMissingStructuredCategory.Count,
             },
             brandsWithoutModels,
             modelsWithoutGenerations,
@@ -457,6 +484,12 @@ public class AdminController : ControllerBase
             duplicateModels,
             advertsWithBlankTitle,
             advertsNoImages,
+            categoriesWithoutFeatureCategories,
+            categoriesWithoutSubtypes,
+            partAdvertsMissingStructuredCategory,
+            vehicleCategoryCount,
+            enginePlausibilityRuleCount,
+            pendingCustomCategoryRequestCount,
         });
     }
 
