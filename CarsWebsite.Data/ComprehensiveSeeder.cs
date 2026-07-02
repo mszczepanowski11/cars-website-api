@@ -3470,6 +3470,74 @@ public static class ComprehensiveSeeder
                     Cylinders = 3, Acceleration0100 = 7.9m, TopSpeedKmh = 170, FuelConsumptionCombined = 5.3m },
             ]);
 
+            int xtrail = GetOrCreateModel(nissanId, "X-Trail", "nissan-x-trail");
+            PrepareGenerations(xtrail,
+                ("T32 (2014–2022)", "nissan-xtrail-t32", 2014, 2022),
+                ("T33 (2022–)", "nissan-xtrail-t33", 2022, null));
+            AddOrReplaceEngines(GetOrFixGeneration(xtrail, "T32 (2014–2022)", "nissan-xtrail-t32", 2014, 2022), 130, [
+                new EngineVersion { EngineName = "1.3 DIG-T 160 KM", PowerHP = 160, PowerKW = 118, Displacement = 1332, FuelTypeId = mild,
+                    TorqueNm = 240, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.2m, TopSpeedKmh = 190, FuelConsumptionCombined = 6.6m },
+                new EngineVersion { EngineName = "1.7 dCi 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1749, FuelTypeId = die,
+                    TorqueNm = 340, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 9.8m, TopSpeedKmh = 194, FuelConsumptionCombined = 5.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(xtrail, "T33 (2022–)", "nissan-xtrail-t33", 2022, null), 160, [
+                new EngineVersion { EngineName = "e-Power HEV 204 KM", PowerHP = 204, PowerKW = 150, Displacement = 1497, FuelTypeId = hyb,
+                    TorqueNm = 330, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 8.1m, TopSpeedKmh = 170, FuelConsumptionCombined = 6.1m },
+                new EngineVersion { EngineName = "e-4ORCE e-Power 213 KM AWD", PowerHP = 213, PowerKW = 157, Displacement = 1497, FuelTypeId = hyb,
+                    TorqueNm = 330, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 3, Acceleration0100 = 7.0m, TopSpeedKmh = 170, FuelConsumptionCombined = 6.7m },
+            ]);
+
+            int micra = GetOrCreateModel(nissanId, "Micra", "nissan-micra");
+            AddOrReplaceEngines(GetOrFixGeneration(micra, "K14 (2016–2024)", "nissan-micra-k14", 2016, 2024), 70, [
+                new EngineVersion { EngineName = "1.0 IG-T 92 KM", PowerHP = 92, PowerKW = 68, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 160, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.4m, TopSpeedKmh = 175, FuelConsumptionCombined = 5.2m },
+                new EngineVersion { EngineName = "1.0 IG-T 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 160, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 10.4m, TopSpeedKmh = 183, FuelConsumptionCombined = 5.3m },
+            ]);
+
+            int navara = GetOrCreateModel(nissanId, "Navara", "nissan-navara");
+            AddOrReplaceEngines(GetOrFixGeneration(navara, "D23 (2015–)", "nissan-navara-d23", 2015, null), 150, [
+                new EngineVersion { EngineName = "2.3 dCi 160 KM", PowerHP = 160, PowerKW = 118, Displacement = 2298, FuelTypeId = die,
+                    TorqueNm = 403, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 12.0m, TopSpeedKmh = 173, FuelConsumptionCombined = 7.5m },
+                new EngineVersion { EngineName = "2.3 dCi 190 KM Twin-Turbo", PowerHP = 190, PowerKW = 140, Displacement = 2298, FuelTypeId = die,
+                    TorqueNm = 450, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 10.7m, TopSpeedKmh = 180, FuelConsumptionCombined = 7.9m },
+            ]);
+
+            int ariya = GetOrCreateModel(nissanId, "Ariya", "nissan-ariya");
+            AddOrReplaceEngines(GetOrFixGeneration(ariya, "I (2022–)", "nissan-ariya-i", 2022, null), 200, [
+                new EngineVersion { EngineName = "63 kWh 218 KM", PowerHP = 218, PowerKW = 160, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 300, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 0, Acceleration0100 = 7.5m, TopSpeedKmh = 160, FuelConsumptionCombined = 17.1m },
+                new EngineVersion { EngineName = "87 kWh e-4ORCE 306 KM AWD", PowerHP = 306, PowerKW = 225, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 600, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 0, Acceleration0100 = 5.7m, TopSpeedKmh = 200, FuelConsumptionCombined = 19.5m },
+            ]);
+
+            int gtr = GetOrCreateModel(nissanId, "GT-R", "nissan-gt-r");
+            AddOrReplaceEngines(GetOrFixGeneration(gtr, "R35 (2007–)", "nissan-gtr-r35", 2007, null), 480, [
+                new EngineVersion { EngineName = "3.8 V6 Bi-Turbo 570 KM", PowerHP = 570, PowerKW = 419, Displacement = 3799, FuelTypeId = ben,
+                    TorqueNm = 637, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 2.9m, TopSpeedKmh = 315, FuelConsumptionCombined = 11.7m },
+                new EngineVersion { EngineName = "Nismo 3.8 V6 600 KM", PowerHP = 600, PowerKW = 441, Displacement = 3799, FuelTypeId = ben,
+                    TorqueNm = 652, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 2.7m, TopSpeedKmh = 315, FuelConsumptionCombined = 12.0m },
+            ]);
+
+            int z370 = GetOrCreateModel(nissanId, "370Z", "nissan-370z");
+            AddOrReplaceEngines(GetOrFixGeneration(z370, "Z34 (2009–2020)", "nissan-370z-z34", 2009, 2020), 300, [
+                new EngineVersion { EngineName = "3.7 V6 328 KM", PowerHP = 328, PowerKW = 241, Displacement = 3696, FuelTypeId = ben,
+                    TorqueNm = 366, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 5.3m, TopSpeedKmh = 250, FuelConsumptionCombined = 10.5m },
+            ]);
+
             // ── DACIA DUSTER II + III ─────────────────────────────────────────────────
             int daciaId = GetOrCreateBrand("Dacia", "dacia", "auta-osobowe");
             int duster = GetOrCreateModel(daciaId, "Duster", "dacia-duster");
