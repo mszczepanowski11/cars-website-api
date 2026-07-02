@@ -568,6 +568,79 @@ public static class ComprehensiveSeeder
                     TorqueNm = 1100, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD",
                     Cylinders = 8, Acceleration0100 = 4.8m, TopSpeedKmh = 305, FuelConsumptionCombined = 17.8m },
             ]);
+
+            int arnage = GetOrCreateModel(bId, "Arnage", "bentley-arnage");
+            PrepareGenerations(arnage,
+                ("I (1998–2002)", "bentley-arnage-i", 1998, 2002),
+                ("II (2002–2009)", "bentley-arnage-ii", 2002, 2009));
+            AddOrReplaceEngines(GetOrFixGeneration(arnage, "I (1998–2002)", "bentley-arnage-i", 1998, 2002), 300, [
+                new EngineVersion { EngineName = "4.4 V8 Twin-Turbo Red Label 350 KM", PowerHP = 350, PowerKW = 257, Displacement = 4398, FuelTypeId = ben,
+                    TorqueNm = 630, EuroNorm = "Euro 3", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 6.9m, TopSpeedKmh = 240, FuelConsumptionCombined = 19.5m },
+                new EngineVersion { EngineName = "4.4 V8 Twin-Turbo Green Label 400 KM", PowerHP = 400, PowerKW = 294, Displacement = 4398, FuelTypeId = ben,
+                    TorqueNm = 700, EuroNorm = "Euro 3", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 6.1m, TopSpeedKmh = 249, FuelConsumptionCombined = 20.0m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(arnage, "II (2002–2009)", "bentley-arnage-ii", 2002, 2009), 300, [
+                new EngineVersion { EngineName = "6.75 V8 Twin-Turbo R 405 KM", PowerHP = 405, PowerKW = 298, Displacement = 6761, FuelTypeId = ben,
+                    TorqueNm = 875, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 5.9m, TopSpeedKmh = 249, FuelConsumptionCombined = 20.9m },
+                new EngineVersion { EngineName = "6.75 V8 Twin-Turbo T 456 KM", PowerHP = 456, PowerKW = 335, Displacement = 6761, FuelTypeId = ben,
+                    TorqueNm = 875, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 5.5m, TopSpeedKmh = 273, FuelConsumptionCombined = 21.5m },
+            ]);
+
+            int azure = GetOrCreateModel(bId, "Azure", "bentley-azure");
+            PrepareGenerations(azure,
+                ("I (1995–2003)", "bentley-azure-i", 1995, 2003),
+                ("II (2006–2010)", "bentley-azure-ii", 2006, 2010));
+            AddOrReplaceEngines(GetOrFixGeneration(azure, "I (1995–2003)", "bentley-azure-i", 1995, 2003), 300, [
+                new EngineVersion { EngineName = "6.75 V8 Turbo 385 KM", PowerHP = 385, PowerKW = 283, Displacement = 6750, FuelTypeId = ben,
+                    TorqueNm = 715, EuroNorm = "Euro 2", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 6.6m, TopSpeedKmh = 239, FuelConsumptionCombined = 21.0m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(azure, "II (2006–2010)", "bentley-azure-ii", 2006, 2010), 400, [
+                new EngineVersion { EngineName = "6.75 V8 Twin-Turbo 450 KM", PowerHP = 450, PowerKW = 331, Displacement = 6761, FuelTypeId = ben,
+                    TorqueNm = 875, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 5.6m, TopSpeedKmh = 265, FuelConsumptionCombined = 20.9m },
+            ]);
+
+            int brooklands = GetOrCreateModel(bId, "Brooklands", "bentley-brooklands");
+            AddOrReplaceEngines(GetOrFixGeneration(brooklands, "I (2008–2011)", "bentley-brooklands-i", 2008, 2011), 400, [
+                new EngineVersion { EngineName = "6.75 V8 Twin-Turbo 530 KM", PowerHP = 530, PowerKW = 390, Displacement = 6761, FuelTypeId = ben,
+                    TorqueNm = 1050, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 5.3m, TopSpeedKmh = 296, FuelConsumptionCombined = 20.8m },
+            ]);
+
+            int cgtc = GetOrCreateModel(bId, "Continental GTC", "bentley-continental-gtc");
+            PrepareGenerations(cgtc,
+                ("I (2006–2011)", "bentley-cgtc-i", 2006, 2011),
+                ("II (2011–2018)", "bentley-cgtc-ii", 2011, 2018),
+                ("III (2019–)", "bentley-cgtc-iii", 2019, null));
+            AddOrReplaceEngines(GetOrFixGeneration(cgtc, "I (2006–2011)", "bentley-cgtc-i", 2006, 2011), 400, [
+                new EngineVersion { EngineName = "6.0 W12 560 KM", PowerHP = 560, PowerKW = 412, Displacement = 5998, FuelTypeId = ben,
+                    TorqueNm = 650, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 12, Acceleration0100 = 5.1m, TopSpeedKmh = 312, FuelConsumptionCombined = 17.3m },
+                new EngineVersion { EngineName = "6.0 W12 Speed 610 KM", PowerHP = 610, PowerKW = 449, Displacement = 5998, FuelTypeId = ben,
+                    TorqueNm = 750, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 12, Acceleration0100 = 4.6m, TopSpeedKmh = 328, FuelConsumptionCombined = 17.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(cgtc, "II (2011–2018)", "bentley-cgtc-ii", 2011, 2018), 400, [
+                new EngineVersion { EngineName = "6.0 W12 575 KM", PowerHP = 575, PowerKW = 423, Displacement = 5998, FuelTypeId = ben,
+                    TorqueNm = 800, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 12, Acceleration0100 = 4.5m, TopSpeedKmh = 314, FuelConsumptionCombined = 15.6m },
+                new EngineVersion { EngineName = "4.0 V8 507 KM", PowerHP = 507, PowerKW = 373, Displacement = 3993, FuelTypeId = ben,
+                    TorqueNm = 660, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 4.9m, TopSpeedKmh = 303, FuelConsumptionCombined = 12.3m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(cgtc, "III (2019–)", "bentley-cgtc-iii", 2019, null), 400, [
+                new EngineVersion { EngineName = "6.0 W12 635 KM", PowerHP = 635, PowerKW = 467, Displacement = 5950, FuelTypeId = ben,
+                    TorqueNm = 900, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 12, Acceleration0100 = 3.8m, TopSpeedKmh = 333, FuelConsumptionCombined = 15.1m },
+                new EngineVersion { EngineName = "4.0 V8 550 KM", PowerHP = 550, PowerKW = 404, Displacement = 3996, FuelTypeId = ben,
+                    TorqueNm = 770, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 4.1m, TopSpeedKmh = 318, FuelConsumptionCombined = 12.6m },
+            ]);
         }
 
         // ── ASTON MARTIN ────────────────────────────────────────────────────────
@@ -704,6 +777,171 @@ public static class ComprehensiveSeeder
                 new EngineVersion { EngineName = "5.9 V12 490 KM", PowerHP = 490, PowerKW = 360, Displacement = 5935, FuelTypeId = ben,
                     TorqueNm = 570, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "RWD",
                     Cylinders = 12, Acceleration0100 = 4.6m, TopSpeedKmh = 300, FuelConsumptionCombined = 17.0m },
+            ]);
+        }
+
+        // ── CADILLAC ────────────────────────────────────────────────────────────
+        {
+            int bId = GetOrCreateBrand("Cadillac", "cadillac", "auta-osobowe");
+            if (BrandNeedsModels(bId)) { seededModelBrandIds.Add(bId); }
+
+            int ats = GetOrCreateModel(bId, "ATS", "cadillac-ats");
+            AddOrReplaceEngines(GetOrFixGeneration(ats, "I (2012–2019)", "cadillac-ats-i", 2012, 2019), 180, [
+                new EngineVersion { EngineName = "2.0T 272 KM", PowerHP = 272, PowerKW = 200, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 400, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 5.7m, TopSpeedKmh = 249, FuelConsumptionCombined = 9.5m },
+                new EngineVersion { EngineName = "3.6 V6 340 KM", PowerHP = 340, PowerKW = 250, Displacement = 3649, FuelTypeId = ben,
+                    TorqueNm = 373, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 5.6m, TopSpeedKmh = 249, FuelConsumptionCombined = 11.2m },
+                new EngineVersion { EngineName = "ATS-V 3.6 Twin-Turbo 464 KM", PowerHP = 464, PowerKW = 341, Displacement = 3649, FuelTypeId = ben,
+                    TorqueNm = 603, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 3.9m, TopSpeedKmh = 305, FuelConsumptionCombined = 12.8m },
+            ]);
+
+            int ct4 = GetOrCreateModel(bId, "CT4", "cadillac-ct4");
+            AddOrReplaceEngines(GetOrFixGeneration(ct4, "I (2019–)", "cadillac-ct4-i", 2019, null), 200, [
+                new EngineVersion { EngineName = "2.0T 237 KM", PowerHP = 237, PowerKW = 174, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 350, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 6.6m, TopSpeedKmh = 209, FuelConsumptionCombined = 9.0m },
+                new EngineVersion { EngineName = "CT4-V 325 KM", PowerHP = 325, PowerKW = 239, Displacement = 2661, FuelTypeId = ben,
+                    TorqueNm = 475, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 5.0m, TopSpeedKmh = 240, FuelConsumptionCombined = 10.5m },
+                new EngineVersion { EngineName = "CT4-V Blackwing 476 KM", PowerHP = 476, PowerKW = 350, Displacement = 3649, FuelTypeId = ben,
+                    TorqueNm = 603, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 3.9m, TopSpeedKmh = 306, FuelConsumptionCombined = 13.2m },
+            ]);
+
+            int ct5 = GetOrCreateModel(bId, "CT5", "cadillac-ct5");
+            AddOrReplaceEngines(GetOrFixGeneration(ct5, "I (2019–)", "cadillac-ct5-i", 2019, null), 200, [
+                new EngineVersion { EngineName = "2.0T 237 KM", PowerHP = 237, PowerKW = 174, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 350, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 6.6m, TopSpeedKmh = 210, FuelConsumptionCombined = 9.2m },
+                new EngineVersion { EngineName = "3.0TT 335 KM", PowerHP = 335, PowerKW = 246, Displacement = 2996, FuelTypeId = ben,
+                    TorqueNm = 542, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 5.0m, TopSpeedKmh = 240, FuelConsumptionCombined = 10.8m },
+                new EngineVersion { EngineName = "CT5-V Blackwing 668 KM", PowerHP = 668, PowerKW = 491, Displacement = 6162, FuelTypeId = ben,
+                    TorqueNm = 893, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 3.6m, TopSpeedKmh = 320, FuelConsumptionCombined = 15.3m },
+            ]);
+
+            int cts = GetOrCreateModel(bId, "CTS", "cadillac-cts");
+            PrepareGenerations(cts,
+                ("I (2002–2007)", "cadillac-cts-i", 2002, 2007),
+                ("II (2007–2013)", "cadillac-cts-ii", 2007, 2013),
+                ("III (2013–2019)", "cadillac-cts-iii", 2013, 2019));
+            AddOrReplaceEngines(GetOrFixGeneration(cts, "I (2002–2007)", "cadillac-cts-i", 2002, 2007), 150, [
+                new EngineVersion { EngineName = "3.2 V6 220 KM", PowerHP = 220, PowerKW = 162, Displacement = 3172, FuelTypeId = ben,
+                    TorqueNm = 305, EuroNorm = "Euro 3", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 8.4m, TopSpeedKmh = 220, FuelConsumptionCombined = 12.5m },
+                new EngineVersion { EngineName = "3.6 V6 260 KM", PowerHP = 260, PowerKW = 191, Displacement = 3564, FuelTypeId = ben,
+                    TorqueNm = 350, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 6.9m, TopSpeedKmh = 240, FuelConsumptionCombined = 12.9m },
+                new EngineVersion { EngineName = "CTS-V 5.7 V8 400 KM", PowerHP = 400, PowerKW = 294, Displacement = 5665, FuelTypeId = ben,
+                    TorqueNm = 529, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 5.0m, TopSpeedKmh = 262, FuelConsumptionCombined = 15.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(cts, "II (2007–2013)", "cadillac-cts-ii", 2007, 2013), 200, [
+                new EngineVersion { EngineName = "3.0 V6 273 KM", PowerHP = 273, PowerKW = 201, Displacement = 2967, FuelTypeId = ben,
+                    TorqueNm = 320, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 7.0m, TopSpeedKmh = 230, FuelConsumptionCombined = 11.5m },
+                new EngineVersion { EngineName = "3.6 V6 311 KM", PowerHP = 311, PowerKW = 229, Displacement = 3564, FuelTypeId = ben,
+                    TorqueNm = 373, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 6.0m, TopSpeedKmh = 248, FuelConsumptionCombined = 12.3m },
+                new EngineVersion { EngineName = "CTS-V 6.2 Supercharged 556 KM", PowerHP = 556, PowerKW = 409, Displacement = 6162, FuelTypeId = ben,
+                    TorqueNm = 747, EuroNorm = "Euro 5", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 3.9m, TopSpeedKmh = 291, FuelConsumptionCombined = 16.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(cts, "III (2013–2019)", "cadillac-cts-iii", 2013, 2019), 200, [
+                new EngineVersion { EngineName = "2.0T 276 KM", PowerHP = 276, PowerKW = 203, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 400, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 5.9m, TopSpeedKmh = 249, FuelConsumptionCombined = 9.4m },
+                new EngineVersion { EngineName = "3.6 V6 335 KM", PowerHP = 335, PowerKW = 246, Displacement = 3649, FuelTypeId = ben,
+                    TorqueNm = 373, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 5.6m, TopSpeedKmh = 249, FuelConsumptionCombined = 11.6m },
+                new EngineVersion { EngineName = "CTS-V 6.2 Supercharged 640 KM", PowerHP = 640, PowerKW = 471, Displacement = 6162, FuelTypeId = ben,
+                    TorqueNm = 855, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 3.7m, TopSpeedKmh = 320, FuelConsumptionCombined = 16.9m },
+            ]);
+
+            int escalade = GetOrCreateModel(bId, "Escalade", "cadillac-escalade");
+            PrepareGenerations(escalade,
+                ("I (1998–2001)", "cadillac-escalade-i", 1998, 2001),
+                ("II (2001–2006)", "cadillac-escalade-ii", 2001, 2006),
+                ("III (2006–2014)", "cadillac-escalade-iii", 2006, 2014),
+                ("IV (2014–2020)", "cadillac-escalade-iv", 2014, 2020),
+                ("V (2020–)", "cadillac-escalade-v", 2020, null));
+            AddOrReplaceEngines(GetOrFixGeneration(escalade, "I (1998–2001)", "cadillac-escalade-i", 1998, 2001), 200, [
+                new EngineVersion { EngineName = "5.7 V8 260 KM", PowerHP = 260, PowerKW = 191, Displacement = 5665, FuelTypeId = ben,
+                    TorqueNm = 447, EuroNorm = "Euro 2", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 8.9m, TopSpeedKmh = 180, FuelConsumptionCombined = 17.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(escalade, "II (2001–2006)", "cadillac-escalade-ii", 2001, 2006), 300, [
+                new EngineVersion { EngineName = "6.0 V8 345 KM", PowerHP = 345, PowerKW = 254, Displacement = 5967, FuelTypeId = ben,
+                    TorqueNm = 495, EuroNorm = "Euro 3", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 7.3m, TopSpeedKmh = 180, FuelConsumptionCombined = 18.0m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(escalade, "III (2006–2014)", "cadillac-escalade-iii", 2006, 2014), 380, [
+                new EngineVersion { EngineName = "6.2 V8 409 KM", PowerHP = 409, PowerKW = 301, Displacement = 6162, FuelTypeId = ben,
+                    TorqueNm = 566, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 6.0m, TopSpeedKmh = 180, FuelConsumptionCombined = 17.8m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(escalade, "IV (2014–2020)", "cadillac-escalade-iv", 2014, 2020), 390, [
+                new EngineVersion { EngineName = "6.2 V8 420 KM", PowerHP = 420, PowerKW = 309, Displacement = 6162, FuelTypeId = ben,
+                    TorqueNm = 623, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 6.0m, TopSpeedKmh = 180, FuelConsumptionCombined = 15.9m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(escalade, "V (2020–)", "cadillac-escalade-v", 2020, null), 250, [
+                new EngineVersion { EngineName = "6.2 V8 426 KM", PowerHP = 426, PowerKW = 313, Displacement = 6162, FuelTypeId = ben,
+                    TorqueNm = 623, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 6.0m, TopSpeedKmh = 210, FuelConsumptionCombined = 15.0m },
+                new EngineVersion { EngineName = "3.0 Duramax Diesel 277 KM", PowerHP = 277, PowerKW = 204, Displacement = 2993, FuelTypeId = die,
+                    TorqueNm = 623, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 7.8m, TopSpeedKmh = 190, FuelConsumptionCombined = 9.4m },
+            ]);
+
+            int srx = GetOrCreateModel(bId, "SRX", "cadillac-srx");
+            PrepareGenerations(srx,
+                ("I (2003–2009)", "cadillac-srx-i", 2003, 2009),
+                ("II (2009–2016)", "cadillac-srx-ii", 2009, 2016));
+            AddOrReplaceEngines(GetOrFixGeneration(srx, "I (2003–2009)", "cadillac-srx-i", 2003, 2009), 200, [
+                new EngineVersion { EngineName = "3.6 V6 260 KM", PowerHP = 260, PowerKW = 191, Displacement = 3564, FuelTypeId = ben,
+                    TorqueNm = 346, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 8.0m, TopSpeedKmh = 200, FuelConsumptionCombined = 13.5m },
+                new EngineVersion { EngineName = "4.6 V8 320 KM", PowerHP = 320, PowerKW = 235, Displacement = 4565, FuelTypeId = ben,
+                    TorqueNm = 420, EuroNorm = "Euro 4", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 7.0m, TopSpeedKmh = 210, FuelConsumptionCombined = 15.0m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(srx, "II (2009–2016)", "cadillac-srx-ii", 2009, 2016), 200, [
+                new EngineVersion { EngineName = "3.0 V6 265 KM", PowerHP = 265, PowerKW = 195, Displacement = 2996, FuelTypeId = ben,
+                    TorqueNm = 305, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 7.8m, TopSpeedKmh = 200, FuelConsumptionCombined = 12.2m },
+                new EngineVersion { EngineName = "2.8T 300 KM", PowerHP = 300, PowerKW = 221, Displacement = 2792, FuelTypeId = ben,
+                    TorqueNm = 400, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 6.5m, TopSpeedKmh = 220, FuelConsumptionCombined = 13.0m },
+            ]);
+
+            int xt4 = GetOrCreateModel(bId, "XT4", "cadillac-xt4");
+            AddOrReplaceEngines(GetOrFixGeneration(xt4, "I (2018–)", "cadillac-xt4-i", 2018, null), 180, [
+                new EngineVersion { EngineName = "2.0T 237 KM", PowerHP = 237, PowerKW = 174, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 350, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 7.4m, TopSpeedKmh = 209, FuelConsumptionCombined = 9.7m },
+            ]);
+
+            int xt5 = GetOrCreateModel(bId, "XT5", "cadillac-xt5");
+            AddOrReplaceEngines(GetOrFixGeneration(xt5, "I (2016–)", "cadillac-xt5-i", 2016, null), 200, [
+                new EngineVersion { EngineName = "2.0T 237 KM", PowerHP = 237, PowerKW = 174, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 353, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 7.9m, TopSpeedKmh = 200, FuelConsumptionCombined = 10.5m },
+                new EngineVersion { EngineName = "3.6 V6 314 KM", PowerHP = 314, PowerKW = 231, Displacement = 3649, FuelTypeId = ben,
+                    TorqueNm = 370, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 6.7m, TopSpeedKmh = 210, FuelConsumptionCombined = 12.1m },
+            ]);
+
+            int xt6 = GetOrCreateModel(bId, "XT6", "cadillac-xt6");
+            AddOrReplaceEngines(GetOrFixGeneration(xt6, "I (2019–)", "cadillac-xt6-i", 2019, null), 200, [
+                new EngineVersion { EngineName = "3.6 V6 314 KM", PowerHP = 314, PowerKW = 231, Displacement = 3649, FuelTypeId = ben,
+                    TorqueNm = 370, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 7.3m, TopSpeedKmh = 210, FuelConsumptionCombined = 12.3m },
             ]);
         }
 
@@ -6374,6 +6612,39 @@ public static class ComprehensiveSeeder
                 new EngineVersion { EngineName = "xDrive40d 352 KM", PowerHP = 352, PowerKW = 259, Displacement = 2993, FuelTypeId = mild,
                     TorqueNm = 700, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
                     Cylinders = 6, Acceleration0100 = 5.4m, TopSpeedKmh = 240, FuelConsumptionCombined = 7.5m },
+            ]);
+
+            int i3 = GetOrCreateModel(bId, "i3", "bmw-i3");
+            AddOrReplaceEngines(GetOrFixGeneration(i3, "I (2013–2022)", "bmw-i3-i", 2013, 2022), 130, [
+                new EngineVersion { EngineName = "170 KM", PowerHP = 170, PowerKW = 125, Displacement = null, FuelTypeId = ev,
+                    TorqueNm = 250, EuroNorm = "Euro 6", GearboxType = "eAutomatic", DriveType = "RWD",
+                    Cylinders = null, Acceleration0100 = 7.3m, TopSpeedKmh = 150, FuelConsumptionCombined = null },
+                new EngineVersion { EngineName = "i3s 184 KM", PowerHP = 184, PowerKW = 135, Displacement = null, FuelTypeId = ev,
+                    TorqueNm = 270, EuroNorm = "Euro 6", GearboxType = "eAutomatic", DriveType = "RWD",
+                    Cylinders = null, Acceleration0100 = 6.9m, TopSpeedKmh = 160, FuelConsumptionCombined = null },
+            ]);
+
+            int i4 = GetOrCreateModel(bId, "i4", "bmw-i4");
+            AddOrReplaceEngines(GetOrFixGeneration(i4, "I (2021–)", "bmw-i4-i", 2021, null), 300, [
+                new EngineVersion { EngineName = "eDrive40 340 KM", PowerHP = 340, PowerKW = 250, Displacement = null, FuelTypeId = ev,
+                    TorqueNm = 430, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "RWD",
+                    Cylinders = null, Acceleration0100 = 5.7m, TopSpeedKmh = 190, FuelConsumptionCombined = null },
+                new EngineVersion { EngineName = "M50 544 KM", PowerHP = 544, PowerKW = 400, Displacement = null, FuelTypeId = ev,
+                    TorqueNm = 795, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = null, Acceleration0100 = 3.9m, TopSpeedKmh = 225, FuelConsumptionCombined = null },
+            ]);
+
+            int ix = GetOrCreateModel(bId, "iX", "bmw-ix");
+            AddOrReplaceEngines(GetOrFixGeneration(ix, "I (2021–)", "bmw-ix-i", 2021, null), 300, [
+                new EngineVersion { EngineName = "xDrive40 326 KM", PowerHP = 326, PowerKW = 240, Displacement = null, FuelTypeId = ev,
+                    TorqueNm = 630, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = null, Acceleration0100 = 6.1m, TopSpeedKmh = 200, FuelConsumptionCombined = null },
+                new EngineVersion { EngineName = "xDrive50 523 KM", PowerHP = 523, PowerKW = 385, Displacement = null, FuelTypeId = ev,
+                    TorqueNm = 765, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = null, Acceleration0100 = 4.6m, TopSpeedKmh = 200, FuelConsumptionCombined = null },
+                new EngineVersion { EngineName = "M60 619 KM", PowerHP = 619, PowerKW = 455, Displacement = null, FuelTypeId = ev,
+                    TorqueNm = 1015, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = null, Acceleration0100 = 3.8m, TopSpeedKmh = 250, FuelConsumptionCombined = null },
             ]);
         }
 
