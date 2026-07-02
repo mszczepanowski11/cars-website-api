@@ -12,8 +12,14 @@ public static class ComprehensiveSeeder
 {
     public static void SeedComprehensiveData(AppDbContext db, ILogger logger)
     {
-        var brandDict = db.Brands.Include(b => b.Categories).ToDictionary(b => b.Name, b => b);
-        var fuelDict  = db.FuelTypes.ToDictionary(f => f.Name, f => f.Id);
+        // GroupBy+First instead of ToDictionary: duplicate Brand/FuelType names (e.g. a
+        // stray second "Krone" row) must not crash the whole seeder on the very first line.
+        // Keep the lowest-Id row per name — the original, most likely to have existing
+        // Model/Generation/EngineVersion rows already pointing at it.
+        var brandDict = db.Brands.Include(b => b.Categories).AsEnumerable()
+            .GroupBy(b => b.Name).ToDictionary(g => g.Key, g => g.OrderBy(b => b.Id).First());
+        var fuelDict  = db.FuelTypes.AsEnumerable()
+            .GroupBy(f => f.Name).ToDictionary(g => g.Key, g => g.OrderBy(f => f.Id).First().Id);
         var seededModelBrandIds = db.Models.Select(m => m.BrandId).Distinct().ToHashSet();
         var allVCats = db.VehicleCategories.ToList();
 

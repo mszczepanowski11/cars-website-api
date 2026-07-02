@@ -7,8 +7,12 @@ public static class ModelSeeder
 {
     public static void SeedModelsGenerationsEngines(AppDbContext db, ILogger logger)
     {
-        var brands = db.Brands.ToDictionary(b => b.Name, b => b.Id);
-        var fuels  = db.FuelTypes.ToDictionary(f => f.Name, f => f.Id);
+        // GroupBy+First instead of ToDictionary: a duplicate Brand/FuelType name must not
+        // crash the whole seeder chain (this runs first, before every other seeder).
+        var brands = db.Brands.AsEnumerable()
+            .GroupBy(b => b.Name).ToDictionary(g => g.Key, g => g.OrderBy(b => b.Id).First().Id);
+        var fuels  = db.FuelTypes.AsEnumerable()
+            .GroupBy(f => f.Name).ToDictionary(g => g.Key, g => g.OrderBy(f => f.Id).First().Id);
         if (!brands.Any() || !fuels.Any()) return;
 
         // Brands that already have at least one model — skip seeding those

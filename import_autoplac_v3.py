@@ -42,7 +42,7 @@ except ImportError:
 # ================================================================
 
 AUTOPLAC_DEALER = "https://autoplac.pl/dealer/autokomisostrowiec"
-CARIZO_API      = "https://cars-website-api-production.up.railway.app"
+CARIZO_API      = "https://api.carizo.eu"
 PHOTOS_ROOT     = r"C:\CARIZO"
 DATA_FILE       = "autoplac_data.json"
 
