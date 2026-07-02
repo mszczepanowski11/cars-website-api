@@ -6258,6 +6258,36 @@ public static class ComprehensiveSeeder
                     TorqueNm = 205, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "RWD",
                     Cylinders = 4, Acceleration0100 = 6.5m, TopSpeedKmh = 218, FuelConsumptionCombined = 7.4m },
             ]);
+
+            int mazda2 = GetOrCreateModel(mazId, "Mazda2", "mazda-2");
+            AddOrReplaceEngines(GetOrFixGeneration(mazda2, "DJ (2014–)", "mazda2-dj", 2014, null), 70, [
+                new EngineVersion { EngineName = "1.5 Skyactiv-G 75 KM", PowerHP = 75, PowerKW = 55, Displacement = 1496, FuelTypeId = ben,
+                    TorqueNm = 135, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.7m, TopSpeedKmh = 165, FuelConsumptionCombined = 4.9m },
+                new EngineVersion { EngineName = "1.5 Skyactiv-G 90 KM", PowerHP = 90, PowerKW = 66, Displacement = 1496, FuelTypeId = ben,
+                    TorqueNm = 148, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.4m, TopSpeedKmh = 175, FuelConsumptionCombined = 5.0m },
+            ]);
+
+            int cx3 = GetOrCreateModel(mazId, "CX-3", "mazda-cx3");
+            AddOrReplaceEngines(GetOrFixGeneration(cx3, "DK (2015–)", "mazda-cx3-dk", 2015, null), 90, [
+                new EngineVersion { EngineName = "2.0 Skyactiv-G 121 KM", PowerHP = 121, PowerKW = 89, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 205, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.0m, TopSpeedKmh = 192, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "1.5 Skyactiv-D 105 KM", PowerHP = 105, PowerKW = 77, Displacement = 1499, FuelTypeId = die,
+                    TorqueNm = 270, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.9m, TopSpeedKmh = 180, FuelConsumptionCombined = 4.5m },
+            ]);
+
+            int cx60 = GetOrCreateModel(mazId, "CX-60", "mazda-cx60");
+            AddOrReplaceEngines(GetOrFixGeneration(cx60, "KH (2022–)", "mazda-cx60-kh", 2022, null), 190, [
+                new EngineVersion { EngineName = "3.3 e-Skyactiv D 200 KM", PowerHP = 200, PowerKW = 147, Displacement = 3283, FuelTypeId = mild,
+                    TorqueNm = 450, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 8.4m, TopSpeedKmh = 210, FuelConsumptionCombined = 5.4m },
+                new EngineVersion { EngineName = "2.5 e-Skyactiv PHEV 327 KM", PowerHP = 327, PowerKW = 241, Displacement = 2488, FuelTypeId = phev,
+                    TorqueNm = 500, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 5.8m, TopSpeedKmh = 200, FuelConsumptionCombined = 1.5m },
+            ]);
         }
 
         // ── Peugeot (remaining) ───────────────────────────────────────────────────
