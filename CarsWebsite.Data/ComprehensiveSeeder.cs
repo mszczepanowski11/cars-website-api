@@ -9348,6 +9348,110 @@ public static class ComprehensiveSeeder
                     TorqueNm = 800, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "RWD",
                     Cylinders = 8, Acceleration0100 = 3.2m, TopSpeedKmh = 325, FuelConsumptionCombined = 12.8m },
             ]);
+
+            int klasaS = GetOrCreateModel(bId, "Klasa S", "mb-klasa-s");
+            PrepareGenerations(klasaS,
+                ("W222 (2013–2020)", "mb-s-w222", 2013, 2020),
+                ("W223 (2020–)", "mb-s-w223", 2020, null));
+            AddOrReplaceEngines(GetOrFixGeneration(klasaS, "W222 (2013–2020)", "mb-s-w222", 2013, 2020), 250, [
+                new EngineVersion { EngineName = "S350d 286 KM", PowerHP = 286, PowerKW = 210, Displacement = 2925, FuelTypeId = mild,
+                    TorqueNm = 600, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 6.0m, TopSpeedKmh = 250, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "S500 435 KM", PowerHP = 435, PowerKW = 320, Displacement = 2999, FuelTypeId = ben,
+                    TorqueNm = 520, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 4.9m, TopSpeedKmh = 250, FuelConsumptionCombined = 8.5m },
+                new EngineVersion { EngineName = "S63 AMG 612 KM", PowerHP = 612, PowerKW = 450, Displacement = 3982, FuelTypeId = ben,
+                    TorqueNm = 900, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 8, Acceleration0100 = 3.6m, TopSpeedKmh = 300, FuelConsumptionCombined = 11.5m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(klasaS, "W223 (2020–)", "mb-s-w223", 2020, null), 280, [
+                new EngineVersion { EngineName = "S350d 286 KM", PowerHP = 286, PowerKW = 210, Displacement = 2925, FuelTypeId = mild,
+                    TorqueNm = 600, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 6.0m, TopSpeedKmh = 250, FuelConsumptionCombined = 6.2m },
+                new EngineVersion { EngineName = "S500 435 KM", PowerHP = 435, PowerKW = 320, Displacement = 2999, FuelTypeId = mild,
+                    TorqueNm = 520, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 4.9m, TopSpeedKmh = 250, FuelConsumptionCombined = 8.7m },
+                new EngineVersion { EngineName = "S580e PHEV 510 KM", PowerHP = 510, PowerKW = 375, Displacement = 2999, FuelTypeId = phev,
+                    TorqueNm = 750, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 4.4m, TopSpeedKmh = 250, FuelConsumptionCombined = 1.9m },
+            ]);
+
+            int eqa = GetOrCreateModel(bId, "EQA", "mb-eqa");
+            AddOrReplaceEngines(GetOrFixGeneration(eqa, "H243 (2021–)", "mb-eqa-h243", 2021, null), 150, [
+                new EngineVersion { EngineName = "EQA250 66.5 kWh 190 KM", PowerHP = 190, PowerKW = 140, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 385, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 0, Acceleration0100 = 8.9m, TopSpeedKmh = 160, FuelConsumptionCombined = 15.7m },
+                new EngineVersion { EngineName = "EQA350 4MATIC 292 KM", PowerHP = 292, PowerKW = 215, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 520, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 0, Acceleration0100 = 6.0m, TopSpeedKmh = 160, FuelConsumptionCombined = 18.1m },
+            ]);
+
+            int eqb = GetOrCreateModel(bId, "EQB", "mb-eqb");
+            AddOrReplaceEngines(GetOrFixGeneration(eqb, "X243 (2021–)", "mb-eqb-x243", 2021, null), 150, [
+                new EngineVersion { EngineName = "EQB250 66.5 kWh 190 KM", PowerHP = 190, PowerKW = 140, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 385, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 0, Acceleration0100 = 9.2m, TopSpeedKmh = 160, FuelConsumptionCombined = 17.7m },
+                new EngineVersion { EngineName = "EQB350 4MATIC 292 KM", PowerHP = 292, PowerKW = 215, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 520, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 0, Acceleration0100 = 6.2m, TopSpeedKmh = 160, FuelConsumptionCombined = 19.7m },
+            ]);
+
+            int eqc = GetOrCreateModel(bId, "EQC", "mb-eqc");
+            AddOrReplaceEngines(GetOrFixGeneration(eqc, "N293 (2019–2023)", "mb-eqc-n293", 2019, 2023), 350, [
+                new EngineVersion { EngineName = "EQC400 4MATIC 408 KM", PowerHP = 408, PowerKW = 300, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 760, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 0, Acceleration0100 = 5.1m, TopSpeedKmh = 180, FuelConsumptionCombined = 21.3m },
+            ]);
+
+            int eqe = GetOrCreateModel(bId, "EQE", "mb-eqe");
+            AddOrReplaceEngines(GetOrFixGeneration(eqe, "V295 (2022–)", "mb-eqe-v295", 2022, null), 250, [
+                new EngineVersion { EngineName = "EQE350 90.6 kWh 292 KM", PowerHP = 292, PowerKW = 215, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 550, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "RWD",
+                    Cylinders = 0, Acceleration0100 = 6.4m, TopSpeedKmh = 210, FuelConsumptionCombined = 16.8m },
+                new EngineVersion { EngineName = "AMG EQE 43 4MATIC 476 KM", PowerHP = 476, PowerKW = 350, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 858, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 0, Acceleration0100 = 4.2m, TopSpeedKmh = 210, FuelConsumptionCombined = 19.7m },
+            ]);
+
+            int eqs = GetOrCreateModel(bId, "EQS", "mb-eqs");
+            AddOrReplaceEngines(GetOrFixGeneration(eqs, "V297 (2021–)", "mb-eqs-v297", 2021, null), 300, [
+                new EngineVersion { EngineName = "EQS450+ 108.4 kWh 333 KM", PowerHP = 333, PowerKW = 245, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 568, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "RWD",
+                    Cylinders = 0, Acceleration0100 = 6.2m, TopSpeedKmh = 210, FuelConsumptionCombined = 17.4m },
+                new EngineVersion { EngineName = "AMG EQS 53 4MATIC+ 761 KM", PowerHP = 761, PowerKW = 560, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 1020, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 0, Acceleration0100 = 3.4m, TopSpeedKmh = 250, FuelConsumptionCombined = 21.8m },
+            ]);
+
+            int sprinter = GetOrCreateModel(bId, "Sprinter", "mb-sprinter");
+            AddOrReplaceEngines(GetOrFixGeneration(sprinter, "W907 (2018–)", "mb-sprinter-w907", 2018, null), 100, [
+                new EngineVersion { EngineName = "313 CDI 2.0 130 KM", PowerHP = 130, PowerKW = 96, Displacement = 1950, FuelTypeId = die,
+                    TorqueNm = 330, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 16.0m, TopSpeedKmh = 155, FuelConsumptionCombined = 8.5m },
+                new EngineVersion { EngineName = "319 CDI 2.0 190 KM", PowerHP = 190, PowerKW = 140, Displacement = 1950, FuelTypeId = die,
+                    TorqueNm = 440, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 13.0m, TopSpeedKmh = 165, FuelConsumptionCombined = 9.5m },
+            ]);
+
+            int vito = GetOrCreateModel(bId, "Vito", "mb-vito");
+            AddOrReplaceEngines(GetOrFixGeneration(vito, "W447 (2014–)", "mb-vito-w447", 2014, null), 90, [
+                new EngineVersion { EngineName = "111 CDI 2.0 114 KM", PowerHP = 114, PowerKW = 84, Displacement = 1598, FuelTypeId = die,
+                    TorqueNm = 270, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 15.5m, TopSpeedKmh = 168, FuelConsumptionCombined = 6.8m },
+                new EngineVersion { EngineName = "119 CDI 2.0 190 KM", PowerHP = 190, PowerKW = 140, Displacement = 1950, FuelTypeId = die,
+                    TorqueNm = 440, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 9.5m, TopSpeedKmh = 205, FuelConsumptionCombined = 7.3m },
+            ]);
+
+            int vKlasa = GetOrCreateModel(bId, "Klasa V", "mb-klasa-v");
+            AddOrReplaceEngines(GetOrFixGeneration(vKlasa, "W447 (2014–)", "mb-v-w447", 2014, null), 100, [
+                new EngineVersion { EngineName = "V220d 163 KM", PowerHP = 163, PowerKW = 120, Displacement = 2143, FuelTypeId = die,
+                    TorqueNm = 380, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.9m, TopSpeedKmh = 190, FuelConsumptionCombined = 6.9m },
+                new EngineVersion { EngineName = "V300d 239 KM", PowerHP = 239, PowerKW = 176, Displacement = 1950, FuelTypeId = die,
+                    TorqueNm = 500, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.4m, TopSpeedKmh = 214, FuelConsumptionCombined = 7.8m },
+            ]);
         }
 
         logger.LogInformation("[ComprehensiveSeeder] Completed seeding premium cars, motorcycles, trucks.");
