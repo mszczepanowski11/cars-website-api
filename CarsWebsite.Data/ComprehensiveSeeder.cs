@@ -2459,6 +2459,121 @@ public static class ComprehensiveSeeder
                     Cylinders = 4, Acceleration0100 = 8.7m, TopSpeedKmh = 200, FuelConsumptionCombined = 5.7m },
             ]);
 
+            // ── HYUNDAI (Elantra, i20, Santa Fe, Ioniq 5, Bayon, i10 — i30/Tucson/Kona already seeded by ModelSeeder) ──
+            int hyundaiId3 = GetOrCreateBrand("Hyundai", "hyundai", "auta-osobowe");
+            int elantra = GetOrCreateModel(hyundaiId3, "Elantra", "hyundai-elantra");
+            PrepareGenerations(elantra,
+                ("AD (2015–2020)", "hyundai-elantra-ad", 2015, 2020),
+                ("CN7 (2020–)", "hyundai-elantra-cn7", 2020, null));
+            AddOrReplaceEngines(GetOrFixGeneration(elantra, "AD (2015–2020)", "hyundai-elantra-ad", 2015, 2020), 100, [
+                new EngineVersion { EngineName = "1.6 GDI 132 KM", PowerHP = 132, PowerKW = 97, Displacement = 1591, FuelTypeId = ben,
+                    TorqueNm = 165, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.9m, TopSpeedKmh = 190, FuelConsumptionCombined = 6.2m },
+                new EngineVersion { EngineName = "1.6 CRDi 136 KM", PowerHP = 136, PowerKW = 100, Displacement = 1598, FuelTypeId = die,
+                    TorqueNm = 300, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.0m, TopSpeedKmh = 200, FuelConsumptionCombined = 4.4m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(elantra, "CN7 (2020–)", "hyundai-elantra-cn7", 2020, null), 120, [
+                new EngineVersion { EngineName = "1.6 GDI 123 KM", PowerHP = 123, PowerKW = 90, Displacement = 1598, FuelTypeId = ben,
+                    TorqueNm = 154, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.9m, TopSpeedKmh = 185, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "1.6 T-GDI N Line 204 KM", PowerHP = 204, PowerKW = 150, Displacement = 1591, FuelTypeId = ben,
+                    TorqueNm = 265, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.9m, TopSpeedKmh = 240, FuelConsumptionCombined = 7.5m },
+                new EngineVersion { EngineName = "1.6 Hybrid 141 KM", PowerHP = 141, PowerKW = 104, Displacement = 1580, FuelTypeId = hyb,
+                    TorqueNm = 264, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 9.5m, TopSpeedKmh = 185, FuelConsumptionCombined = 4.2m },
+            ]);
+
+            int i20 = GetOrCreateModel(hyundaiId3, "i20", "hyundai-i20");
+            PrepareGenerations(i20,
+                ("GB (2014–2020)", "hyundai-i20-gb", 2014, 2020),
+                ("BC3 (2020–)", "hyundai-i20-bc3", 2020, null));
+            AddOrReplaceEngines(GetOrFixGeneration(i20, "GB (2014–2020)", "hyundai-i20-gb", 2014, 2020), 70, [
+                new EngineVersion { EngineName = "1.2 84 KM", PowerHP = 84, PowerKW = 62, Displacement = 1248, FuelTypeId = ben,
+                    TorqueNm = 122, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.3m, TopSpeedKmh = 165, FuelConsumptionCombined = 5.5m },
+                new EngineVersion { EngineName = "1.0 T-GDI 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 998, FuelTypeId = ben,
+                    TorqueNm = 172, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 10.9m, TopSpeedKmh = 185, FuelConsumptionCombined = 4.8m },
+                new EngineVersion { EngineName = "1.1 CRDi 75 KM", PowerHP = 75, PowerKW = 55, Displacement = 1120, FuelTypeId = die,
+                    TorqueNm = 205, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 15.8m, TopSpeedKmh = 163, FuelConsumptionCombined = 3.7m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(i20, "BC3 (2020–)", "hyundai-i20-bc3", 2020, null), 80, [
+                new EngineVersion { EngineName = "1.2 84 KM", PowerHP = 84, PowerKW = 62, Displacement = 1248, FuelTypeId = ben,
+                    TorqueNm = 118, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 13.7m, TopSpeedKmh = 165, FuelConsumptionCombined = 5.6m },
+                new EngineVersion { EngineName = "1.0 T-GDI 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 998, FuelTypeId = mild,
+                    TorqueNm = 172, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 10.7m, TopSpeedKmh = 187, FuelConsumptionCombined = 4.9m },
+                new EngineVersion { EngineName = "N 1.6 T-GDI 204 KM", PowerHP = 204, PowerKW = 150, Displacement = 1591, FuelTypeId = ben,
+                    TorqueNm = 275, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.7m, TopSpeedKmh = 230, FuelConsumptionCombined = 7.3m },
+            ]);
+
+            int santafe = GetOrCreateModel(hyundaiId3, "Santa Fe", "hyundai-santa-fe");
+            PrepareGenerations(santafe,
+                ("TM (2018–2023)", "hyundai-santa-fe-tm", 2018, 2023),
+                ("MX5 (2024–)", "hyundai-santa-fe-mx5", 2024, null));
+            AddOrReplaceEngines(GetOrFixGeneration(santafe, "TM (2018–2023)", "hyundai-santa-fe-tm", 2018, 2023), 150, [
+                new EngineVersion { EngineName = "2.2 CRDi 200 KM", PowerHP = 200, PowerKW = 147, Displacement = 2151, FuelTypeId = die,
+                    TorqueNm = 440, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 9.3m, TopSpeedKmh = 201, FuelConsumptionCombined = 6.8m },
+                new EngineVersion { EngineName = "1.6 T-GDI PHEV 265 KM", PowerHP = 265, PowerKW = 195, Displacement = 1598, FuelTypeId = phev,
+                    TorqueNm = 350, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.1m, TopSpeedKmh = 187, FuelConsumptionCombined = 1.6m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(santafe, "MX5 (2024–)", "hyundai-santa-fe-mx5", 2024, null), 200, [
+                new EngineVersion { EngineName = "1.6 T-GDI Hybrid 215 KM", PowerHP = 215, PowerKW = 158, Displacement = 1598, FuelTypeId = hyb,
+                    TorqueNm = 264, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 9.1m, TopSpeedKmh = 187, FuelConsumptionCombined = 5.8m },
+            ]);
+
+            int ioniq5 = GetOrCreateModel(hyundaiId3, "Ioniq 5", "hyundai-ioniq-5");
+            AddOrReplaceEngines(GetOrFixGeneration(ioniq5, "I (2021–)", "hyundai-ioniq-5-i", 2021, null), 150, [
+                new EngineVersion { EngineName = "58 kWh RWD 170 KM", PowerHP = 170, PowerKW = 125, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 350, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "RWD",
+                    Cylinders = 0, Acceleration0100 = 8.5m, TopSpeedKmh = 185, FuelConsumptionCombined = 16.8m },
+                new EngineVersion { EngineName = "77.4 kWh AWD 305 KM", PowerHP = 305, PowerKW = 225, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 605, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 0, Acceleration0100 = 5.2m, TopSpeedKmh = 185, FuelConsumptionCombined = 19.0m },
+                new EngineVersion { EngineName = "N 84 kWh AWD 650 KM", PowerHP = 650, PowerKW = 478, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 740, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 0, Acceleration0100 = 3.4m, TopSpeedKmh = 260, FuelConsumptionCombined = 21.0m },
+            ]);
+
+            int bayon = GetOrCreateModel(hyundaiId3, "Bayon", "hyundai-bayon");
+            AddOrReplaceEngines(GetOrFixGeneration(bayon, "I (2021–)", "hyundai-bayon-i", 2021, null), 80, [
+                new EngineVersion { EngineName = "1.0 T-GDI 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 998, FuelTypeId = mild,
+                    TorqueNm = 172, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.4m, TopSpeedKmh = 181, FuelConsumptionCombined = 5.4m },
+                new EngineVersion { EngineName = "1.2 84 KM", PowerHP = 84, PowerKW = 62, Displacement = 1197, FuelTypeId = ben,
+                    TorqueNm = 118, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 14.0m, TopSpeedKmh = 165, FuelConsumptionCombined = 5.9m },
+            ]);
+
+            int i10 = GetOrCreateModel(hyundaiId3, "i10", "hyundai-i10");
+            PrepareGenerations(i10,
+                ("PA (2013–2019)", "hyundai-i10-pa", 2013, 2019),
+                ("AC3 (2019–)", "hyundai-i10-ac3", 2019, null));
+            AddOrReplaceEngines(GetOrFixGeneration(i10, "PA (2013–2019)", "hyundai-i10-pa", 2013, 2019), 60, [
+                new EngineVersion { EngineName = "1.0 66 KM", PowerHP = 66, PowerKW = 49, Displacement = 998, FuelTypeId = ben,
+                    TorqueNm = 96, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 14.9m, TopSpeedKmh = 155, FuelConsumptionCombined = 5.0m },
+                new EngineVersion { EngineName = "1.2 87 KM", PowerHP = 87, PowerKW = 64, Displacement = 1248, FuelTypeId = ben,
+                    TorqueNm = 122, EuroNorm = "Euro 6", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.3m, TopSpeedKmh = 165, FuelConsumptionCombined = 5.4m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(i10, "AC3 (2019–)", "hyundai-i10-ac3", 2019, null), 65, [
+                new EngineVersion { EngineName = "1.0 67 KM", PowerHP = 67, PowerKW = 49, Displacement = 998, FuelTypeId = ben,
+                    TorqueNm = 96, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 14.7m, TopSpeedKmh = 155, FuelConsumptionCombined = 5.0m },
+                new EngineVersion { EngineName = "1.2 84 KM", PowerHP = 84, PowerKW = 62, Displacement = 1197, FuelTypeId = ben,
+                    TorqueNm = 118, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.2m, TopSpeedKmh = 160, FuelConsumptionCombined = 5.3m },
+            ]);
+
             int opelId = GetOrCreateBrand("Opel", "opel", "auta-osobowe");
             int astra = GetOrCreateModel(opelId, "Astra", "opel-astra");
             AddEngines(GetOrCreateGeneration(astra, "K (2015–2021)", "opel-astra-k", 2015, 2021), [
