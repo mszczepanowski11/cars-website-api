@@ -23,25 +23,40 @@ public static class ModelSeeder
         int F(string n) => fuels.TryGetValue(n, out var id) ? id : 0;
         bool NeedsSeeding(string n) { var id = B(n); return id > 0 && !seededBrandIds.Contains(id); }
 
-        int ben  = F("Benzyna"), die = F("Diesel"), hyb = F("Hybryda"),
-            phev = F("Hybryda plug-in"), ev = F("Elektryczny"), mild = F("Hybryda mild");
+        // Get-or-create: the live FuelTypes table doesn't have a plain "Hybryda" (full,
+        // non-plug-in hybrid) row — only "Hybryda plug-in (PHEV)" and "Hybryda mild (MHEV)" —
+        // so it's created here once instead of mislabelling every full-hybrid engine as Benzyna.
+        int GetOrCreateFuel(string name)
+        {
+            if (fuels.TryGetValue(name, out var id)) return id;
+            var ft = new FuelType { Name = name };
+            db.FuelTypes.Add(ft);
+            db.SaveChanges();
+            fuels[name] = ft.Id;
+            logger.LogWarning("[STARTUP-TRACE] Created missing FuelType '{Name}' (id={Id})", name, ft.Id);
+            return ft.Id;
+        }
+
+        // Names must match the live FuelTypes table exactly — confirmed via [STARTUP-TRACE]
+        // fuels-in-DB dump: Diesel, Benzyna, Gaz, Elektryczny, "Hybryda plug-in (PHEV)", LPG,
+        // "Hybryda mild (MHEV)", Wodór.
+        int ben  = F("Benzyna"), die = F("Diesel"), ev = F("Elektryczny"), lpg = F("LPG");
+        int phev = F("Hybryda plug-in (PHEV)"), mild = F("Hybryda mild (MHEV)");
+        int hyb  = GetOrCreateFuel("Hybryda");
 
         logger.LogWarning(
             "[STARTUP-TRACE] fuels in DB: [{DbFuels}] | lookups: Benzyna={Ben} Diesel={Die} Hybryda={Hyb} " +
             "HybrydaPlugIn={Phev} Elektryczny={Ev} HybrydaMild={Mild} LPG={Lpg}",
-            string.Join(", ", fuels.Keys), ben, die, hyb, phev, ev, mild, F("LPG"));
+            string.Join(", ", fuels.Keys), ben, die, hyb, phev, ev, mild, lpg);
 
-        // A missing fuel-type name must not crash the whole seeder via an FK violation on
-        // EngineVersion.FuelTypeId — fall back to Benzyna (always the first seeded type) and
-        // log loudly so the real gap in FuelTypes gets fixed, instead of blocking every seeder
-        // that runs after this one (including ComprehensiveSeeder).
+        // Defense in depth: a missing fuel-type name must not crash the whole seeder via an FK
+        // violation on EngineVersion.FuelTypeId — fall back to Benzyna and log loudly instead of
+        // blocking every seeder that runs after this one (including ComprehensiveSeeder).
         if (ben == 0 && fuels.Count > 0) ben = fuels.Values.First();
         if (die == 0) { logger.LogError("[STARTUP-TRACE] FuelType 'Diesel' missing from DB — falling back to Benzyna"); die = ben; }
-        if (hyb == 0) { logger.LogError("[STARTUP-TRACE] FuelType 'Hybryda' missing from DB — falling back to Benzyna"); hyb = ben; }
-        if (phev == 0) { logger.LogError("[STARTUP-TRACE] FuelType 'Hybryda plug-in' missing from DB — falling back to Benzyna"); phev = ben; }
+        if (phev == 0) { logger.LogError("[STARTUP-TRACE] FuelType 'Hybryda plug-in (PHEV)' missing from DB — falling back to Benzyna"); phev = ben; }
         if (ev == 0) { logger.LogError("[STARTUP-TRACE] FuelType 'Elektryczny' missing from DB — falling back to Benzyna"); ev = ben; }
-        if (mild == 0) { logger.LogError("[STARTUP-TRACE] FuelType 'Hybryda mild' missing from DB — falling back to Benzyna"); mild = ben; }
-        int lpg = F("LPG");
+        if (mild == 0) { logger.LogError("[STARTUP-TRACE] FuelType 'Hybryda mild (MHEV)' missing from DB — falling back to Benzyna"); mild = ben; }
         if (lpg == 0) { logger.LogError("[STARTUP-TRACE] FuelType 'LPG' missing from DB — falling back to Benzyna"); lpg = ben; }
 
         // Helper: create EngineVersion

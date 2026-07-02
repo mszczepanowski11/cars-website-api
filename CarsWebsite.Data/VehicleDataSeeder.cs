@@ -48,7 +48,7 @@ public static class VehicleDataSeeder
         int ben   = GetOrCreateFuel("Benzyna");
         int die   = GetOrCreateFuel("Diesel");
         int hyb   = GetOrCreateFuel("Hybryda");
-        int phev  = GetOrCreateFuel("Hybryda PHEV");
+        int phev  = GetOrCreateFuel("Hybryda plug-in (PHEV)");
         int ev    = GetOrCreateFuel("Elektryczny");
         int lpg   = GetOrCreateFuel("LPG");
 
@@ -541,11 +541,11 @@ public static class VehicleDataSeeder
         int GetFuel(string name) => fuelDict.TryGetValue(name, out var id) ? id : 0;
         int ben  = GetFuel("Benzyna");
         int die  = GetFuel("Diesel");
-        int phev = GetFuel("Hybryda PHEV");
+        int phev = GetFuel("Hybryda plug-in (PHEV)");
         // Missing fuel type must not crash via an FK violation — fall back to Benzyna.
         if (ben == 0 && fuelDict.Count > 0) ben = fuelDict.Values.First();
         if (die == 0) { logger.LogError("[STARTUP-TRACE] SeedTrimData: FuelType 'Diesel' missing — falling back to Benzyna"); die = ben; }
-        if (phev == 0) { logger.LogError("[STARTUP-TRACE] SeedTrimData: FuelType 'Hybryda PHEV' missing — falling back to Benzyna"); phev = ben; }
+        if (phev == 0) { logger.LogError("[STARTUP-TRACE] SeedTrimData: FuelType 'Hybryda plug-in (PHEV)' missing — falling back to Benzyna"); phev = ben; }
 
         int GetOrCreateModel(int brandId, string name, string slug)
         {
