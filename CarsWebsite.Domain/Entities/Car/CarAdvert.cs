@@ -98,6 +98,9 @@ public class CarAdvert : Advert
     // Parts specific
     public string? CatalogNumber { get; set; }
     public string? Compatibility { get; set; }
+    [MaxLength(20)] public string? Side { get; set; }   // "Lewa" | "Prawa" | "Obie strony" | "Przód" | "Tył" | null
+    public int? Quantity { get; set; }
+    public ICollection<PartCompatibility> PartCompatibilities { get; set; } = new List<PartCompatibility>();
 
     // Extended taxonomy FKs
     public int? TrimId { get; set; }

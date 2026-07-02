@@ -68,6 +68,9 @@ namespace CarsWebsite
         // Financing leads
         public DbSet<FinancingInquiry> FinancingInquiries { get; set; }
 
+        // Part compatibility (advert <-> Brand/Model/Generation)
+        public DbSet<PartCompatibility> PartCompatibilities { get; set; }
+
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -272,6 +275,34 @@ namespace CarsWebsite
                 .WithMany()
                 .HasForeignKey(fc => fc.ModelId)
                 .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
+            // PartCompatibility: deleted along with its advert; Brand/Model/Generation FKs restrict
+            // (a taxonomy row referenced by a compatibility entry can't be deleted out from under it).
+            modelBuilder.Entity<PartCompatibility>()
+                .HasOne(pc => pc.CarAdvert)
+                .WithMany(a => a.PartCompatibilities)
+                .HasForeignKey(pc => pc.CarAdvertId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PartCompatibility>()
+                .HasOne(pc => pc.Brand)
+                .WithMany()
+                .HasForeignKey(pc => pc.BrandId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PartCompatibility>()
+                .HasOne(pc => pc.Model)
+                .WithMany()
+                .HasForeignKey(pc => pc.ModelId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
+
+            modelBuilder.Entity<PartCompatibility>()
+                .HasOne(pc => pc.Generation)
+                .WithMany()
+                .HasForeignKey(pc => pc.GenerationId)
+                .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired(false);
 
             // Trim

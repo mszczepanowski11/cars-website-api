@@ -85,6 +85,16 @@ public class CarAdvertResponseDto
     // Parts specific
     public string? CatalogNumber { get; set; }
     public string? Compatibility { get; set; }
+    public string? Side { get; set; }
+    public int? Quantity { get; set; }
+    public int? PartCategoryId { get; set; }
+    public string? PartCategoryName { get; set; }
+    public int? PartSubcategoryId { get; set; }
+    public string? PartSubcategoryName { get; set; }
+    public string? OemNumber { get; set; }
+    public string? ManufacturerPartNumber { get; set; }
+    public string? PartManufacturer { get; set; }
+    public List<PartCompatibilityDto> Compatibilities { get; set; } = new();
 
     // Vehicle subtype
     public int? VehicleSubtypeId { get; set; }
