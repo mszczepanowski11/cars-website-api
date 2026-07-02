@@ -189,6 +189,25 @@ public static class ComprehensiveSeeder
             return g.Id;
         }
 
+        // Deleting an EngineVersion that's still referenced by a real CarAdvert violates
+        // FK_CarAdverts_EngineVersions_EngineVersionId (no ON DELETE CASCADE/SET NULL
+        // configured on that FK) — detach any such adverts first so the correct engine data
+        // can actually replace the wrong rows instead of crashing the whole seeder chain.
+        void SafeRemoveEngines(List<EngineVersion> toRemove)
+        {
+            if (toRemove.Count == 0) return;
+            var ids = toRemove.Select(e => e.Id).ToList();
+            var blockingAdverts = db.CarAdverts.Where(a => a.EngineVersionId != null && ids.Contains(a.EngineVersionId.Value)).ToList();
+            if (blockingAdverts.Any())
+            {
+                foreach (var a in blockingAdverts) a.EngineVersionId = null;
+                db.SaveChanges();
+                logger.LogWarning("[ComprehensiveSeeder] Detached {Count} CarAdverts from engines being replaced", blockingAdverts.Count);
+            }
+            db.EngineVersions.RemoveRange(toRemove);
+            db.SaveChanges();
+        }
+
         void AddEngines(int generationId, List<EngineVersion> engines)
         {
             var expectedNames = engines.Select(e => e.EngineName).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -199,8 +218,7 @@ public static class ComprehensiveSeeder
                 .ToList();
             if (wrongNames.Any())
             {
-                db.EngineVersions.RemoveRange(wrongNames);
-                db.SaveChanges();
+                SafeRemoveEngines(wrongNames);
                 logger.LogInformation("[ComprehensiveSeeder] Removed {Count} unexpected engines from gen {Id}", wrongNames.Count, generationId);
             }
             if (db.EngineVersions.Any(e => e.GenerationId == generationId && e.TorqueNm != null)) return;
@@ -221,8 +239,7 @@ public static class ComprehensiveSeeder
                 .ToList();
             if (wrong.Any())
             {
-                db.EngineVersions.RemoveRange(wrong);
-                db.SaveChanges();
+                SafeRemoveEngines(wrong);
                 logger.LogInformation("[ComprehensiveSeeder] Removed {Count} wrong engines from gen {Id}", wrong.Count, generationId);
             }
             if (db.EngineVersions.Any(e => e.GenerationId == generationId && e.TorqueNm != null)) return;
@@ -241,8 +258,7 @@ public static class ComprehensiveSeeder
             if (alreadyCorrect) return;
             if (existing.Any())
             {
-                db.EngineVersions.RemoveRange(existing);
-                db.SaveChanges();
+                SafeRemoveEngines(existing);
                 logger.LogInformation("[ComprehensiveSeeder] ForceReplace: removed {Count} engines from gen {Id}", existing.Count, generationId);
             }
             foreach (var e in engines) e.GenerationId = generationId;
