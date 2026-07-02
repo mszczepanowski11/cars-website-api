@@ -224,6 +224,12 @@ public class AdminController : ControllerBase
     [HttpPost("feature-categories")]
     public async Task<IActionResult> CreateFeatureCategory([FromBody] CreateFeatureCategoryDto dto)
     {
+        if (dto.VehicleCategoryId <= 0)
+            return BadRequest(new { message = "Kategoria wyposażenia musi mieć przypisaną kategorię pojazdu." });
+        var vehicleCategoryExists = await _db.VehicleCategories.AnyAsync(vc => vc.Id == dto.VehicleCategoryId);
+        if (!vehicleCategoryExists)
+            return BadRequest(new { message = "Wybrana kategoria pojazdu nie istnieje." });
+
         var cat = new FeatureCategory {
             Name = dto.Name,
             VehicleCategoryId = dto.VehicleCategoryId,

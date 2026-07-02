@@ -14,7 +14,6 @@ public class ChainValidationResult
 
 public class TaxonomyAuditReport
 {
-    public List<string> NullScopeFeatureCategories { get; set; } = new();
     public List<string> MismatchedEngineTrimGeneration { get; set; } = new();
     public List<string> DuplicateBrandNames { get; set; } = new();
 }

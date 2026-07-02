@@ -248,12 +248,15 @@ namespace CarsWebsite
                 .WithMany(c => c.Brands)
                 .UsingEntity(j => j.ToTable("brandvehiclecategories"));
 
-            // FeatureCategory → VehicleCategory (optional FK)
+            // FeatureCategory → VehicleCategory (required FK — see comment on FeatureCategory.VehicleCategoryId).
+            // Restrict on delete: a VehicleCategory with FeatureCategories still scoped to it cannot be
+            // deleted outright, forcing an explicit reassignment/cleanup instead of a silent cascade wipe.
             modelBuilder.Entity<FeatureCategory>()
                 .HasOne(fc => fc.VehicleCategory)
                 .WithMany()
                 .HasForeignKey(fc => fc.VehicleCategoryId)
-                .IsRequired(false);
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired();
 
             // FeatureCategory → Brand (optional FK)
             modelBuilder.Entity<FeatureCategory>()

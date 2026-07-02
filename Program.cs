@@ -1234,51 +1234,80 @@ internal class Program
                     bgLogger.LogError(ex, "[Seeder] SeedDataIfEmpty failed — app will start without complete seed data: {Msg}", ex.Message);
                 }
 
-                // Fix confirmed cross-category leak: 6 FeatureCategory rows named "Specjalne - <type>"
-                // (created via the admin panel, not seeded by any code here) have a vehicle-type
-                // name but VehicleCategoryId = NULL, meaning they show up on EVERY category's
-                // equipment step instead of just their own — e.g. motorcycle-only equipment showing
-                // on a car listing. Confirmed via the AUDIT-FEATURES log added in #57. Self-heal by
-                // matching the name to the right VehicleCategory slug.
+                // Fix confirmed cross-category leak, then harden the schema so it can't recur.
+                // History: 6 FeatureCategory rows named "Specjalne - <type>" (created via the
+                // admin panel, not seeded by any code here) had a vehicle-type name but
+                // VehicleCategoryId = NULL, meaning they showed up on EVERY category's equipment
+                // step instead of just their own — e.g. motorcycle-only equipment showing on a car
+                // listing. Confirmed via the AUDIT-FEATURES log added in #57.
+                //
+                // Step 1: name-pattern self-heal for the known "Specjalne - ..." rows.
+                // Step 2: any OTHER row still unscoped (not caught by the name pattern) is parked
+                //         under "inne" as a visible, admin-reviewable fallback instead of left NULL.
+                // Step 3: once nothing is NULL, VehicleCategoryId is made NOT NULL at the DB level,
+                //         so this bug class becomes structurally impossible instead of relying on
+                //         self-heal code catching every future case.
+                // All three steps run as raw SQL (not through the FeatureCategory entity, whose
+                // VehicleCategoryId is now a non-nullable C# int) so EF never has to materialize a
+                // row that is still NULL in the DB while these fixes are in flight.
                 try
                 {
-                    var vcatBySlug = bgDb.VehicleCategories.ToDictionary(c => c.Slug, c => c.Id);
-                    var specjalne = bgDb.FeatureCategories
-                        .Where(fc => fc.VehicleCategoryId == null && fc.Name.StartsWith("Specjalne"))
-                        .ToList();
-                    int fixedCount = 0;
-                    foreach (var fc in specjalne)
+                    var slugMatches = new (string Match, string Slug)[]
                     {
-                        string? slug =
-                            fc.Name.Contains("Ciężarówki", StringComparison.OrdinalIgnoreCase) ? "ciezarowe" :
-                            fc.Name.Contains("Dostawcze", StringComparison.OrdinalIgnoreCase) ? "dostawcze" :
-                            fc.Name.Contains("budowlane", StringComparison.OrdinalIgnoreCase) ? "budowlane" :
-                            fc.Name.Contains("rolnicze", StringComparison.OrdinalIgnoreCase) ? "rolnicze" :
-                            fc.Name.Contains("Motocykle", StringComparison.OrdinalIgnoreCase) ? "motocykle" :
-                            fc.Name.Contains("Przyczepy", StringComparison.OrdinalIgnoreCase) ? "przyczepy" :
-                            null;
-                        if (slug != null && vcatBySlug.TryGetValue(slug, out var vcatId))
-                        {
-                            fc.VehicleCategoryId = vcatId;
-                            fixedCount++;
-                            bgLogger.LogWarning("[STARTUP-TRACE] Fixed FeatureCategory '{Name}' (id={Id}) scope: ANY -> {Slug}", fc.Name, fc.Id, slug);
-                        }
+                        ("Ciężarówki", "ciezarowe"),
+                        ("Dostawcze", "dostawcze"),
+                        ("budowlane", "budowlane"),
+                        ("rolnicze", "rolnicze"),
+                        ("Motocykle", "motocykle"),
+                        ("Przyczepy", "przyczepy"),
+                    };
+                    foreach (var (match, slug) in slugMatches)
+                    {
+                        var affected = bgDb.Database.ExecuteSqlRaw(
+                            "UPDATE `featurecategories` fc JOIN `vehiclecategories` vc ON vc.`Slug` = {0} " +
+                            "SET fc.`VehicleCategoryId` = vc.`Id` " +
+                            "WHERE fc.`VehicleCategoryId` IS NULL AND fc.`Name` LIKE 'Specjalne%' AND fc.`Name` LIKE CONCAT('%', {1}, '%')",
+                            slug, match);
+                        if (affected > 0)
+                            bgLogger.LogWarning("[STARTUP-TRACE] Fixed {Count} FeatureCategory row(s) matching '{Match}' scope: ANY -> {Slug}", affected, match, slug);
                     }
-                    if (fixedCount > 0) bgDb.SaveChanges();
                 }
                 catch (Exception ex)
                 {
                     bgLogger.LogError(ex, "[STARTUP-TRACE] FeatureCategory scope fix failed: {Msg}", ex.Message);
                 }
 
+                try
+                {
+                    var fallbackFixed = bgDb.Database.ExecuteSqlRaw(
+                        "UPDATE `featurecategories` fc JOIN `vehiclecategories` vc ON vc.`Slug` = 'inne' " +
+                        "SET fc.`VehicleCategoryId` = vc.`Id` " +
+                        "WHERE fc.`VehicleCategoryId` IS NULL");
+                    if (fallbackFixed > 0)
+                        bgLogger.LogWarning("[STARTUP-TRACE] {Count} FeatureCategory row(s) had no vehicle-category scope and no name match — parked under 'inne' for admin review", fallbackFixed);
+                }
+                catch (Exception ex)
+                {
+                    bgLogger.LogError(ex, "[STARTUP-TRACE] FeatureCategory null-scope fallback failed: {Msg}", ex.Message);
+                }
+
+                try
+                {
+                    bgDb.Database.ExecuteSqlRaw("ALTER TABLE `featurecategories` MODIFY COLUMN `VehicleCategoryId` int NOT NULL");
+                    bgLogger.LogWarning("[STARTUP-TRACE] FeatureCategories.VehicleCategoryId is now NOT NULL");
+                }
+                catch (Exception ex)
+                {
+                    bgLogger.LogError(ex, "[STARTUP-TRACE] Could not make FeatureCategories.VehicleCategoryId NOT NULL yet (some row may still be unscoped): {Msg}", ex.Message);
+                }
+
                 // Audit: dump every FeatureCategory's scope (VehicleCategoryId/BrandId/ModelId) and
                 // feature count, so equipment leaking into the wrong vehicle category (e.g. car
                 // features showing on a motorcycle listing) can be spotted from the scope values
-                // directly instead of clicking through every category in the form by hand. A NULL
-                // scope field means "applies to everything" by design (see
-                // GetFeatureCategoriesByContextAsync) — that's expected for a handful of universal
-                // categories, but is a red flag if it shows up on something that reads as
-                // category-specific by name.
+                // directly instead of clicking through every category in the form by hand.
+                // VehicleCategoryId is required (see the migration hardening this above) — only
+                // BrandId/ModelId can still be a deliberate "applies to every brand/model in the
+                // category" wildcard (see GetFeatureCategoriesByContextAsync).
                 try
                 {
                     var vcatNames = bgDb.VehicleCategories.ToDictionary(c => c.Id, c => c.Slug);
@@ -1286,7 +1315,7 @@ internal class Program
                         .AsEnumerable()
                         .OrderBy(fc => fc.Name)
                         .Select(fc =>
-                            $"{fc.Name} [vcat={(fc.VehicleCategoryId.HasValue ? vcatNames.GetValueOrDefault(fc.VehicleCategoryId.Value, "?") : "ANY")}, " +
+                            $"{fc.Name} [vcat={vcatNames.GetValueOrDefault(fc.VehicleCategoryId, "?")}, " +
                             $"brand={(fc.BrandId?.ToString() ?? "ANY")}, model={(fc.ModelId?.ToString() ?? "ANY")}, features={fc.Features.Count}] (id={fc.Id})")
                         .ToList();
                     bgLogger.LogWarning("[STARTUP-TRACE] AUDIT-FEATURES: {Count} feature categories: {List}",
@@ -1589,7 +1618,7 @@ internal class Program
             {
                 new FeatureCategory
                 {
-                    Name = "Bezpieczeństwo", VehicleCategoryId = carCatId == 0 ? null : carCatId,
+                    Name = "Bezpieczeństwo", VehicleCategoryId = carCatId,
                     Features = new List<Feature> {
                         new Feature { Name = "ABS" }, new Feature { Name = "ESP" }, new Feature { Name = "ASR / kontrola trakcji" },
                         new Feature { Name = "Airbag kierowcy" }, new Feature { Name = "Airbag pasażera" }, new Feature { Name = "Kurtyny powietrzne" },
@@ -1600,7 +1629,7 @@ internal class Program
                 },
                 new FeatureCategory
                 {
-                    Name = "Komfort", VehicleCategoryId = carCatId == 0 ? null : carCatId,
+                    Name = "Komfort", VehicleCategoryId = carCatId,
                     Features = new List<Feature> {
                         new Feature { Name = "Klimatyzacja manualna" }, new Feature { Name = "Klimatyzacja automatyczna" },
                         new Feature { Name = "Dwustrefowa klimatyzacja" }, new Feature { Name = "Trzystrefowa klimatyzacja" },
@@ -1614,7 +1643,7 @@ internal class Program
                 },
                 new FeatureCategory
                 {
-                    Name = "Multimedia", VehicleCategoryId = carCatId == 0 ? null : carCatId,
+                    Name = "Multimedia", VehicleCategoryId = carCatId,
                     Features = new List<Feature> {
                         new Feature { Name = "Bluetooth" }, new Feature { Name = "Android Auto" }, new Feature { Name = "Apple CarPlay" },
                         new Feature { Name = "GPS / Nawigacja" }, new Feature { Name = "USB" }, new Feature { Name = "Ładowarka indukcyjna Qi" },
@@ -1625,7 +1654,7 @@ internal class Program
                 },
                 new FeatureCategory
                 {
-                    Name = "Oświetlenie", VehicleCategoryId = carCatId == 0 ? null : carCatId,
+                    Name = "Oświetlenie", VehicleCategoryId = carCatId,
                     Features = new List<Feature> {
                         new Feature { Name = "Halogeny" }, new Feature { Name = "Xenon" }, new Feature { Name = "Bi-Xenon" },
                         new Feature { Name = "Full LED" }, new Feature { Name = "Matrix LED" }, new Feature { Name = "Światła adaptacyjne" },
@@ -1634,7 +1663,7 @@ internal class Program
                 },
                 new FeatureCategory
                 {
-                    Name = "Systemy wspomagania", VehicleCategoryId = carCatId == 0 ? null : carCatId,
+                    Name = "Systemy wspomagania", VehicleCategoryId = carCatId,
                     Features = new List<Feature> {
                         new Feature { Name = "Tempomat" }, new Feature { Name = "Aktywny tempomat (ACC)" },
                         new Feature { Name = "Asystent pasa ruchu (LKA)" }, new Feature { Name = "Asystent martwego pola (BSM)" },
@@ -1647,7 +1676,7 @@ internal class Program
                 },
                 new FeatureCategory
                 {
-                    Name = "Nadwozie i wyposażenie zewnętrzne", VehicleCategoryId = carCatId == 0 ? null : carCatId,
+                    Name = "Nadwozie i wyposażenie zewnętrzne", VehicleCategoryId = carCatId,
                     Features = new List<Feature> {
                         new Feature { Name = "Dach panoramiczny" }, new Feature { Name = "Szklany dach (moonroof)" },
                         new Feature { Name = "Relingi dachowe" }, new Feature { Name = "Hak holowniczy" },
@@ -1658,7 +1687,7 @@ internal class Program
                 },
                 new FeatureCategory
                 {
-                    Name = "Bezpieczeństwo", VehicleCategoryId = motoCatId == 0 ? null : motoCatId,
+                    Name = "Bezpieczeństwo", VehicleCategoryId = motoCatId,
                     Features = new List<Feature> {
                         new Feature { Name = "ABS" }, new Feature { Name = "Kontrola trakcji (TCS)" },
                         new Feature { Name = "Asystent ruszania pod górkę (HSA)" }, new Feature { Name = "Hamowanie kombinowane (CBS)" }
@@ -1666,7 +1695,7 @@ internal class Program
                 },
                 new FeatureCategory
                 {
-                    Name = "Komfort", VehicleCategoryId = motoCatId == 0 ? null : motoCatId,
+                    Name = "Komfort", VehicleCategoryId = motoCatId,
                     Features = new List<Feature> {
                         new Feature { Name = "Quickshifter" }, new Feature { Name = "Podgrzewane manetki" },
                         new Feature { Name = "Tempomat" }, new Feature { Name = "Elektrycznie regulowana szyba" },
@@ -1675,7 +1704,7 @@ internal class Program
                 },
                 new FeatureCategory
                 {
-                    Name = "Bagaż i akcesoria", VehicleCategoryId = motoCatId == 0 ? null : motoCatId,
+                    Name = "Bagaż i akcesoria", VehicleCategoryId = motoCatId,
                     Features = new List<Feature> {
                         new Feature { Name = "Kufry boczne (oryginalne)" }, new Feature { Name = "Centralny kufer (oryginalne)" },
                         new Feature { Name = "Tankbag" }, new Feature { Name = "Owiewki boczne" },
@@ -1685,7 +1714,7 @@ internal class Program
                 },
                 new FeatureCategory
                 {
-                    Name = "Wyposażenie techniczne", VehicleCategoryId = trailerCatId == 0 ? null : trailerCatId,
+                    Name = "Wyposażenie techniczne", VehicleCategoryId = trailerCatId,
                     Features = new List<Feature> {
                         new Feature { Name = "Hamulec najazdowy" }, new Feature { Name = "Koło podporowe" },
                         new Feature { Name = "Podpory tylne" }, new Feature { Name = "Burtownica aluminiowa" },
@@ -1695,7 +1724,7 @@ internal class Program
                 },
                 new FeatureCategory
                 {
-                    Name = "Kabina i komfort", VehicleCategoryId = agriCatId == 0 ? null : agriCatId,
+                    Name = "Kabina i komfort", VehicleCategoryId = agriCatId,
                     Features = new List<Feature> {
                         new Feature { Name = "Klimatyzacja kabiny" }, new Feature { Name = "Zawieszenie kabiny" },
                         new Feature { Name = "Radio / Bluetooth" }, new Feature { Name = "Fotel z zawieszeniem pneumatycznym" }
@@ -1703,7 +1732,7 @@ internal class Program
                 },
                 new FeatureCategory
                 {
-                    Name = "Technologia i systemy", VehicleCategoryId = agriCatId == 0 ? null : agriCatId,
+                    Name = "Technologia i systemy", VehicleCategoryId = agriCatId,
                     Features = new List<Feature> {
                         new Feature { Name = "GPS / Autosteering" }, new Feature { Name = "Kamera robocza" },
                         new Feature { Name = "System telematyczny" }, new Feature { Name = "4WD" },

@@ -1291,7 +1291,7 @@ namespace cars_website_api.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<int?>("VehicleCategoryId")
+                    b.Property<int>("VehicleCategoryId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -2391,7 +2391,9 @@ namespace cars_website_api.Migrations
 
                     b.HasOne("cars_website_api.CarsWebsite.Domain.Entities.VehicleCategory", "VehicleCategory")
                         .WithMany()
-                        .HasForeignKey("VehicleCategoryId");
+                        .HasForeignKey("VehicleCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Brand");
 
