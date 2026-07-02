@@ -28,13 +28,21 @@ public class AdvertMappingProfile : Profile
 
         CreateMap<AdvertImage, AdvertImageDto>();
 
+        CreateMap<PartCompatibility, PartCompatibilityDto>()
+            .ForMember(dest => dest.BrandName, opt => opt.MapFrom(src => src.Brand.Name))
+            .ForMember(dest => dest.ModelName, opt => opt.MapFrom(src => src.Model != null ? src.Model.Name : null))
+            .ForMember(dest => dest.GenerationName, opt => opt.MapFrom(src => src.Generation != null ? src.Generation.Name : null));
+
         CreateMap<CarAdvert, CarAdvertResponseDto>()
             .ForMember(dest => dest.Features, opt => opt.MapFrom(src =>
                 src.AdvertFeatures.Select(af => af.Feature)))
             .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images))
             .ForMember(dest => dest.Color, opt => opt.MapFrom(src => src.CarColor))
             .ForMember(dest => dest.ViewCount, opt => opt.Ignore())
-            .ForMember(dest => dest.SoldAt, opt => opt.MapFrom(src => src.SoldAt));
+            .ForMember(dest => dest.SoldAt, opt => opt.MapFrom(src => src.SoldAt))
+            .ForMember(dest => dest.PartCategoryName, opt => opt.MapFrom(src => src.PartCategory != null ? src.PartCategory.Name : null))
+            .ForMember(dest => dest.PartSubcategoryName, opt => opt.MapFrom(src => src.PartSubcategory != null ? src.PartSubcategory.Name : null))
+            .ForMember(dest => dest.Compatibilities, opt => opt.MapFrom(src => src.PartCompatibilities));
 
         CreateMap<CreateCarAdvertDto, CarAdvert>()
             .ForMember(dest => dest.AdvertFeatures, opt => opt.Ignore())

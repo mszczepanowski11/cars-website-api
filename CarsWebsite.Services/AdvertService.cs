@@ -50,6 +50,23 @@ public class AdvertService : IAdvertService
     private static string StripHtml(string input)
         => System.Text.RegularExpressions.Regex.Replace(input, @"[<>]", "");
 
+    // Validates each compatibility entry's Brand/Model/Generation chain the same way the advert's
+    // own vehicle chain is validated, so a part can't be marked "fits" a nonsensical combination.
+    private async Task<List<PartCompatibility>> BuildPartCompatibilitiesAsync(List<PartCompatibilityEntryDto>? entries)
+    {
+        var result = new List<PartCompatibility>();
+        if (entries == null) return result;
+        foreach (var entry in entries)
+        {
+            var check = await _hierarchyValidationService.ValidateVehicleChainAsync(
+                entry.BrandId, entry.ModelId, entry.GenerationId, null, null, null);
+            if (!check.IsValid)
+                throw new ArgumentException($"Niepoprawna kompatybilność części: {check.ErrorMessage}");
+            result.Add(new PartCompatibility { BrandId = entry.BrandId, ModelId = entry.ModelId, GenerationId = entry.GenerationId });
+        }
+        return result;
+    }
+
     public async Task<int> CreateCarAdvertAsync(CreateCarAdvertDto dto,int userId)
     {
         // Sanitize Title and Description: trim whitespace and strip angle-bracket characters
@@ -111,6 +128,10 @@ public class AdvertService : IAdvertService
             _context.AdvertFeatures.AddRange(features);
         }
 
+        var compatibilities = await BuildPartCompatibilitiesAsync(dto.Compatibilities);
+        foreach (var c in compatibilities) c.CarAdvertId = advert.Id;
+        if (compatibilities.Count > 0) _context.PartCompatibilities.AddRange(compatibilities);
+
         await _context.SaveChangesAsync();
 
         return advert.Id;
@@ -135,6 +156,7 @@ public class AdvertService : IAdvertService
 
         var advert = await _context.CarAdverts
             .Include(a => a.AdvertFeatures)
+            .Include(a => a.PartCompatibilities)
             .FirstOrDefaultAsync(a => a.Id == id);
 
         if (advert == null)
@@ -147,6 +169,8 @@ public class AdvertService : IAdvertService
             dto.BrandId, dto.ModelId, dto.GenerationId, dto.TrimId, dto.EngineVersionId, dto.VehicleCategoryId);
         if (!chainCheck.IsValid)
             throw new ArgumentException(chainCheck.ErrorMessage);
+
+        var newCompatibilities = await BuildPartCompatibilitiesAsync(dto.Compatibilities);
 
         _mapper.Map(dto, advert);
 
@@ -162,6 +186,10 @@ public class AdvertService : IAdvertService
 
             _context.AdvertFeatures.AddRange(newFeatures);
         }
+
+        _context.PartCompatibilities.RemoveRange(advert.PartCompatibilities);
+        foreach (var c in newCompatibilities) c.CarAdvertId = advert.Id;
+        if (newCompatibilities.Count > 0) _context.PartCompatibilities.AddRange(newCompatibilities);
 
         await _context.SaveChangesAsync();
     }
@@ -218,6 +246,11 @@ public class AdvertService : IAdvertService
             .Include(a => a.AdvertFeatures)
                 .ThenInclude(af => af.Feature)
                     .ThenInclude(f => f.Category)
+            .Include(a => a.PartCategory)
+            .Include(a => a.PartSubcategory)
+            .Include(a => a.PartCompatibilities).ThenInclude(pc => pc.Brand)
+            .Include(a => a.PartCompatibilities).ThenInclude(pc => pc.Model)
+            .Include(a => a.PartCompatibilities).ThenInclude(pc => pc.Generation)
             .FirstOrDefaultAsync(a => a.Id == id);
 
         if (advert == null)
@@ -391,6 +424,35 @@ public class AdvertService : IAdvertService
         if (dto.PartCategoryId.HasValue)
             query = query.Where(a => a.PartCategoryId == dto.PartCategoryId);
 
+        if (dto.PartSubcategoryId.HasValue)
+            query = query.Where(a => a.PartSubcategoryId == dto.PartSubcategoryId);
+
+        if (!string.IsNullOrWhiteSpace(dto.Side))
+            query = query.Where(a => a.Side == dto.Side);
+
+        if (dto.QuantityFrom.HasValue)
+            query = query.Where(a => a.Quantity >= dto.QuantityFrom);
+
+        if (!string.IsNullOrWhiteSpace(dto.OemNumber))
+            query = query.Where(a => a.OemNumber != null && a.OemNumber.Contains(dto.OemNumber));
+
+        if (!string.IsNullOrWhiteSpace(dto.ManufacturerPartNumber))
+            query = query.Where(a => a.ManufacturerPartNumber != null && a.ManufacturerPartNumber.Contains(dto.ManufacturerPartNumber));
+
+        if (!string.IsNullOrWhiteSpace(dto.PartManufacturer))
+            query = query.Where(a => a.PartManufacturer != null && a.PartManufacturer.Contains(dto.PartManufacturer));
+
+        if (dto.CompatibleBrandId.HasValue)
+        {
+            var cBrand = dto.CompatibleBrandId.Value;
+            var cModel = dto.CompatibleModelId;
+            var cGen = dto.CompatibleGenerationId;
+            query = query.Where(a => a.PartCompatibilities.Any(pc =>
+                pc.BrandId == cBrand &&
+                (pc.ModelId == null || pc.ModelId == cModel) &&
+                (pc.GenerationId == null || pc.GenerationId == cGen)));
+        }
+
         // Premium filters
         if (dto.HasVatInvoice.HasValue)
             query = query.Where(a => a.HasVatInvoice == dto.HasVatInvoice);
@@ -440,6 +502,8 @@ public class AdvertService : IAdvertService
             .Include(a => a.Images)
             .Include(a => a.AdvertFeatures)
                 .ThenInclude(af => af.Feature)
+            .Include(a => a.PartCategory)
+            .Include(a => a.PartSubcategory)
             .Where(a => ids.Contains(a.Id) && a.IsActive && !a.IsHidden)
             .ToListAsync();
 

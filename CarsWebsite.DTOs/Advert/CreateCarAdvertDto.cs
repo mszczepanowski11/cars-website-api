@@ -76,6 +76,14 @@ public class CreateCarAdvertDto
     // Parts specific
     [MaxLength(100)] public string? CatalogNumber { get; set; }
     [MaxLength(1000)] public string? Compatibility { get; set; }
+    [MaxLength(20)] public string? Side { get; set; }
+    [Range(1, 100000)] public int? Quantity { get; set; }
+    public int? PartCategoryId { get; set; }
+    public int? PartSubcategoryId { get; set; }
+    [MaxLength(100)] public string? OemNumber { get; set; }
+    [MaxLength(100)] public string? ManufacturerPartNumber { get; set; }
+    [MaxLength(100)] public string? PartManufacturer { get; set; }
+    public List<PartCompatibilityEntryDto>? Compatibilities { get; set; }
 
     // Subtype-specific machine fields
     public int? OperatingWeightKg { get; set; }

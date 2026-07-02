@@ -97,6 +97,27 @@ public class SearchCarAdvertDto
     public string? CatalogNumber { get; set; }
 
     public int? PartCategoryId { get; set; }
+    public int? PartSubcategoryId { get; set; }
+
+    [MaxLength(20)]
+    public string? Side { get; set; }
+
+    public int? QuantityFrom { get; set; }
+
+    [MaxLength(100)]
+    public string? OemNumber { get; set; }
+
+    [MaxLength(100)]
+    public string? ManufacturerPartNumber { get; set; }
+
+    [MaxLength(100)]
+    public string? PartManufacturer { get; set; }
+
+    // Filters parts advertised as fitting this vehicle — a PartCompatibility row with a null
+    // ModelId/GenerationId is a wildcard, so e.g. a "fits all BMW" row matches any BMW model.
+    public int? CompatibleBrandId { get; set; }
+    public int? CompatibleModelId { get; set; }
+    public int? CompatibleGenerationId { get; set; }
 
     [MaxLength(100)]
     public string? City { get; set; }
