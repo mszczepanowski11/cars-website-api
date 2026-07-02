@@ -226,6 +226,16 @@ public class EmailService : IEmailService
     [data-ogsc] .body-cell{{background-color:#0d0d0d !important}}
     [data-ogsc] .title-text{{color:#ffffff !important}}
     [data-ogsc] .body-text{{color:#888888 !important}}
+    /* Second signal for clients that check the actual media query instead of (or in addition
+       to) the color-scheme meta tags - reasserts the same palette so there's no light fallback
+       to fall back to regardless of which detection path a given Gmail surface uses. */
+    @media (prefers-color-scheme: dark){{
+      body, .wrap-bg{{background-color:#050505 !important}}
+      .hdr-cell, .ftr-cell{{background-color:#080808 !important}}
+      .body-cell{{background-color:#0d0d0d !important}}
+      .title-text{{color:#ffffff !important}}
+      .body-text{{color:#888888 !important}}
+    }}
     @media only screen and (max-width:620px){{
       .outer-pad{{padding:16px 0 !important}}
       .card{{border-radius:12px !important}}
@@ -237,11 +247,11 @@ public class EmailService : IEmailService
     }}
   </style>
 </head>
-<body class=""wrap-bg"" style=""margin:0;padding:0;background-color:#050505"">
+<body class=""wrap-bg"" bgcolor=""#050505"" style=""margin:0;padding:0;background-color:#050505"">
 
 <!-- Outer wrapper -->
 <table role=""presentation"" cellpadding=""0"" cellspacing=""0"" border=""0"" width=""100%"" bgcolor=""#050505"" class=""wrap-bg"">
-  <tr><td class=""outer-pad"" style=""padding:40px 16px"" align=""center"">
+  <tr><td class=""outer-pad"" bgcolor=""#050505"" style=""padding:40px 16px"" align=""center"">
 
     <!-- Email card -->
     <table role=""presentation"" cellpadding=""0"" cellspacing=""0"" border=""0"" width=""600"" style=""max-width:600px;width:100%"">
