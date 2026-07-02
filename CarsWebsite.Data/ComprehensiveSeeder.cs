@@ -8694,6 +8694,66 @@ public static class ComprehensiveSeeder
                     TorqueNm = 500, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
                     Cylinders = 4, Acceleration0100 = 6.9m, TopSpeedKmh = 233, FuelConsumptionCombined = 6.2m },
             ]);
+
+            int id3 = GetOrCreateModel(bId, "ID.3", "vw-id3");
+            AddOrReplaceEngines(GetOrFixGeneration(id3, "I (2020–)", "vw-id3-i", 2020, null), 150, [
+                new EngineVersion { EngineName = "Pro 58 kWh 204 KM", PowerHP = 204, PowerKW = 150, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 310, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "RWD",
+                    Cylinders = 0, Acceleration0100 = 7.9m, TopSpeedKmh = 160, FuelConsumptionCombined = 15.4m },
+                new EngineVersion { EngineName = "Pro Performance 77 kWh 204 KM", PowerHP = 204, PowerKW = 150, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 310, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "RWD",
+                    Cylinders = 0, Acceleration0100 = 7.3m, TopSpeedKmh = 160, FuelConsumptionCombined = 16.6m },
+            ]);
+
+            int id4 = GetOrCreateModel(bId, "ID.4", "vw-id4");
+            AddOrReplaceEngines(GetOrFixGeneration(id4, "I (2020–)", "vw-id4-i", 2020, null), 170, [
+                new EngineVersion { EngineName = "Pro 77 kWh 204 KM", PowerHP = 204, PowerKW = 150, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 310, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "RWD",
+                    Cylinders = 0, Acceleration0100 = 8.5m, TopSpeedKmh = 160, FuelConsumptionCombined = 17.2m },
+                new EngineVersion { EngineName = "GTX 77 kWh 299 KM AWD", PowerHP = 299, PowerKW = 220, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 460, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 0, Acceleration0100 = 6.2m, TopSpeedKmh = 180, FuelConsumptionCombined = 19.4m },
+            ]);
+
+            int id5 = GetOrCreateModel(bId, "ID.5", "vw-id5");
+            AddOrReplaceEngines(GetOrFixGeneration(id5, "I (2021–)", "vw-id5-i", 2021, null), 170, [
+                new EngineVersion { EngineName = "Pro 77 kWh 204 KM", PowerHP = 204, PowerKW = 150, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 310, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "RWD",
+                    Cylinders = 0, Acceleration0100 = 8.4m, TopSpeedKmh = 160, FuelConsumptionCombined = 17.1m },
+                new EngineVersion { EngineName = "GTX 77 kWh 299 KM AWD", PowerHP = 299, PowerKW = 220, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 460, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 0, Acceleration0100 = 6.3m, TopSpeedKmh = 180, FuelConsumptionCombined = 19.3m },
+            ]);
+
+            int caddy = GetOrCreateModel(bId, "Caddy", "vw-caddy");
+            AddOrReplaceEngines(GetOrFixGeneration(caddy, "V (2020–)", "vw-caddy-v", 2020, null), 90, [
+                new EngineVersion { EngineName = "1.5 TSI 114 KM", PowerHP = 114, PowerKW = 84, Displacement = 1498, FuelTypeId = ben,
+                    TorqueNm = 220, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 12.0m, TopSpeedKmh = 174, FuelConsumptionCombined = 6.6m },
+                new EngineVersion { EngineName = "2.0 TDI 122 KM", PowerHP = 122, PowerKW = 90, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 320, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.3m, TopSpeedKmh = 179, FuelConsumptionCombined = 5.3m },
+            ]);
+
+            int up = GetOrCreateModel(bId, "Up!", "vw-up");
+            AddOrReplaceEngines(GetOrFixGeneration(up, "I (2011–2023)", "vw-up-i", 2011, 2023), 55, [
+                new EngineVersion { EngineName = "1.0 60 KM", PowerHP = 60, PowerKW = 44, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 95, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 14.9m, TopSpeedKmh = 160, FuelConsumptionCombined = 4.7m },
+                new EngineVersion { EngineName = "e-up! 32.3 kWh 82 KM", PowerHP = 82, PowerKW = 60, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 210, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 0, Acceleration0100 = 11.9m, TopSpeedKmh = 130, FuelConsumptionCombined = 12.7m },
+            ]);
+
+            int amarok = GetOrCreateModel(bId, "Amarok", "vw-amarok");
+            AddOrReplaceEngines(GetOrFixGeneration(amarok, "II (2022–)", "vw-amarok-ii", 2022, null), 150, [
+                new EngineVersion { EngineName = "2.0 TDI 170 KM", PowerHP = 170, PowerKW = 125, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 405, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 10.9m, TopSpeedKmh = 170, FuelConsumptionCombined = 7.8m },
+                new EngineVersion { EngineName = "3.0 V6 TDI 240 KM", PowerHP = 240, PowerKW = 177, Displacement = 2967, FuelTypeId = die,
+                    TorqueNm = 600, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 8.0m, TopSpeedKmh = 193, FuelConsumptionCombined = 8.4m },
+            ]);
         }
 
         // ── AUDI A4 (older gens) / A5 / A6 / A7 / A8 / Q3 / Q7 / Q8 / TT ──────────
