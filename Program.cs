@@ -1185,6 +1185,15 @@ internal class Program
 
             try
             {
+                MergeDuplicateBrands(db, logger);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "[Cleanup] MergeDuplicateBrands failed: {Msg}", ex.Message);
+            }
+
+            try
+            {
                 SeedDataIfEmpty(db, logger);
             }
             catch (Exception ex)
@@ -1303,6 +1312,44 @@ internal class Program
         });
 
         app.Run();
+    }
+
+    // Merges duplicate Brand rows sharing the same Name (e.g. two "Krone" rows) into the
+    // oldest one. Duplicates otherwise (a) show the brand twice in the add-listing dropdown
+    // and (b) crash every seeder's startup ToDictionary(b => b.Name, ...) call, which blocks
+    // the entire seeding chain — including unrelated fixes — from running at all.
+    private static void MergeDuplicateBrands(AppDbContext db, ILogger logger)
+    {
+        var duplicateGroups = db.Brands.Include(b => b.Categories).AsEnumerable()
+            .GroupBy(b => b.Name)
+            .Where(g => g.Count() > 1)
+            .ToList();
+        if (duplicateGroups.Count == 0) return;
+
+        foreach (var group in duplicateGroups)
+        {
+            var ordered = group.OrderBy(b => b.Id).ToList();
+            var canonical = ordered[0];
+            var duplicates = ordered.Skip(1).ToList();
+
+            foreach (var dup in duplicates)
+            {
+                db.Database.ExecuteSqlRaw("UPDATE `Models` SET `BrandId` = {0} WHERE `BrandId` = {1}", canonical.Id, dup.Id);
+                db.Database.ExecuteSqlRaw("UPDATE `CarAdverts` SET `BrandId` = {0} WHERE `BrandId` = {1}", canonical.Id, dup.Id);
+                db.Database.ExecuteSqlRaw("UPDATE `FeatureCategories` SET `BrandId` = {0} WHERE `BrandId` = {1}", canonical.Id, dup.Id);
+
+                foreach (var cat in dup.Categories)
+                    if (!canonical.Categories.Any(c => c.Id == cat.Id))
+                        canonical.Categories.Add(cat);
+
+                db.Brands.Remove(dup);
+                logger.LogInformation(
+                    "[Cleanup] Merged duplicate Brand '{Name}' (id={DupId}) into canonical id={CanonicalId}",
+                    dup.Name, dup.Id, canonical.Id);
+            }
+        }
+
+        db.SaveChanges();
     }
 
     private static void SeedDataIfEmpty(AppDbContext db, ILogger logger)

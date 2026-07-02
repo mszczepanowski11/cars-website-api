@@ -24,7 +24,8 @@ public static class TrimSeeder
 
         var genDict = db.Generations
             .Where(g => g.Slug != null)
-            .ToDictionary(g => g.Slug!, g => g.Id);
+            .AsEnumerable()
+            .GroupBy(g => g.Slug!).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Id).First().Id);
 
         if (!genDict.Any())
         {
@@ -236,7 +237,8 @@ public static class TrimSeeder
             .Include(t => t.Generation)
             .Where(t => t.Generation.Slug != null)
             .ToList()
-            .ToDictionary(t => $"{t.Generation.Slug}:{t.Name}", t => new { t.Id, t.GenerationId });
+            .GroupBy(t => $"{t.Generation.Slug}:{t.Name}")
+            .ToDictionary(g => g.Key, g => g.OrderBy(t => t.Id).Select(t => new { t.Id, t.GenerationId }).First());
 
         int linked = 0;
         foreach (var (key, engineName) in engineLinks)

@@ -20,8 +20,12 @@ public static class VehicleDataSeeder
             return;
         }
 
-        var brandDict = db.Brands.ToDictionary(b => b.Name, b => b.Id);
-        var fuelDict  = db.FuelTypes.ToDictionary(f => f.Name, f => f.Id);
+        // GroupBy+First instead of ToDictionary: a duplicate Brand/FuelType name must not
+        // crash the whole seeder chain.
+        var brandDict = db.Brands.AsEnumerable()
+            .GroupBy(b => b.Name).ToDictionary(g => g.Key, g => g.OrderBy(b => b.Id).First().Id);
+        var fuelDict  = db.FuelTypes.AsEnumerable()
+            .GroupBy(f => f.Name).ToDictionary(g => g.Key, g => g.OrderBy(f => f.Id).First().Id);
 
         if (!brandDict.Any() || !fuelDict.Any())
         {
@@ -524,7 +528,8 @@ public static class VehicleDataSeeder
             return;
         }
 
-        var fuelDict = db.FuelTypes.ToDictionary(f => f.Name, f => f.Id);
+        var fuelDict = db.FuelTypes.AsEnumerable()
+            .GroupBy(f => f.Name).ToDictionary(g => g.Key, g => g.OrderBy(f => f.Id).First().Id);
         if (!fuelDict.Any())
         {
             logger.LogWarning("[VehicleDataSeeder] SeedTrimData — FuelTypes not yet seeded, skipping.");
@@ -760,7 +765,8 @@ public static class VehicleDataSeeder
             return;
         }
 
-        var fuelDict = db.FuelTypes.ToDictionary(f => f.Name, f => f.Id);
+        var fuelDict = db.FuelTypes.AsEnumerable()
+            .GroupBy(f => f.Name).ToDictionary(g => g.Key, g => g.OrderBy(f => f.Id).First().Id);
         if (!fuelDict.Any())
         {
             logger.LogWarning("[VehicleDataSeeder] SeedMotorcycleData — FuelTypes not yet seeded, skipping.");
