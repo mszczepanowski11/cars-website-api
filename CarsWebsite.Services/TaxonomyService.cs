@@ -210,7 +210,7 @@ public class TaxonomyService : ITaxonomyService
             return await _context.FeatureCategories
                 .AsNoTracking()
                 .Include(fc => fc.Features)
-                .Where(fc => fc.VehicleCategoryId == vehicleCategoryId || fc.VehicleCategoryId == null)
+                .Where(fc => fc.VehicleCategoryId == vehicleCategoryId)
                 .OrderBy(fc => fc.Name)
                 .ToListAsync();
         }) ?? [];
@@ -226,7 +226,7 @@ public class TaxonomyService : ITaxonomyService
                 .AsNoTracking()
                 .Include(fc => fc.Features)
                 .Where(fc =>
-                    (fc.VehicleCategoryId == null || fc.VehicleCategoryId == vehicleCategoryId) &&
+                    fc.VehicleCategoryId == vehicleCategoryId &&
                     (fc.BrandId == null || fc.BrandId == brandId) &&
                     (fc.ModelId == null || fc.ModelId == modelId))
                 .OrderBy(fc => fc.Name)

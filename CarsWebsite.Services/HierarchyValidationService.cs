@@ -71,10 +71,9 @@ public class HierarchyValidationService : IHierarchyValidationService
     {
         var report = new TaxonomyAuditReport();
 
-        report.NullScopeFeatureCategories = await _context.FeatureCategories
-            .Where(fc => fc.VehicleCategoryId == null)
-            .Select(fc => $"#{fc.Id} \"{fc.Name}\"")
-            .ToListAsync();
+        // FeatureCategory.VehicleCategoryId is now a required (NOT NULL) column at the DB level
+        // (see the migration around this change), so the null-scope leak this used to check for
+        // is structurally impossible — nothing to report here anymore.
 
         report.MismatchedEngineTrimGeneration = await _context.EngineVersions
             .Where(e => e.TrimId != null)

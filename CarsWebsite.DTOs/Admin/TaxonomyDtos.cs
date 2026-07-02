@@ -9,7 +9,9 @@ public class CreateFeatureDto
 public class CreateFeatureCategoryDto
 {
     public string Name { get; set; } = string.Empty;
-    public int? VehicleCategoryId { get; set; }
+    // Required — a FeatureCategory must always belong to a vehicle category. BrandId/ModelId stay
+    // optional wildcards ("applies to every brand/model in the category").
+    public int VehicleCategoryId { get; set; }
     public int? BrandId { get; set; }
     public int? ModelId { get; set; }
 }
