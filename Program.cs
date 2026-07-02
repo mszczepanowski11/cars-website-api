@@ -1217,6 +1217,43 @@ internal class Program
                 logger.LogError(ex, "[Seeder] SeedDataIfEmpty failed — app will start without complete seed data: {Msg}", ex.Message);
             }
 
+            // Fix confirmed cross-category leak: 6 FeatureCategory rows named "Specjalne - <type>"
+            // (created via the admin panel, not seeded by any code here) have a vehicle-type
+            // name but VehicleCategoryId = NULL, meaning they show up on EVERY category's
+            // equipment step instead of just their own — e.g. motorcycle-only equipment showing
+            // on a car listing. Confirmed via the AUDIT-FEATURES log added in #57. Self-heal by
+            // matching the name to the right VehicleCategory slug.
+            try
+            {
+                var vcatBySlug = db.VehicleCategories.ToDictionary(c => c.Slug, c => c.Id);
+                var specjalne = db.FeatureCategories
+                    .Where(fc => fc.VehicleCategoryId == null && fc.Name.StartsWith("Specjalne"))
+                    .ToList();
+                int fixedCount = 0;
+                foreach (var fc in specjalne)
+                {
+                    string? slug =
+                        fc.Name.Contains("Ciężarówki", StringComparison.OrdinalIgnoreCase) ? "ciezarowe" :
+                        fc.Name.Contains("Dostawcze", StringComparison.OrdinalIgnoreCase) ? "dostawcze" :
+                        fc.Name.Contains("budowlane", StringComparison.OrdinalIgnoreCase) ? "budowlane" :
+                        fc.Name.Contains("rolnicze", StringComparison.OrdinalIgnoreCase) ? "rolnicze" :
+                        fc.Name.Contains("Motocykle", StringComparison.OrdinalIgnoreCase) ? "motocykle" :
+                        fc.Name.Contains("Przyczepy", StringComparison.OrdinalIgnoreCase) ? "przyczepy" :
+                        null;
+                    if (slug != null && vcatBySlug.TryGetValue(slug, out var vcatId))
+                    {
+                        fc.VehicleCategoryId = vcatId;
+                        fixedCount++;
+                        logger.LogWarning("[STARTUP-TRACE] Fixed FeatureCategory '{Name}' (id={Id}) scope: ANY -> {Slug}", fc.Name, fc.Id, slug);
+                    }
+                }
+                if (fixedCount > 0) db.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "[STARTUP-TRACE] FeatureCategory scope fix failed: {Msg}", ex.Message);
+            }
+
             // Audit: dump every FeatureCategory's scope (VehicleCategoryId/BrandId/ModelId) and
             // feature count, so equipment leaking into the wrong vehicle category (e.g. car
             // features showing on a motorcycle listing) can be spotted from the scope values
