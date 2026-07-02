@@ -21,13 +21,15 @@ public class AdminController : ControllerBase
     private readonly AppDbContext _db;
     private readonly IConfiguration _config;
     private readonly ILogger<AdminController> _logger;
+    private readonly IHierarchyValidationService _hierarchyValidationService;
 
-    public AdminController(IAdminService adminService, AppDbContext db, IConfiguration config, ILogger<AdminController> logger)
+    public AdminController(IAdminService adminService, AppDbContext db, IConfiguration config, ILogger<AdminController> logger, IHierarchyValidationService hierarchyValidationService)
     {
         _adminService = adminService;
         _db = db;
         _config = config;
         _logger = logger;
+        _hierarchyValidationService = hierarchyValidationService;
     }
 
     private int GetUserId()
@@ -306,6 +308,15 @@ public class AdminController : ControllerBase
         await _db.SaveChangesAsync();
         return Ok(new { message = "Deleted", id });
     }
+
+    // ── Taxonomy integrity audit ──────────────────────────────────────────────
+    // Read-only report of hierarchy inconsistencies (e.g. FeatureCategory rows with no
+    // vehicle-category scope, engine/trim generation mismatches, duplicate brand names).
+    // Deliberately does not auto-fix anything — an admin decides how to resolve each item.
+
+    [HttpGet("taxonomy-audit")]
+    public async Task<IActionResult> GetTaxonomyAudit()
+        => Ok(await _hierarchyValidationService.GetAuditReportAsync());
 
     // ── Quality report ────────────────────────────────────────────────────────
 

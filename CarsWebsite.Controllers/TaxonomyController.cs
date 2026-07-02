@@ -11,11 +11,13 @@ namespace cars_website_api.CarsWebsite.Controllers
     public class TaxonomyController : ControllerBase
     {
         private readonly ITaxonomyService _taxonomyService;
+        private readonly IHierarchyValidationService _hierarchyValidationService;
         private readonly IMapper _mapper;
 
-        public TaxonomyController(ITaxonomyService taxonomyService, IMapper mapper)
+        public TaxonomyController(ITaxonomyService taxonomyService, IHierarchyValidationService hierarchyValidationService, IMapper mapper)
         {
             _taxonomyService = taxonomyService;
+            _hierarchyValidationService = hierarchyValidationService;
             _mapper = mapper;
         }
 
@@ -173,6 +175,17 @@ namespace cars_website_api.CarsWebsite.Controllers
         {
             var subcategories = await _taxonomyService.GetPartSubcategoriesByCategoryAsync(partCategoryId);
             return Ok(subcategories);
+        }
+
+        // Pre-flight check for the Brand -> Model -> Generation -> Trim -> EngineVersion chain,
+        // used by the frontend at submit time to reject stale/inconsistent selections before
+        // they ever reach CreateCarAdvertAsync.
+        [HttpPost("validate-chain")]
+        public async Task<IActionResult> ValidateChain([FromBody] ValidateChainDto dto)
+        {
+            var result = await _hierarchyValidationService.ValidateVehicleChainAsync(
+                dto.BrandId, dto.ModelId, dto.GenerationId, dto.TrimId, dto.EngineVersionId, dto.VehicleCategoryId);
+            return Ok(result);
         }
     }
 }

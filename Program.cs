@@ -139,6 +139,7 @@ internal class Program
         builder.Services.AddSingleton(cloudinary);
         builder.Services.AddMemoryCache(); // B-27: taxonomy caching
         builder.Services.AddScoped<ITaxonomyService, TaxonomyService>();
+        builder.Services.AddScoped<IHierarchyValidationService, HierarchyValidationService>();
         builder.Services.AddScoped<ICategoryService, CategoryService>();
         builder.Services.AddScoped<IFavoriteService, FavoriteService>();
         builder.Services.AddScoped<IMessageService, MessageService>();
