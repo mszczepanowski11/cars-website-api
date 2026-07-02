@@ -4131,6 +4131,45 @@ public static class ComprehensiveSeeder
                     Cylinders = 4, Acceleration0100 = 8.0m, TopSpeedKmh = 221, FuelConsumptionCombined = 5.5m },
             ]);
 
+            int scala = GetOrCreateModel(skodaId2, "Scala", "skoda-scala");
+            AddOrReplaceEngines(GetOrFixGeneration(scala, "I (2019–)", "skoda-scala-i", 2019, null), 90, [
+                new EngineVersion { EngineName = "1.0 TSI 95 KM", PowerHP = 95, PowerKW = 70, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 175, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 10.9m, TopSpeedKmh = 187, FuelConsumptionCombined = 5.4m },
+                new EngineVersion { EngineName = "1.5 TSI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1498, FuelTypeId = ben,
+                    TorqueNm = 250, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.2m, TopSpeedKmh = 219, FuelConsumptionCombined = 5.9m },
+                new EngineVersion { EngineName = "1.6 TDI 116 KM", PowerHP = 116, PowerKW = 85, Displacement = 1598, FuelTypeId = die,
+                    TorqueNm = 300, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.6m, TopSpeedKmh = 202, FuelConsumptionCombined = 4.4m },
+            ]);
+
+            int karoq = GetOrCreateModel(skodaId2, "Karoq", "skoda-karoq");
+            AddOrReplaceEngines(GetOrFixGeneration(karoq, "I (2017–)", "skoda-karoq-i", 2017, null), 110, [
+                new EngineVersion { EngineName = "1.0 TSI 116 KM", PowerHP = 116, PowerKW = 85, Displacement = 999, FuelTypeId = ben,
+                    TorqueNm = 200, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 10.6m, TopSpeedKmh = 188, FuelConsumptionCombined = 6.0m },
+                new EngineVersion { EngineName = "1.5 TSI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1498, FuelTypeId = mild,
+                    TorqueNm = 250, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 8.4m, TopSpeedKmh = 205, FuelConsumptionCombined = 6.4m },
+                new EngineVersion { EngineName = "2.0 TDI 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 1968, FuelTypeId = die,
+                    TorqueNm = 340, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 9.3m, TopSpeedKmh = 199, FuelConsumptionCombined = 5.9m },
+            ]);
+
+            int enyaq = GetOrCreateModel(skodaId2, "Enyaq", "skoda-enyaq");
+            AddOrReplaceEngines(GetOrFixGeneration(enyaq, "I (2021–)", "skoda-enyaq-i", 2021, null), 150, [
+                new EngineVersion { EngineName = "60 58 kWh 179 KM", PowerHP = 179, PowerKW = 132, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 310, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "RWD",
+                    Cylinders = 0, Acceleration0100 = 8.9m, TopSpeedKmh = 160, FuelConsumptionCombined = 16.4m },
+                new EngineVersion { EngineName = "80 77 kWh 204 KM", PowerHP = 204, PowerKW = 150, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 310, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "RWD",
+                    Cylinders = 0, Acceleration0100 = 8.5m, TopSpeedKmh = 160, FuelConsumptionCombined = 17.4m },
+                new EngineVersion { EngineName = "RS 77 kWh 299 KM AWD", PowerHP = 299, PowerKW = 220, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 460, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 0, Acceleration0100 = 6.5m, TopSpeedKmh = 180, FuelConsumptionCombined = 19.7m },
+            ]);
+
             // ── SUZUKI SWIFT V + VITARA IV ────────────────────────────────────────────
             int suzukiId2 = GetOrCreateBrand("Suzuki", "suzuki", "auta-osobowe");
             int swift = GetOrCreateModel(suzukiId2, "Swift", "suzuki-swift");
