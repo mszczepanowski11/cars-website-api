@@ -6139,6 +6139,23 @@ public static class ComprehensiveSeeder
                     TorqueNm = 330, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "FWD",
                     Cylinders = 4, Acceleration0100 = 8.6m, TopSpeedKmh = 215, FuelConsumptionCombined = 4.3m },
             ]);
+
+            int aceman = GetOrCreateModel(miniId, "Aceman", "mini-aceman");
+            AddOrReplaceEngines(GetOrFixGeneration(aceman, "I (2024–)", "mini-aceman-i", 2024, null), 150, [
+                new EngineVersion { EngineName = "E 42.5 kWh 184 KM", PowerHP = 184, PowerKW = 135, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 290, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 0, Acceleration0100 = 7.9m, TopSpeedKmh = 160, FuelConsumptionCombined = 15.6m },
+                new EngineVersion { EngineName = "SE 54.2 kWh 218 KM", PowerHP = 218, PowerKW = 160, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 330, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 0, Acceleration0100 = 7.1m, TopSpeedKmh = 170, FuelConsumptionCombined = 16.5m },
+            ]);
+
+            int electric = GetOrCreateModel(miniId, "Electric", "mini-electric");
+            AddOrReplaceEngines(GetOrFixGeneration(electric, "I (2020–2024)", "mini-electric-i", 2020, 2024), 150, [
+                new EngineVersion { EngineName = "Cooper SE 32.6 kWh 184 KM", PowerHP = 184, PowerKW = 135, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 270, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 0, Acceleration0100 = 7.3m, TopSpeedKmh = 150, FuelConsumptionCombined = 16.9m },
+            ]);
         }
 
         // ── Jeep ──────────────────────────────────────────────────────────────────
