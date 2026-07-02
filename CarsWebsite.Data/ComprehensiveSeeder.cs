@@ -4741,6 +4741,75 @@ public static class ComprehensiveSeeder
                     Cylinders = 4, Acceleration0100 = 10.5m, TopSpeedKmh = 185, FuelConsumptionCombined = 6.0m },
             ]);
 
+            int aygo = GetOrCreateModel(toyotaId3, "Aygo", "toyota-aygo");
+            AddOrReplaceEngines(GetOrFixGeneration(aygo, "II (2014–)", "toyota-aygo-ii", 2014, null), 65, [
+                new EngineVersion { EngineName = "1.0 VVT-i 72 KM", PowerHP = 72, PowerKW = 53, Displacement = 998, FuelTypeId = ben,
+                    TorqueNm = 93, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 14.2m, TopSpeedKmh = 160, FuelConsumptionCombined = 4.6m },
+                new EngineVersion { EngineName = "x-play 1.0 VVT-i 72 KM", PowerHP = 72, PowerKW = 53, Displacement = 998, FuelTypeId = ben,
+                    TorqueNm = 93, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 15.5m, TopSpeedKmh = 158, FuelConsumptionCombined = 4.8m },
+            ]);
+
+            int prius = GetOrCreateModel(toyotaId3, "Prius", "toyota-prius");
+            PrepareGenerations(prius,
+                ("IV (2015–2022)", "toyota-prius-iv", 2015, 2022),
+                ("V (2022–)", "toyota-prius-v", 2022, null));
+            AddOrReplaceEngines(GetOrFixGeneration(prius, "IV (2015–2022)", "toyota-prius-iv", 2015, 2022), 100, [
+                new EngineVersion { EngineName = "1.8 HEV 122 KM", PowerHP = 122, PowerKW = 90, Displacement = 1798, FuelTypeId = hyb,
+                    TorqueNm = 142, EuroNorm = "Euro 6", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 10.6m, TopSpeedKmh = 180, FuelConsumptionCombined = 3.4m },
+                new EngineVersion { EngineName = "Plug-in 1.8 PHEV 122 KM", PowerHP = 122, PowerKW = 90, Displacement = 1798, FuelTypeId = phev,
+                    TorqueNm = 142, EuroNorm = "Euro 6", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 11.1m, TopSpeedKmh = 180, FuelConsumptionCombined = 1.0m },
+            ]);
+            AddOrReplaceEngines(GetOrFixGeneration(prius, "V (2022–)", "toyota-prius-v", 2022, null), 150, [
+                new EngineVersion { EngineName = "2.0 PHEV 223 KM", PowerHP = 223, PowerKW = 164, Displacement = 1987, FuelTypeId = phev,
+                    TorqueNm = 208, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 4, Acceleration0100 = 6.8m, TopSpeedKmh = 177, FuelConsumptionCombined = 1.0m },
+            ]);
+
+            int landCruiser = GetOrCreateModel(toyotaId3, "Land Cruiser", "toyota-land-cruiser");
+            AddOrReplaceEngines(GetOrFixGeneration(landCruiser, "J300 (2021–)", "toyota-land-cruiser-j300", 2021, null), 200, [
+                new EngineVersion { EngineName = "3.3 D-4D V6 Twin-Turbo 309 KM", PowerHP = 309, PowerKW = 227, Displacement = 3346, FuelTypeId = die,
+                    TorqueNm = 700, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 8.9m, TopSpeedKmh = 210, FuelConsumptionCombined = 9.9m },
+            ]);
+
+            int highlander = GetOrCreateModel(toyotaId3, "Highlander", "toyota-highlander");
+            AddOrReplaceEngines(GetOrFixGeneration(highlander, "XU70 (2020–)", "toyota-highlander-xu70", 2020, null), 200, [
+                new EngineVersion { EngineName = "2.5 HEV 248 KM AWD", PowerHP = 248, PowerKW = 182, Displacement = 2487, FuelTypeId = hyb,
+                    TorqueNm = 239, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 8.3m, TopSpeedKmh = 180, FuelConsumptionCombined = 6.6m },
+            ]);
+
+            int supra = GetOrCreateModel(toyotaId3, "GR Supra", "toyota-gr-supra");
+            AddOrReplaceEngines(GetOrFixGeneration(supra, "A90 (2019–)", "toyota-gr-supra-a90", 2019, null), 250, [
+                new EngineVersion { EngineName = "2.0 Turbo 258 KM", PowerHP = 258, PowerKW = 190, Displacement = 1998, FuelTypeId = ben,
+                    TorqueNm = 400, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 5.2m, TopSpeedKmh = 250, FuelConsumptionCombined = 7.7m },
+                new EngineVersion { EngineName = "3.0 Turbo 340 KM", PowerHP = 340, PowerKW = 250, Displacement = 2998, FuelTypeId = ben,
+                    TorqueNm = 500, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 4.1m, TopSpeedKmh = 250, FuelConsumptionCombined = 8.7m },
+            ]);
+
+            int gr86 = GetOrCreateModel(toyotaId3, "GR86", "toyota-gr86");
+            AddOrReplaceEngines(GetOrFixGeneration(gr86, "II (2021–)", "toyota-gr86-ii", 2021, null), 200, [
+                new EngineVersion { EngineName = "2.4 Boxer 235 KM", PowerHP = 235, PowerKW = 173, Displacement = 2387, FuelTypeId = ben,
+                    TorqueNm = 250, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 4, Acceleration0100 = 6.3m, TopSpeedKmh = 226, FuelConsumptionCombined = 9.0m },
+            ]);
+
+            int bz4x = GetOrCreateModel(toyotaId3, "bZ4X", "toyota-bz4x");
+            AddOrReplaceEngines(GetOrFixGeneration(bz4x, "I (2022–)", "toyota-bz4x-i", 2022, null), 150, [
+                new EngineVersion { EngineName = "71.4 kWh FWD 204 KM", PowerHP = 204, PowerKW = 150, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 266, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 0, Acceleration0100 = 7.5m, TopSpeedKmh = 160, FuelConsumptionCombined = 16.3m },
+                new EngineVersion { EngineName = "71.4 kWh AWD 218 KM", PowerHP = 218, PowerKW = 160, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 337, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "AWD",
+                    Cylinders = 0, Acceleration0100 = 6.9m, TopSpeedKmh = 160, FuelConsumptionCombined = 18.1m },
+            ]);
+
             // ── FORD FOCUS MK3 + MK4 ─────────────────────────────────────────────
             int fordId3 = GetOrCreateBrand("Ford", "ford", "auta-osobowe");
             int focus = GetOrCreateModel(fordId3, "Focus", "ford-focus");
