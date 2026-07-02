@@ -10,6 +10,22 @@ namespace cars_website_api.CarsWebsite.Data;
 /// </summary>
 public static class ComprehensiveSeeder
 {
+    // Matches "Generation I", "Gen 1", etc. AND the same with a year-range suffix like
+    // "Generation I (2011–2022)" or "Gen I (2016–)" — the exact-string list used to miss the
+    // year-suffixed form, which is how these placeholder names actually show up in the DB
+    // (e.g. Lamborghini Aventador's un-fixed "Generation I (2011–2022)"), so
+    // GetOrFixGeneration's rename-in-place path never triggered and it created a duplicate
+    // generation instead of fixing the existing (wrong-engine) one in place.
+    //
+    // IMPORTANT: bare Roman numerals ("I", "II"...) are matched WITHOUT a year suffix only —
+    // several models (e.g. Bentley Continental GT below) deliberately use bare
+    // "I (2003–2011)"/"II (2011–2018)" as real, final generation names, so allowing a suffix
+    // on the bare form would make GetOrFixGeneration's orphan cleanup delete sibling
+    // generations as false "generic" matches.
+    private static readonly System.Text.RegularExpressions.Regex GenericGenNameRegex = new(
+        @"^(?:(?:Generation|Gen\.?)\s*(?:I{1,3}|IV|V|[0-9]+)(\s*\([^)]*\))?|I{1,3}|IV|V)$",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
     public static void SeedComprehensiveData(AppDbContext db, ILogger logger)
     {
         logger.LogWarning("[STARTUP-TRACE] ComprehensiveSeeder.SeedComprehensiveData entered");
@@ -93,21 +109,6 @@ public static class ComprehensiveSeeder
             return g.Id;
         }
 
-        // Matches "Generation I", "Gen 1", etc. AND the same with a year-range suffix like
-        // "Generation I (2011–2022)" or "Gen I (2016–)" — the exact-string list used to miss the
-        // year-suffixed form, which is how these placeholder names actually show up in the DB
-        // (e.g. Lamborghini Aventador's un-fixed "Generation I (2011–2022)"), so
-        // GetOrFixGeneration's rename-in-place path never triggered and it created a duplicate
-        // generation instead of fixing the existing (wrong-engine) one in place.
-        //
-        // IMPORTANT: bare Roman numerals ("I", "II"...) are matched WITHOUT a year suffix only —
-        // several models (e.g. Bentley Continental GT below) deliberately use bare
-        // "I (2003–2011)"/"II (2011–2018)" as real, final generation names, so allowing a suffix
-        // on the bare form would make GetOrFixGeneration's orphan cleanup delete sibling
-        // generations as false "generic" matches.
-        static readonly System.Text.RegularExpressions.Regex GenericGenNameRegex = new(
-            @"^(?:(?:Generation|Gen\.?)\s*(?:I{1,3}|IV|V|[0-9]+)(\s*\([^)]*\))?|I{1,3}|IV|V)$",
-            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         static bool IsGenericGenName(string n) => GenericGenNameRegex.IsMatch(n.Trim());
 
         // Maps existing generic placeholder generations (e.g. "Generation I/II/III") to real names
