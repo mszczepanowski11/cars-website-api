@@ -93,11 +93,22 @@ public static class ComprehensiveSeeder
             return g.Id;
         }
 
-        static bool IsGenericGenName(string n) =>
-            n is "Generation I" or "Generation II" or "Generation III" or "Generation IV" or "Generation V"
-            or "Gen 1" or "Gen 2" or "Gen 3" or "Gen 4"
-            or "I" or "II" or "III" or "IV" or "Gen I" or "Gen II" or "Gen III" or "Gen IV"
-            || n.StartsWith("Gen ", StringComparison.OrdinalIgnoreCase);
+        // Matches "Generation I", "Gen 1", etc. AND the same with a year-range suffix like
+        // "Generation I (2011–2022)" or "Gen I (2016–)" — the exact-string list used to miss the
+        // year-suffixed form, which is how these placeholder names actually show up in the DB
+        // (e.g. Lamborghini Aventador's un-fixed "Generation I (2011–2022)"), so
+        // GetOrFixGeneration's rename-in-place path never triggered and it created a duplicate
+        // generation instead of fixing the existing (wrong-engine) one in place.
+        //
+        // IMPORTANT: bare Roman numerals ("I", "II"...) are matched WITHOUT a year suffix only —
+        // several models (e.g. Bentley Continental GT below) deliberately use bare
+        // "I (2003–2011)"/"II (2011–2018)" as real, final generation names, so allowing a suffix
+        // on the bare form would make GetOrFixGeneration's orphan cleanup delete sibling
+        // generations as false "generic" matches.
+        static readonly System.Text.RegularExpressions.Regex GenericGenNameRegex = new(
+            @"^(?:(?:Generation|Gen\.?)\s*(?:I{1,3}|IV|V|[0-9]+)(\s*\([^)]*\))?|I{1,3}|IV|V)$",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        static bool IsGenericGenName(string n) => GenericGenNameRegex.IsMatch(n.Trim());
 
         // Maps existing generic placeholder generations (e.g. "Generation I/II/III") to real names
         // in creation order, preserving all FK references (adverts, trims, etc.).
@@ -3310,8 +3321,26 @@ public static class ComprehensiveSeeder
                     Cylinders = null, Acceleration0100 = 3.8m, TopSpeedKmh = 180, FuelConsumptionCombined = null },
             ]);
 
-            // ── LAMBORGHINI HURACÁN + URUS + REVUELTO ─────────────────────────────
+            // ── LAMBORGHINI AVENTADOR + HURACÁN + URUS + REVUELTO ─────────────────
             int lambId = GetOrCreateBrand("Lamborghini", "lamborghini", "auta-osobowe");
+            int aventador = GetOrCreateModel(lambId, "Aventador", "lamborghini-aventador");
+            ForceReplaceEngines(GetOrFixGeneration(aventador, "Aventador (2011–2022)", "lamborghini-aventador-2011", 2011, 2022), [
+                new EngineVersion { EngineName = "6.5 V12 LP700-4 700 KM", PowerHP = 700, PowerKW = 515, Displacement = 6498, FuelTypeId = ben,
+                    TorqueNm = 690, EuroNorm = "Euro 5", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 12, Acceleration0100 = 2.9m, TopSpeedKmh = 350, FuelConsumptionCombined = 19.8m },
+                new EngineVersion { EngineName = "6.5 V12 LP750-4 SV 750 KM", PowerHP = 750, PowerKW = 552, Displacement = 6498, FuelTypeId = ben,
+                    TorqueNm = 690, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 12, Acceleration0100 = 2.8m, TopSpeedKmh = 350, FuelConsumptionCombined = 19.8m },
+                new EngineVersion { EngineName = "6.5 V12 S 740 KM", PowerHP = 740, PowerKW = 544, Displacement = 6498, FuelTypeId = ben,
+                    TorqueNm = 690, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 12, Acceleration0100 = 2.9m, TopSpeedKmh = 350, FuelConsumptionCombined = 19.8m },
+                new EngineVersion { EngineName = "6.5 V12 SVJ 770 KM", PowerHP = 770, PowerKW = 566, Displacement = 6498, FuelTypeId = ben,
+                    TorqueNm = 720, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 12, Acceleration0100 = 2.8m, TopSpeedKmh = 350, FuelConsumptionCombined = 19.8m },
+                new EngineVersion { EngineName = "6.5 V12 Ultimae 780 KM", PowerHP = 780, PowerKW = 574, Displacement = 6498, FuelTypeId = ben,
+                    TorqueNm = 720, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 12, Acceleration0100 = 2.8m, TopSpeedKmh = 355, FuelConsumptionCombined = 19.8m },
+            ]);
             int huracan = GetOrCreateModel(lambId, "Huracán", "lamborghini-huracan");
             AddEngines(GetOrCreateGeneration(huracan, "LP610-4 (2014–2021)", "lamborghini-huracan-lp610", 2014, 2021), [
                 new EngineVersion { EngineName = "5.2 V10 610 KM", PowerHP = 610, PowerKW = 449, Displacement = 5204, FuelTypeId = ben,
@@ -5989,5 +6018,24 @@ public static class ComprehensiveSeeder
         }
 
         logger.LogInformation("[ComprehensiveSeeder] Completed seeding premium cars, motorcycles, trucks.");
+
+        // Audit: list every generation whose name still looks like scraper/import placeholder
+        // junk (e.g. "Generation I (2011–2022)", same pattern Bugatti Chiron and Lamborghini
+        // Aventador had). These models were never given a dedicated ComprehensiveSeeder entry,
+        // so whatever generic small-engine data they were originally imported with is still
+        // live. This turns "which models are still broken" from a screenshot-by-screenshot hunt
+        // into one log line to search for.
+        var remainingGeneric = db.Generations.Include(g => g.Model).ThenInclude(m => m.Brand)
+            .AsEnumerable()
+            .Where(g => IsGenericGenName(g.Name))
+            .Select(g => $"{g.Model.Brand.Name} {g.Model.Name} — \"{g.Name}\" (genId={g.Id})")
+            .OrderBy(s => s)
+            .ToList();
+        if (remainingGeneric.Any())
+            logger.LogWarning(
+                "[STARTUP-TRACE] AUDIT: {Count} generations still have placeholder names (likely still showing wrong/generic engine data): {List}",
+                remainingGeneric.Count, string.Join(" | ", remainingGeneric));
+        else
+            logger.LogInformation("[STARTUP-TRACE] AUDIT: no generations with placeholder names remain.");
     }
 }
