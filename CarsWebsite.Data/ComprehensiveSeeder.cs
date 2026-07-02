@@ -4092,6 +4092,110 @@ public static class ComprehensiveSeeder
                     TorqueNm = 716, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "AWD",
                     Cylinders = 12, Acceleration0100 = 3.3m, TopSpeedKmh = 310, FuelConsumptionCombined = 14.9m },
             ]);
+
+            int f296 = GetOrCreateModel(ferrId, "296 GTB", "ferrari-296-gtb");
+            AddOrReplaceEngines(GetOrFixGeneration(f296, "I (2021–)", "ferrari-296-gtb-i", 2021, null), 700, [
+                new EngineVersion { EngineName = "3.0 V6 Twin-Turbo Hybrid 830 KM", PowerHP = 830, PowerKW = 610, Displacement = 2992, FuelTypeId = phev,
+                    TorqueNm = 740, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 6, Acceleration0100 = 2.9m, TopSpeedKmh = 330, FuelConsumptionCombined = 5.8m },
+            ]);
+
+            int f308 = GetOrCreateModel(ferrId, "308", "ferrari-308");
+            AddOrReplaceEngines(GetOrFixGeneration(f308, "I (1975–1985)", "ferrari-308-i", 1975, 1985), 200, [
+                new EngineVersion { EngineName = "3.0 V8 255 KM", PowerHP = 255, PowerKW = 188, Displacement = 2927, FuelTypeId = ben,
+                    TorqueNm = 245, EuroNorm = "Euro 0", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 6.6m, TopSpeedKmh = 245, FuelConsumptionCombined = 15.5m },
+            ]);
+
+            int f328 = GetOrCreateModel(ferrId, "328", "ferrari-328");
+            AddOrReplaceEngines(GetOrFixGeneration(f328, "I (1985–1989)", "ferrari-328-i", 1985, 1989), 250, [
+                new EngineVersion { EngineName = "3.2 V8 270 KM", PowerHP = 270, PowerKW = 199, Displacement = 3185, FuelTypeId = ben,
+                    TorqueNm = 304, EuroNorm = "Euro 0", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 5.6m, TopSpeedKmh = 260, FuelConsumptionCombined = 15.8m },
+            ]);
+
+            int f348 = GetOrCreateModel(ferrId, "348", "ferrari-348");
+            AddOrReplaceEngines(GetOrFixGeneration(f348, "I (1989–1995)", "ferrari-348-i", 1989, 1995), 280, [
+                new EngineVersion { EngineName = "3.4 V8 300 KM", PowerHP = 300, PowerKW = 221, Displacement = 3405, FuelTypeId = ben,
+                    TorqueNm = 324, EuroNorm = "Euro 1", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 5.6m, TopSpeedKmh = 275, FuelConsumptionCombined = 16.2m },
+            ]);
+
+            int f355 = GetOrCreateModel(ferrId, "355", "ferrari-355");
+            AddOrReplaceEngines(GetOrFixGeneration(f355, "I (1994–1999)", "ferrari-355-i", 1994, 1999), 350, [
+                new EngineVersion { EngineName = "3.5 V8 380 KM", PowerHP = 380, PowerKW = 280, Displacement = 3496, FuelTypeId = ben,
+                    TorqueNm = 363, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 4.7m, TopSpeedKmh = 295, FuelConsumptionCombined = 17.0m },
+            ]);
+
+            int f430 = GetOrCreateModel(ferrId, "430", "ferrari-430");
+            AddOrReplaceEngines(GetOrFixGeneration(f430, "I (2004–2009)", "ferrari-430-i", 2004, 2009), 400, [
+                new EngineVersion { EngineName = "4.3 V8 490 KM", PowerHP = 490, PowerKW = 360, Displacement = 4308, FuelTypeId = ben,
+                    TorqueNm = 465, EuroNorm = "Euro 4", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 4.0m, TopSpeedKmh = 315, FuelConsumptionCombined = 18.7m },
+            ]);
+
+            int f812 = GetOrCreateModel(ferrId, "812 Superfast", "ferrari-812-superfast");
+            AddOrReplaceEngines(GetOrFixGeneration(f812, "I (2017–2022)", "ferrari-812-superfast-i", 2017, 2022), 700, [
+                new EngineVersion { EngineName = "6.5 V12 800 KM", PowerHP = 800, PowerKW = 588, Displacement = 6496, FuelTypeId = ben,
+                    TorqueNm = 718, EuroNorm = "Euro 6d", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 12, Acceleration0100 = 2.9m, TopSpeedKmh = 340, FuelConsumptionCombined = 17.0m },
+            ]);
+
+            int california = GetOrCreateModel(ferrId, "California", "ferrari-california");
+            AddOrReplaceEngines(GetOrFixGeneration(california, "I (2008–2017)", "ferrari-california-i", 2008, 2017), 350, [
+                new EngineVersion { EngineName = "4.3 V8 460 KM", PowerHP = 460, PowerKW = 338, Displacement = 4297, FuelTypeId = ben,
+                    TorqueNm = 485, EuroNorm = "Euro 5", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 4.0m, TopSpeedKmh = 310, FuelConsumptionCombined = 12.6m },
+                new EngineVersion { EngineName = "California T 4.0 Turbo 560 KM", PowerHP = 560, PowerKW = 412, Displacement = 3855, FuelTypeId = ben,
+                    TorqueNm = 755, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 3.6m, TopSpeedKmh = 316, FuelConsumptionCombined = 10.5m },
+            ]);
+
+            int enzo = GetOrCreateModel(ferrId, "Enzo", "ferrari-enzo");
+            AddOrReplaceEngines(GetOrFixGeneration(enzo, "I (2002–2004)", "ferrari-enzo-i", 2002, 2004), 600, [
+                new EngineVersion { EngineName = "6.0 V12 660 KM", PowerHP = 660, PowerKW = 485, Displacement = 5998, FuelTypeId = ben,
+                    TorqueNm = 657, EuroNorm = "Euro 3", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 12, Acceleration0100 = 3.6m, TopSpeedKmh = 350, FuelConsumptionCombined = 21.0m },
+            ]);
+
+            int f40 = GetOrCreateModel(ferrId, "F40", "ferrari-f40");
+            AddOrReplaceEngines(GetOrFixGeneration(f40, "I (1987–1992)", "ferrari-f40-i", 1987, 1992), 400, [
+                new EngineVersion { EngineName = "2.9 V8 Twin-Turbo 478 KM", PowerHP = 478, PowerKW = 352, Displacement = 2936, FuelTypeId = ben,
+                    TorqueNm = 577, EuroNorm = "Euro 0", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 4.1m, TopSpeedKmh = 324, FuelConsumptionCombined = 19.5m },
+            ]);
+
+            int f50 = GetOrCreateModel(ferrId, "F50", "ferrari-f50");
+            AddOrReplaceEngines(GetOrFixGeneration(f50, "I (1995–1997)", "ferrari-f50-i", 1995, 1997), 450, [
+                new EngineVersion { EngineName = "4.7 V12 520 KM", PowerHP = 520, PowerKW = 382, Displacement = 4698, FuelTypeId = ben,
+                    TorqueNm = 471, EuroNorm = "Euro 2", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 12, Acceleration0100 = 3.7m, TopSpeedKmh = 325, FuelConsumptionCombined = 21.0m },
+            ]);
+
+            int gtc4Lusso = GetOrCreateModel(ferrId, "GTC4Lusso", "ferrari-gtc4lusso");
+            AddOrReplaceEngines(GetOrFixGeneration(gtc4Lusso, "I (2016–2020)", "ferrari-gtc4lusso-i", 2016, 2020), 550, [
+                new EngineVersion { EngineName = "6.3 V12 690 KM", PowerHP = 690, PowerKW = 507, Displacement = 6262, FuelTypeId = ben,
+                    TorqueNm = 697, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 12, Acceleration0100 = 3.4m, TopSpeedKmh = 335, FuelConsumptionCombined = 15.7m },
+                new EngineVersion { EngineName = "GTC4Lusso T 3.9 Twin-Turbo V8 610 KM", PowerHP = 610, PowerKW = 448, Displacement = 3855, FuelTypeId = ben,
+                    TorqueNm = 760, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 8, Acceleration0100 = 3.5m, TopSpeedKmh = 320, FuelConsumptionCombined = 11.6m },
+            ]);
+
+            int laFerrari = GetOrCreateModel(ferrId, "LaFerrari", "ferrari-laferrari");
+            AddOrReplaceEngines(GetOrFixGeneration(laFerrari, "I (2013–2018)", "ferrari-laferrari-i", 2013, 2018), 900, [
+                new EngineVersion { EngineName = "6.3 V12 Hybrid 963 KM", PowerHP = 963, PowerKW = 708, Displacement = 6262, FuelTypeId = phev,
+                    TorqueNm = 900, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "RWD",
+                    Cylinders = 12, Acceleration0100 = 2.6m, TopSpeedKmh = 350, FuelConsumptionCombined = 14.0m },
+            ]);
+
+            int testarossa = GetOrCreateModel(ferrId, "Testarossa", "ferrari-testarossa");
+            AddOrReplaceEngines(GetOrFixGeneration(testarossa, "I (1984–1996)", "ferrari-testarossa-i", 1984, 1996), 350, [
+                new EngineVersion { EngineName = "4.9 F12 390 KM", PowerHP = 390, PowerKW = 287, Displacement = 4942, FuelTypeId = ben,
+                    TorqueNm = 490, EuroNorm = "Euro 1", GearboxType = "manual", DriveType = "RWD",
+                    Cylinders = 12, Acceleration0100 = 5.2m, TopSpeedKmh = 290, FuelConsumptionCombined = 20.0m },
+            ]);
         }
 
         // ── Tesla ─────────────────────────────────────────────────────────────────
