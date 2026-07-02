@@ -5873,6 +5873,33 @@ public static class ComprehensiveSeeder
                     TorqueNm = 600, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
                     Cylinders = 6, Acceleration0100 = 8.3m, TopSpeedKmh = 208, FuelConsumptionCombined = 8.0m },
             ]);
+
+            int cherokee = GetOrCreateModel(jeepId, "Cherokee", "jeep-cherokee");
+            AddOrReplaceEngines(GetOrFixGeneration(cherokee, "KL (2013–2020)", "jeep-cherokee-kl", 2013, 2020), 130, [
+                new EngineVersion { EngineName = "2.0 MultiJet 170 KM", PowerHP = 170, PowerKW = 125, Displacement = 1956, FuelTypeId = die,
+                    TorqueNm = 350, EuroNorm = "Euro 6", GearboxType = "dsg", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 10.0m, TopSpeedKmh = 195, FuelConsumptionCombined = 6.4m },
+                new EngineVersion { EngineName = "2.4 MultiAir 175 KM", PowerHP = 175, PowerKW = 129, Displacement = 2360, FuelTypeId = ben,
+                    TorqueNm = 224, EuroNorm = "Euro 6", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 4, Acceleration0100 = 10.4m, TopSpeedKmh = 187, FuelConsumptionCombined = 8.8m },
+            ]);
+
+            int gladiator = GetOrCreateModel(jeepId, "Gladiator", "jeep-gladiator");
+            AddOrReplaceEngines(GetOrFixGeneration(gladiator, "JT (2019–)", "jeep-gladiator-jt", 2019, null), 250, [
+                new EngineVersion { EngineName = "3.6 V6 Pentastar 285 KM", PowerHP = 285, PowerKW = 209, Displacement = 3604, FuelTypeId = ben,
+                    TorqueNm = 353, EuroNorm = "Euro 6d", GearboxType = "automatic", DriveType = "AWD",
+                    Cylinders = 6, Acceleration0100 = 8.8m, TopSpeedKmh = 152, FuelConsumptionCombined = 13.0m },
+            ]);
+
+            int avenger = GetOrCreateModel(jeepId, "Avenger", "jeep-avenger");
+            AddOrReplaceEngines(GetOrFixGeneration(avenger, "I (2023–)", "jeep-avenger-i", 2023, null), 100, [
+                new EngineVersion { EngineName = "1.2 T4 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 1199, FuelTypeId = mild,
+                    TorqueNm = 205, EuroNorm = "Euro 6d", GearboxType = "manual", DriveType = "FWD",
+                    Cylinders = 3, Acceleration0100 = 11.7m, TopSpeedKmh = 165, FuelConsumptionCombined = 5.4m },
+                new EngineVersion { EngineName = "Electric 156 KM", PowerHP = 156, PowerKW = 115, Displacement = 0, FuelTypeId = ev,
+                    TorqueNm = 260, EuroNorm = "Euro 6d", GearboxType = "eAutomatic", DriveType = "FWD",
+                    Cylinders = 0, Acceleration0100 = 9.0m, TopSpeedKmh = 150, FuelConsumptionCombined = 16.0m },
+            ]);
         }
 
         // ── Mazda ─────────────────────────────────────────────────────────────────
