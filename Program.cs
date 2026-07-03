@@ -1833,59 +1833,38 @@ internal class Program
                     bgLogger.LogError(ex, "[STARTUP-TRACE] Could not make FeatureCategories.VehicleCategoryId NOT NULL yet (some row may still be unscoped): {Msg}", ex.Message);
                 }
 
-                // Repair fallout from the fallback above: every car/moto/trailer/agri equipment
-                // group seeded earlier in this file was originally created before the
-                // VehicleCategoryId column existed (added 2026-06-23), so each one still had
-                // VehicleCategoryId = NULL when the fallback ran - and since none of their names
-                // start with "Specjalne", every single one (including all 6 auta-osobowe groups)
-                // got swept into 'inne' instead of back to its real category, wiping the entire
-                // equipment step for cars. Car/moto share group names ("Bezpieczeństwo",
-                // "Komfort"), so re-matching by name alone would be ambiguous - match on the
-                // exact Feature-name set instead, which is unique per group.
+                // Repair fallout from the fallback above, confirmed via the AUDIT-FEATURES log
+                // dump below: exactly 8 rows (the lowest ids in the table, 1-8 - the very first
+                // FeatureCategory rows ever created, predating the VehicleCategoryId column added
+                // 2026-06-23) sit under 'inne' - Bezpieczeństwo, Komfort, Multimedia i łączność,
+                // Oświetlenie, Systemy wspomagania, Dodatki i akcesoria, Tapicerka i wnętrze,
+                // Zewnętrzne - wiping the entire auta-osobowe equipment step. Every other vehicle
+                // type (motocykle/przyczepy/rolnicze/...) already has its own groups correctly
+                // scoped, so 'inne' only ever holds this one leaked car-equipment set.
+                // A prior attempt at this fix matched by exact Feature-name set against the
+                // original seed lists above, but these 8 rows have since been edited via the
+                // admin panel (while still misscoped) and now carry many more features than the
+                // original seed, so that match found nothing - match by name within the 'inne'
+                // bucket instead, which is unambiguous since no other 'inne' row shares these names.
                 try
                 {
                     var inneCatId = bgDb.VehicleCategories.Where(vc => vc.Slug == "inne").Select(vc => vc.Id).FirstOrDefault();
-                    if (inneCatId > 0)
+                    var carCatId2 = bgDb.VehicleCategories.Where(vc => vc.Slug == "auta-osobowe").Select(vc => vc.Id).FirstOrDefault();
+                    if (inneCatId > 0 && carCatId2 > 0)
                     {
-                        var knownGroups = new (string Slug, string Name, string[] Features)[]
-                        {
-                            ("auta-osobowe", "Bezpieczeństwo", new[] { "ABS", "ESP", "ASR / kontrola trakcji", "Airbag kierowcy", "Airbag pasażera", "Kurtyny powietrzne", "Boczne poduszki powietrzne", "Isofix", "Czujniki parkowania przednie", "Czujniki parkowania tylne", "Alarm", "Immobilizer" }),
-                            ("auta-osobowe", "Komfort", new[] { "Klimatyzacja manualna", "Klimatyzacja automatyczna", "Dwustrefowa klimatyzacja", "Trzystrefowa klimatyzacja", "Podgrzewane fotele przednie", "Podgrzewane fotele tylne", "Wentylowane fotele", "Elektryczne fotele", "Pamięć ustawień fotela", "Podgrzewana kierownica", "Elektryczna regulacja lusterek", "Podgrzewane lusterka", "Elektryczna szyba przednia", "Elektryczna szyba tylna", "Keyless Entry", "Start/Stop" }),
-                            ("auta-osobowe", "Multimedia", new[] { "Bluetooth", "Android Auto", "Apple CarPlay", "GPS / Nawigacja", "USB", "Ładowarka indukcyjna Qi", "System audio premium", "Radio fabryczne", "Ekran dotykowy", "Head-up display (HUD)", "Asystent głosowy", "Wi-Fi hotspot" }),
-                            ("auta-osobowe", "Oświetlenie", new[] { "Halogeny", "Xenon", "Bi-Xenon", "Full LED", "Matrix LED", "Światła adaptacyjne", "Światła do jazdy dziennej (DRL)", "Podświetlenie wnętrza" }),
-                            ("auta-osobowe", "Systemy wspomagania", new[] { "Tempomat", "Aktywny tempomat (ACC)", "Asystent pasa ruchu (LKA)", "Asystent martwego pola (BSM)", "Asystent parkowania", "Automatyczne parkowanie", "Kamera cofania", "Kamera 360°", "Hamowanie awaryjne (AEB)", "Rozpoznawanie znaków (TSR)", "Asystent zmęczenia kierowcy", "Asystent zjazdu ze wzniesienia (HDC)", "Asystent ruszania pod górkę (HSA)" }),
-                            ("auta-osobowe", "Nadwozie i wyposażenie zewnętrzne", new[] { "Dach panoramiczny", "Szklany dach (moonroof)", "Relingi dachowe", "Hak holowniczy", "Przyciemniane szyby", "Felgi aluminiowe", "Opony zimowe (komplet)", "Koło zapasowe pełnowymiarowe", "Boczne progi", "Elektrycznie otwierana klapa bagażnika" }),
-                            ("motocykle", "Bezpieczeństwo", new[] { "ABS", "Kontrola trakcji (TCS)", "Asystent ruszania pod górkę (HSA)", "Hamowanie kombinowane (CBS)" }),
-                            ("motocykle", "Komfort", new[] { "Quickshifter", "Podgrzewane manetki", "Tempomat", "Elektrycznie regulowana szyba", "Elektryczna regulacja zawieszenia", "Podgrzewane siodełko" }),
-                            ("motocykle", "Bagaż i akcesoria", new[] { "Kufry boczne (oryginalne)", "Centralny kufer (oryginalne)", "Tankbag", "Owiewki boczne", "Osłona silnika", "Uchwyty pasażera", "Podnożki pasażera" }),
-                            ("przyczepy", "Wyposażenie techniczne", new[] { "Hamulec najazdowy", "Koło podporowe", "Podpory tylne", "Burtownica aluminiowa", "Plandeka", "Rampa załadowcza", "Oświetlenie LED", "Blokada kuli" }),
-                            ("rolnicze", "Kabina i komfort", new[] { "Klimatyzacja kabiny", "Zawieszenie kabiny", "Radio / Bluetooth", "Fotel z zawieszeniem pneumatycznym" }),
-                            ("rolnicze", "Technologia i systemy", new[] { "GPS / Autosteering", "Kamera robocza", "System telematyczny", "4WD", "Przedni WOM", "Tylny WOM", "Blokada mechanizmu różnicowego" }),
+                        var carGroupNames = new[] {
+                            "Bezpieczeństwo", "Komfort", "Multimedia i łączność", "Oświetlenie",
+                            "Systemy wspomagania", "Dodatki i akcesoria", "Tapicerka i wnętrze", "Zewnętrzne"
                         };
-
-                        var inneGroups = bgDb.FeatureCategories
-                            .Include(fc => fc.Features)
-                            .Where(fc => fc.VehicleCategoryId == inneCatId)
+                        var toFix = bgDb.FeatureCategories
+                            .Where(fc => fc.VehicleCategoryId == inneCatId && carGroupNames.Contains(fc.Name))
                             .ToList();
-
-                        int repaired = 0;
-                        foreach (var (slug, name, expectedFeatures) in knownGroups)
+                        if (toFix.Count > 0)
                         {
-                            var expectedSet = expectedFeatures.ToHashSet();
-                            var match = inneGroups.FirstOrDefault(fc =>
-                                fc.Name == name &&
-                                fc.Features.Count == expectedSet.Count &&
-                                fc.Features.All(f => expectedSet.Contains(f.Name)));
-                            if (match == null) continue;
-                            var targetId = bgDb.VehicleCategories.Where(vc => vc.Slug == slug).Select(vc => vc.Id).FirstOrDefault();
-                            if (targetId == 0) continue;
-                            match.VehicleCategoryId = targetId;
-                            repaired++;
-                        }
-                        if (repaired > 0)
-                        {
+                            foreach (var fc in toFix) fc.VehicleCategoryId = carCatId2;
                             bgDb.SaveChanges();
-                            bgLogger.LogWarning("[STARTUP-TRACE] Repaired {Count} FeatureCategory row(s) mis-parked under 'inne' back to their real vehicle category (matched by Feature-name set)", repaired);
+                            bgLogger.LogWarning("[STARTUP-TRACE] Repaired {Count} FeatureCategory row(s) mis-parked under 'inne' back to auta-osobowe: {Names}",
+                                toFix.Count, string.Join(", ", toFix.Select(fc => fc.Name)));
                         }
                     }
                 }
