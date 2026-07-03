@@ -11,4 +11,6 @@ public interface IPaymentService
     Task<PagedResult<PaymentResponseDto>> GetUserPaymentsAsync(int userId, int page, int pageSize);
     Task<PagedResult<PaymentResponseDto>> GetAllPaymentsAsync(int page, int pageSize);
     Task<PaymentResponseDto?> AdminUpdateStatusAsync(int paymentId, string status);
+    bool IsFreePromoActive();
+    DateTime? GetFreePromoEndsAtUtc();
 }
