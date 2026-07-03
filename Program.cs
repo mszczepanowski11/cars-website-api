@@ -1911,7 +1911,17 @@ internal class Program
                 var feature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
                 var exLogger = app.Services.GetRequiredService<ILogger<Program>>();
                 if (feature?.Error != null)
-                    exLogger.LogError(feature.Error, "[GlobalExceptionHandler] Unhandled exception at {Path}", context.Request.Path);
+                {
+                    // Railway's compact log view only renders the message template text, not the
+                    // structured exception argument passed to LogError - so the actual exception
+                    // type/message/inner-exception was invisible without digging further into the
+                    // UI. Bake it into the message itself so it's visible at a glance.
+                    var ex = feature.Error;
+                    var inner = ex.InnerException != null ? $" | inner: {ex.InnerException.GetType().Name}: {ex.InnerException.Message}" : "";
+                    exLogger.LogError(ex, "[GlobalExceptionHandler] Unhandled exception at {Path} -- {ExType}: {ExMessage}{Inner} -- {StackTop}",
+                        context.Request.Path, ex.GetType().Name, ex.Message, inner,
+                        ex.StackTrace?.Split('\n').FirstOrDefault(l => l.Contains("cars_website_api") || l.Contains("CarsWebsite"))?.Trim() ?? ex.StackTrace?.Split('\n').FirstOrDefault()?.Trim() ?? "");
+                }
                 context.Response.StatusCode = 500;
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsJsonAsync(new { message = "Internal server error" });
