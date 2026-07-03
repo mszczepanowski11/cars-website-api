@@ -541,7 +541,8 @@ internal class Program
                 "`StartProgramActivatedAt`       datetime(6)  NULL",
                 "`FeaturedQuotaUsed`             int          NOT NULL DEFAULT 0",
                 "`FeaturedQuotaResetAt`          datetime(6)  NULL",
-                "`IsVerifiedDealer`              tinyint(1)   NOT NULL DEFAULT 0" })
+                "`IsVerifiedDealer`              tinyint(1)   NOT NULL DEFAULT 0",
+                "`FreePromoBoostUsedAt`          datetime(6)  NULL" })
             { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `users` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] users.{Col}: {Msg}", colDef, ex.Message); } }
 
             // events — columns added to Event.cs without a corresponding migration

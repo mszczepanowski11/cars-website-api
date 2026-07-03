@@ -47,6 +47,10 @@ namespace CarsWebsite
         public DateTime? FeaturedQuotaResetAt { get; set; }
         public bool IsVerifiedDealer { get; set; } = false;
 
+        // Launch promo: each account gets one free advert boost (Top/Premium/Featured/Refresh)
+        // while the promo window is active - set the first time that free activation fires.
+        public DateTime? FreePromoBoostUsedAt { get; set; }
+
         // Notification settings
         public bool EmailNotifications { get; set; } = true;
         public bool PriceChangeAlerts { get; set; } = true;
