@@ -34,11 +34,15 @@ public class InvoiceService : IInvoiceService
         var end = start.AddMonths(1);
         var monthName = new System.Globalization.CultureInfo("pl-PL").DateTimeFormat.GetMonthName(month);
 
+        // Invoices are only meant for business-account settlement - private sellers buying a
+        // one-off boost don't need a VAT invoice, so their completed payments are deliberately
+        // left with InvoiceId == null forever rather than getting swept into a monthly invoice.
         var payments = await _context.Payments
             .Include(p => p.User)
             .Where(p => p.Status == PaymentStatus.Completed
                      && p.PaidAt >= start && p.PaidAt < end
-                     && p.InvoiceId == null)
+                     && p.InvoiceId == null
+                     && p.User.AccountType == AccountType.Business)
             .ToListAsync();
 
         if (!payments.Any())
@@ -246,7 +250,7 @@ public class InvoiceService : IInvoiceService
             {
                 page.Margin(0);
                 page.Size(PageSizes.A4);
-                page.DefaultTextStyle(x => x.FontSize(9).FontFamily("Arial").FontColor(dark));
+                page.DefaultTextStyle(x => x.FontSize(9).FontFamily("Liberation Sans").FontColor(dark));
 
                 page.Content().Column(col =>
                 {
