@@ -237,10 +237,17 @@ namespace CarsWebsite
             modelBuilder.Entity<UserFollow>().HasOne(f => f.Followed).WithMany().HasForeignKey(f => f.FollowedId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<Review>().ToTable("Reviews").HasKey(r => r.Id);
 
-            modelBuilder.Entity<AppNotification>().ToTable("AppNotifications").HasKey(n => n.Id);
+            // Lowercase table names: Program.cs's startup RENAME TABLE guards move these two
+            // tables (originally created PascalCase) to lowercase to match how they physically
+            // exist in production MySQL (case-sensitive on Linux) — ToTable() must match or EF
+            // queries against a table name ("AppNotifications"/"UserNotificationSettings") that
+            // no longer exists post-rename, throwing on every read. This silently broke every
+            // NewMessage/PaymentConfirmed/etc. email since NotifyAsync's UserNotificationSettings
+            // lookup always threw before reaching the actual send.
+            modelBuilder.Entity<AppNotification>().ToTable("appnotifications").HasKey(n => n.Id);
             modelBuilder.Entity<AppNotification>().HasOne(n => n.User).WithMany().HasForeignKey(n => n.UserId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<AppNotification>().Property(n => n.Type).HasConversion<string>();
-            modelBuilder.Entity<UserNotificationSetting>().ToTable("UserNotificationSettings").HasKey(s => s.Id);
+            modelBuilder.Entity<UserNotificationSetting>().ToTable("usernotificationsettings").HasKey(s => s.Id);
             modelBuilder.Entity<UserNotificationSetting>().HasOne(s => s.User).WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<UserNotificationSetting>().HasIndex(s => new { s.UserId, s.Category }).IsUnique();
 
