@@ -577,9 +577,32 @@ public class PaymentService : IPaymentService
             return false;
         }
 
-        var parts = signature?.Split(';');
-        var hashMethod = parts?.Length == 2 ? parts[1].ToLower() : "sha256";
-        var receivedHash = parts?[0]?.ToLower() ?? "";
+        // The webhook's X-Imoje-Signature header uses a structured, semicolon-separated
+        // key=value format — "merchantid=...;serviceid=...;signature=<hash>;alg=sha256" —
+        // NOT the simpler "hash;sha256" format used elsewhere (e.g. the outbound paywall form
+        // signature). Confirmed from a live webhook: our computed hash exactly matched the
+        // "signature=" field's value once correctly extracted, so the hashing itself
+        // (SHA256(rawBody + secret)) was always right — only the parsing was wrong, previously
+        // treating the whole first "key=value" segment ("merchantid=...") as the hash.
+        string? receivedHash = null;
+        var hashMethod = "sha256";
+        foreach (var part in (signature ?? "").Split(';'))
+        {
+            var kv = part.Split('=', 2);
+            if (kv.Length != 2) continue;
+            var key = kv[0].Trim().ToLowerInvariant();
+            var value = kv[1].Trim();
+            if (key == "signature") receivedHash = value.ToLowerInvariant();
+            else if (key == "alg") hashMethod = value.ToLowerInvariant();
+        }
+        // Fallback for the legacy "hash;sha256" format, in case any other caller still uses it.
+        if (receivedHash == null)
+        {
+            var legacyParts = signature?.Split(';');
+            hashMethod = legacyParts?.Length == 2 ? legacyParts[1].ToLower() : "sha256";
+            receivedHash = legacyParts?[0]?.ToLower() ?? "";
+        }
+        receivedHash ??= "";
 
         if (hashMethod != "sha256")
         {
