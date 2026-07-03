@@ -343,7 +343,11 @@ public class PaymentService : IPaymentService
     {
         var section = _config.GetSection("Imoje");
         var serviceId  = section["ServiceId"]  ?? "";
-        var serviceKey = section["ServiceKey"] ?? section["ApiKey"] ?? "";
+        // `??` only falls through on null, not on an empty-but-present env var — if
+        // Imoje__ApiKey exists on Railway but is blank, `section["ApiKey"] ?? section["ServiceKey"]`
+        // would silently win with "" even though ServiceKey has a real value. FirstNonEmpty
+        // treats blank the same as unset.
+        var serviceKey = FirstNonEmpty(section["ServiceKey"], section["ApiKey"]);
         var merchantId = section["MerchantId"] ?? "";
         var sandbox    = string.Equals(section["Environment"], "sandbox", StringComparison.OrdinalIgnoreCase);
         var siteUrl    = section["SiteUrl"] ?? "https://carizo.eu";
@@ -408,6 +412,12 @@ public class PaymentService : IPaymentService
 
         return (actionUrl, fields);
     }
+
+    // `??` only falls through on null, not on an empty-but-present config value (e.g. an
+    // env var that exists on the host but is blank) — this picks the first value that is
+    // actually non-empty, so a stray blank Imoje__ApiKey can't shadow a real ServiceKey.
+    private static string FirstNonEmpty(params string?[] values) =>
+        values.FirstOrDefault(v => !string.IsNullOrEmpty(v)) ?? "";
 
     private static string ComputeImojeSignature(Dictionary<string, string> fields, string serviceKey)
     {
@@ -555,7 +565,7 @@ public class PaymentService : IPaymentService
 
     private bool VerifySignature(string rawBody, string signature)
     {
-        var secret = _config["Imoje:WebhookSecret"] ?? _config["Imoje:ServiceKey"] ?? _config["Imoje:ApiKey"] ?? "";
+        var secret = FirstNonEmpty(_config["Imoje:WebhookSecret"], _config["Imoje:ServiceKey"], _config["Imoje:ApiKey"]);
 
         _logger.LogInformation(
             "[Webhook/Verify] secretLen={SecretLen} sigHeader={Sig} bodyLen={BodyLen} bodyPrefix={Prefix}",

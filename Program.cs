@@ -1911,9 +1911,17 @@ internal class Program
             // BuildImojeFormData actually uses (Imoje__* env vars via ASP.NET Core's standard
             // double-underscore convention), not the old flat IMOJE_* names, which this used to
             // check and reported "EMPTY" even when the real config was correctly set.
+            //
+            // Fallback order and empty-string handling MUST match BuildImojeFormData/VerifySignature
+            // in PaymentService.cs exactly (ServiceKey checked first, blank values treated as unset)
+            // — a mismatched order here previously reported "EMPTY" for a genuinely-set ServiceKey
+            // whenever a blank (but present) Imoje__ApiKey env var existed on the host, since `??`
+            // only falls through on null, not on "".
+            static string FirstNonEmptyCfg(params string?[] values) =>
+                values.FirstOrDefault(v => !string.IsNullOrEmpty(v)) ?? "";
             var imojeSection = app.Configuration.GetSection("Imoje");
             var imojeMid    = imojeSection["MerchantId"] ?? "";
-            var imojeKey    = imojeSection["ApiKey"] ?? imojeSection["ServiceKey"] ?? "";
+            var imojeKey    = FirstNonEmptyCfg(imojeSection["ServiceKey"], imojeSection["ApiKey"]);
             var imojeSecret = imojeSection["WebhookSecret"] ?? "";
             var internalSec = app.Configuration["InternalServiceSecret"] ?? Environment.GetEnvironmentVariable("INTERNAL_SERVICE_SECRET") ?? "";
             logger.LogInformation(
