@@ -1559,6 +1559,82 @@ internal class Program
                     bgLogger.LogError(ex, "[STARTUP-TRACE] New-category brand seeding failed: {Msg}", ex.Message);
                 }
 
+                // The 7 new categories launched with only 1-2 equipment groups each (5-13 items),
+                // noticeably thinner than established categories like auta-osobowe (6 groups,
+                // ~35-40 items) or rolnicze/dostawcze (4 groups, ~20-25 items). Adds a second
+                // group where there was only one, and backfills missing items into existing
+                // groups by name. Idempotent, runs every startup.
+                try
+                {
+                    var equipCatBySlug = bgDb.VehicleCategories
+                        .Where(c => new[] { "lodzie-i-jachty", "kampery", "quady-atv", "skutery-wodne", "autobusy", "naczepy", "wozki-widlowe" }.Contains(c.Slug))
+                        .ToDictionary(c => c.Slug, c => c.Id);
+
+                    var equipmentExpansions = new Dictionary<string, (string Group, string[] Features)[]> {
+                        ["lodzie-i-jachty"] = new[] {
+                            ("Wyposażenie pokładowe", new[] { "Zapasowy silnik zaburtowy", "Oświetlenie podwodne LED", "Chłodziarka pokładowa / lodówka", "System audio zewnętrzny", "Toaleta / WC chemiczne" }),
+                            ("Komfort i zasilanie", new[] { "Klimatyzacja kabiny", "Generator / agregat prądotwórczy", "Instalacja elektryczna 12V/230V" }),
+                        },
+                        ["kampery"] = new[] {
+                            ("Multimedia i bezpieczeństwo", new[] { "Markiza elektryczna", "System nawigacji kamperowej", "Telewizor", "System alarmowy", "Kamera cofania", "Bagażnik rowerowy zewnętrzny", "Tempomat", "Hak holowniczy" }),
+                        },
+                        ["quady-atv"] = new[] {
+                            ("Wyposażenie", new[] { "Ogrzewane manetki", "Wyświetlacz cyfrowy (kokpit)", "Kufer boczny / kufry", "Osłona silnika (skid plate)", "Alarm / immobilizer" }),
+                        },
+                        ["skutery-wodne"] = new[] {
+                            ("Wyposażenie", new[] { "Bluetooth / zestaw audio", "Oświetlenie LED", "Wyświetlacz cyfrowy", "Uchwyt narciarski", "Immobilizer / alarm", "Pokrowiec transportowy" }),
+                        },
+                        ["autobusy"] = new[] {
+                            ("Komfort kierowcy i dostępność", new[] { "Winda dla niepełnosprawnych", "Ogrzewanie postojowe", "Fotel pneumatyczny kierowcy", "Tachograf cyfrowy", "Klimatyzacja niezależna kierowcy", "Rampa najazdowa dla wózków" }),
+                        },
+                        ["naczepy"] = new[] {
+                            ("Systemy i homologacje", new[] { "Winda załadowcza", "Klapa tylna", "System TPMS (kontrola ciśnienia)", "Homologacja ADR", "Oświetlenie LED", "Instalacja chłodnicza (agregat)" }),
+                        },
+                        ["wozki-widlowe"] = new[] {
+                            ("Komfort i bezpieczeństwo operatora", new[] { "Kamera cofania", "Zawieszona / amortyzowana kabina", "Klimatyzacja kabiny", "Wskaźnik obciążenia", "Udźwig regulowany", "Ogumienie poliuretanowe", "Sygnalizacja LED (blue spot)" }),
+                        },
+                    };
+
+                    int addedGroups = 0, addedFeatures = 0;
+                    foreach (var (catSlug, groups) in equipmentExpansions)
+                    {
+                        if (!equipCatBySlug.TryGetValue(catSlug, out var catId)) continue;
+                        foreach (var (groupName, featureNames) in groups)
+                        {
+                            var fc = bgDb.FeatureCategories
+                                .Include(f => f.Features)
+                                .FirstOrDefault(f => f.VehicleCategoryId == catId && f.Name == groupName);
+                            if (fc == null)
+                            {
+                                bgDb.FeatureCategories.Add(new FeatureCategory {
+                                    Name = groupName, VehicleCategoryId = catId,
+                                    Features = featureNames.Select(f => new Feature { Name = f }).ToList(),
+                                });
+                                addedGroups++;
+                                addedFeatures += featureNames.Length;
+                            }
+                            else
+                            {
+                                var existingNames = fc.Features.Select(f => f.Name).ToHashSet();
+                                foreach (var fname in featureNames)
+                                {
+                                    if (!existingNames.Contains(fname))
+                                    {
+                                        fc.Features.Add(new Feature { Name = fname });
+                                        addedFeatures++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    bgDb.SaveChanges();
+                    bgLogger.LogWarning("[STARTUP-TRACE] Expanded equipment for new categories: {Groups} new groups, {Features} features added", addedGroups, addedFeatures);
+                }
+                catch (Exception ex)
+                {
+                    bgLogger.LogError(ex, "[STARTUP-TRACE] New-category equipment expansion failed: {Msg}", ex.Message);
+                }
+
                 // Fix confirmed cross-category leak, then harden the schema so it can't recur.
                 // History: 6 FeatureCategory rows named "Specjalne - <type>" (created via the
                 // admin panel, not seeded by any code here) had a vehicle-type name but
