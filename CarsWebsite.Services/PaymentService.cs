@@ -9,23 +9,23 @@ public class PaymentService : IPaymentService
 {
     private static readonly Dictionary<(ServiceType, int), (decimal Price, string Description)> PriceTable = new()
     {
-        { (ServiceType.Top, 7),      (19.99m, "Wyróżnienie TOP – 7 dni") },
-        { (ServiceType.Top, 14),     (29.99m, "Wyróżnienie TOP – 14 dni") },
-        { (ServiceType.Top, 30),     (49.99m, "Wyróżnienie TOP – 30 dni") },
-        { (ServiceType.Premium, 7),  (29.99m, "Oferta Premium – 7 dni") },
-        { (ServiceType.Premium, 14), (44.99m, "Oferta Premium – 14 dni") },
-        { (ServiceType.Premium, 30), (79.99m, "Oferta Premium – 30 dni") },
-        { (ServiceType.Featured, 7),  (14.99m, "Wyróżnienie – 7 dni") },
-        { (ServiceType.Featured, 14), (24.99m, "Wyróżnienie – 14 dni") },
-        { (ServiceType.Featured, 30), (39.99m, "Wyróżnienie – 30 dni") },
+        { (ServiceType.Top, 7),      (19.99m, "Wyróżnienie TOP - 7 dni") },
+        { (ServiceType.Top, 14),     (29.99m, "Wyróżnienie TOP - 14 dni") },
+        { (ServiceType.Top, 30),     (49.99m, "Wyróżnienie TOP - 30 dni") },
+        { (ServiceType.Premium, 7),  (29.99m, "Oferta Premium - 7 dni") },
+        { (ServiceType.Premium, 14), (44.99m, "Oferta Premium - 14 dni") },
+        { (ServiceType.Premium, 30), (79.99m, "Oferta Premium - 30 dni") },
+        { (ServiceType.Featured, 7),  (14.99m, "Wyróżnienie - 7 dni") },
+        { (ServiceType.Featured, 14), (24.99m, "Wyróżnienie - 14 dni") },
+        { (ServiceType.Featured, 30), (39.99m, "Wyróżnienie - 30 dni") },
         { (ServiceType.Refresh, 1),   (4.99m,  "Odświeżenie ogłoszenia") },
-        { (ServiceType.EventFeatured, 7),  (9.99m,  "Wyróżnienie wydarzenia – 7 dni") },
-        { (ServiceType.EventFeatured, 14), (17.99m, "Wyróżnienie wydarzenia – 14 dni") },
-        { (ServiceType.EventFeatured, 30), (29.99m, "Wyróżnienie wydarzenia – 30 dni") },
+        { (ServiceType.EventFeatured, 7),  (9.99m,  "Wyróżnienie wydarzenia - 7 dni") },
+        { (ServiceType.EventFeatured, 14), (17.99m, "Wyróżnienie wydarzenia - 14 dni") },
+        { (ServiceType.EventFeatured, 30), (29.99m, "Wyróżnienie wydarzenia - 30 dni") },
         // Subscription packages — key int = (int)SubscriptionTier
-        { (ServiceType.Subscription, (int)SubscriptionTier.Start),   (SubscriptionPlanConfig.GetBruttoPrice(SubscriptionTier.Start),   "Pakiet Start – 1 miesiąc") },
-        { (ServiceType.Subscription, (int)SubscriptionTier.Biznes),  (SubscriptionPlanConfig.GetBruttoPrice(SubscriptionTier.Biznes),  "Pakiet Biznes – 1 miesiąc") },
-        { (ServiceType.Subscription, (int)SubscriptionTier.Premium), (SubscriptionPlanConfig.GetBruttoPrice(SubscriptionTier.Premium), "Pakiet Premium – 1 miesiąc") },
+        { (ServiceType.Subscription, (int)SubscriptionTier.Start),   (SubscriptionPlanConfig.GetBruttoPrice(SubscriptionTier.Start),   "Pakiet Start - 1 miesiąc") },
+        { (ServiceType.Subscription, (int)SubscriptionTier.Biznes),  (SubscriptionPlanConfig.GetBruttoPrice(SubscriptionTier.Biznes),  "Pakiet Biznes - 1 miesiąc") },
+        { (ServiceType.Subscription, (int)SubscriptionTier.Premium), (SubscriptionPlanConfig.GetBruttoPrice(SubscriptionTier.Premium), "Pakiet Premium - 1 miesiąc") },
     };
 
     private readonly AppDbContext _context;
