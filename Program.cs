@@ -1635,6 +1635,95 @@ internal class Program
                     bgLogger.LogError(ex, "[STARTUP-TRACE] New-category equipment expansion failed: {Msg}", ex.Message);
                 }
 
+                // przyczepy vs naczepy brand/subtype overlap cleanup. Krone/Schmitz Cargobull/
+                // Kögel/Schwarzmüller/Nooteboom make heavy semi-trailers exclusively, not
+                // car-towable trailers — they were only ever seeded under przyczepy by an earlier
+                // pass, before naczepy existed. Wielton/Fliegl genuinely span both segments and
+                // stay linked to both.
+                try
+                {
+                    var przyczepyCat = bgDb.VehicleCategories.FirstOrDefault(c => c.Slug == "przyczepy");
+                    if (przyczepyCat != null)
+                    {
+                        var semiOnlySlugs = new[] { "krone-trailer", "schmitz-cargobull", "kogel", "schwarzmuller", "nooteboom" };
+                        foreach (var slug in semiOnlySlugs)
+                        {
+                            var brand = bgDb.Brands.Include(b => b.Categories).FirstOrDefault(b => b.Slug == slug);
+                            var link = brand?.Categories.FirstOrDefault(c => c.Id == przyczepyCat.Id);
+                            if (link != null) brand!.Categories.Remove(link);
+                        }
+                        bgDb.SaveChanges();
+
+                        var existingBrandSlugs3 = bgDb.Brands.Select(b => b.Slug).ToHashSet();
+                        var newTrailerBrands = new List<Brand>();
+                        foreach (var (n, s) in new (string, string)[] {
+                            ("Böckmann", "boeckmann"), ("Brenderup", "brenderup"), ("Saris", "saris"),
+                        })
+                        {
+                            if (!existingBrandSlugs3.Contains(s))
+                                newTrailerBrands.Add(new Brand { Name = n, Slug = s, Categories = new List<VehicleCategory> { przyczepyCat } });
+                        }
+                        if (newTrailerBrands.Count > 0)
+                        {
+                            bgDb.Brands.AddRange(newTrailerBrands);
+                            bgDb.SaveChanges();
+                        }
+                        bgLogger.LogWarning("[STARTUP-TRACE] przyczepy/naczepy brand cleanup done, {Count} new light-trailer brands", newTrailerBrands.Count);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    bgLogger.LogError(ex, "[STARTUP-TRACE] przyczepy/naczepy brand cleanup failed: {Msg}", ex.Message);
+                }
+
+                // przyczepy also accumulated ~12 "Naczepa X" subtypes from earlier seeding passes
+                // that predate the naczepy category — several are exact duplicates of an existing
+                // non-"Naczepa" row (e.g. both "Naczepa wywrotka" and "Przyczepa wywrotka" exist),
+                // and the rest just don't need the prefix (every other category's subtypes are
+                // bare type words, e.g. ciezarowe's "Firanka"). Re-points any advert referencing a
+                // duplicate to the surviving row before deleting it, so nothing loses its subtype.
+                try
+                {
+                    var duplicateSubtypePairs = new (string DupSlug, string KeepSlug)[] {
+                        ("naczepa-platforma", "przyczepa-platforma"),
+                        ("naczepa-wywrotka", "przyczepa-wywrotka"),
+                        ("naczepa-cysterna", "przyczepa-cysterna"),
+                        ("naczepa-niskopodwoziowa", "przyczepa-niskopodwoziowa"),
+                        ("naczepa-silos", "silos"),
+                        ("naczepa-dluzica", "dluzica"),
+                        ("naczepa-kurtynowa", "naczepa-firanka"),
+                    };
+                    foreach (var (dupSlug, keepSlug) in duplicateSubtypePairs)
+                    {
+                        var dup = bgDb.VehicleSubtypes.FirstOrDefault(s => s.Slug == dupSlug);
+                        var keep = bgDb.VehicleSubtypes.FirstOrDefault(s => s.Slug == keepSlug);
+                        if (dup == null || keep == null || dup.Id == keep.Id) continue;
+                        var affectedAdverts = bgDb.CarAdverts.Where(a => a.VehicleSubtypeId == dup.Id).ToList();
+                        foreach (var ad in affectedAdverts) ad.VehicleSubtypeId = keep.Id;
+                        bgDb.VehicleSubtypes.Remove(dup);
+                    }
+                    bgDb.SaveChanges();
+
+                    var subtypeRenames = new Dictionary<string, string> {
+                        ["naczepa-firanka"] = "Firanka / plandeka",
+                        ["naczepa-chlodnia"] = "Chłodnia",
+                        ["naczepa-izoterma"] = "Izoterma",
+                        ["naczepa-kontener"] = "Kontener",
+                        ["naczepa-autotransporter"] = "Autotransporter",
+                    };
+                    foreach (var (slug, newName) in subtypeRenames)
+                    {
+                        var st = bgDb.VehicleSubtypes.FirstOrDefault(s => s.Slug == slug);
+                        if (st != null && st.Name != newName) st.Name = newName;
+                    }
+                    bgDb.SaveChanges();
+                    bgLogger.LogWarning("[STARTUP-TRACE] Deduped przyczepy/naczepy subtype overlap");
+                }
+                catch (Exception ex)
+                {
+                    bgLogger.LogError(ex, "[STARTUP-TRACE] przyczepy subtype cleanup failed: {Msg}", ex.Message);
+                }
+
                 // Fix confirmed cross-category leak, then harden the schema so it can't recur.
                 // History: 6 FeatureCategory rows named "Specjalne - <type>" (created via the
                 // admin panel, not seeded by any code here) had a vehicle-type name but
