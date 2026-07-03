@@ -47,82 +47,90 @@ public class InvoiceService : IInvoiceService
             return;
         }
 
-        // K-3: Serializable isolation prevents duplicate sequence numbers under concurrent calls
-        using var tx = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
-        try
+        // K-3: Serializable isolation prevents duplicate sequence numbers under concurrent calls.
+        // Same fix as PaymentService.HandleWebhookAsync: the Pomelo MySQL provider's retrying
+        // execution strategy forbids a manually-opened transaction outside of
+        // CreateExecutionStrategy().ExecuteAsync() — wrap it so this doesn't throw
+        // InvalidOperationException the first time it actually runs (the 1st of the month).
+        var strategy = _context.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
         {
-            var existingNums = await _context.Invoices
-                .Where(i => i.Month == month && i.Year == year)
-                .Select(i => i.InvoiceNumber)
-                .ToListAsync();
-
-            var maxSeq = existingNums.Count == 0 ? 0 :
-                existingNums
-                    .Select(n => { var p = n.Split('/'); return p.Length == 4 && int.TryParse(p[3], out var s) ? s : 0; })
-                    .DefaultIfEmpty(0)
-                    .Max();
-            var seq = maxSeq + 1;
-
-            foreach (var group in payments.GroupBy(p => p.UserId))
+            using var tx = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+            try
             {
-                var user = group.First().User;
-                var groupPayments = group.ToList();
-                var gross = groupPayments.Sum(p => p.Amount);
-                const decimal vatRate = 0.23m;
-                var net = Math.Round(gross / (1 + vatRate), 2);
-                var vatAmount = Math.Round(net * vatRate, 2);
+                var existingNums = await _context.Invoices
+                    .Where(i => i.Month == month && i.Year == year)
+                    .Select(i => i.InvoiceNumber)
+                    .ToListAsync();
 
-                var invoice = new Invoice
+                var maxSeq = existingNums.Count == 0 ? 0 :
+                    existingNums
+                        .Select(n => { var p = n.Split('/'); return p.Length == 4 && int.TryParse(p[3], out var s) ? s : 0; })
+                        .DefaultIfEmpty(0)
+                        .Max();
+                var seq = maxSeq + 1;
+
+                foreach (var group in payments.GroupBy(p => p.UserId))
                 {
-                    UserId = group.Key,
-                    InvoiceNumber = $"FZ/{year}/{month:D2}/{seq:D4}",
-                    Month = month,
-                    Year = year,
-                    TotalAmount = gross,
-                    NetAmount = net,
-                    VatAmount = vatAmount,
-                    VatRate = vatRate,
-                    Status = InvoiceStatus.Generated,
-                    GeneratedAt = DateTime.UtcNow
-                };
+                    var user = group.First().User;
+                    var groupPayments = group.ToList();
+                    var gross = groupPayments.Sum(p => p.Amount);
+                    const decimal vatRate = 0.23m;
+                    var net = Math.Round(gross / (1 + vatRate), 2);
+                    var vatAmount = Math.Round(net * vatRate, 2);
 
-                _context.Invoices.Add(invoice);
-                await _context.SaveChangesAsync();
+                    var invoice = new Invoice
+                    {
+                        UserId = group.Key,
+                        InvoiceNumber = $"FZ/{year}/{month:D2}/{seq:D4}",
+                        Month = month,
+                        Year = year,
+                        TotalAmount = gross,
+                        NetAmount = net,
+                        VatAmount = vatAmount,
+                        VatRate = vatRate,
+                        Status = InvoiceStatus.Generated,
+                        GeneratedAt = DateTime.UtcNow
+                    };
 
-                foreach (var p in groupPayments)
-                    p.InvoiceId = invoice.Id;
-
-                await _context.SaveChangesAsync();
-
-                invoice.User = user;
-                invoice.Payments = groupPayments;
-
-                await SendInvoiceEmailAsync(invoice, user);
-
-                var ksefRef = await _ksef.SendInvoiceAsync(invoice, groupPayments);
-                if (ksefRef != null)
-                {
-                    invoice.KSeFReferenceNumber = ksefRef;
-                    invoice.IsKSeFSent = true;
+                    _context.Invoices.Add(invoice);
                     await _context.SaveChangesAsync();
+
+                    foreach (var p in groupPayments)
+                        p.InvoiceId = invoice.Id;
+
+                    await _context.SaveChangesAsync();
+
+                    invoice.User = user;
+                    invoice.Payments = groupPayments;
+
+                    await SendInvoiceEmailAsync(invoice, user);
+
+                    var ksefRef = await _ksef.SendInvoiceAsync(invoice, groupPayments);
+                    if (ksefRef != null)
+                    {
+                        invoice.KSeFReferenceNumber = ksefRef;
+                        invoice.IsKSeFSent = true;
+                        await _context.SaveChangesAsync();
+                    }
+
+                    _ = _notifications.NotifyAsync(group.Key, EmailNotificationType.InvoiceGenerated,
+                        "Faktura wygenerowana",
+                        $"Twoja faktura zbiorcza {invoice.InvoiceNumber} za {monthName} {year} została wygenerowana. Łączna kwota: {invoice.TotalAmount:0.00} PLN.",
+                        invoiceId: invoice.Id);
+
+                    seq++;
                 }
 
-                _ = _notifications.NotifyAsync(group.Key, EmailNotificationType.InvoiceGenerated,
-                    "Faktura wygenerowana",
-                    $"Twoja faktura zbiorcza {invoice.InvoiceNumber} za {monthName} {year} została wygenerowana. Łączna kwota: {invoice.TotalAmount:0.00} PLN.",
-                    invoiceId: invoice.Id);
-
-                seq++;
+                await tx.CommitAsync();
+                _logger.LogInformation("Wygenerowano faktury za {Month}/{Year}", month, year);
             }
-
-            await tx.CommitAsync();
-            _logger.LogInformation("Wygenerowano faktury za {Month}/{Year}", month, year);
-        }
-        catch
-        {
-            await tx.RollbackAsync();
-            throw;
-        }
+            catch
+            {
+                await tx.RollbackAsync();
+                throw;
+            }
+        });
     }
 
     public async Task<PagedResult<InvoiceResponseDto>> GetUserInvoicesAsync(int userId, int page, int pageSize)
