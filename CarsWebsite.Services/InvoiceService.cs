@@ -208,9 +208,13 @@ public class InvoiceService : IInvoiceService
             : (user?.AccountType == AccountType.Business && !string.IsNullOrWhiteSpace(user.CompanyName)
                 ? user.CompanyName : $"{user?.Name} {user?.Surname}".Trim());
         var buyerNip     = (firstPayment?.BillingNip ?? user?.Nip) ?? "";
-        var buyerStreet  = firstPayment?.BillingStreet ?? "";
-        var buyerPostal  = firstPayment?.BillingPostalCode ?? "";
-        var buyerCity    = firstPayment?.BillingCity ?? "";
+        // Package/subscription purchases (pakiety.vue) never collect billing details at checkout -
+        // only one-off advert/event boosts do via BillingDataForm - so these must fall back to the
+        // user's own profile address (dashboard "Dane firmy") or every subscription invoice gets a
+        // blank buyer address regardless of what the user filled in.
+        var buyerStreet  = firstPayment?.BillingStreet ?? user?.Street ?? "";
+        var buyerPostal  = firstPayment?.BillingPostalCode ?? user?.PostalCode ?? "";
+        var buyerCity    = firstPayment?.BillingCity ?? user?.City ?? "";
         var buyerEmail   = user?.Email ?? "";
 
         var sellerName    = _config["Invoice:SellerName"]    ?? "CARIZO Wiktor Niezgoda";
@@ -657,8 +661,15 @@ public class InvoiceService : IInvoiceService
             ? firstPayment.BillingNip
             : user?.Nip;
 
-        var buyerAddress = (!string.IsNullOrWhiteSpace(firstPayment?.BillingStreet) || !string.IsNullOrWhiteSpace(firstPayment?.BillingCity))
-            ? $"{firstPayment?.BillingStreet}, {firstPayment?.BillingPostalCode} {firstPayment?.BillingCity}"
+        // Package/subscription purchases (pakiety.vue) never collect billing details at checkout -
+        // only one-off advert/event boosts do via BillingDataForm - so this must fall back to the
+        // user's own profile address (dashboard "Dane firmy") or every subscription invoice gets no
+        // buyer address regardless of what the user filled in.
+        var addrStreet = !string.IsNullOrWhiteSpace(firstPayment?.BillingStreet) ? firstPayment.BillingStreet : user?.Street;
+        var addrPostal = !string.IsNullOrWhiteSpace(firstPayment?.BillingPostalCode) ? firstPayment.BillingPostalCode : user?.PostalCode;
+        var addrCity   = !string.IsNullOrWhiteSpace(firstPayment?.BillingCity) ? firstPayment.BillingCity : user?.City;
+        var buyerAddress = (!string.IsNullOrWhiteSpace(addrStreet) || !string.IsNullOrWhiteSpace(addrCity))
+            ? $"{addrStreet}, {addrPostal} {addrCity}"
             : null;
 
         var sName    = _config["Invoice:SellerName"]    ?? "CARIZO Wiktor Niezgoda";
@@ -828,6 +839,11 @@ public class InvoiceService : IInvoiceService
         UserEmail = inv.User?.Email ?? string.Empty,
         CompanyName = inv.User?.CompanyName,
         Nip = inv.User?.Nip,
+        // Same billing-snapshot-then-profile-fallback as the PDF/HTML builders - package
+        // purchases never collect a checkout-time address, only one-off boosts do.
+        Street = inv.Payments.FirstOrDefault()?.BillingStreet ?? inv.User?.Street,
+        PostalCode = inv.Payments.FirstOrDefault()?.BillingPostalCode ?? inv.User?.PostalCode,
+        City = inv.Payments.FirstOrDefault()?.BillingCity ?? inv.User?.City,
         KSeFReferenceNumber = inv.KSeFReferenceNumber,
         IsKSeFSent = inv.IsKSeFSent,
         Items = inv.Payments.Select(p => new PaymentResponseDto
