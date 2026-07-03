@@ -1907,13 +1907,17 @@ internal class Program
                 }
             });
 
-            // Startup config diagnostics
-            var imojeMid    = Environment.GetEnvironmentVariable("IMOJE_MERCHANT_ID") ?? "";
-            var imojeKey    = Environment.GetEnvironmentVariable("IMOJE_API_KEY") ?? "";
-            var imojeSecret = Environment.GetEnvironmentVariable("IMOJE_WEBHOOK_SECRET") ?? "";
-            var internalSec = Environment.GetEnvironmentVariable("INTERNAL_SERVICE_SECRET") ?? "";
+            // Startup config diagnostics — read via the same IConfiguration section
+            // BuildImojeFormData actually uses (Imoje__* env vars via ASP.NET Core's standard
+            // double-underscore convention), not the old flat IMOJE_* names, which this used to
+            // check and reported "EMPTY" even when the real config was correctly set.
+            var imojeSection = app.Configuration.GetSection("Imoje");
+            var imojeMid    = imojeSection["MerchantId"] ?? "";
+            var imojeKey    = imojeSection["ApiKey"] ?? imojeSection["ServiceKey"] ?? "";
+            var imojeSecret = imojeSection["WebhookSecret"] ?? "";
+            var internalSec = app.Configuration["InternalServiceSecret"] ?? Environment.GetEnvironmentVariable("INTERNAL_SERVICE_SECRET") ?? "";
             logger.LogInformation(
-                "[Config] IMOJE_MERCHANT_ID={HasMid} IMOJE_API_KEY={HasKey}(pfx={Pfx}) IMOJE_WEBHOOK_SECRET={HasWs} INTERNAL_SERVICE_SECRET={HasIs}",
+                "[Config] Imoje:MerchantId={HasMid} Imoje:ApiKey/ServiceKey={HasKey}(pfx={Pfx}) Imoje:WebhookSecret={HasWs} InternalServiceSecret={HasIs}",
                 string.IsNullOrEmpty(imojeMid) ? "EMPTY" : "SET",
                 string.IsNullOrEmpty(imojeKey) ? "EMPTY" : "SET",
                 imojeKey.Length >= 6 ? imojeKey[..6] + "..." : "(short)",
