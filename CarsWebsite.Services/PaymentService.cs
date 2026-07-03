@@ -237,66 +237,76 @@ public class PaymentService : IPaymentService
             throw new UnauthorizedAccessException("Nieprawidłowy podpis webhooka.");
         }
 
-        // K-2: Lock payment row to prevent duplicate webhook processing
-        using var tx = await _context.Database.BeginTransactionAsync();
-        try
+        // K-2: Lock payment row to prevent duplicate webhook processing.
+        // The Pomelo MySQL provider is configured with a retrying execution strategy
+        // (MySqlRetryingExecutionStrategy) for transient-fault resilience, which forbids
+        // manually-opened transactions outside of CreateExecutionStrategy().ExecuteAsync() — a
+        // user-initiated BeginTransactionAsync() throws InvalidOperationException as soon as it's
+        // actually reached. Confirmed live: this was the very first webhook to get past routing,
+        // auth, and signature verification, so this bug had never been triggered before.
+        var strategy = _context.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
         {
-            await _context.Database.ExecuteSqlRawAsync(
-                "SELECT 1 FROM `payments` WHERE `ImojeOrderId` = {0} FOR UPDATE", dto.ResolvedOrderId);
-
-            var payment = await _context.Payments
-                .Include(p => p.User)
-                .FirstOrDefaultAsync(p => p.ImojeOrderId == dto.ResolvedOrderId);
-
-            if (payment == null)
+            using var tx = await _context.Database.BeginTransactionAsync();
+            try
             {
-                _logger.LogWarning("Nie znaleziono płatności dla orderId={OrderId}", dto.ResolvedOrderId);
-                await tx.CommitAsync();
-                return;
-            }
+                await _context.Database.ExecuteSqlRawAsync(
+                    "SELECT 1 FROM `payments` WHERE `ImojeOrderId` = {0} FOR UPDATE", dto.ResolvedOrderId);
 
-            if (payment.Status == PaymentStatus.Completed)
-            {
-                await tx.CommitAsync();
-                return;
-            }
+                var payment = await _context.Payments
+                    .Include(p => p.User)
+                    .FirstOrDefaultAsync(p => p.ImojeOrderId == dto.ResolvedOrderId);
 
-            if (dto.ResolvedStatus is "settled" or "confirmed" or "authorized" or "completed" or "Completed")
-            {
-                payment.Status = PaymentStatus.Completed;
-                payment.PaidAt = DateTime.UtcNow;
-                payment.ImojeTransactionId = dto.ResolvedTransactionId;
-                await _context.SaveChangesAsync();
-                await ActivateServiceAsync(payment);
-                await tx.CommitAsync();
+                if (payment == null)
+                {
+                    _logger.LogWarning("Nie znaleziono płatności dla orderId={OrderId}", dto.ResolvedOrderId);
+                    await tx.CommitAsync();
+                    return;
+                }
 
-                _ = _notifications.NotifyAsync(payment.UserId, EmailNotificationType.PaymentConfirmed,
-                    "Płatność potwierdzona",
-                    $"Twoja płatność za usługę \"{payment.ServiceDescription}\" w kwocie {payment.Amount:0.00} PLN została pomyślnie zrealizowana.",
-                    advertId: payment.AdvertId, paymentId: payment.Id);
-            }
-            else if (dto.ResolvedStatus is "rejected" or "cancelled" or "error" or "Failed" or "Cancelled" or "Refunded")
-            {
-                payment.Status = PaymentStatus.Failed;
-                await _context.SaveChangesAsync();
-                await tx.CommitAsync();
+                if (payment.Status == PaymentStatus.Completed)
+                {
+                    await tx.CommitAsync();
+                    return;
+                }
 
-                _ = _notifications.NotifyAsync(payment.UserId, EmailNotificationType.PaymentFailed,
-                    "Płatność nieudana",
-                    $"Niestety Twoja płatność za usługę \"{payment.ServiceDescription}\" nie została zrealizowana. Możesz spróbować ponownie.",
-                    advertId: payment.AdvertId, paymentId: payment.Id);
+                if (dto.ResolvedStatus is "settled" or "confirmed" or "authorized" or "completed" or "Completed")
+                {
+                    payment.Status = PaymentStatus.Completed;
+                    payment.PaidAt = DateTime.UtcNow;
+                    payment.ImojeTransactionId = dto.ResolvedTransactionId;
+                    await _context.SaveChangesAsync();
+                    await ActivateServiceAsync(payment);
+                    await tx.CommitAsync();
+
+                    _ = _notifications.NotifyAsync(payment.UserId, EmailNotificationType.PaymentConfirmed,
+                        "Płatność potwierdzona",
+                        $"Twoja płatność za usługę \"{payment.ServiceDescription}\" w kwocie {payment.Amount:0.00} PLN została pomyślnie zrealizowana.",
+                        advertId: payment.AdvertId, paymentId: payment.Id);
+                }
+                else if (dto.ResolvedStatus is "rejected" or "cancelled" or "error" or "Failed" or "Cancelled" or "Refunded")
+                {
+                    payment.Status = PaymentStatus.Failed;
+                    await _context.SaveChangesAsync();
+                    await tx.CommitAsync();
+
+                    _ = _notifications.NotifyAsync(payment.UserId, EmailNotificationType.PaymentFailed,
+                        "Płatność nieudana",
+                        $"Niestety Twoja płatność za usługę \"{payment.ServiceDescription}\" nie została zrealizowana. Możesz spróbować ponownie.",
+                        advertId: payment.AdvertId, paymentId: payment.Id);
+                }
+                else
+                {
+                    await tx.CommitAsync();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                await tx.CommitAsync();
+                _logger.LogError(ex, "[Webhook] Transaction rolled back for orderId={OrderId}", dto.ResolvedOrderId);
+                await tx.RollbackAsync();
+                throw;
             }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "[Webhook] Transaction rolled back for orderId={OrderId}", dto.ResolvedOrderId);
-            await tx.RollbackAsync();
-            throw;
-        }
+        });
     }
 
     public async Task<PagedResult<PaymentResponseDto>> GetUserPaymentsAsync(int userId, int page, int pageSize)
