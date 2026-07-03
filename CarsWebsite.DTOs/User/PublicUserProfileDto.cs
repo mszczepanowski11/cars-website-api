@@ -13,4 +13,5 @@ public class PublicUserProfileDto
     public string? CompanyName { get; set; }
     public DateTime CreatedAt { get; set; }
     public bool EmailVerified { get; set; }
+    public string? PhoneNumber { get; set; }
 }
