@@ -450,13 +450,29 @@ internal class Program
                 "`ResultingVehicleSubtypeId` int NULL" })
             { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `customcategoryrequests` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] customcategoryrequests.{Col}: {Msg}", colDef, ex.Message); } }
 
+            // These 3 tables were first created (via the CREATE TABLE IF NOT EXISTS guards right
+            // below) with PascalCase names, shadowing the lowercase name EF's generated queries
+            // actually look for on this DB (same class of bug documented in the rename block
+            // above) — every GET /api/Advert/{id} failed with "Table 'partcompatibilities'
+            // doesn't exist" as a result. Rename first (preserves any rows already written) so
+            // the CREATE TABLE IF NOT EXISTS calls below only fire on a genuinely fresh DB.
+            foreach (var sql in new[] {
+                "RENAME TABLE `PartCompatibilities` TO `partcompatibilities`",
+                "RENAME TABLE `BrandAllowedFuelTypes` TO `brandallowedfueltypes`",
+                "RENAME TABLE `ModelNamePlausibilityRules` TO `modelnameplausibilityrules`",
+            })
+            {
+                try { db.Database.ExecuteSqlRaw(sql); }
+                catch (Exception ex) { logger.LogDebug("RENAME TABLE skipped: {Message}", ex.Message); }
+            }
+
             // New tables added by migrations that may have been marked applied without running
             // (same bootstrap risk documented above) — CREATE TABLE IF NOT EXISTS is safe to
             // re-run every startup regardless of migration history state.
             try
             {
                 db.Database.ExecuteSqlRaw(@"
-                    CREATE TABLE IF NOT EXISTS `PartCompatibilities` (
+                    CREATE TABLE IF NOT EXISTS `partcompatibilities` (
                         `Id` int NOT NULL AUTO_INCREMENT,
                         `CarAdvertId` int NOT NULL,
                         `BrandId` int NOT NULL,
@@ -470,12 +486,12 @@ internal class Program
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
                 ");
             }
-            catch (Exception ex) { logger.LogDebug("[Schema] PartCompatibilities table: {Msg}", ex.Message); }
+            catch (Exception ex) { logger.LogDebug("[Schema] partcompatibilities table: {Msg}", ex.Message); }
 
             try
             {
                 db.Database.ExecuteSqlRaw(@"
-                    CREATE TABLE IF NOT EXISTS `BrandAllowedFuelTypes` (
+                    CREATE TABLE IF NOT EXISTS `brandallowedfueltypes` (
                         `Id` int NOT NULL AUTO_INCREMENT,
                         `BrandId` int NOT NULL,
                         `FuelTypeId` int NOT NULL,
@@ -485,12 +501,12 @@ internal class Program
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
                 ");
             }
-            catch (Exception ex) { logger.LogDebug("[Schema] BrandAllowedFuelTypes table: {Msg}", ex.Message); }
+            catch (Exception ex) { logger.LogDebug("[Schema] brandallowedfueltypes table: {Msg}", ex.Message); }
 
             try
             {
                 db.Database.ExecuteSqlRaw(@"
-                    CREATE TABLE IF NOT EXISTS `ModelNamePlausibilityRules` (
+                    CREATE TABLE IF NOT EXISTS `modelnameplausibilityrules` (
                         `Id` int NOT NULL AUTO_INCREMENT,
                         `NamePattern` varchar(100) NOT NULL,
                         `MinPowerHP` int NOT NULL,
@@ -499,7 +515,7 @@ internal class Program
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
                 ");
             }
-            catch (Exception ex) { logger.LogDebug("[Schema] ModelNamePlausibilityRules table: {Msg}", ex.Message); }
+            catch (Exception ex) { logger.LogDebug("[Schema] modelnameplausibilityrules table: {Msg}", ex.Message); }
 
             // FeatureCategories.VehicleCategoryId NOT NULL (migration MakeFeatureCategoryVehicleCategoryRequired)
             // — the background-task guard added for this already self-heals independently of
