@@ -438,8 +438,75 @@ internal class Program
                 "`KeyCount` int NULL",
                 "`InsuranceUntil` datetime(6) NULL",
                 "`YoutubeUrl` varchar(500) NULL",
-                "`PdfBrochureUrl` varchar(1000) NULL" })
+                "`PdfBrochureUrl` varchar(1000) NULL",
+                // Parts catalog fields (migration AddPartCatalogFields) — same bootstrap risk.
+                "`Side` varchar(20) NULL",
+                "`Quantity` int NULL" })
             { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `caradverts` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] caradverts.{Col}: {Msg}", colDef, ex.Message); } }
+
+            // customcategoryrequests result columns (migration AddCustomCategoryRequestResults) — same bootstrap risk.
+            foreach (var colDef in new[] {
+                "`ResultingVehicleCategoryId` int NULL",
+                "`ResultingVehicleSubtypeId` int NULL" })
+            { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `customcategoryrequests` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] customcategoryrequests.{Col}: {Msg}", colDef, ex.Message); } }
+
+            // New tables added by migrations that may have been marked applied without running
+            // (same bootstrap risk documented above) — CREATE TABLE IF NOT EXISTS is safe to
+            // re-run every startup regardless of migration history state.
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"
+                    CREATE TABLE IF NOT EXISTS `PartCompatibilities` (
+                        `Id` int NOT NULL AUTO_INCREMENT,
+                        `CarAdvertId` int NOT NULL,
+                        `BrandId` int NOT NULL,
+                        `ModelId` int NULL,
+                        `GenerationId` int NULL,
+                        PRIMARY KEY (`Id`),
+                        KEY `IX_PartCompatibilities_CarAdvertId` (`CarAdvertId`),
+                        KEY `IX_PartCompatibilities_BrandId` (`BrandId`),
+                        KEY `IX_PartCompatibilities_ModelId` (`ModelId`),
+                        KEY `IX_PartCompatibilities_GenerationId` (`GenerationId`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                ");
+            }
+            catch (Exception ex) { logger.LogDebug("[Schema] PartCompatibilities table: {Msg}", ex.Message); }
+
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"
+                    CREATE TABLE IF NOT EXISTS `BrandAllowedFuelTypes` (
+                        `Id` int NOT NULL AUTO_INCREMENT,
+                        `BrandId` int NOT NULL,
+                        `FuelTypeId` int NOT NULL,
+                        PRIMARY KEY (`Id`),
+                        KEY `IX_BrandAllowedFuelTypes_BrandId` (`BrandId`),
+                        KEY `IX_BrandAllowedFuelTypes_FuelTypeId` (`FuelTypeId`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                ");
+            }
+            catch (Exception ex) { logger.LogDebug("[Schema] BrandAllowedFuelTypes table: {Msg}", ex.Message); }
+
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"
+                    CREATE TABLE IF NOT EXISTS `ModelNamePlausibilityRules` (
+                        `Id` int NOT NULL AUTO_INCREMENT,
+                        `NamePattern` varchar(100) NOT NULL,
+                        `MinPowerHP` int NOT NULL,
+                        `Description` varchar(500) NULL,
+                        PRIMARY KEY (`Id`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                ");
+            }
+            catch (Exception ex) { logger.LogDebug("[Schema] ModelNamePlausibilityRules table: {Msg}", ex.Message); }
+
+            // FeatureCategories.VehicleCategoryId NOT NULL (migration MakeFeatureCategoryVehicleCategoryRequired)
+            // — the background-task guard added for this already self-heals independently of
+            // migration status (see the "Fix confirmed cross-category leak" block below), but the
+            // table CREATEs above are placed here, synchronously, so the columns/tables they need
+            // exist before any request can be served — unlike the FeatureCategory backfill, which
+            // needs the full seed data present first and so must stay in the background task.
 
             // Conversation pin/archive (migration AddConversationPinArchive) — same bootstrap risk.
             foreach (var colDef in new[] {
@@ -1199,6 +1266,24 @@ internal class Program
 
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `customcategoryrequests` ADD CONSTRAINT `FK_customcategoryrequests_VehicleSubtypes_ResultingVehicleSubtypeId` FOREIGN KEY (`ResultingVehicleSubtypeId`) REFERENCES `VehicleSubtypes`(`Id`) ON DELETE SET NULL"); }
             catch (Exception ex) { logger.LogDebug("FK customcategoryrequests.ResultingVehicleSubtypeId skipped: {Message}", ex.Message); }
+
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `PartCompatibilities` ADD CONSTRAINT `FK_PartCompatibilities_CarAdverts_CarAdvertId` FOREIGN KEY (`CarAdvertId`) REFERENCES `caradverts`(`Id`) ON DELETE CASCADE"); }
+            catch (Exception ex) { logger.LogDebug("FK PartCompatibilities.CarAdvertId skipped: {Message}", ex.Message); }
+
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `PartCompatibilities` ADD CONSTRAINT `FK_PartCompatibilities_Brands_BrandId` FOREIGN KEY (`BrandId`) REFERENCES `Brands`(`Id`) ON DELETE RESTRICT"); }
+            catch (Exception ex) { logger.LogDebug("FK PartCompatibilities.BrandId skipped: {Message}", ex.Message); }
+
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `PartCompatibilities` ADD CONSTRAINT `FK_PartCompatibilities_Models_ModelId` FOREIGN KEY (`ModelId`) REFERENCES `Models`(`Id`) ON DELETE RESTRICT"); }
+            catch (Exception ex) { logger.LogDebug("FK PartCompatibilities.ModelId skipped: {Message}", ex.Message); }
+
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `PartCompatibilities` ADD CONSTRAINT `FK_PartCompatibilities_Generations_GenerationId` FOREIGN KEY (`GenerationId`) REFERENCES `Generations`(`Id`) ON DELETE RESTRICT"); }
+            catch (Exception ex) { logger.LogDebug("FK PartCompatibilities.GenerationId skipped: {Message}", ex.Message); }
+
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `BrandAllowedFuelTypes` ADD CONSTRAINT `FK_BrandAllowedFuelTypes_Brands_BrandId` FOREIGN KEY (`BrandId`) REFERENCES `Brands`(`Id`) ON DELETE CASCADE"); }
+            catch (Exception ex) { logger.LogDebug("FK BrandAllowedFuelTypes.BrandId skipped: {Message}", ex.Message); }
+
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `BrandAllowedFuelTypes` ADD CONSTRAINT `FK_BrandAllowedFuelTypes_FuelTypes_FuelTypeId` FOREIGN KEY (`FuelTypeId`) REFERENCES `FuelTypes`(`Id`) ON DELETE RESTRICT"); }
+            catch (Exception ex) { logger.LogDebug("FK BrandAllowedFuelTypes.FuelTypeId skipped: {Message}", ex.Message); }
 
             db.Database.SetCommandTimeout(30);
             logger.LogWarning("[STARTUP-TRACE] FK constraint guards complete; calling MergeDuplicateBrands");
