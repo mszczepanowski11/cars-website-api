@@ -23,6 +23,18 @@ public class PaymentController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>Publiczny status promocji startowej — czy usługi płatne aktywują się teraz za darmo.</summary>
+    [HttpGet("promo-status")]
+    public IActionResult PromoStatus()
+    {
+        var endsAt = _paymentService.GetFreePromoEndsAtUtc();
+        return Ok(new
+        {
+            isFreePromoActive = _paymentService.IsFreePromoActive(),
+            freeUntilUtc = endsAt,
+        });
+    }
+
     /// <summary>Pobierz cenę dla wybranej usługi i czasu trwania.</summary>
     [HttpGet("price")]
     public async Task<IActionResult> GetPrice(

@@ -48,6 +48,24 @@ public class PaymentService : IPaymentService
         _logger = logger;
     }
 
+    // Launch promo: every paid service (boosts + B2B subscriptions) activates for free while
+    // now < Promotion:FreeUntilUtc, reusing the exact admin-bypass path below. No manual flip
+    // needed at cutover — this simply stops returning true once the configured instant passes.
+    public bool IsFreePromoActive()
+    {
+        var raw = _config["Promotion:FreeUntilUtc"];
+        if (string.IsNullOrWhiteSpace(raw)) return false;
+        if (!DateTime.TryParse(raw, null, System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal, out var freeUntil)) return false;
+        return DateTime.UtcNow < freeUntil;
+    }
+
+    public DateTime? GetFreePromoEndsAtUtc()
+    {
+        var raw = _config["Promotion:FreeUntilUtc"];
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+        return DateTime.TryParse(raw, null, System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal, out var freeUntil) ? freeUntil : null;
+    }
+
     public Task<ServicePriceDto> GetServicePriceAsync(ServiceType serviceType, int durationDays)
     {
         if (!PriceTable.TryGetValue((serviceType, durationDays), out var entry))
@@ -112,6 +130,8 @@ public class PaymentService : IPaymentService
             }
         }
 
+        var freePromoActive = IsFreePromoActive();
+
         var guidPart = Guid.NewGuid().ToString("N")[..8];
         var orderId = $"CARIZO-{userId}-{DateTime.UtcNow:yyyyMMddHHmmss}-{guidPart}";
         if (orderId.Length > 40) orderId = orderId[..40];
@@ -130,7 +150,7 @@ public class PaymentService : IPaymentService
             ServiceDescription = priceInfo.Description,
             Amount = priceInfo.Price,
             Currency = "PLN",
-            Status = user.IsAdmin ? PaymentStatus.Completed : PaymentStatus.Pending,
+            Status = (user.IsAdmin || freePromoActive) ? PaymentStatus.Completed : PaymentStatus.Pending,
             ImojeOrderId = orderId,
             DurationDays = storedDurationDays,
             CreatedAt = DateTime.UtcNow,
@@ -154,11 +174,13 @@ public class PaymentService : IPaymentService
         }
         _logger.LogInformation("[Payment/Initiate] Payment #{PaymentId} saved", payment.Id);
 
-        // Admin: activate immediately without payment
-        if (user.IsAdmin)
+        // Admin, or launch-promo window: activate immediately without payment
+        if (user.IsAdmin || freePromoActive)
         {
             await ActivateServiceAsync(payment);
-            _logger.LogInformation("[Payment/Initiate] Admin bypass — service activated instantly for userId={UserId}", userId);
+            _logger.LogInformation(
+                "[Payment/Initiate] {Reason} bypass — service activated instantly for userId={UserId}",
+                user.IsAdmin ? "Admin" : "Free promo", userId);
             return new PaymentInitiatedDto
             {
                 PaymentId      = payment.Id,
