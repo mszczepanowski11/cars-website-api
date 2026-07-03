@@ -289,7 +289,8 @@ public class UserService : IUserService
             AccountType = user.AccountType.ToString(),
             CompanyName = user.CompanyName,
             CreatedAt = user.CreatedAt,
-            EmailVerified = user.EmailVerified
+            EmailVerified = user.EmailVerified,
+            PhoneNumber = user.PhoneNumber
         };
     }
 
