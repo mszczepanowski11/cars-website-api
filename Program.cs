@@ -1363,7 +1363,7 @@ internal class Program
                         },
                         new {
                             Slug = "quady-atv", Name = "Quady i ATV",
-                            Description = "Quady sportowe, użytkowe i pojazdy SSV/UTV", IconName = "mdi-quadbike", SortOrder = 13,
+                            Description = "Quady sportowe, użytkowe i pojazdy SSV/UTV", IconName = "mdi-atv", SortOrder = 13,
                             Subtypes = new (string Name, string Slug)[] {
                                 ("Quad sportowy", "quad-sportowy"), ("Quad użytkowy", "quad-uzytkowy"),
                                 ("Quad dziecięcy", "quad-dzieciecy"), ("SSV / UTV (side-by-side)", "ssv-utv"),
@@ -1375,7 +1375,7 @@ internal class Program
                         },
                         new {
                             Slug = "skutery-wodne", Name = "Skutery wodne",
-                            Description = "Skutery wodne jedno- i wieloosobowe", IconName = "mdi-jet-ski", SortOrder = 14,
+                            Description = "Skutery wodne jedno- i wieloosobowe", IconName = "mdi-ski-water", SortOrder = 14,
                             Subtypes = new (string Name, string Slug)[] {
                                 ("Skuter jednoosobowy", "skuter-jednoosobowy"), ("Skuter wieloosobowy", "skuter-wieloosobowy"),
                                 ("Skuter wyścigowy", "skuter-wyscigowy"),
@@ -1455,6 +1455,108 @@ internal class Program
                 catch (Exception ex)
                 {
                     bgLogger.LogError(ex, "[STARTUP-TRACE] New category expansion seeding failed: {Msg}", ex.Message);
+                }
+
+                // newCategorySpecs above only inserts a row once (guarded by existingSlugs), so a
+                // corrected IconName in the spec never reaches rows already seeded by an earlier
+                // deploy. mdi-quadbike / mdi-jet-ski never existed in @mdi/font and rendered as
+                // blank tiles; force-sync the corrected names on every startup instead.
+                try
+                {
+                    var iconFixes = new Dictionary<string, string> {
+                        ["quady-atv"] = "mdi-atv",
+                        ["skutery-wodne"] = "mdi-ski-water",
+                    };
+                    foreach (var (slug, icon) in iconFixes)
+                    {
+                        var cat = bgDb.VehicleCategories.FirstOrDefault(c => c.Slug == slug);
+                        if (cat != null && cat.IconName != icon)
+                        {
+                            cat.IconName = icon;
+                            bgLogger.LogWarning("[STARTUP-TRACE] Fixed IconName for '{Slug}' -> '{Icon}'", slug, icon);
+                        }
+                    }
+                    bgDb.SaveChanges();
+                }
+                catch (Exception ex)
+                {
+                    bgLogger.LogError(ex, "[STARTUP-TRACE] Category icon backfill failed: {Msg}", ex.Message);
+                }
+
+                // Real Brand<->VehicleCategory data for the 7 new categories (Phase 8 seeded the
+                // categories/subtypes/features but left the brand field as free text everywhere,
+                // which showed a misleading "N dostępnych marek" hint pulled from the *global*
+                // brand count instead of any real per-category data). This is a starter set of
+                // well-known manufacturers per category, not an exhaustive catalog - full brand/
+                // model population remains ongoing backlog. Runs every startup; idempotent by slug.
+                try
+                {
+                    var newCatBrands = bgDb.VehicleCategories
+                        .Where(c => new[] { "lodzie-i-jachty", "kampery", "quady-atv", "skutery-wodne", "autobusy", "naczepy", "wozki-widlowe" }.Contains(c.Slug))
+                        .ToDictionary(c => c.Slug, c => c);
+
+                    // Attach the new category to brands that already exist (avoids duplicating
+                    // well-known manufacturers who legitimately span multiple categories).
+                    var attachExisting = new Dictionary<string, string[]> {
+                        ["kampery"] = new[] { "fiat", "mercedes-benz" },
+                        ["quady-atv"] = new[] { "yamaha", "honda", "suzuki" },
+                        ["skutery-wodne"] = new[] { "yamaha", "kawasaki" },
+                        ["autobusy"] = new[] { "mercedes-benz", "man", "scania", "iveco", "volvo" },
+                        ["naczepy"] = new[] { "krone-trailer", "wielton", "fliegl", "kogel", "schwarzmuller", "schmitz-cargobull", "nooteboom", "meiller" },
+                        ["wozki-widlowe"] = new[] { "toyota", "komatsu" },
+                        ["lodzie-i-jachty"] = new[] { "yamaha" },
+                    };
+                    foreach (var (catSlug, brandSlugs) in attachExisting)
+                    {
+                        if (!newCatBrands.TryGetValue(catSlug, out var cat)) continue;
+                        foreach (var bSlug in brandSlugs)
+                        {
+                            var brand = bgDb.Brands.Include(b => b.Categories).FirstOrDefault(b => b.Slug == bSlug);
+                            if (brand != null && !brand.Categories.Any(c => c.Id == cat.Id))
+                                brand.Categories.Add(cat);
+                        }
+                    }
+                    bgDb.SaveChanges();
+
+                    // New brands specific to these categories.
+                    var existingBrandSlugs = bgDb.Brands.Select(b => b.Slug).ToHashSet();
+                    var newBrandsToAdd = new List<Brand>();
+                    void AddIfMissing(string catSlug, string name, string slug)
+                    {
+                        if (!newCatBrands.TryGetValue(catSlug, out var cat)) return;
+                        if (existingBrandSlugs.Contains(slug)) return;
+                        newBrandsToAdd.Add(new Brand { Name = name, Slug = slug, Categories = new List<VehicleCategory> { cat } });
+                    }
+                    foreach (var (n, s) in new (string, string)[] {
+                        ("Bavaria Yachts", "bavaria-yachts"), ("Jeanneau", "jeanneau"), ("Beneteau", "beneteau"),
+                        ("Quicksilver", "quicksilver-boats"), ("Bayliner", "bayliner"), ("Sea Ray", "sea-ray"),
+                        ("Galeon", "galeon"), ("Ranieri", "ranieri"),
+                    }) AddIfMissing("lodzie-i-jachty", n, s);
+                    foreach (var (n, s) in new (string, string)[] {
+                        ("Adria", "adria"), ("Dethleffs", "dethleffs"), ("Hymer", "hymer"), ("Knaus", "knaus"),
+                        ("Carthago", "carthago"), ("Rapido", "rapido"), ("Chausson", "chausson"), ("Benimar", "benimar"),
+                    }) AddIfMissing("kampery", n, s);
+                    foreach (var (n, s) in new (string, string)[] {
+                        ("Polaris", "polaris"), ("CFMOTO", "cfmoto"), ("Can-Am", "can-am"), ("Kymco", "kymco"), ("Segway", "segway-powersports"),
+                    }) AddIfMissing("quady-atv", n, s);
+                    AddIfMissing("skutery-wodne", "Sea-Doo", "sea-doo");
+                    foreach (var (n, s) in new (string, string)[] {
+                        ("Solaris Bus & Coach", "solaris-bus"), ("Setra", "setra"), ("Neoplan", "neoplan"), ("Irisbus", "irisbus"),
+                    }) AddIfMissing("autobusy", n, s);
+                    foreach (var (n, s) in new (string, string)[] {
+                        ("Linde", "linde"), ("Jungheinrich", "jungheinrich"), ("Still", "still"), ("Hyster", "hyster"), ("Crown", "crown-equipment"),
+                    }) AddIfMissing("wozki-widlowe", n, s);
+
+                    if (newBrandsToAdd.Count > 0)
+                    {
+                        bgDb.Brands.AddRange(newBrandsToAdd);
+                        bgDb.SaveChanges();
+                    }
+                    bgLogger.LogWarning("[STARTUP-TRACE] Brand<->category seeding for new categories done ({Count} new brands)", newBrandsToAdd.Count);
+                }
+                catch (Exception ex)
+                {
+                    bgLogger.LogError(ex, "[STARTUP-TRACE] New-category brand seeding failed: {Msg}", ex.Message);
                 }
 
                 // Fix confirmed cross-category leak, then harden the schema so it can't recur.
