@@ -387,6 +387,7 @@ public class PaymentService : IPaymentService
             ["urlReturn"]         = $"{siteUrl}/payment/return?status=cancel&paymentId={payment.Id}",
             ["orderDescription"]  = payment.ServiceDescription,
             ["serviceId"]         = serviceId,
+            ["urlNotification"]   = $"{apiUrl}/api/Payment/webhook",
         };
 
         // merchantId is optional — only include if configured, empty string breaks the signature
