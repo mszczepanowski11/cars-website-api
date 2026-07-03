@@ -1314,6 +1314,31 @@ internal class Program
                     bgLogger.LogError(ex, "[Cleanup] MergeDuplicateBrands failed: {Msg}", ex.Message);
                 }
 
+                // One-time self-heal for PartCompatibilities rows orphaned by earlier startups —
+                // before the fix above, MergeDuplicateBrands deleted a duplicate Brand without
+                // repointing PartCompatibilities.BrandId (that table has no FK enforcing this,
+                // see the raw CREATE TABLE guard), leaving a dangling BrandId. AutoMapper's
+                // unguarded `src.Brand.Name` then threw a NullReferenceException on every
+                // GET /api/Advert/{id} for the affected adverts — 500 for those specific IDs only.
+                try
+                {
+                    var orphanedPartCompat = bgDb.PartCompatibilities
+                        .Where(pc => !bgDb.Brands.Any(b => b.Id == pc.BrandId))
+                        .ToList();
+                    if (orphanedPartCompat.Count > 0)
+                    {
+                        bgDb.PartCompatibilities.RemoveRange(orphanedPartCompat);
+                        bgDb.SaveChanges();
+                        bgLogger.LogWarning(
+                            "[Cleanup] Removed {Count} PartCompatibilities rows with a dangling BrandId (advertIds: {AdvertIds})",
+                            orphanedPartCompat.Count, string.Join(",", orphanedPartCompat.Select(pc => pc.CarAdvertId).Distinct()));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    bgLogger.LogError(ex, "[Cleanup] Orphaned PartCompatibilities cleanup failed: {Msg}", ex.Message);
+                }
+
                 bgLogger.LogWarning("[STARTUP-TRACE] Calling SeedDataIfEmpty");
                 try
                 {
@@ -2010,6 +2035,18 @@ internal class Program
                 foreach (var m in db.Models.Where(m => m.BrandId == dup.Id)) m.BrandId = canonical.Id;
                 foreach (var a in db.CarAdverts.Where(a => a.BrandId == dup.Id)) a.BrandId = canonical.Id;
                 foreach (var fc in db.FeatureCategories.Where(fc => fc.BrandId == dup.Id)) fc.BrandId = canonical.Id;
+                // PartCompatibilities/BrandAllowedFuelTypes were added via raw CREATE TABLE IF NOT
+                // EXISTS guards (Program.cs migration-bootstrap fallback) with no FK constraint, so
+                // deleting `dup` below wouldn't fail even if these were left dangling — repoint them
+                // explicitly instead of relying on referential integrity that isn't actually enforced.
+                foreach (var pc in db.PartCompatibilities.Where(pc => pc.BrandId == dup.Id)) pc.BrandId = canonical.Id;
+                foreach (var baf in db.BrandAllowedFuelTypes.Where(baf => baf.BrandId == dup.Id))
+                {
+                    if (db.BrandAllowedFuelTypes.Any(x => x.BrandId == canonical.Id && x.FuelTypeId == baf.FuelTypeId))
+                        db.BrandAllowedFuelTypes.Remove(baf);
+                    else
+                        baf.BrandId = canonical.Id;
+                }
 
                 foreach (var cat in dup.Categories)
                     if (!canonical.Categories.Any(c => c.Id == cat.Id))

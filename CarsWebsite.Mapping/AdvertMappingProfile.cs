@@ -29,7 +29,7 @@ public class AdvertMappingProfile : Profile
         CreateMap<AdvertImage, AdvertImageDto>();
 
         CreateMap<PartCompatibility, PartCompatibilityDto>()
-            .ForMember(dest => dest.BrandName, opt => opt.MapFrom(src => src.Brand.Name))
+            .ForMember(dest => dest.BrandName, opt => opt.MapFrom(src => src.Brand != null ? src.Brand.Name : ""))
             .ForMember(dest => dest.ModelName, opt => opt.MapFrom(src => src.Model != null ? src.Model.Name : null))
             .ForMember(dest => dest.GenerationName, opt => opt.MapFrom(src => src.Generation != null ? src.Generation.Name : null));
 
