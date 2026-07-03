@@ -1,6 +1,7 @@
 using CarsWebsite;
 using cars_website_api.CarsWebsite.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 public class NotificationService : INotificationService
 {
@@ -42,15 +43,15 @@ public class NotificationService : INotificationService
         [EmailNotificationType.NewMessage]           = "Messages",
     };
 
-    private readonly AppDbContext _context;
     private readonly IEmailService _email;
     private readonly ILogger<NotificationService> _logger;
+    private readonly IServiceScopeFactory _scopeFactory;
 
-    public NotificationService(AppDbContext context, IEmailService email, ILogger<NotificationService> logger)
+    public NotificationService(IEmailService email, ILogger<NotificationService> logger, IServiceScopeFactory scopeFactory)
     {
-        _context = context;
         _email = email;
         _logger = logger;
+        _scopeFactory = scopeFactory;
     }
 
     public async Task NotifyAsync(
@@ -64,6 +65,17 @@ public class NotificationService : INotificationService
     {
         try
         {
+            // Callers invoke NotifyAsync fire-and-forget ("_ = _notifications.NotifyAsync(...)")
+            // so the request can return immediately without waiting on email delivery. But
+            // NotificationService is request-scoped — by the time this background work actually
+            // runs, ASP.NET Core has often already disposed the request's DI scope (and with it
+            // the AppDbContext/DB connection this method used to receive via constructor
+            // injection), throwing "Connection must be Open; current state is Closed" on every
+            // call. Creating an independent scope here decouples this method's DbContext
+            // lifetime from the original HTTP request's.
+            using var scope = _scopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
             var notification = new AppNotification
             {
                 UserId = userId,
@@ -76,10 +88,10 @@ public class NotificationService : INotificationService
                 CreatedAt = DateTime.UtcNow
             };
 
-            _context.AppNotifications.Add(notification);
+            context.AppNotifications.Add(notification);
 
             var category = Categories.GetValueOrDefault(type, "Other");
-            var pref = await _context.UserNotificationSettings
+            var pref = await context.UserNotificationSettings
                 .AsNoTracking()
                 .FirstOrDefaultAsync(s => s.UserId == userId && s.Category == category);
             var emailEnabled = pref?.EmailEnabled ?? true;
@@ -87,7 +99,7 @@ public class NotificationService : INotificationService
             string? userEmail = null;
             if (emailEnabled)
             {
-                userEmail = await _context.Users
+                userEmail = await context.Users
                     .AsNoTracking()
                     .Where(u => u.Id == userId)
                     .Select(u => u.Email)
@@ -96,7 +108,7 @@ public class NotificationService : INotificationService
 
             // Persist the in-app notification before attempting email so it is always saved
             // even if the SMTP send fails.
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
             if (emailEnabled && userEmail != null)
             {
@@ -105,7 +117,7 @@ public class NotificationService : INotificationService
                     var html = BuildEmailHtml(type, title, content, advertId, paymentId, invoiceId);
                     await _email.SendAsync(userEmail, title, html);
                     notification.EmailSent = true;
-                    await _context.SaveChangesAsync();
+                    await context.SaveChangesAsync();
                 }
                 catch (Exception emailEx)
                 {
