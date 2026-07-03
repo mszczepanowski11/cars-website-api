@@ -130,7 +130,13 @@ public class PaymentService : IPaymentService
             }
         }
 
-        var freePromoActive = IsFreePromoActive();
+        // Launch promo grants ONE free boost per account (Top/Premium/Featured/Refresh/
+        // EventFeatured) while the promo window is open. Business subscriptions are excluded -
+        // dealer/business accounts get their own separate free allowance via the existing
+        // StartProgram tier (20 free active ads, see SubscriptionService.ActivateStartProgramAsync).
+        var freePromoEligible = IsFreePromoActive()
+            && dto.ServiceType != ServiceType.Subscription
+            && user.FreePromoBoostUsedAt == null;
 
         var guidPart = Guid.NewGuid().ToString("N")[..8];
         var orderId = $"CARIZO-{userId}-{DateTime.UtcNow:yyyyMMddHHmmss}-{guidPart}";
@@ -150,7 +156,7 @@ public class PaymentService : IPaymentService
             ServiceDescription = priceInfo.Description,
             Amount = priceInfo.Price,
             Currency = "PLN",
-            Status = (user.IsAdmin || freePromoActive) ? PaymentStatus.Completed : PaymentStatus.Pending,
+            Status = (user.IsAdmin || freePromoEligible) ? PaymentStatus.Completed : PaymentStatus.Pending,
             ImojeOrderId = orderId,
             DurationDays = storedDurationDays,
             CreatedAt = DateTime.UtcNow,
@@ -174,10 +180,16 @@ public class PaymentService : IPaymentService
         }
         _logger.LogInformation("[Payment/Initiate] Payment #{PaymentId} saved", payment.Id);
 
-        // Admin, or launch-promo window: activate immediately without payment
-        if (user.IsAdmin || freePromoActive)
+        // Admin, or launch-promo window (one free boost per account): activate immediately
+        // without payment
+        if (user.IsAdmin || freePromoEligible)
         {
             await ActivateServiceAsync(payment);
+            if (freePromoEligible && !user.IsAdmin)
+            {
+                await _context.Users.Where(u => u.Id == userId)
+                    .ExecuteUpdateAsync(s => s.SetProperty(u => u.FreePromoBoostUsedAt, DateTime.UtcNow));
+            }
             _logger.LogInformation(
                 "[Payment/Initiate] {Reason} bypass — service activated instantly for userId={UserId}",
                 user.IsAdmin ? "Admin" : "Free promo", userId);
