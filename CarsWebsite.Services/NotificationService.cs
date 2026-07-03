@@ -115,7 +115,14 @@ public class NotificationService : INotificationService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Błąd powiadomienia userId={UserId} typ={Type}", userId, type);
+            // Exception type/message baked into the message TEXT itself, not just the
+            // structured `ex` arg — Railway's log viewer only renders the template text and
+            // splits multi-line stack traces into separate entries with no visible link back
+            // to the exception that produced them (same issue fixed for GlobalExceptionHandler
+            // earlier), making the actual failure impossible to find from the UI otherwise.
+            var inner = ex.InnerException != null ? $" | inner: {ex.InnerException.GetType().Name}: {ex.InnerException.Message}" : "";
+            _logger.LogError(ex, "[NotifyAsync] Błąd powiadomienia userId={UserId} typ={Type} -- {ExType}: {ExMessage}{Inner}",
+                userId, type, ex.GetType().Name, ex.Message, inner);
         }
     }
 
