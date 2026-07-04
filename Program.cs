@@ -1936,10 +1936,21 @@ internal class Program
                 // Backfill CarAdvert.VehicleCategoryId where it's NULL (nullable column - reported
                 // as "doesn't show up when filtering by category" even though the direct advert
                 // link still works, since a category filter's WHERE VehicleCategoryId = X excludes
-                // NULL rows entirely). Only auto-fix when the advert's own Brand maps to exactly
-                // one VehicleCategory - a brand that spans multiple categories (e.g. a manufacturer
-                // that makes both cars and vans) is ambiguous and gets logged for manual review
-                // instead of guessed at.
+                // NULL rows entirely).
+                //
+                // Confirmed live via a prior run's AUDIT-CATEGORY dump: 224 adverts were still
+                // null, and EVERY one was skipped by the single-category-brand rule below because
+                // mainstream brands (Opel, Ford, BMW, Audi, Renault, VW, ...) are themselves
+                // associated with multiple categories (they sell both passenger cars and vans) -
+                // the brand-only rule alone left almost the entire marketplace uncategorized.
+                // Manually reviewed that dump's actual titles: it's overwhelmingly regular
+                // passenger cars (Q5, Superb, Golf, X1, A3, Astra, Fiesta, Meriva, Zafira, ...)
+                // with a handful of genuine commercial vans (Opel Vivaro/Combo, Ford Transit,
+                // Renault Trafic, ...). So: still fix unambiguous single-category brands first,
+                // then for the rest fall back to the advert's own Model name (a far more specific
+                // signal than the ambiguous brand) against a known van/commercial-model list, and
+                // default anything left to auta-osobowe - a targeted call grounded in the actual
+                // data, not a blind guess.
                 try
                 {
                     var uncategorized = bgDb.CarAdverts
@@ -1948,31 +1959,53 @@ internal class Program
                         .Where(a => a.VehicleCategoryId == null)
                         .ToList();
 
-                    int fixed_ = 0;
-                    var ambiguous = new List<string>();
+                    var carCatId = bgDb.VehicleCategories.Where(vc => vc.Slug == "auta-osobowe").Select(vc => vc.Id).FirstOrDefault();
+                    var vanCatId = bgDb.VehicleCategories.Where(vc => vc.Slug == "dostawcze").Select(vc => vc.Id).FirstOrDefault();
+                    var vanModelNames = new[] {
+                        "vivaro", "combo", "transit", "trafic", "master", "kangoo", "berlingo", "partner",
+                        "doblo", "caddy", "transporter", "crafter", "ducato", "boxer", "jumper", "movano",
+                        "nv200", "nv300", "nv400", "sprinter", "expert", "jumpy", "scudo", "talento"
+                    };
+
+                    int fixedUnambiguous = 0, fixedByModel = 0;
+                    var stillAmbiguous = new List<string>();
                     foreach (var ad in uncategorized)
                     {
                         var cats = ad.Brand.Categories;
                         if (cats.Count == 1)
                         {
                             ad.VehicleCategoryId = cats.First().Id;
-                            fixed_++;
+                            fixedUnambiguous++;
+                            continue;
+                        }
+
+                        var modelName = ad.Model.Name.ToLowerInvariant();
+                        if (vanModelNames.Any(v => modelName.Contains(v)) && vanCatId > 0)
+                        {
+                            ad.VehicleCategoryId = vanCatId;
+                            fixedByModel++;
+                        }
+                        else if (carCatId > 0)
+                        {
+                            ad.VehicleCategoryId = carCatId;
+                            fixedByModel++;
                         }
                         else
                         {
-                            ambiguous.Add($"id={ad.Id} \"{ad.Title}\" ({ad.Brand.Name} {ad.Model.Name}) — marka ma {cats.Count} kategorii");
+                            stillAmbiguous.Add($"id={ad.Id} \"{ad.Title}\" ({ad.Brand.Name} {ad.Model.Name})");
                         }
                     }
 
-                    if (fixed_ > 0)
+                    if (fixedUnambiguous + fixedByModel > 0)
                     {
                         bgDb.SaveChanges();
-                        bgLogger.LogWarning("[STARTUP-TRACE] Backfilled VehicleCategoryId for {Count} advert(s) with a null category (brand mapped to exactly one category)", fixed_);
+                        bgLogger.LogWarning("[STARTUP-TRACE] Backfilled VehicleCategoryId for {Total} advert(s) with a null category ({Unambig} via single-category brand, {ByModel} via model-name fallback)",
+                            fixedUnambiguous + fixedByModel, fixedUnambiguous, fixedByModel);
                     }
-                    if (ambiguous.Count > 0)
+                    if (stillAmbiguous.Count > 0)
                     {
                         bgLogger.LogWarning("[STARTUP-TRACE] AUDIT-CATEGORY: {Count} advert(s) still have a null category and need manual review: {List}",
-                            ambiguous.Count, string.Join(" | ", ambiguous));
+                            stillAmbiguous.Count, string.Join(" | ", stillAmbiguous));
                     }
                 }
                 catch (Exception ex)
