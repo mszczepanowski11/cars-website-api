@@ -1873,6 +1873,66 @@ internal class Program
                     bgLogger.LogError(ex, "[STARTUP-TRACE] FeatureCategory 'inne' mis-park repair failed: {Msg}", ex.Message);
                 }
 
+                // One-off cleanup: several adverts have raw scraped boilerplate pasted into their
+                // free-text description - a "Wyposazenie: - <model> do <price> zł..." bullet block
+                // (actually related-search links copied from the source listing site, not real
+                // equipment - that's handled separately by the structured featureIds checkboxes)
+                // followed by a "Zrodlo: <url>" attribution line. Both headers are spelled without
+                // Polish diacritics ("Wyposazenie"/"Zrodlo" rather than "Wyposażenie"/"Źródło"), a
+                // signature specific enough to this scraped junk that it's safe to truncate on -
+                // genuine user-written Polish text doesn't drop diacritics from exactly these words.
+                try
+                {
+                    var junkMarkers = new[] { "Zrodlo:", "Źródło:" };
+                    var headerMarkers = new[] { "Wyposazenie:", "Wyposażenie:" };
+                    var affectedAdverts = bgDb.CarAdverts
+                        // Plain OR'd .Contains() calls rather than junkMarkers.Any(...) - the
+                        // latter (a local array queried via nested lambda) isn't guaranteed to
+                        // translate cleanly to SQL across EF Core versions.
+                        .Where(a => a.Description.Contains("Zrodlo:") || a.Description.Contains("Źródło:"))
+                        .ToList();
+
+                    int cleaned = 0;
+                    foreach (var ad in affectedAdverts)
+                    {
+                        var desc = ad.Description;
+                        // Prefer truncating at the equipment-junk header if present (it's part of
+                        // the same scraped block), otherwise fall back to the source-link marker.
+                        var cutIdx = -1;
+                        foreach (var h in headerMarkers)
+                        {
+                            var i = desc.IndexOf(h, StringComparison.Ordinal);
+                            if (i > 0 && (cutIdx == -1 || i < cutIdx)) cutIdx = i;
+                        }
+                        if (cutIdx == -1)
+                        {
+                            foreach (var m in junkMarkers)
+                            {
+                                var i = desc.IndexOf(m, StringComparison.Ordinal);
+                                if (i > 0 && (cutIdx == -1 || i < cutIdx)) cutIdx = i;
+                            }
+                        }
+                        if (cutIdx <= 0) continue;
+
+                        var trimmed = desc[..cutIdx].TrimEnd();
+                        if (trimmed.Length > 0 && trimmed != desc)
+                        {
+                            ad.Description = trimmed;
+                            cleaned++;
+                        }
+                    }
+
+                    if (cleaned > 0)
+                    {
+                        bgDb.SaveChanges();
+                        bgLogger.LogWarning("[STARTUP-TRACE] Cleaned scraped 'Wyposazenie:/Zrodlo:' boilerplate out of {Count} advert description(s)", cleaned);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    bgLogger.LogError(ex, "[STARTUP-TRACE] Advert description cleanup failed: {Msg}", ex.Message);
+                }
+
                 // Starter engine-plausibility rules: a small, high-confidence allowlist for a
                 // handful of petrol/hybrid-only exotic brands (fail-open — any other brand has no
                 // restriction). Idempotent: only inserts a (brand, fuel type) pair that isn't
