@@ -37,7 +37,7 @@ public class KSeFService : IKSeFService
         var token = Environment.GetEnvironmentVariable("KSEF_TOKEN") ?? _config["KSeF:Token"];
         if (string.IsNullOrWhiteSpace(token))
         {
-            _logger.LogDebug("KSeF token not configured, skipping {Nr}", invoice.InvoiceNumber);
+            _logger.LogInformation("[KSeF] Token not configured, skipping invoice {Nr}", invoice.InvoiceNumber);
             return null;
         }
 
@@ -48,7 +48,7 @@ public class KSeFService : IKSeFService
         var buyerNip = (firstPayment?.BillingNip ?? invoice.User?.Nip)?.Replace("-", "").Replace(" ", "").Trim();
         if (string.IsNullOrWhiteSpace(buyerNip))
         {
-            _logger.LogInformation("Buyer NIP missing for {Nr}, skipping KSeF", invoice.InvoiceNumber);
+            _logger.LogInformation("[KSeF] Buyer NIP missing for {Nr}, skipping KSeF", invoice.InvoiceNumber);
             return null;
         }
 
@@ -59,12 +59,14 @@ public class KSeFService : IKSeFService
             var elementRef = await SendToKSeFAsync(apiUrl, sessionToken, xmlBytes);
             var ksefNumber = await PollStatusAsync(apiUrl, sessionToken, elementRef);
             await TerminateSessionAsync(apiUrl, sessionToken);
-            _logger.LogInformation("Invoice {Nr} sent to KSeF → {KSeF}", invoice.InvoiceNumber, ksefNumber);
+            _logger.LogInformation("[KSeF] Invoice {Nr} sent to KSeF → {KSeF}", invoice.InvoiceNumber, ksefNumber);
             return ksefNumber;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "KSeF send failed for invoice {Nr}", invoice.InvoiceNumber);
+            var inner = ex.InnerException != null ? $" | inner: {ex.InnerException.GetType().Name}: {ex.InnerException.Message}" : "";
+            _logger.LogError(ex, "[KSeF] Send failed for invoice {Nr} -- {ExType}: {ExMessage}{Inner}",
+                invoice.InvoiceNumber, ex.GetType().Name, ex.Message, inner);
             return null;
         }
     }
@@ -147,7 +149,7 @@ public class KSeFService : IKSeFService
             var ksefNr = status?.InvoiceStatus?.KsefReferenceNumber;
             if (!string.IsNullOrEmpty(ksefNr)) return ksefNr;
         }
-        _logger.LogWarning("KSeF status poll timed out for element {Ref}", elementRef);
+        _logger.LogWarning("[KSeF] Status poll timed out for element {Ref}", elementRef);
         return null;
     }
 
