@@ -1971,6 +1971,15 @@ internal class Program
                 imojeKey.Length >= 6 ? imojeKey[..6] + "..." : "(short)",
                 string.IsNullOrEmpty(imojeSecret) ? "EMPTY←WEBHOOKS BĘDĄ ODRZUCANE" : "SET",
                 string.IsNullOrEmpty(internalSec) ? "EMPTY←WEBHOOKS BĘDĄ ODRZUCANE" : "SET");
+
+            // KSeFService.SendInvoiceAsync silently no-ops (LogDebug, invisible in Railway's log
+            // viewer) whenever this token is missing, so every monthly invoice generation would
+            // quietly skip KSeF submission with no visible trace. Surface it at startup instead.
+            var ksefToken = Environment.GetEnvironmentVariable("KSEF_TOKEN") ?? app.Configuration["KSeF:Token"] ?? "";
+            logger.LogInformation(
+                "[Config] KSeF:Token={HasToken} — {Note}",
+                string.IsNullOrEmpty(ksefToken) ? "EMPTY" : "SET",
+                string.IsNullOrEmpty(ksefToken) ? "brak tokena = faktury NIE są wysyłane do KSeF (IsKSeFSent zostanie false)" : "faktury z NIP nabywcy będą wysyłane do KSeF");
         }
 
         app.UseExceptionHandler(exApp =>
