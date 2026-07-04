@@ -1933,6 +1933,53 @@ internal class Program
                     bgLogger.LogError(ex, "[STARTUP-TRACE] Advert description cleanup failed: {Msg}", ex.Message);
                 }
 
+                // Backfill CarAdvert.VehicleCategoryId where it's NULL (nullable column - reported
+                // as "doesn't show up when filtering by category" even though the direct advert
+                // link still works, since a category filter's WHERE VehicleCategoryId = X excludes
+                // NULL rows entirely). Only auto-fix when the advert's own Brand maps to exactly
+                // one VehicleCategory - a brand that spans multiple categories (e.g. a manufacturer
+                // that makes both cars and vans) is ambiguous and gets logged for manual review
+                // instead of guessed at.
+                try
+                {
+                    var uncategorized = bgDb.CarAdverts
+                        .Include(a => a.Brand).ThenInclude(b => b.Categories)
+                        .Include(a => a.Model)
+                        .Where(a => a.VehicleCategoryId == null)
+                        .ToList();
+
+                    int fixed_ = 0;
+                    var ambiguous = new List<string>();
+                    foreach (var ad in uncategorized)
+                    {
+                        var cats = ad.Brand.Categories;
+                        if (cats.Count == 1)
+                        {
+                            ad.VehicleCategoryId = cats.First().Id;
+                            fixed_++;
+                        }
+                        else
+                        {
+                            ambiguous.Add($"id={ad.Id} \"{ad.Title}\" ({ad.Brand.Name} {ad.Model.Name}) — marka ma {cats.Count} kategorii");
+                        }
+                    }
+
+                    if (fixed_ > 0)
+                    {
+                        bgDb.SaveChanges();
+                        bgLogger.LogWarning("[STARTUP-TRACE] Backfilled VehicleCategoryId for {Count} advert(s) with a null category (brand mapped to exactly one category)", fixed_);
+                    }
+                    if (ambiguous.Count > 0)
+                    {
+                        bgLogger.LogWarning("[STARTUP-TRACE] AUDIT-CATEGORY: {Count} advert(s) still have a null category and need manual review: {List}",
+                            ambiguous.Count, string.Join(" | ", ambiguous));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    bgLogger.LogError(ex, "[STARTUP-TRACE] Advert category backfill failed: {Msg}", ex.Message);
+                }
+
                 // Starter engine-plausibility rules: a small, high-confidence allowlist for a
                 // handful of petrol/hybrid-only exotic brands (fail-open — any other brand has no
                 // restriction). Idempotent: only inserts a (brand, fuel type) pair that isn't
