@@ -1933,6 +1933,52 @@ internal class Program
                     bgLogger.LogError(ex, "[STARTUP-TRACE] Advert description cleanup failed: {Msg}", ex.Message);
                 }
 
+                // Follow-up repair: the cleanup above could leave a dangling, incomplete final
+                // sentence (e.g. "...Auto jest" with nothing after) when the real text ran
+                // directly into the removed junk header with no sentence break in between.
+                // There's no description-history table, so the exact missing words can't be
+                // recovered - the best available fix is to drop the incomplete trailing
+                // fragment so the description ends on a full sentence instead of mid-word.
+                // Scoped only to the same scraped batch (identified by its distinctive
+                // "Cena: X zł" / "Przebieg: X km" template lines - real user-written text
+                // doesn't restate price/mileage that way, since both already have their own
+                // form fields) so ordinary descriptions that simply lack a trailing period
+                // aren't touched.
+                try
+                {
+                    var scrapedBatch = bgDb.CarAdverts
+                        .Where(a => a.Description.Contains("Cena:") && a.Description.Contains("Przebieg:"))
+                        .ToList();
+
+                    var enders = new[] { '.', '!', '?' };
+                    int trimmedCount = 0;
+                    foreach (var ad in scrapedBatch)
+                    {
+                        var desc = ad.Description.TrimEnd();
+                        if (desc.Length == 0 || enders.Contains(desc[^1])) continue;
+
+                        var lastEnderIdx = desc.LastIndexOfAny(enders);
+                        if (lastEnderIdx <= 0) continue;
+
+                        var cut = desc[..(lastEnderIdx + 1)].TrimEnd();
+                        if (cut.Length > 0 && cut != ad.Description)
+                        {
+                            ad.Description = cut;
+                            trimmedCount++;
+                        }
+                    }
+
+                    if (trimmedCount > 0)
+                    {
+                        bgDb.SaveChanges();
+                        bgLogger.LogWarning("[STARTUP-TRACE] Trimmed {Count} advert description(s) back to the last complete sentence (dangling fragment left by the scraped-boilerplate cleanup above)", trimmedCount);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    bgLogger.LogError(ex, "[STARTUP-TRACE] Dangling-sentence description trim failed: {Msg}", ex.Message);
+                }
+
                 // Backfill CarAdvert.VehicleCategoryId where it's NULL (nullable column - reported
                 // as "doesn't show up when filtering by category" even though the direct advert
                 // link still works, since a category filter's WHERE VehicleCategoryId = X excludes
