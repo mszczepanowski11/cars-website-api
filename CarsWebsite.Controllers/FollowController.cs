@@ -16,11 +16,13 @@ public class FollowController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly IFollowService _followService;
+    private readonly ILogger<FollowController> _logger;
 
-    public FollowController(AppDbContext context, IFollowService followService)
+    public FollowController(AppDbContext context, IFollowService followService, ILogger<FollowController> logger)
     {
         _context = context;
         _followService = followService;
+        _logger = logger;
     }
 
     private int GetUserId()
@@ -171,8 +173,16 @@ public class FollowController : ControllerBase
     public async Task<IActionResult> SellerStatus(int sellerId)
     {
         var uid = GetUserId(); if (uid == 0) return Unauthorized();
-        var isFollowing = await _followService.IsFollowingAsync(uid, sellerId);
-        return Ok(new { isFollowing });
+        try
+        {
+            var isFollowing = await _followService.IsFollowingAsync(uid, sellerId);
+            return Ok(new { isFollowing });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[Follow] SellerStatus failed uid={Uid} sellerId={SellerId}: {Msg}", uid, sellerId, ex.Message);
+            throw;
+        }
     }
 
     [HttpPost("seller/{sellerId}")]
@@ -180,15 +190,31 @@ public class FollowController : ControllerBase
     {
         var uid = GetUserId(); if (uid == 0) return Unauthorized();
         if (uid == sellerId) return BadRequest(new { message = "Nie możesz obserwować siebie." });
-        await _followService.FollowAsync(uid, sellerId);
-        return Ok();
+        try
+        {
+            await _followService.FollowAsync(uid, sellerId);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[Follow] FollowSeller failed uid={Uid} sellerId={SellerId}: {Msg}", uid, sellerId, ex.Message);
+            throw;
+        }
     }
 
     [HttpDelete("seller/{sellerId}")]
     public async Task<IActionResult> UnfollowSeller(int sellerId)
     {
         var uid = GetUserId(); if (uid == 0) return Unauthorized();
-        await _followService.UnfollowAsync(uid, sellerId);
-        return NoContent();
+        try
+        {
+            await _followService.UnfollowAsync(uid, sellerId);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[Follow] UnfollowSeller failed uid={Uid} sellerId={SellerId}: {Msg}", uid, sellerId, ex.Message);
+            throw;
+        }
     }
 }
