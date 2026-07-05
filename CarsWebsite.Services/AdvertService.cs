@@ -489,11 +489,19 @@ public class AdvertService : IAdvertService
 
         query = dto.SortBy switch
         {
-            "price_asc"  => prioritized.ThenBy(a => a.Price),
-            "price_desc" => prioritized.ThenByDescending(a => a.Price),
-            "year_desc"  => prioritized.ThenByDescending(a => a.Year),
-            "year_asc"   => prioritized.ThenBy(a => a.Year),
-            _            => prioritized.ThenByDescending(a => a.UpdatedAt ?? a.CreatedAt)
+            "price_asc"   => prioritized.ThenBy(a => a.Price),
+            "price_desc"  => prioritized.ThenByDescending(a => a.Price),
+            "year_desc"   => prioritized.ThenByDescending(a => a.Year),
+            "year_asc"    => prioritized.ThenBy(a => a.Year),
+            "mileage_asc" => prioritized.ThenBy(a => a.Mileage),
+            "power_desc"  => prioritized.ThenByDescending(a => a.PowerHP),
+            "featured"    => prioritized.ThenByDescending(a => a.UpdatedAt ?? a.CreatedAt),
+            // "Najnowsze" (default/empty sortBy, also used by the homepage's "recently added"
+            // section) - deliberately NOT using `prioritized`, so a promoted TOP/PREMIUM/FEATURED
+            // ad no longer bumps ahead of genuinely newer plain ads just for having a badge. That
+            // badge-first ordering is still what "Polecane" (sortBy=featured) and the price/year/
+            // mileage/power sorts above intentionally use.
+            _             => query.OrderByDescending(a => a.UpdatedAt ?? a.CreatedAt)
         };
 
         var totalCount = await query.CountAsync();
