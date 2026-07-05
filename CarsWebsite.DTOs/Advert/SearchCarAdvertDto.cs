@@ -5,6 +5,7 @@ namespace cars_website_api.CarsWebsite.DTOs.Advert;
 public class SearchCarAdvertDto
 {
     public int? CategoryId { get; set; }
+    public int? UserId { get; set; }
 
     [MaxLength(150)]
     public string? TextSearch { get; set; }

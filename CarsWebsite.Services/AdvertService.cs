@@ -290,6 +290,9 @@ public class AdvertService : IAdvertService
         // Keep a typed alias so the rest of the method can use query as before
         var query = filterQuery;
 
+        if (dto.UserId.HasValue)
+            query = query.Where(a => a.UserId == dto.UserId);
+
         if (dto.BrandId.HasValue)
             query = query.Where(a => a.BrandId == dto.BrandId);
 
