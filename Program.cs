@@ -1979,6 +1979,46 @@ internal class Program
                     bgLogger.LogError(ex, "[STARTUP-TRACE] Dangling-sentence description trim failed: {Msg}", ex.Message);
                 }
 
+                // One-off repair: add-advert.vue's description builder had a bug where the
+                // color-picker extra field ("Kolor nadwozia"/"Kolor") serialized the raw
+                // CarColor id instead of its resolved name (e.g. "Kolor nadwozia: 19"), because
+                // its generic tech-data loop only special-cased radio/select fields, not
+                // color-picker. Fixed in the frontend going forward; repair already-saved
+                // descriptions here using each advert's own (correctly-set) ColorId/CarColor.
+                try
+                {
+                    var colorLineRegex = new System.Text.RegularExpressions.Regex(@"^(Kolor(?: nadwozia)?): (\d+)$", System.Text.RegularExpressions.RegexOptions.Multiline);
+                    var affected = bgDb.CarAdverts
+                        .Include(a => a.CarColor)
+                        .Where(a => a.Description.Contains("Kolor nadwozia: ") || a.Description.Contains("Kolor: "))
+                        .ToList();
+
+                    int fixedColorLines = 0;
+                    foreach (var ad in affected)
+                    {
+                        if (ad.CarColor == null) continue;
+                        var replaced = colorLineRegex.Replace(ad.Description, m =>
+                            m.Groups[2].Value == ad.ColorId.ToString()
+                                ? $"{m.Groups[1].Value}: {ad.CarColor.Name}"
+                                : m.Value);
+                        if (replaced != ad.Description)
+                        {
+                            ad.Description = replaced;
+                            fixedColorLines++;
+                        }
+                    }
+
+                    if (fixedColorLines > 0)
+                    {
+                        bgDb.SaveChanges();
+                        bgLogger.LogWarning("[STARTUP-TRACE] Fixed raw color-id leak in {Count} advert description(s)", fixedColorLines);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    bgLogger.LogError(ex, "[STARTUP-TRACE] Color-id description repair failed: {Msg}", ex.Message);
+                }
+
                 // Backfill CarAdvert.VehicleCategoryId where it's NULL (nullable column - reported
                 // as "doesn't show up when filtering by category" even though the direct advert
                 // link still works, since a category filter's WHERE VehicleCategoryId = X excludes
