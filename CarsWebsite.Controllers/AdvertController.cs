@@ -364,7 +364,8 @@ public class AdvertController : ControllerBase
         try
         {
             var cloudinary = HttpContext.RequestServices.GetRequiredService<CloudinaryDotNet.Cloudinary>();
-            var publicId = $"adverts/{advertId}/brochure_{Guid.NewGuid()}";
+            // "brochures" not "adverts" - see AdvertImageService.UploadAdvertImageAsync for why.
+            var publicId = $"brochures/{advertId}/brochure_{Guid.NewGuid()}";
             var uploadParams = new CloudinaryDotNet.Actions.RawUploadParams
             {
                 File = new CloudinaryDotNet.FileDescription(file.FileName, stream),

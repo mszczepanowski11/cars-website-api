@@ -82,7 +82,10 @@ public class AdvertImageService : IAdvertImageService
         if (advert.UserId != userId) throw new UnauthorizedAccessException("Nie jesteś właścicielem tego ogłoszenia.");
         if (advert.Images.Count >= 20) throw new BadHttpRequestException("Ogłoszenie może mieć maksymalnie 20 zdjęć.");
 
-        var publicId = $"adverts/{advertId}/{Guid.NewGuid()}";
+        // "photos" not "adverts" in the Cloudinary public_id - it ends up baked verbatim into the
+        // served image URL, and ad-blocker filter lists commonly block any request URL containing
+        // "/adverts/" (the same reason the frontend proxies local uploads through /img/photos/).
+        var publicId = $"photos/{advertId}/{Guid.NewGuid()}";
         _logger.LogInformation("[ImgSvc] Uploading to Cloudinary: publicId={PublicId}", publicId);
 
         ImageUploadResult result;
