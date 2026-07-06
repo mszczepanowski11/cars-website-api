@@ -7,7 +7,7 @@ public class CreateCarAdvertDto
     public int? VehicleCategoryId { get; set; }
     public int? VehicleSubtypeId { get; set; }
     public int BrandId { get; set; }
-    public int ModelId { get; set; }
+    public int? ModelId { get; set; }
     public int? GenerationId { get; set; }
     public int? EngineVersionId { get; set; }
     public int? TrimId { get; set; }

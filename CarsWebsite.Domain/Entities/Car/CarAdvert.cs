@@ -10,8 +10,8 @@ public class CarAdvert : Advert
 
     public int BrandId { get; set; }
     public Brand Brand { get; set; } = null!;
-    public int ModelId { get; set; }
-    public Model Model { get; set; } = null!;
+    public int? ModelId { get; set; }
+    public Model? Model { get; set; }
     public int? GenerationId { get; set; }
     public Generation? Generation { get; set; }
     public int? EngineVersionId { get; set; }
