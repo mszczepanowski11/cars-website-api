@@ -6,6 +6,9 @@ using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
 
 namespace cars_website_api.CarsWebsite.Services
 {
@@ -14,12 +17,20 @@ namespace cars_website_api.CarsWebsite.Services
         private readonly AppDbContext _context;
         private readonly Cloudinary _cloudinary;
         private readonly IMemoryCache _cache;
+        private readonly IAdvertService _advertService;
+        private readonly IEmailService _email;
+        private readonly IConfiguration _configuration;
+        private readonly ILogger<AdminService> _logger;
 
-        public AdminService(AppDbContext context, Cloudinary cloudinary, IMemoryCache cache)
+        public AdminService(AppDbContext context, Cloudinary cloudinary, IMemoryCache cache, IAdvertService advertService, IEmailService email, IConfiguration configuration, ILogger<AdminService> logger)
         {
             _context = context;
             _cloudinary = cloudinary;
             _cache = cache;
+            _advertService = advertService;
+            _email = email;
+            _configuration = configuration;
+            _logger = logger;
         }
 
         public async Task<AdminStatsDto> GetStatsAsync()
@@ -174,7 +185,11 @@ namespace cars_website_api.CarsWebsite.Services
 
         public async Task BlockUserAsync(int userId, int adminUserId, string? reason)
         {
+            if (userId == adminUserId)
+                throw new InvalidOperationException("Admin nie może zablokować własnego konta z panelu administracyjnego.");
             var user = await _context.Users.FindAsync(userId) ?? throw new KeyNotFoundException("User not found");
+            if (user.IsAdmin)
+                throw new InvalidOperationException("Nie można zablokować konta administratora.");
             user.IsBlocked = true; user.BlockedAt = DateTime.UtcNow; user.BlockedReason = reason;
             _context.AdminActionLogs.Add(new AdminActionLog { AdminUserId = adminUserId, ActionType = AdminActionType.BlockUser, TargetUserId = userId, Note = reason, PerformedAt = DateTime.UtcNow });
             await _context.SaveChangesAsync();
@@ -267,7 +282,9 @@ namespace cars_website_api.CarsWebsite.Services
                     BlockedAt = u.BlockedAt, BlockedReason = u.BlockedReason, AdvertCount = u.Adverts.Count,
                     AccountType = u.AccountType.ToString(),
                     CompanyName = u.CompanyName,
-                    CreatedAt = u.CreatedAt
+                    CreatedAt = u.CreatedAt,
+                    EmailVerified = u.EmailVerified,
+                    IsAdminCreated = u.CreatedByAdminId != null
                 }).ToList()
             };
         }
@@ -347,6 +364,133 @@ namespace cars_website_api.CarsWebsite.Services
                 return dot > 0 ? idWithExt[..dot] : idWithExt;
             }
             catch { return null; }
+        }
+
+        // Splits a single "Imię Nazwisko" input into (Name, Surname) on the last space,
+        // since the admin panel collects one combined field but User has separate columns.
+        private static (string Name, string Surname) SplitFullName(string fullName)
+        {
+            var trimmed = fullName.Trim();
+            var idx = trimmed.LastIndexOf(' ');
+            if (idx <= 0) return (trimmed, "");
+            return (trimmed[..idx].Trim(), trimmed[(idx + 1)..].Trim());
+        }
+
+        private async Task SendClientAccountEmailAsync(User user)
+        {
+            var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
+            user.PasswordResetToken = token;
+            user.PasswordResetTokenExpires = DateTime.UtcNow.AddDays(14);
+            await _context.SaveChangesAsync();
+
+            var siteUrl = _configuration["SiteUrl"] ?? "https://carizo.eu";
+            var html = EmailService.BuildHtml(
+                "Twoje konto CARIZO jest gotowe",
+                "Przygotowaliśmy dla Ciebie konto w CARIZO oraz opublikowaliśmy Twoje ogłoszenie. Kliknij poniższy przycisk, aby ustawić hasło i przejąć zarządzanie swoim kontem.",
+                null,
+                $"{siteUrl}/reset-password?token={token}",
+                "Ustaw hasło");
+
+            _ = _email.SendAsync(user.Email, "Twoje konto i ogłoszenie w CARIZO", html)
+                .ContinueWith(t =>
+                {
+                    if (t.IsFaulted)
+                        _logger.LogError(t.Exception, "[AdminService] Wysyłka e-maila do klienta nie powiodła się dla {Email}", user.Email);
+                }, TaskContinuationOptions.OnlyOnFaulted);
+        }
+
+        // Admin creates (or reuses) a client account and publishes an advert for them without
+        // requiring the usual email-confirmation-before-publish gate normal registrants go through.
+        public async Task<AdminCreateClientAdvertResultDto> CreateClientAdvertAsync(AdminCreateClientAdvertDto dto, int adminUserId)
+        {
+            var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail);
+            var wasNewAccount = false;
+
+            if (user == null)
+            {
+                wasNewAccount = true;
+                var (name, surname) = SplitFullName(dto.FullName);
+                if (string.IsNullOrWhiteSpace(name))
+                    throw new ArgumentException("Podaj imię i nazwisko klienta.");
+
+                user = new User
+                {
+                    Name = name,
+                    Surname = surname,
+                    Email = normalizedEmail,
+                    PhoneNumber = dto.PhoneNumber.Trim(),
+                    // Random, never-disclosed password - the client can only get in via the
+                    // set-password link sent below, same as a self-service password reset.
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(Convert.ToHexString(RandomNumberGenerator.GetBytes(32))),
+                    DateOfBirth = DateTime.UtcNow.AddYears(-18),
+                    EmailVerified = false,
+                    CreatedByAdminId = adminUserId,
+                    CreatedAt = DateTime.UtcNow,
+                };
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+            }
+            else if (user.IsBlocked)
+            {
+                throw new InvalidOperationException("Konto z tym adresem e-mail jest zablokowane.");
+            }
+
+            var advertId = await _advertService.CreateCarAdvertAsync(dto.Advert, user.Id);
+
+            if (wasNewAccount)
+                await SendClientAccountEmailAsync(user);
+
+            _context.AdminActionLogs.Add(new AdminActionLog
+            {
+                AdminUserId = adminUserId,
+                ActionType = AdminActionType.CreateAdvertForClient,
+                TargetUserId = user.Id,
+                TargetAdvertId = advertId,
+                Note = wasNewAccount ? "Utworzono nowe konto klienta i opublikowano ogłoszenie" : "Dodano ogłoszenie do istniejącego konta klienta",
+                PerformedAt = DateTime.UtcNow,
+            });
+            await _context.SaveChangesAsync();
+
+            return new AdminCreateClientAdvertResultDto { UserId = user.Id, AdvertId = advertId, WasNewAccount = wasNewAccount };
+        }
+
+        public async Task ResendClientActivationEmailAsync(int userId, int adminUserId)
+        {
+            var user = await _context.Users.FindAsync(userId) ?? throw new KeyNotFoundException("Użytkownik nie istnieje.");
+            if (user.CreatedByAdminId == null)
+                throw new InvalidOperationException("Ponowna wysyłka dotyczy tylko kont utworzonych przez administratora.");
+            if (user.EmailVerified)
+                throw new InvalidOperationException("Konto jest już aktywne.");
+
+            await SendClientAccountEmailAsync(user);
+
+            _context.AdminActionLogs.Add(new AdminActionLog
+            {
+                AdminUserId = adminUserId,
+                ActionType = AdminActionType.ResendClientActivationEmail,
+                TargetUserId = userId,
+                PerformedAt = DateTime.UtcNow,
+            });
+            await _context.SaveChangesAsync();
+        }
+
+        // Manual override: flips the login gate open immediately without touching any in-flight
+        // set-password token, so a client who hasn't set a password yet can still use their
+        // original email link afterward instead of being locked out of an "Active" account.
+        public async Task ActivateUserAsync(int userId, int adminUserId)
+        {
+            var user = await _context.Users.FindAsync(userId) ?? throw new KeyNotFoundException("Użytkownik nie istnieje.");
+            user.EmailVerified = true;
+
+            _context.AdminActionLogs.Add(new AdminActionLog
+            {
+                AdminUserId = adminUserId,
+                ActionType = AdminActionType.ActivateUser,
+                TargetUserId = userId,
+                PerformedAt = DateTime.UtcNow,
+            });
+            await _context.SaveChangesAsync();
         }
     }
 }

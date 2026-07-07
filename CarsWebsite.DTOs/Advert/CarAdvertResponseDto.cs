@@ -102,7 +102,7 @@ public class CarAdvertResponseDto
 
     // Taxonomy
     public BrandDto Brand { get; set; } = null!;
-    public ModelDto Model { get; set; } = null!;
+    public ModelDto? Model { get; set; }
     public GenerationDto? Generation { get; set; }
     public EngineVersionDto? EngineVersion { get; set; }
     public FuelTypeDto FuelType { get; set; } = null!;

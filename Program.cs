@@ -783,6 +783,10 @@ internal class Program
                 "ALTER TABLE `caradverts` MODIFY COLUMN `PowerHP` int NULL",
                 "ALTER TABLE `caradverts` MODIFY COLUMN `PowerKW` int NULL",
                 "ALTER TABLE `caradverts` MODIFY COLUMN `EngineSize` int NULL",
+                // Some brands (esp. newly-added motorcycle brands) have no seeded Models yet -
+                // the add-advert form falls back to letting the user skip Model entirely rather
+                // than block on missing taxonomy data, so the column must accept NULL.
+                "ALTER TABLE `caradverts` MODIFY COLUMN `ModelId` int NULL",
             };
             foreach (var sql in modifyColumnSql)
             {
@@ -2057,6 +2061,11 @@ internal class Program
                     var stillAmbiguous = new List<string>();
                     foreach (var ad in uncategorized)
                     {
+                        if (ad.Brand == null)
+                        {
+                            stillAmbiguous.Add($"id={ad.Id} \"{ad.Title}\" (dangling BrandId={ad.BrandId})");
+                            continue;
+                        }
                         var cats = ad.Brand.Categories;
                         if (cats.Count == 1)
                         {
@@ -2065,7 +2074,7 @@ internal class Program
                             continue;
                         }
 
-                        var modelName = ad.Model.Name.ToLowerInvariant();
+                        var modelName = (ad.Model?.Name ?? "").ToLowerInvariant();
                         if (vanModelNames.Any(v => modelName.Contains(v)) && vanCatId > 0)
                         {
                             ad.VehicleCategoryId = vanCatId;
@@ -2078,7 +2087,7 @@ internal class Program
                         }
                         else
                         {
-                            stillAmbiguous.Add($"id={ad.Id} \"{ad.Title}\" ({ad.Brand.Name} {ad.Model.Name})");
+                            stillAmbiguous.Add($"id={ad.Id} \"{ad.Title}\" ({ad.Brand.Name} {ad.Model?.Name ?? "brak modelu"})");
                         }
                     }
 

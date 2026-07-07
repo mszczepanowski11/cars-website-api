@@ -288,6 +288,16 @@ namespace CarsWebsite
                 .OnDelete(DeleteBehavior.SetNull)
                 .IsRequired(false);
 
+            // Lowercase table names: Program.cs's startup RENAME TABLE guards move these three
+            // tables (originally created PascalCase by EF's default convention) to lowercase to
+            // match how they physically exist in production MySQL (case-sensitive on Linux) -
+            // ToTable() must match or every EF query against them throws "table doesn't exist"
+            // once the rename has run (same bug class already hit and fixed for AppNotification/
+            // UserNotificationSettings above).
+            modelBuilder.Entity<PartCompatibility>().ToTable("partcompatibilities");
+            modelBuilder.Entity<BrandAllowedFuelType>().ToTable("brandallowedfueltypes");
+            modelBuilder.Entity<ModelNamePlausibilityRule>().ToTable("modelnameplausibilityrules");
+
             // PartCompatibility: deleted along with its advert; Brand/Model/Generation FKs restrict
             // (a taxonomy row referenced by a compatibility entry can't be deleted out from under it).
             modelBuilder.Entity<PartCompatibility>()

@@ -196,6 +196,10 @@ public class AuthService : IAuthService
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
         user.PasswordResetToken = null;
         user.PasswordResetTokenExpires = null;
+        // Setting a password via this link is also how an admin-created client account (created
+        // with EmailVerified=false and an unknown random password) proves ownership of the email
+        // and becomes Active - a no-op for already-verified users doing a normal password reset.
+        user.EmailVerified = true;
         await _context.SaveChangesAsync();
         return true;
     }

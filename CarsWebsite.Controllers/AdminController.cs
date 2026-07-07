@@ -144,6 +144,47 @@ public class AdminController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("create-client-advert")]
+    public async Task<IActionResult> CreateClientAdvert([FromBody] AdminCreateClientAdvertDto dto)
+    {
+        var adminId = GetUserId();
+        try
+        {
+            var result = await _adminService.CreateClientAdvertAsync(dto, adminId);
+            _logger.LogInformation("[Admin] CreateClientAdvert userId={UserId} advertId={AdvertId} wasNewAccount={WasNew} adminId={AdminId}",
+                result.UserId, result.AdvertId, result.WasNewAccount, adminId);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
+        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    [HttpPost("users/{id}/resend-client-activation")]
+    public async Task<IActionResult> ResendClientActivation(int id)
+    {
+        var adminId = GetUserId();
+        try
+        {
+            await _adminService.ResendClientActivationEmailAsync(id, adminId);
+            return Ok(new { message = "Wysłano e-mail aktywacyjny." });
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+        catch (KeyNotFoundException) { return NotFound(); }
+    }
+
+    [HttpPost("users/{id}/activate")]
+    public async Task<IActionResult> ActivateUser(int id)
+    {
+        var adminId = GetUserId();
+        try
+        {
+            await _adminService.ActivateUserAsync(id, adminId);
+            _logger.LogInformation("[Admin] ActivateUser targetUserId={TargetId} adminId={AdminId}", id, adminId);
+            return Ok(new { message = "Konto aktywowane." });
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+    }
+
     [HttpGet("users")]
     public async Task<IActionResult> GetUsers(
         [FromQuery] string? search,

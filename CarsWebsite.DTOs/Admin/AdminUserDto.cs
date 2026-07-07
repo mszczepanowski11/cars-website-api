@@ -14,5 +14,7 @@ namespace cars_website_api.CarsWebsite.DTOs.Admin
         public string AccountType { get; set; } = string.Empty;
         public string? CompanyName { get; set; }
         public DateTime CreatedAt { get; set; }
+        public bool EmailVerified { get; set; }
+        public bool IsAdminCreated { get; set; }
     }
 }
