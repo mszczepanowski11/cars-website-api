@@ -39,7 +39,7 @@ public class AdvertImageService : IAdvertImageService
             throw new BadHttpRequestException($"Zawartość pliku nie zgadza się z deklarowanym typem ({declaredMime}).");
     }
 
-    public async Task<string> UploadAdvertImageAsync(int advertId, IFormFile file, int userId)
+    public async Task<string> UploadAdvertImageAsync(int advertId, IFormFile file, int userId, bool isAdmin = false)
     {
         _logger.LogInformation("[ImgSvc] Start: advertId={AdvertId} userId={UserId} file={File} size={Size}B mime={Mime}",
             advertId, userId, file.FileName, file.Length, file.ContentType);
@@ -79,7 +79,7 @@ public class AdvertImageService : IAdvertImageService
             .Include(a => a.Images)
             .FirstOrDefaultAsync(a => a.Id == advertId);
         if (advert == null) throw new KeyNotFoundException($"Ogłoszenie {advertId} nie istnieje.");
-        if (advert.UserId != userId) throw new UnauthorizedAccessException("Nie jesteś właścicielem tego ogłoszenia.");
+        if (advert.UserId != userId && !isAdmin) throw new UnauthorizedAccessException("Nie jesteś właścicielem tego ogłoszenia.");
         if (advert.Images.Count >= 20) throw new BadHttpRequestException("Ogłoszenie może mieć maksymalnie 20 zdjęć.");
 
         // "photos" not "adverts" in the Cloudinary public_id - it ends up baked verbatim into the
@@ -120,7 +120,7 @@ public class AdvertImageService : IAdvertImageService
         return url;
     }
 
-    public async Task SetMainImageAsync(int advertId, int imageId, int userId)
+    public async Task SetMainImageAsync(int advertId, int imageId, int userId, bool isAdmin = false)
     {
         var advert = await _context.CarAdverts
             .Include(a => a.Images)
@@ -128,20 +128,20 @@ public class AdvertImageService : IAdvertImageService
         if (advert == null) throw new KeyNotFoundException("Advert not found");
         var image = advert.Images.FirstOrDefault(i => i.Id == imageId);
         if (image == null) throw new KeyNotFoundException("Image not found");
-        if (advert.UserId != userId) throw new UnauthorizedAccessException("You do not own this advert.");
+        if (advert.UserId != userId && !isAdmin) throw new UnauthorizedAccessException("You do not own this advert.");
 
         foreach (var img in advert.Images) img.IsMain = false;
         image.IsMain = true;
         await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteImageAsync(int advertId, int imageId, int userId)
+    public async Task DeleteImageAsync(int advertId, int imageId, int userId, bool isAdmin = false)
     {
         var image = await _context.AdvertImages
             .Include(i => i.Advert)
             .FirstOrDefaultAsync(i => i.Id == imageId && i.AdvertId == advertId);
         if (image == null) throw new KeyNotFoundException("Image not found");
-        if (image.Advert.UserId != userId) throw new UnauthorizedAccessException("You do not own this advert.");
+        if (image.Advert.UserId != userId && !isAdmin) throw new UnauthorizedAccessException("You do not own this advert.");
 
         var publicId = ExtractPublicId(image.Url);
         if (publicId != null)
