@@ -22,5 +22,8 @@ namespace cars_website_api.CarsWebsite.Interfaces
         Task<PagedResult<AdminUserDto>> GetUsersAsync(string? search, string? accountType, bool? isBlocked, int page, int pageSize);
         Task<PagedResult<AdminAdvertDto>> GetAdvertsAsync(string? search, bool? isHidden, bool? isActive, int page, int pageSize);
         Task<List<AdminActionLogDto>> GetActionLogsAsync(int page, int pageSize);
+        Task<AdminCreateClientAdvertResultDto> CreateClientAdvertAsync(AdminCreateClientAdvertDto dto, int adminUserId);
+        Task ResendClientActivationEmailAsync(int userId, int adminUserId);
+        Task ActivateUserAsync(int userId, int adminUserId);
     }
 }

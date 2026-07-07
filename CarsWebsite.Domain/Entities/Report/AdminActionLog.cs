@@ -12,7 +12,10 @@
         EditAdvert,
         ActivateAdvert,
         DeactivateAdvert,
-        DeleteUser
+        DeleteUser,
+        CreateAdvertForClient,
+        ResendClientActivationEmail,
+        ActivateUser
     }
 
     public class AdminActionLog

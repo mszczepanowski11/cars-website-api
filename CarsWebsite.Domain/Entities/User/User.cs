@@ -30,6 +30,10 @@ namespace CarsWebsite
         public DateTime? LastLoginAt { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        // Set when an admin creates this account on behalf of a client (add-advert-for-client flow).
+        // Null for every normal self-registered account.
+        public int? CreatedByAdminId { get; set; }
+
         // Profile
         public string? City { get; set; }
         public string? Region { get; set; }
