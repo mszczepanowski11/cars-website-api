@@ -270,7 +270,7 @@ public class AdvertController : ControllerBase
 
         try
         {
-            var url = await _imageService.UploadAdvertImageAsync(advertId, file, userId);
+            var url = await _imageService.UploadAdvertImageAsync(advertId, file, userId, IsAdmin());
             _logger.LogInformation("[ImageUpload] OK advertId={AdvertId} url={Url}", advertId, url);
             return Ok(new { url });
         }
@@ -309,7 +309,7 @@ public class AdvertController : ControllerBase
         if (userId == 0) return Unauthorized();
         try
         {
-            await _imageService.SetMainImageAsync(advertId, imageId, userId);
+            await _imageService.SetMainImageAsync(advertId, imageId, userId, IsAdmin());
             return NoContent();
         }
         catch (KeyNotFoundException) { return NotFound(); }
@@ -324,7 +324,7 @@ public class AdvertController : ControllerBase
         if (userId == 0) return Unauthorized();
         try
         {
-            await _imageService.DeleteImageAsync(advertId, imageId, userId);
+            await _imageService.DeleteImageAsync(advertId, imageId, userId, IsAdmin());
             return NoContent();
         }
         catch (KeyNotFoundException) { return NotFound(); }
