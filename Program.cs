@@ -1053,6 +1053,12 @@ internal class Program
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `users` ADD COLUMN `RefreshTokenExpiry` datetime(6) NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN users.RefreshTokenExpiry skipped: {Message}", ex.Message); }
 
+            // CreatedByAdminId (migration AddCreatedByAdminIdToUsers) — same bootstrap risk as
+            // every other column above: the migration history bootstrap can mark this migration
+            // as already-applied on an existing DB, so MigrateAsync alone cannot be trusted here.
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `users` ADD COLUMN `CreatedByAdminId` int NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN users.CreatedByAdminId skipped: {Message}", ex.Message); }
+
             // Billing columns for payments
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `payments` ADD COLUMN `BillingName` varchar(200) NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN payments.BillingName skipped: {Message}", ex.Message); }
