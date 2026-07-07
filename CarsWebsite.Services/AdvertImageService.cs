@@ -151,8 +151,22 @@ public class AdvertImageService : IAdvertImageService
                 _logger.LogWarning("Cloudinary delete failed for {PublicId}: {Error}", publicId, result.Error.Message);
         }
 
+        var wasMain = image.IsMain;
         _context.AdvertImages.Remove(image);
         await _context.SaveChangesAsync();
+
+        if (wasMain)
+        {
+            var replacement = await _context.AdvertImages
+                .Where(i => i.AdvertId == advertId)
+                .OrderBy(i => i.Order)
+                .FirstOrDefaultAsync();
+            if (replacement != null)
+            {
+                replacement.IsMain = true;
+                await _context.SaveChangesAsync();
+            }
+        }
     }
 
     // Extracts the Cloudinary public_id from a secure URL.

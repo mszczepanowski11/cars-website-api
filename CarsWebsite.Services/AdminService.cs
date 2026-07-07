@@ -174,7 +174,11 @@ namespace cars_website_api.CarsWebsite.Services
 
         public async Task BlockUserAsync(int userId, int adminUserId, string? reason)
         {
+            if (userId == adminUserId)
+                throw new InvalidOperationException("Admin nie może zablokować własnego konta z panelu administracyjnego.");
             var user = await _context.Users.FindAsync(userId) ?? throw new KeyNotFoundException("User not found");
+            if (user.IsAdmin)
+                throw new InvalidOperationException("Nie można zablokować konta administratora.");
             user.IsBlocked = true; user.BlockedAt = DateTime.UtcNow; user.BlockedReason = reason;
             _context.AdminActionLogs.Add(new AdminActionLog { AdminUserId = adminUserId, ActionType = AdminActionType.BlockUser, TargetUserId = userId, Note = reason, PerformedAt = DateTime.UtcNow });
             await _context.SaveChangesAsync();

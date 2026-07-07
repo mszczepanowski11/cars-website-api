@@ -2061,6 +2061,11 @@ internal class Program
                     var stillAmbiguous = new List<string>();
                     foreach (var ad in uncategorized)
                     {
+                        if (ad.Brand == null)
+                        {
+                            stillAmbiguous.Add($"id={ad.Id} \"{ad.Title}\" (dangling BrandId={ad.BrandId})");
+                            continue;
+                        }
                         var cats = ad.Brand.Categories;
                         if (cats.Count == 1)
                         {
