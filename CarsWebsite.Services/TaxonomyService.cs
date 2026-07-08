@@ -11,19 +11,28 @@ public class TaxonomyService : ITaxonomyService
 {
     private readonly AppDbContext _context;
     private readonly IMemoryCache _cache;
+    private readonly ITaxonomyCacheVersion _cacheVersion;
 
     // B-27: Taxonomy data changes rarely — cache for 1 hour to avoid repeated DB queries.
     private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(1);
 
-    public TaxonomyService(AppDbContext context, IMemoryCache cache)
+    public TaxonomyService(AppDbContext context, IMemoryCache cache, ITaxonomyCacheVersion cacheVersion)
     {
         _context = context;
         _cache = cache;
+        _cacheVersion = cacheVersion;
     }
+
+    // Every key is namespaced with the current cache version - admin taxonomy edits bump the
+    // version (see ITaxonomyCacheVersion.Bump, called from AdminController) instead of trying to
+    // remove every individual key, since IMemoryCache has no prefix/wildcard eviction and there
+    // are many independent cached shapes here (brands/models/generations/engines/trims/features/
+    // etc). Old-versioned entries just age out on their own TTL instead of being reachable again.
+    private string Key(string suffix) => $"taxonomy:v{_cacheVersion.Current}:{suffix}";
 
     public async Task<IEnumerable<Brand>> GetFullTaxonomyAsync()
     {
-        return await _cache.GetOrCreateAsync("taxonomy:full", async entry =>
+        return await _cache.GetOrCreateAsync(Key("full"), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.Brands
@@ -38,7 +47,7 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<Brand>> GetBrandsAsync()
     {
-        return await _cache.GetOrCreateAsync("taxonomy:brands", async entry =>
+        return await _cache.GetOrCreateAsync(Key("brands"), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.Brands
@@ -50,7 +59,7 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<Brand>> GetBrandsByCategoryAsync(int categoryId)
     {
-        return await _cache.GetOrCreateAsync($"taxonomy:brands:category:{categoryId}", async entry =>
+        return await _cache.GetOrCreateAsync(Key($"brands:category:{categoryId}"), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.Brands
@@ -66,7 +75,7 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<Model>> GetModelsByBrandAsync(int brandId)
     {
-        return await _cache.GetOrCreateAsync($"taxonomy:models:brand:{brandId}", async entry =>
+        return await _cache.GetOrCreateAsync(Key($"models:brand:{brandId}"), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.Models
@@ -79,7 +88,7 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<Generation>> GetGenerationsByModelAsync(int modelId)
     {
-        return await _cache.GetOrCreateAsync($"taxonomy:generations:model:{modelId}", async entry =>
+        return await _cache.GetOrCreateAsync(Key($"generations:model:{modelId}"), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.Generations
@@ -92,7 +101,7 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<EngineVersion>> GetEnginesByGenerationAsync(int generationId)
     {
-        return await _cache.GetOrCreateAsync($"taxonomy:engines:generation:{generationId}", async entry =>
+        return await _cache.GetOrCreateAsync(Key($"engines:generation:{generationId}"), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.EngineVersions
@@ -106,7 +115,7 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<FuelType>> GetFuelTypesAsync()
     {
-        return await _cache.GetOrCreateAsync("taxonomy:fueltypes", async entry =>
+        return await _cache.GetOrCreateAsync(Key("fueltypes"), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.FuelTypes
@@ -118,7 +127,7 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<Gearbox>> GetGearboxesAsync()
     {
-        return await _cache.GetOrCreateAsync("taxonomy:gearboxes", async entry =>
+        return await _cache.GetOrCreateAsync(Key("gearboxes"), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.Gearboxes
@@ -130,7 +139,7 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<BodyType>> GetBodyTypesAsync()
     {
-        return await _cache.GetOrCreateAsync("taxonomy:bodytypes", async entry =>
+        return await _cache.GetOrCreateAsync(Key("bodytypes"), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.BodyTypes
@@ -142,7 +151,7 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<DriveType>> GetDriveTypesAsync()
     {
-        return await _cache.GetOrCreateAsync("taxonomy:drivetypes", async entry =>
+        return await _cache.GetOrCreateAsync(Key("drivetypes"), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.DriveTypes
@@ -154,7 +163,7 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<CarColor>> GetColorsAsync()
     {
-        return await _cache.GetOrCreateAsync("taxonomy:colors", async entry =>
+        return await _cache.GetOrCreateAsync(Key("colors"), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.CarColors
@@ -166,7 +175,7 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<Feature>> GetFeaturesAsync()
     {
-        return await _cache.GetOrCreateAsync("taxonomy:features", async entry =>
+        return await _cache.GetOrCreateAsync(Key("features"), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.Features
@@ -179,7 +188,7 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<VehicleCategory>> GetVehicleCategoriesAsync()
     {
-        return await _cache.GetOrCreateAsync("taxonomy:vehiclecategories", async entry =>
+        return await _cache.GetOrCreateAsync(Key("vehiclecategories"), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.VehicleCategories
@@ -191,7 +200,7 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<FeatureCategory>> GetFeatureCategoriesAsync()
     {
-        return await _cache.GetOrCreateAsync("taxonomy:featurecategories", async entry =>
+        return await _cache.GetOrCreateAsync(Key("featurecategories"), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.FeatureCategories
@@ -204,7 +213,7 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<FeatureCategory>> GetFeatureCategoriesByVehicleCategoryAsync(int vehicleCategoryId)
     {
-        return await _cache.GetOrCreateAsync($"taxonomy:featurecategories:vehicle:{vehicleCategoryId}", async entry =>
+        return await _cache.GetOrCreateAsync(Key($"featurecategories:vehicle:{vehicleCategoryId}"), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.FeatureCategories
@@ -218,7 +227,7 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<FeatureCategory>> GetFeatureCategoriesByContextAsync(int? vehicleCategoryId, int? brandId, int? modelId)
     {
-        var cacheKey = $"taxonomy:featurecategories:context:{vehicleCategoryId}:{brandId}:{modelId}";
+        var cacheKey = Key($"featurecategories:context:{vehicleCategoryId}:{brandId}:{modelId}");
         return await _cache.GetOrCreateAsync(cacheKey, async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
@@ -236,7 +245,7 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<Trim>> GetTrimsByGenerationAsync(int generationId)
     {
-        return await _cache.GetOrCreateAsync($"taxonomy:trims:generation:{generationId}", async entry =>
+        return await _cache.GetOrCreateAsync(Key($"trims:generation:{generationId}"), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.Trims
@@ -249,7 +258,7 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<EngineVersion>> GetEnginesByTrimAsync(int trimId)
     {
-        return await _cache.GetOrCreateAsync($"taxonomy:engines:trim:{trimId}", async entry =>
+        return await _cache.GetOrCreateAsync(Key($"engines:trim:{trimId}"), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.EngineVersions
@@ -263,7 +272,7 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<EngineVersion?> GetEngineSpecsAsync(int engineVersionId)
     {
-        return await _cache.GetOrCreateAsync($"taxonomy:enginespecs:{engineVersionId}", async entry =>
+        return await _cache.GetOrCreateAsync(Key($"enginespecs:{engineVersionId}"), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.EngineVersions
@@ -275,7 +284,7 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<VehicleSubtype>> GetVehicleSubtypesByCategoryAsync(int vehicleCategoryId)
     {
-        return await _cache.GetOrCreateAsync($"taxonomy:vehiclesubtypes:category:{vehicleCategoryId}", async entry =>
+        return await _cache.GetOrCreateAsync(Key($"vehiclesubtypes:category:{vehicleCategoryId}"), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.VehicleSubtypes
@@ -289,7 +298,7 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<PartCategory>> GetPartCategoriesAsync()
     {
-        return await _cache.GetOrCreateAsync("taxonomy:partcategories", async entry =>
+        return await _cache.GetOrCreateAsync(Key("partcategories"), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.PartCategories
@@ -303,7 +312,7 @@ public class TaxonomyService : ITaxonomyService
 
     public async Task<IEnumerable<PartSubcategory>> GetPartSubcategoriesByCategoryAsync(int partCategoryId)
     {
-        return await _cache.GetOrCreateAsync($"taxonomy:partsubcategories:category:{partCategoryId}", async entry =>
+        return await _cache.GetOrCreateAsync(Key($"partsubcategories:category:{partCategoryId}"), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await _context.PartSubcategories
