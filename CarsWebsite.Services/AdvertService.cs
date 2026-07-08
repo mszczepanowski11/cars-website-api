@@ -144,7 +144,7 @@ public class AdvertService : IAdvertService
     
     
     
-    public async Task UpdateCarAdvertAsync(int id, UpdateCarAdvertDto dto, int userId)
+    public async Task UpdateCarAdvertAsync(int id, UpdateCarAdvertDto dto, int userId, bool isAdmin = false)
     {
         // Sanitize Title and Description: trim whitespace and strip angle-bracket characters
         dto.Title = StripHtml(dto.Title.Trim());
@@ -167,7 +167,7 @@ public class AdvertService : IAdvertService
         if (advert == null)
             throw new KeyNotFoundException("Advert not found");
 
-        if (advert.UserId != userId)
+        if (!isAdmin && advert.UserId != userId)
             throw new UnauthorizedAccessException("You do not own this advert");
 
         var chainCheck = await _hierarchyValidationService.ValidateVehicleChainAsync(
