@@ -4,7 +4,7 @@ using cars_website_api.CarsWebsite.DTOs.Advert;
 public interface IAdvertService
 {
     Task<int> CreateCarAdvertAsync(CreateCarAdvertDto dto, int userId);
-    Task UpdateCarAdvertAsync(int id, UpdateCarAdvertDto dto, int userId);
+    Task UpdateCarAdvertAsync(int id, UpdateCarAdvertDto dto, int userId, bool isAdmin = false);
     Task DeleteCarAdvertAsync(int id, int userId);
     Task<CarAdvertResponseDto> GetCarAdvertByIdAsync(int id, int? requestingUserId = null, bool isAdmin = false);
     Task<PagedResult<CarAdvertResponseDto>> SearchCarAdvertsAsync(SearchCarAdvertDto dto);

@@ -156,7 +156,7 @@ public class AdvertController : ControllerBase
         if (userId == 0) return Unauthorized();
         try
         {
-            await _advertService.UpdateCarAdvertAsync(id, dto, userId);
+            await _advertService.UpdateCarAdvertAsync(id, dto, userId, IsAdmin());
             return NoContent();
         }
         catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
