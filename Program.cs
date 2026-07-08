@@ -138,6 +138,7 @@ internal class Program
         cloudinary.Api.Secure = true;
         builder.Services.AddSingleton(cloudinary);
         builder.Services.AddMemoryCache(); // B-27: taxonomy caching
+        builder.Services.AddSingleton<ITaxonomyCacheVersion, TaxonomyCacheVersion>();
         builder.Services.AddScoped<ITaxonomyService, TaxonomyService>();
         builder.Services.AddScoped<IHierarchyValidationService, HierarchyValidationService>();
         builder.Services.AddScoped<ICategoryService, CategoryService>();

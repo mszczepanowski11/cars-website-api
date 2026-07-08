@@ -22,14 +22,16 @@ public class AdminController : ControllerBase
     private readonly IConfiguration _config;
     private readonly ILogger<AdminController> _logger;
     private readonly IHierarchyValidationService _hierarchyValidationService;
+    private readonly ITaxonomyCacheVersion _taxonomyCacheVersion;
 
-    public AdminController(IAdminService adminService, AppDbContext db, IConfiguration config, ILogger<AdminController> logger, IHierarchyValidationService hierarchyValidationService)
+    public AdminController(IAdminService adminService, AppDbContext db, IConfiguration config, ILogger<AdminController> logger, IHierarchyValidationService hierarchyValidationService, ITaxonomyCacheVersion taxonomyCacheVersion)
     {
         _adminService = adminService;
         _db = db;
         _config = config;
         _logger = logger;
         _hierarchyValidationService = hierarchyValidationService;
+        _taxonomyCacheVersion = taxonomyCacheVersion;
     }
 
     private int GetUserId()
@@ -231,6 +233,7 @@ public class AdminController : ControllerBase
         var feature = new Feature { Name = dto.Name, CategoryId = dto.CategoryId };
         _db.Features.Add(feature);
         await _db.SaveChangesAsync();
+        _taxonomyCacheVersion.Bump();
         return Ok(new { feature.Id, feature.Name });
     }
 
@@ -241,6 +244,7 @@ public class AdminController : ControllerBase
         if (feature == null) return NotFound();
         _db.Features.Remove(feature);
         await _db.SaveChangesAsync();
+        _taxonomyCacheVersion.Bump();
         return NoContent();
     }
 
@@ -279,6 +283,7 @@ public class AdminController : ControllerBase
         };
         _db.FeatureCategories.Add(cat);
         await _db.SaveChangesAsync();
+        _taxonomyCacheVersion.Bump();
         return Ok(new { cat.Id, cat.Name });
     }
 
@@ -289,6 +294,7 @@ public class AdminController : ControllerBase
         if (cat == null) return NotFound();
         _db.FeatureCategories.Remove(cat);
         await _db.SaveChangesAsync();
+        _taxonomyCacheVersion.Bump();
         return NoContent();
     }
 
@@ -349,6 +355,7 @@ public class AdminController : ControllerBase
         request.AdminNotes = dto.Notes;
         request.ReviewedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
+        _taxonomyCacheVersion.Bump();
         _logger.LogInformation("[Admin] ApproveCustomCategory requestId={Id} adminId={AdminId} resultType={ResultType} notes={Notes}", id, GetUserId(), dto.ResultType, dto.Notes);
         return Ok(request);
     }
@@ -572,6 +579,7 @@ public class AdminController : ControllerBase
         var brand = new Brand { Name = dto.Name, Slug = slug, Categories = cats };
         _db.Brands.Add(brand);
         await _db.SaveChangesAsync();
+        _taxonomyCacheVersion.Bump();
         return Ok(new { brand.Id, brand.Name, brand.Slug });
     }
 
@@ -585,6 +593,7 @@ public class AdminController : ControllerBase
         if (dto.CategoryIds != null)
             brand.Categories = await _db.VehicleCategories.Where(c => dto.CategoryIds.Contains(c.Id)).ToListAsync();
         await _db.SaveChangesAsync();
+        _taxonomyCacheVersion.Bump();
         return Ok(new { brand.Id, brand.Name, brand.Slug });
     }
 
@@ -596,6 +605,7 @@ public class AdminController : ControllerBase
         if (brand.Models.Any()) return BadRequest("Nie można usunąć marki posiadającej modele. Najpierw usuń modele.");
         _db.Brands.Remove(brand);
         await _db.SaveChangesAsync();
+        _taxonomyCacheVersion.Bump();
         return NoContent();
     }
 
@@ -626,6 +636,7 @@ public class AdminController : ControllerBase
         var model = new Model { BrandId = dto.BrandId, Name = dto.Name, Slug = slug };
         _db.Models.Add(model);
         await _db.SaveChangesAsync();
+        _taxonomyCacheVersion.Bump();
         return Ok(new { model.Id, model.Name, model.Slug, model.BrandId });
     }
 
@@ -638,6 +649,7 @@ public class AdminController : ControllerBase
         if (!string.IsNullOrWhiteSpace(dto.Slug)) model.Slug = dto.Slug;
         if (dto.BrandId > 0) model.BrandId = dto.BrandId;
         await _db.SaveChangesAsync();
+        _taxonomyCacheVersion.Bump();
         return Ok(new { model.Id, model.Name, model.Slug });
     }
 
@@ -649,6 +661,7 @@ public class AdminController : ControllerBase
         if (model.Generations.Any()) return BadRequest("Nie można usunąć modelu posiadającego generacje. Najpierw usuń generacje.");
         _db.Models.Remove(model);
         await _db.SaveChangesAsync();
+        _taxonomyCacheVersion.Bump();
         return NoContent();
     }
 
@@ -679,6 +692,7 @@ public class AdminController : ControllerBase
         var gen = new Generation { ModelId = dto.ModelId, Name = dto.Name, Slug = slug, YearFrom = dto.YearFrom, YearTo = dto.YearTo };
         _db.Generations.Add(gen);
         await _db.SaveChangesAsync();
+        _taxonomyCacheVersion.Bump();
         return Ok(new { gen.Id, gen.Name, gen.Slug, gen.ModelId });
     }
 
@@ -693,6 +707,7 @@ public class AdminController : ControllerBase
         if (!string.IsNullOrWhiteSpace(dto.Slug)) gen.Slug = dto.Slug;
         if (dto.ModelId > 0) gen.ModelId = dto.ModelId;
         await _db.SaveChangesAsync();
+        _taxonomyCacheVersion.Bump();
         return Ok(new { gen.Id, gen.Name, gen.Slug });
     }
 
@@ -704,6 +719,7 @@ public class AdminController : ControllerBase
         if (gen.EngineVersions.Any()) return BadRequest("Nie można usunąć generacji posiadającej wersje silników. Najpierw usuń silniki.");
         _db.Generations.Remove(gen);
         await _db.SaveChangesAsync();
+        _taxonomyCacheVersion.Bump();
         return NoContent();
     }
 
@@ -749,6 +765,7 @@ public class AdminController : ControllerBase
         };
         _db.EngineVersions.Add(engine);
         await _db.SaveChangesAsync();
+        _taxonomyCacheVersion.Bump();
         return Ok(new { engine.Id, engine.EngineName, engine.GenerationId });
     }
 
@@ -757,8 +774,15 @@ public class AdminController : ControllerBase
     {
         var engine = await _db.EngineVersions.FindAsync(id);
         if (engine == null) return NotFound();
+        // GenerationId is reassignable here on purpose - it's the fix path for engines the
+        // taxonomy audit flags as attached to the wrong generation/model (see GET
+        // Admin/taxonomy-audit), so a mismatch can be corrected in place instead of only via
+        // delete+recreate, which would lose the rest of the engine's spec data.
+        if (dto.GenerationId > 0 && !await _db.Generations.AnyAsync(g => g.Id == dto.GenerationId))
+            return BadRequest("Generacja nie istnieje.");
         engine.EngineName = dto.EngineName;
         engine.FuelTypeId = dto.FuelTypeId;
+        if (dto.GenerationId > 0) engine.GenerationId = dto.GenerationId;
         engine.PowerHP = dto.PowerHP;
         engine.PowerKW = dto.PowerKW;
         engine.Displacement = dto.Displacement;
@@ -766,7 +790,8 @@ public class AdminController : ControllerBase
         engine.FuelConsumptionHighway = dto.FuelConsumptionHighway;
         engine.FuelConsumptionCombined = dto.FuelConsumptionCombined;
         await _db.SaveChangesAsync();
-        return Ok(new { engine.Id, engine.EngineName });
+        _taxonomyCacheVersion.Bump();
+        return Ok(new { engine.Id, engine.EngineName, engine.GenerationId });
     }
 
     [HttpDelete("engines/{id}")]
@@ -776,6 +801,7 @@ public class AdminController : ControllerBase
         if (engine == null) return NotFound();
         _db.EngineVersions.Remove(engine);
         await _db.SaveChangesAsync();
+        _taxonomyCacheVersion.Bump();
         return NoContent();
     }
 
