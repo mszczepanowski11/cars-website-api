@@ -334,7 +334,12 @@ public class AuthService : IAuthService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    public async Task<object?> FacebookLoginAsync(string accessToken)
+    // Bumped whenever the wording of the Facebook-login consent screen changes materially, so
+    // ConsentRecords stays an accurate record of which version of the disclosure a user actually
+    // saw and agreed to (RODO rozliczalność) rather than just "consent was given at some point".
+    private const string FacebookConsentPolicyVersion = "2026-07-08";
+
+    public async Task<object?> FacebookLoginAsync(string accessToken, bool consentGiven, string? ipAddress, string? userAgent)
     {
         var appSecret = _configuration["Facebook:AppSecret"]
             ?? Environment.GetEnvironmentVariable("FACEBOOK_APP_SECRET") ?? "";
@@ -368,6 +373,19 @@ public class AuthService : IAuthService
             if (string.IsNullOrEmpty(payload.Email))
                 return null;
 
+            // A brand-new account is never created silently - the frontend must show the
+            // "we'll create a CARIZO account from your Facebook name/email" consent screen and
+            // resubmit with consentGiven=true before any User row gets written.
+            if (!consentGiven)
+            {
+                return new
+                {
+                    error = "consent_required",
+                    name = payload.FirstName ?? payload.Name?.Split(' ').FirstOrDefault() ?? "",
+                    email = payload.Email,
+                };
+            }
+
             user = new User
             {
                 Name = payload.FirstName ?? payload.Name?.Split(' ').FirstOrDefault() ?? "Użytkownik",
@@ -379,6 +397,17 @@ public class AuthService : IAuthService
                 FacebookId = payload.Id,
             };
             _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            _context.ConsentRecords.Add(new ConsentRecord
+            {
+                UserId = user.Id,
+                ConsentType = "facebook_login_account_creation",
+                PolicyVersion = FacebookConsentPolicyVersion,
+                GrantedAt = DateTime.UtcNow,
+                IpAddress = ipAddress,
+                UserAgent = userAgent,
+            });
             await _context.SaveChangesAsync();
         }
         else if (user.FacebookId == null)

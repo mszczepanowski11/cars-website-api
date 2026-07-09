@@ -159,7 +159,9 @@ public class AuthController : ControllerBase
     [HttpPost("facebook")]
     public async Task<IActionResult> FacebookLogin([FromBody] FacebookLoginDto dto)
     {
-        var result = await _authService.FacebookLoginAsync(dto.AccessToken);
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var userAgent = Request.Headers.UserAgent.ToString();
+        var result = await _authService.FacebookLoginAsync(dto.AccessToken, dto.ConsentGiven, ip, userAgent);
         if (result == null) return Unauthorized("Nie można zalogować przez Facebook.");
 
         var resultType = result.GetType();
@@ -167,6 +169,15 @@ public class AuthController : ControllerBase
         if (errorProp != null)
         {
             var errorVal = errorProp.GetValue(result)?.ToString();
+            if (errorVal == "consent_required")
+            {
+                return Ok(new
+                {
+                    consentRequired = true,
+                    name = resultType.GetProperty("name")?.GetValue(result)?.ToString(),
+                    email = resultType.GetProperty("email")?.GetValue(result)?.ToString(),
+                });
+            }
             return errorVal == "blocked"
                 ? Unauthorized("Konto zostało zablokowane.")
                 : Unauthorized("Nie można zalogować przez Facebook.");

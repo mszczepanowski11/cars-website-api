@@ -760,6 +760,30 @@ internal class Program
   KEY `IX_financinginquiries_AdvertId` (`AdvertId`),
   KEY `IX_financinginquiries_UserId` (`UserId`),
   KEY `IX_financinginquiries_CreatedAt` (`CreatedAt`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+                @"CREATE TABLE IF NOT EXISTS `consentrecords` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `UserId` int NOT NULL,
+  `ConsentType` varchar(100) NOT NULL,
+  `PolicyVersion` varchar(50) NOT NULL,
+  `GrantedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `IpAddress` varchar(64) NULL,
+  `UserAgent` varchar(500) NULL,
+  PRIMARY KEY (`Id`),
+  KEY `IX_consentrecords_UserId` (`UserId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+                @"CREATE TABLE IF NOT EXISTS `datadeletionrequests` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `FacebookUserId` varchar(100) NOT NULL,
+  `UserId` int NULL,
+  `ConfirmationCode` varchar(64) NOT NULL,
+  `RequestedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `CompletedAt` datetime(6) NULL,
+  PRIMARY KEY (`Id`),
+  UNIQUE KEY `IX_datadeletionrequests_ConfirmationCode` (`ConfirmationCode`),
+  KEY `IX_datadeletionrequests_FacebookUserId` (`FacebookUserId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
             };
 
