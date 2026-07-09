@@ -59,6 +59,10 @@ namespace CarsWebsite
         // Auth
         public DbSet<RefreshToken> RefreshTokens { get; set; }
 
+        // Meta/social login compliance
+        public DbSet<ConsentRecord> ConsentRecords { get; set; }
+        public DbSet<DataDeletionRequest> DataDeletionRequests { get; set; }
+
         // Newsletter
         public DbSet<NewsletterSubscriber> NewsletterSubscribers { get; set; }
 
@@ -250,6 +254,9 @@ namespace CarsWebsite
             modelBuilder.Entity<UserNotificationSetting>().ToTable("usernotificationsettings").HasKey(s => s.Id);
             modelBuilder.Entity<UserNotificationSetting>().HasOne(s => s.User).WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<UserNotificationSetting>().HasIndex(s => new { s.UserId, s.Category }).IsUnique();
+            modelBuilder.Entity<ConsentRecord>().ToTable("consentrecords").HasKey(c => c.Id);
+            modelBuilder.Entity<DataDeletionRequest>().ToTable("datadeletionrequests").HasKey(d => d.Id);
+            modelBuilder.Entity<DataDeletionRequest>().HasIndex(d => d.ConfirmationCode).IsUnique();
 
             modelBuilder.Entity<EventAttendee>().ToTable("EventAttendees").HasKey(a => a.Id);
             modelBuilder.Entity<EventAttendee>().HasIndex(a => new { a.EventId, a.UserId }).IsUnique();
