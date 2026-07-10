@@ -3432,6 +3432,8 @@ internal class Program
         VehicleDataSeeder.SeedMotorcycleData(db, logger);
         logger.LogWarning("[STARTUP-TRACE] Calling ComprehensiveSeeder.SeedComprehensiveData");
         ComprehensiveSeeder.SeedComprehensiveData(db, logger);
+        logger.LogWarning("[STARTUP-TRACE] Calling ExternalTaxonomySeeder.Seed");
+        ExternalTaxonomySeeder.Seed(db, logger);
         logger.LogWarning("[STARTUP-TRACE] SeedDataIfEmpty: all seeders completed");
     }
 }
