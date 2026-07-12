@@ -24,7 +24,7 @@ public interface IHierarchyValidationService
     // chain actually belongs to its parent, and that the brand belongs to the given vehicle category.
     // Any id left null is skipped (not every category uses the full chain, e.g. czesci/rolnicze).
     Task<ChainValidationResult> ValidateVehicleChainAsync(
-        int brandId,
+        int? brandId,
         int? modelId,
         int? generationId,
         int? trimId,
@@ -35,7 +35,7 @@ public interface IHierarchyValidationService
     // catch a handful of obvious cases (e.g. an exotic petrol-only brand marked Diesel, or a
     // performance-badged trim claiming implausibly low power) — not exhaustive coverage.
     Task<ChainValidationResult> ValidateEnginePlausibilityAsync(
-        int brandId,
+        int? brandId,
         int? fuelTypeId,
         int? engineVersionId,
         int? trimId,
