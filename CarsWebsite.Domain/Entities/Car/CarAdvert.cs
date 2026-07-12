@@ -134,8 +134,14 @@ public class CarAdvert : Advert
     public bool IsGaraged { get; set; }
     public int? KeyCount { get; set; }
     public DateTime? InsuranceUntil { get; set; }
+    // Deprecated (Faza 8 of the category/attribute restructure): replaced by AdvertDocument, kept
+    // for one more release as read/write-compatible until Faza 9 confirms the migration and drops
+    // these two columns.
     public string? YoutubeUrl { get; set; }
     public string? PdfBrochureUrl { get; set; }
+    // Applies to nearly every advert, so it's a real column rather than an AttributeDefinition.
+    public bool HasHomologation { get; set; }
+    public string? HomologationType { get; set; }
 
     public ICollection<AdvertFeature> AdvertFeatures { get; set; } = new List<AdvertFeature>();
 }

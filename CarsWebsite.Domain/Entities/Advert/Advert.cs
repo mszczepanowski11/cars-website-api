@@ -18,4 +18,5 @@ public class Advert
     public DateTime? ExpiresAt { get; set; }
     public DateTime? SoldAt { get; set; }
     public ICollection<AdvertImage> Images { get; set; }
+    public ICollection<AdvertDocument> Documents { get; set; } = new List<AdvertDocument>();
 }

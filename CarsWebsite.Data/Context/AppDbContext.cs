@@ -12,6 +12,7 @@ namespace CarsWebsite
         public DbSet<Advert> Adverts { get; set; }
         public DbSet<CarAdvert> CarAdverts { get; set; }
         public DbSet<AdvertImage> AdvertImages { get; set; }
+        public DbSet<AdvertDocument> AdvertDocuments { get; set; }
         public DbSet<AdvertFeature> AdvertFeatures { get; set; }
         public DbSet<VehicleCategory> VehicleCategories { get; set; }
         public DbSet<FavoriteAdvert> FavoriteAdverts { get; set; }
@@ -117,6 +118,12 @@ namespace CarsWebsite
             modelBuilder.Entity<AdvertImage>().ToTable("AdvertImages").HasKey(i => i.Id);
             modelBuilder.Entity<Advert>().HasMany(a => a.Images).WithOne(i => i.Advert)
                 .HasForeignKey(i => i.AdvertId).OnDelete(DeleteBehavior.Cascade);
+
+            // Faza 8: nav collection on Advert (unlike AdvertAttributeValue) so AutoMapper's
+            // convention mapping can populate CarAdvertResponseDto.Documents automatically.
+            modelBuilder.Entity<AdvertDocument>().ToTable("advertdocuments").HasKey(d => d.Id);
+            modelBuilder.Entity<Advert>().HasMany(a => a.Documents).WithOne(d => d.Advert)
+                .HasForeignKey(d => d.AdvertId).OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<AdvertFeature>().ToTable("AdvertFeatures").HasKey(af => new { af.AdvertId, af.FeatureId });
             modelBuilder.Entity<AdvertFeature>().HasOne(af => af.Advert).WithMany(a => a.AdvertFeatures)
