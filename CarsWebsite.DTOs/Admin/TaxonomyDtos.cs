@@ -21,6 +21,8 @@ public class CreateBrandDto
     public string Name { get; set; } = string.Empty;
     public string? Slug { get; set; }
     public List<int>? CategoryIds { get; set; }
+    public string? OriginCountry { get; set; }
+    public bool IsLuxury { get; set; }
 }
 
 public class CreateModelDto

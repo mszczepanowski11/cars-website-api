@@ -556,7 +556,7 @@ public class AdminController : ControllerBase
         var items = await q.OrderBy(b => b.Name)
             .Skip((page - 1) * pageSize).Take(pageSize)
             .Select(b => new {
-                b.Id, b.Name, b.Slug,
+                b.Id, b.Name, b.Slug, b.OriginCountry, b.IsLuxury,
                 Categories = b.Categories.Select(c => new { c.Id, c.Name }).ToList(),
                 ModelCount = b.Models.Count()
             }).ToListAsync();
@@ -576,11 +576,11 @@ public class AdminController : ControllerBase
         var cats = dto.CategoryIds?.Count > 0
             ? await _db.VehicleCategories.Where(c => dto.CategoryIds.Contains(c.Id)).ToListAsync()
             : new List<VehicleCategory>();
-        var brand = new Brand { Name = dto.Name, Slug = slug, Categories = cats };
+        var brand = new Brand { Name = dto.Name, Slug = slug, Categories = cats, OriginCountry = dto.OriginCountry, IsLuxury = dto.IsLuxury };
         _db.Brands.Add(brand);
         await _db.SaveChangesAsync();
         _taxonomyCacheVersion.Bump();
-        return Ok(new { brand.Id, brand.Name, brand.Slug });
+        return Ok(new { brand.Id, brand.Name, brand.Slug, brand.OriginCountry, brand.IsLuxury });
     }
 
     [HttpPut("brands/{id}")]
@@ -592,9 +592,11 @@ public class AdminController : ControllerBase
         if (!string.IsNullOrWhiteSpace(dto.Slug)) brand.Slug = dto.Slug;
         if (dto.CategoryIds != null)
             brand.Categories = await _db.VehicleCategories.Where(c => dto.CategoryIds.Contains(c.Id)).ToListAsync();
+        brand.OriginCountry = dto.OriginCountry;
+        brand.IsLuxury = dto.IsLuxury;
         await _db.SaveChangesAsync();
         _taxonomyCacheVersion.Bump();
-        return Ok(new { brand.Id, brand.Name, brand.Slug });
+        return Ok(new { brand.Id, brand.Name, brand.Slug, brand.OriginCountry, brand.IsLuxury });
     }
 
     [HttpDelete("brands/{id}")]

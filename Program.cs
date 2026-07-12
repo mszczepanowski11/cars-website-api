@@ -451,6 +451,13 @@ internal class Program
                 "`ResultingVehicleSubtypeId` int NULL" })
             { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `customcategoryrequests` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] customcategoryrequests.{Col}: {Msg}", colDef, ex.Message); } }
 
+            // brands metadata columns (Faza 1 of the category/attribute restructure) — backs the
+            // "Samochody amerykańskie/japońskie/chińskie" and "Samochody luksusowe" filters.
+            foreach (var colDef in new[] {
+                "`OriginCountry` varchar(50) NULL",
+                "`IsLuxury` tinyint(1) NOT NULL DEFAULT 0" })
+            { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `brands` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] brands.{Col}: {Msg}", colDef, ex.Message); } }
+
             // These 3 tables were first created (via the CREATE TABLE IF NOT EXISTS guards right
             // below) with PascalCase names, shadowing the lowercase name EF's generated queries
             // actually look for on this DB (same class of bug documented in the rename block
@@ -3434,6 +3441,8 @@ internal class Program
         ComprehensiveSeeder.SeedComprehensiveData(db, logger);
         logger.LogWarning("[STARTUP-TRACE] Calling ExternalTaxonomySeeder.Seed");
         ExternalTaxonomySeeder.Seed(db, logger);
+        logger.LogWarning("[STARTUP-TRACE] Calling BrandMetadataSeeder.Seed");
+        BrandMetadataSeeder.Seed(db, logger);
         logger.LogWarning("[STARTUP-TRACE] SeedDataIfEmpty: all seeders completed");
     }
 }
