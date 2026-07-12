@@ -791,6 +791,45 @@ internal class Program
   PRIMARY KEY (`Id`),
   UNIQUE KEY `IX_datadeletionrequests_ConfirmationCode` (`ConfirmationCode`),
   KEY `IX_datadeletionrequests_FacebookUserId` (`FacebookUserId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+                // Faza 2 of the category/attribute restructure (crispy-riding-mochi.md) - generic
+                // per-category field system replacing the old "dump extraFields into description
+                // text" pattern.
+                @"CREATE TABLE IF NOT EXISTS `attributedefinitions` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `VehicleCategoryId` int NOT NULL,
+  `VehicleSubtypeId` int NULL,
+  `Key` varchar(100) NOT NULL,
+  `LabelPl` varchar(200) NOT NULL,
+  `DataType` int NOT NULL,
+  `Unit` varchar(30) NULL,
+  `ValidationJson` longtext NULL,
+  `OptionsJson` longtext NULL,
+  `IsRequired` tinyint(1) NOT NULL DEFAULT 0,
+  `IsFilterable` tinyint(1) NOT NULL DEFAULT 0,
+  `IsSearchable` tinyint(1) NOT NULL DEFAULT 0,
+  `IsActive` tinyint(1) NOT NULL DEFAULT 1,
+  `SortOrder` int NOT NULL DEFAULT 0,
+  PRIMARY KEY (`Id`),
+  KEY `IX_attributedefinitions_VehicleCategoryId` (`VehicleCategoryId`),
+  KEY `IX_attributedefinitions_VehicleSubtypeId` (`VehicleSubtypeId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+                @"CREATE TABLE IF NOT EXISTS `advertattributevalues` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `AdvertId` int NOT NULL,
+  `AttributeDefinitionId` int NOT NULL,
+  `ValueText` longtext NULL,
+  `ValueNumber` decimal(18,4) NULL,
+  `ValueBool` tinyint(1) NULL,
+  `ValueDate` datetime(6) NULL,
+  PRIMARY KEY (`Id`),
+  UNIQUE KEY `IX_advertattributevalues_AdvertId_AttributeDefinitionId` (`AdvertId`, `AttributeDefinitionId`),
+  KEY `IX_advertattributevalues_AttrDef_ValueNumber` (`AttributeDefinitionId`, `ValueNumber`),
+  KEY `IX_advertattributevalues_AttrDef_ValueText` (`AttributeDefinitionId`, `ValueText`(191)),
+  KEY `IX_advertattributevalues_AttrDef_ValueBool` (`AttributeDefinitionId`, `ValueBool`),
+  KEY `IX_advertattributevalues_AttrDef_ValueDate` (`AttributeDefinitionId`, `ValueDate`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
             };
 
