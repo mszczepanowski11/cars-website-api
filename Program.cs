@@ -156,6 +156,7 @@ internal class Program
         builder.Services.AddScoped<IPaymentService, PaymentService>();
         builder.Services.AddScoped<IInvoiceService, InvoiceService>();
         builder.Services.AddHttpClient<IKSeFService, KSeFService>();
+        builder.Services.AddHttpClient<ICepikService, CepikService>();
         builder.Services.AddScoped<IFinancingService, FinancingService>();
         builder.Services.AddHostedService<SubscriptionExpiryJob>();
         builder.Services.AddHostedService<MonthlyInvoiceJob>();
