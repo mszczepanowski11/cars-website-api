@@ -14,7 +14,7 @@ public class HierarchyValidationService : IHierarchyValidationService
     }
 
     public async Task<ChainValidationResult> ValidateVehicleChainAsync(
-        int brandId,
+        int? brandId,
         int? modelId,
         int? generationId,
         int? trimId,
@@ -68,13 +68,13 @@ public class HierarchyValidationService : IHierarchyValidationService
     }
 
     public async Task<ChainValidationResult> ValidateEnginePlausibilityAsync(
-        int brandId,
+        int? brandId,
         int? fuelTypeId,
         int? engineVersionId,
         int? trimId,
         int? powerHP)
     {
-        if (fuelTypeId.HasValue)
+        if (fuelTypeId.HasValue && brandId.HasValue)
         {
             var brandHasRestriction = await _context.BrandAllowedFuelTypes.AnyAsync(x => x.BrandId == brandId);
             if (brandHasRestriction)

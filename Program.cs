@@ -858,6 +858,12 @@ internal class Program
                 // the add-advert form falls back to letting the user skip Model entirely rather
                 // than block on missing taxonomy data, so the column must accept NULL.
                 "ALTER TABLE `caradverts` MODIFY COLUMN `ModelId` int NULL",
+                // Faza 6 of the category/attribute restructure: non-vehicle categories (Usługi
+                // motoryzacyjne) and free-text-brand machinery categories (rolnicze/budowlane/
+                // maszyny) never populate BrandId/FuelTypeId, which previously hit a NOT NULL FK
+                // violation (500) on every such submission.
+                "ALTER TABLE `caradverts` MODIFY COLUMN `BrandId` int NULL",
+                "ALTER TABLE `caradverts` MODIFY COLUMN `FuelTypeId` int NULL",
             };
             foreach (var sql in modifyColumnSql)
             {
