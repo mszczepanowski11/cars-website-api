@@ -3482,6 +3482,8 @@ internal class Program
         ExternalTaxonomySeeder.Seed(db, logger);
         logger.LogWarning("[STARTUP-TRACE] Calling BrandMetadataSeeder.Seed");
         BrandMetadataSeeder.Seed(db, logger);
+        logger.LogWarning("[STARTUP-TRACE] Calling AttributeDefinitionMigrationSeeder.Seed");
+        AttributeDefinitionMigrationSeeder.Seed(db, logger);
         logger.LogWarning("[STARTUP-TRACE] SeedDataIfEmpty: all seeders completed");
     }
 }
