@@ -1805,6 +1805,144 @@ internal class Program
                     bgLogger.LogError(ex, "[STARTUP-TRACE] przyczepy/naczepy brand cleanup failed: {Msg}", ex.Message);
                 }
 
+                // Faza 6 of the category/attribute restructure (crispy-riding-mochi.md): 4 new
+                // categories - Opony, Felgi, Akcesoria, Usługi motoryzacyjne. Same idempotent-by-
+                // slug pattern as the category expansion above. Opony/Felgi/Akcesoria still reuse
+                // CarAdvert (a tire/wheel/accessory has a real Brand); Usługi motoryzacyjne
+                // genuinely has neither brand nor fuel type - safe now that BrandId/FuelTypeId are
+                // nullable (see the "Fix 500 on brand-less/fuel-type-less advert submissions" PR).
+                try
+                {
+                    var faza6Specs = new[]
+                    {
+                        new {
+                            Slug = "opony", Name = "Opony",
+                            Description = "Opony osobowe, dostawcze, ciężarowe i motocyklowe", IconName = "mdi-tire", SortOrder = 18,
+                            Subtypes = new (string Name, string Slug)[] {
+                                ("Osobowe", "opony-osobowe"), ("Dostawcze / SUV", "opony-dostawcze-suv"),
+                                ("Ciężarowe", "opony-ciezarowe"), ("Motocyklowe", "opony-motocyklowe"),
+                                ("Rolnicze / przemysłowe", "opony-rolnicze"),
+                            },
+                        },
+                        new {
+                            Slug = "felgi", Name = "Felgi",
+                            Description = "Felgi stalowe i aluminiowe do wszystkich typów pojazdów", IconName = "mdi-alloy-wheel", SortOrder = 19,
+                            Subtypes = new (string Name, string Slug)[] {
+                                ("Osobowe", "felgi-osobowe"), ("Dostawcze / SUV", "felgi-dostawcze-suv"),
+                                ("Ciężarowe", "felgi-ciezarowe"), ("Motocyklowe", "felgi-motocyklowe"),
+                            },
+                        },
+                        new {
+                            Slug = "akcesoria", Name = "Akcesoria",
+                            Description = "Akcesoria samochodowe i wyposażenie dodatkowe", IconName = "mdi-package-variant-closed", SortOrder = 20,
+                            Subtypes = Array.Empty<(string, string)>(),
+                        },
+                        new {
+                            Slug = "uslugi-motoryzacyjne", Name = "Usługi motoryzacyjne",
+                            Description = "Warsztaty, mechanika, wulkanizacja, detailing i inne usługi", IconName = "mdi-car-wrench", SortOrder = 21,
+                            Subtypes = Array.Empty<(string, string)>(),
+                        },
+                    };
+
+                    var existingSlugs6 = bgDb.VehicleCategories.Select(c => c.Slug).ToHashSet();
+                    foreach (var spec in faza6Specs)
+                    {
+                        if (existingSlugs6.Contains(spec.Slug)) continue;
+
+                        var vcat = new VehicleCategory {
+                            Slug = spec.Slug, Name = spec.Name, Description = spec.Description,
+                            IconName = spec.IconName, SortOrder = spec.SortOrder,
+                        };
+                        bgDb.VehicleCategories.Add(vcat);
+                        bgDb.SaveChanges(); // need vcat.Id for subtypes below
+
+                        var order = 0;
+                        foreach (var (name, slug) in spec.Subtypes)
+                            bgDb.VehicleSubtypes.Add(new VehicleSubtype { VehicleCategoryId = vcat.Id, Name = name, Slug = slug, SortOrder = order++ });
+                        bgDb.SaveChanges();
+
+                        bgLogger.LogWarning("[STARTUP-TRACE] Seeded Faza 6 vehicle category '{Slug}' ({SubCount} subtypes)", spec.Slug, spec.Subtypes.Length);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    bgLogger.LogError(ex, "[STARTUP-TRACE] Faza 6 category seeding failed: {Msg}", ex.Message);
+                }
+
+                // Faza 6: tire/wheel manufacturer Brand<->Category data, reusing the existing
+                // Brand->Model hierarchy exactly like every other category (Michelin/Continental/
+                // etc. as Brands linked to "opony"/"felgi" via the existing many-to-many, with a
+                // few representative product lines as Models) - zero new schema per the plan. Not
+                // an exhaustive catalog, same starter-set convention as the Phase 8 brand seeding
+                // above. Runs every startup; idempotent by slug.
+                try
+                {
+                    string Slugify(string s) => s.ToLowerInvariant()
+                        .Replace(" ", "-").Replace("/", "-").Replace("*", "").Replace("ą", "a")
+                        .Replace("ę", "e").Replace("ł", "l").Replace("ó", "o").Replace("ś", "s")
+                        .Replace("ż", "z").Replace("ź", "z").Replace("ń", "n").Replace("ć", "c");
+
+                    var tireWheelCats = bgDb.VehicleCategories
+                        .Where(c => new[] { "opony", "felgi" }.Contains(c.Slug))
+                        .ToDictionary(c => c.Slug, c => c);
+
+                    var existingBrandSlugs6 = bgDb.Brands.Select(b => b.Slug).ToHashSet();
+                    var newBrands6 = new List<Brand>();
+                    var brandModels6 = new Dictionary<string, string[]>();
+                    void AddTireWheelBrand(string catSlug, string name, string slug, string[] models)
+                    {
+                        if (!tireWheelCats.TryGetValue(catSlug, out var cat)) return;
+                        if (existingBrandSlugs6.Contains(slug)) return;
+                        newBrands6.Add(new Brand { Name = name, Slug = slug, Categories = new List<VehicleCategory> { cat } });
+                        brandModels6[slug] = models;
+                    }
+
+                    foreach (var (n, s, models) in new (string, string, string[])[] {
+                        ("Michelin", "michelin-tyres", new[] { "Pilot Sport 4", "CrossClimate 2", "Primacy 4", "Agilis 3", "Alpin 6" }),
+                        ("Continental", "continental-tyres", new[] { "PremiumContact 6", "WinterContact TS 870", "EcoContact 6", "VanContact 4Season" }),
+                        ("Bridgestone", "bridgestone-tyres", new[] { "Turanza T005", "Blizzak LM005", "Potenza Sport", "Duravis" }),
+                        ("Pirelli", "pirelli-tyres", new[] { "P Zero", "Cinturato P7", "Winter Sottozero 3", "Scorpion" }),
+                        ("Goodyear", "goodyear-tyres", new[] { "EfficientGrip Performance 2", "UltraGrip 9+", "Vector 4Seasons" }),
+                        ("Dunlop", "dunlop-tyres", new[] { "Sport Maxx RT2", "Winter Sport 5", "SP Sport" }),
+                        ("Nokian", "nokian-tyres", new[] { "Hakkapeliitta R5", "Powerproof", "WR Snowproof" }),
+                        ("Hankook", "hankook-tyres", new[] { "Ventus Prime4", "Winter i*cept", "Kinergy 4S2" }),
+                        ("Yokohama", "yokohama-tyres", new[] { "BluEarth-GT", "Advan Sport", "Geolandar" }),
+                        ("Falken", "falken-tyres", new[] { "Azenis FK510", "Eurowinter HS01" }),
+                        ("Kumho", "kumho-tyres", new[] { "Ecsta PS71", "WinterCraft" }),
+                        ("Semperit", "semperit-tyres", new[] { "Speed-Life 3", "Master-Grip 2" }),
+                    }) AddTireWheelBrand("opony", n, s, models);
+
+                    foreach (var (n, s, models) in new (string, string, string[])[] {
+                        ("BBS", "bbs-wheels", new[] { "CH-R", "SR", "LM" }),
+                        ("OZ Racing", "oz-racing", new[] { "Ultraleggera", "Superturismo", "Botticelli" }),
+                        ("Enkei", "enkei-wheels", new[] { "RPF1", "PF01", "Performance Line" }),
+                        ("Borbet", "borbet-wheels", new[] { "BY", "CW", "A" }),
+                        ("ATS", "ats-wheels", new[] { "Radial+", "Emotion" }),
+                        ("Alutec", "alutec-wheels", new[] { "Grip", "Ikenu" }),
+                        ("Dezent", "dezent-wheels", new[] { "TE", "RE" }),
+                        ("Ronal", "ronal-wheels", new[] { "R59", "R60" }),
+                    }) AddTireWheelBrand("felgi", n, s, models);
+
+                    if (newBrands6.Count > 0)
+                    {
+                        bgDb.Brands.AddRange(newBrands6);
+                        bgDb.SaveChanges(); // need brand.Id for Models below
+
+                        foreach (var brand in newBrands6)
+                        {
+                            if (!brandModels6.TryGetValue(brand.Slug, out var models)) continue;
+                            foreach (var modelName in models)
+                                bgDb.Models.Add(new Model { Brand = brand, Name = modelName, Slug = $"{brand.Slug}-{Slugify(modelName)}" });
+                        }
+                        bgDb.SaveChanges();
+                    }
+                    bgLogger.LogWarning("[STARTUP-TRACE] Tire/wheel brand seeding done ({Count} new brands)", newBrands6.Count);
+                }
+                catch (Exception ex)
+                {
+                    bgLogger.LogError(ex, "[STARTUP-TRACE] Tire/wheel brand seeding failed: {Msg}", ex.Message);
+                }
+
                 // przyczepy also accumulated ~12 "Naczepa X" subtypes from earlier seeding passes
                 // that predate the naczepy category — several are exact duplicates of an existing
                 // non-"Naczepa" row (e.g. both "Naczepa wywrotka" and "Przyczepa wywrotka" exist),

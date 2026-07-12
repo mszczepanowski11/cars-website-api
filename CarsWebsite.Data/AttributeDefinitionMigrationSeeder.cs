@@ -18,6 +18,10 @@ namespace cars_website_api.CarsWebsite.Data;
 // CarAdvert columns forever, per the plan's hard boundary. Idempotent by (VehicleCategoryId,
 // VehicleSubtypeId, Key), same convention as ExternalTaxonomySeeder/BrandMetadataSeeder - safe to
 // run on every startup.
+//
+// Faza 6 extended this same seeder (rather than adding a new one) with fields for the 4 brand-new
+// categories (Opony/Felgi/Akcesoria/Usługi motoryzacyjne) - not a migration, just new data, but the
+// same upsert-by-natural-key mechanism applies unchanged.
 public static class AttributeDefinitionMigrationSeeder
 {
     private record DefSpec(string CategorySlug, string? SubtypeSlug, string Key, string LabelPl, AttributeDataType DataType, string? Unit, string[]? Options, bool IsRequired = false);
@@ -188,6 +192,48 @@ public static class AttributeDefinitionMigrationSeeder
             ["Wieżowy", "Mobilny", "Samojezdny"]),
         new("budowlane", "zuraw", "maxLoad", "Udźwig max (t)", AttributeDataType.Decimal, "t", null),
         new("budowlane", "zuraw", "maxBoom", "Długość wysięgnika (m)", AttributeDataType.Decimal, "m", null),
+
+        // ── Faza 6: brand-new categories (Opony/Felgi/Akcesoria/Usługi motoryzacyjne) ─────────
+        // These aren't migrated from anywhere - genuinely new fields for genuinely new categories,
+        // scoped by category only (no subtype - the vehicle-fit axis is already a VehicleSubtype).
+        new("opony", null, "szerokosc", "Szerokość", AttributeDataType.Number, "mm", null, IsRequired: true),
+        new("opony", null, "profil", "Profil", AttributeDataType.Number, "%", null, IsRequired: true),
+        new("opony", null, "srednica", "Średnica felgi", AttributeDataType.Decimal, "\"", null, IsRequired: true),
+        new("opony", null, "indeksPredkosci", "Indeks prędkości", AttributeDataType.Select, null,
+            ["Q", "R", "S", "T", "U", "H", "V", "W", "Y", "ZR"]),
+        new("opony", null, "indeksNosnosci", "Indeks nośności", AttributeDataType.Number, null, null),
+        new("opony", null, "sezon", "Sezon", AttributeDataType.Select, null,
+            ["Letnie", "Zimowe", "Całoroczne"], IsRequired: true),
+        new("opony", null, "dataDot", "Data produkcji (DOT)", AttributeDataType.Text, null, null),
+        new("opony", null, "bieznik", "Głębokość bieżnika", AttributeDataType.Decimal, "mm", null),
+        new("opony", null, "runFlat", "Run Flat (RFT)", AttributeDataType.Boolean, null, null),
+        new("opony", null, "iloscSztuk", "Liczba sztuk w komplecie", AttributeDataType.Number, "szt.", null),
+
+        new("felgi", null, "srednica", "Średnica", AttributeDataType.Decimal, "\"", null, IsRequired: true),
+        new("felgi", null, "szerokoscFelgi", "Szerokość", AttributeDataType.Decimal, "\"", null),
+        new("felgi", null, "et", "ET (offset)", AttributeDataType.Number, "mm", null),
+        new("felgi", null, "pcd", "Rozstaw śrub (PCD)", AttributeDataType.Text, null, null),
+        new("felgi", null, "otworCentralny", "Otwór centralny", AttributeDataType.Decimal, "mm", null),
+        new("felgi", null, "liczbaSrub", "Liczba śrub", AttributeDataType.Number, null, null),
+        new("felgi", null, "material", "Materiał", AttributeDataType.Select, null,
+            ["Aluminium", "Stal", "Carbon", "Magnez"], IsRequired: true),
+        new("felgi", null, "iloscSztuk", "Liczba sztuk w komplecie", AttributeDataType.Number, "szt.", null),
+
+        new("akcesoria", null, "typ", "Typ akcesorium", AttributeDataType.Select, null,
+            ["Dywaniki i maty", "Pokrowce na siedzenia", "Bagażnik dachowy / box", "Hak holowniczy",
+             "Elektronika i multimedia", "Oświetlenie", "Nawigacja GPS", "Akcesoria wnętrza",
+             "Akcesoria zewnętrzne", "Narzędzia warsztatowe", "Chemia samochodowa", "Inne"], IsRequired: true),
+        new("akcesoria", null, "stan", "Stan", AttributeDataType.Select, null,
+            ["Nowy", "Używany"], IsRequired: true),
+        new("akcesoria", null, "pasujeDo", "Pasuje do (marka / model)", AttributeDataType.Text, null, null),
+
+        new("uslugi-motoryzacyjne", null, "typUslugi", "Typ usługi", AttributeDataType.Select, null,
+            ["Mechanika ogólna", "Elektryka i diagnostyka", "Blacharstwo i lakiernictwo", "Wulkanizacja",
+             "Serwis klimatyzacji", "Detailing i mycie", "Pomoc drogowa / Holowanie", "Wynajem pojazdów",
+             "Przegląd i stacja kontroli", "Tuning i chip tuning", "Inne"], IsRequired: true),
+        new("uslugi-motoryzacyjne", null, "obszarDzialania", "Obszar działania", AttributeDataType.Text, null, null),
+        new("uslugi-motoryzacyjne", null, "godzinyOtwarcia", "Godziny otwarcia", AttributeDataType.Text, null, null),
+        new("uslugi-motoryzacyjne", null, "telefonKontaktowy", "Telefon kontaktowy", AttributeDataType.Text, null, null),
     ];
 
     public static void Seed(AppDbContext db, ILogger logger)
