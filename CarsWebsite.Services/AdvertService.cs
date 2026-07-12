@@ -149,10 +149,25 @@ public class AdvertService : IAdvertService
         if (dto.AttributeValues != null && dto.AttributeValues.Count > 0)
             _context.AdvertAttributeValues.AddRange(BuildAttributeValues(dto.AttributeValues, advert.Id));
 
+        if (dto.Documents != null && dto.Documents.Count > 0)
+            _context.AdvertDocuments.AddRange(BuildDocuments(dto.Documents, advert.Id));
+
         await _context.SaveChangesAsync();
 
         return advert.Id;
     }
+
+    // Faza 8 of the category/attribute restructure - same shape as BuildAttributeValues above.
+    private static IEnumerable<AdvertDocument> BuildDocuments(List<CreateAdvertDocumentDto> documents, int advertId) =>
+        documents.Where(d => !string.IsNullOrWhiteSpace(d.Url))
+            .Select(d => new AdvertDocument
+            {
+                AdvertId = advertId,
+                Url = d.Url,
+                Type = d.Type,
+                Label = d.Label,
+                SortOrder = d.SortOrder,
+            });
 
     // Faza 3 of the category/attribute restructure - mirrors the FeatureIds pattern just above:
     // the client sends only the fields the seller actually filled in, we trust AttributeDefinition
@@ -235,6 +250,14 @@ public class AdvertService : IAdvertService
             _context.AdvertAttributeValues.RemoveRange(oldValues);
             if (dto.AttributeValues.Count > 0)
                 _context.AdvertAttributeValues.AddRange(BuildAttributeValues(dto.AttributeValues, advert.Id));
+        }
+
+        if (dto.Documents != null)
+        {
+            var oldDocuments = await _context.AdvertDocuments.Where(d => d.AdvertId == advert.Id).ToListAsync();
+            _context.AdvertDocuments.RemoveRange(oldDocuments);
+            if (dto.Documents.Count > 0)
+                _context.AdvertDocuments.AddRange(BuildDocuments(dto.Documents, advert.Id));
         }
 
         await _context.SaveChangesAsync();

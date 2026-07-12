@@ -27,6 +27,7 @@ public class AdvertMappingProfile : Profile
         CreateMap<Feature, FeatureDto>();
 
         CreateMap<AdvertImage, AdvertImageDto>();
+        CreateMap<AdvertDocument, AdvertDocumentDto>();
 
         CreateMap<PartCompatibility, PartCompatibilityDto>()
             .ForMember(dest => dest.BrandName, opt => opt.MapFrom(src => src.Brand != null ? src.Brand.Name : ""))

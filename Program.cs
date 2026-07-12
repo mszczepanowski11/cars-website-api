@@ -442,7 +442,13 @@ internal class Program
                 "`PdfBrochureUrl` varchar(1000) NULL",
                 // Parts catalog fields (migration AddPartCatalogFields) — same bootstrap risk.
                 "`Side` varchar(20) NULL",
-                "`Quantity` int NULL" })
+                "`Quantity` int NULL",
+                // Faza 8 of the category/attribute restructure: homologation stays a real column
+                // (applies to nearly every advert) - documents/videos go in the new AdvertDocuments
+                // table below instead, replacing the single YoutubeUrl/PdfBrochureUrl columns above
+                // (kept for one more release as deprecated/backward-compatible, per the plan).
+                "`HasHomologation` tinyint(1) NOT NULL DEFAULT 0",
+                "`HomologationType` varchar(100) NULL" })
             { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `caradverts` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] caradverts.{Col}: {Msg}", colDef, ex.Message); } }
 
             // customcategoryrequests result columns (migration AddCustomCategoryRequestResults) — same bootstrap risk.
@@ -953,6 +959,25 @@ internal class Program
 
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `advertimages` ADD COLUMN `IsMain` tinyint(1) NOT NULL DEFAULT 0"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN advertimages.IsMain skipped: {Message}", ex.Message); }
+
+            // Faza 8: AdvertDocuments — replaces the single YoutubeUrl/PdfBrochureUrl columns with
+            // proper multiple-documents-per-advert support. AdvertId FKs to the base Advert table
+            // (not CarAdvert specifically), same TPT-shared-Id relationship as AdvertAttributeValue.
+            // No explicit FK constraint, index only — matches the advertimages table above.
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS `advertdocuments` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `AdvertId` int NOT NULL,
+  `Url` varchar(1000) NOT NULL,
+  `Type` int NOT NULL,
+  `Label` varchar(200) NULL,
+  `SortOrder` int NOT NULL DEFAULT 0,
+  PRIMARY KEY (`Id`),
+  KEY `IX_AdvertDocuments_AdvertId` (`AdvertId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            }
+            catch (Exception ex) { logger.LogWarning("CREATE TABLE advertdocuments skipped: {Message}", ex.Message); }
 
             try
             {
@@ -3628,6 +3653,8 @@ internal class Program
         BrandMetadataSeeder.Seed(db, logger);
         logger.LogWarning("[STARTUP-TRACE] Calling AttributeDefinitionMigrationSeeder.Seed");
         AttributeDefinitionMigrationSeeder.Seed(db, logger);
+        logger.LogWarning("[STARTUP-TRACE] Calling AdvertDocumentBackfillSeeder.Seed");
+        AdvertDocumentBackfillSeeder.Seed(db, logger);
         logger.LogWarning("[STARTUP-TRACE] SeedDataIfEmpty: all seeders completed");
     }
 }

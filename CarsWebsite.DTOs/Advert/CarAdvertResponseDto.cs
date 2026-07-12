@@ -125,11 +125,15 @@ public class CarAdvertResponseDto
     public bool IsGaraged { get; set; }
     public int? KeyCount { get; set; }
     public DateTime? InsuranceUntil { get; set; }
+    // Deprecated (Faza 8): replaced by Documents below, kept read-compatible until Faza 9.
     public string? YoutubeUrl { get; set; }
     public string? PdfBrochureUrl { get; set; }
+    public bool HasHomologation { get; set; }
+    public string? HomologationType { get; set; }
 
     public List<FeatureDto> Features { get; set; } = new();
     public List<AdvertImageDto> Images { get; set; } = new();
+    public List<AdvertDocumentDto> Documents { get; set; } = new();
 
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }

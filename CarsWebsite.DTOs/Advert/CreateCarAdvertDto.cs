@@ -112,6 +112,10 @@ public class CreateCarAdvertDto
     public bool IsGaraged { get; set; }
     [Range(1, 10)] public int? KeyCount { get; set; }
     public DateTime? InsuranceUntil { get; set; }
+    // Deprecated (Faza 8): replaced by Documents below, kept read/write-compatible until Faza 9.
     [MaxLength(500)] public string? YoutubeUrl { get; set; }
     [MaxLength(1000)] public string? PdfBrochureUrl { get; set; }
+    public bool HasHomologation { get; set; }
+    [MaxLength(100)] public string? HomologationType { get; set; }
+    public List<CreateAdvertDocumentDto>? Documents { get; set; }
 }
