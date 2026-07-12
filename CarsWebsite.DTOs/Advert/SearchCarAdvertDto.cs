@@ -144,6 +144,16 @@ public class SearchCarAdvertDto
     // fixed filter above.
     public List<AttributeFilterDto>? AttributeFilters { get; set; }
 
+    // Faza 7: calculated filters for "Auta osobowe" - origin/luxury read off Brand (Faza 1
+    // columns), era/sport computed from Year/BodyType/PowerHP at query time. No new schema.
+    [MaxLength(50)]
+    public string? OriginCountry { get; set; }
+    public bool? IsLuxuryBrand { get; set; }
+
+    [MaxLength(20)]
+    public string? Era { get; set; } // "youngtimer" | "classic"
+    public bool? IsSporty { get; set; }
+
     [MaxLength(50)]
     public string? SortBy { get; set; }
 
