@@ -372,7 +372,41 @@ public class AdvertService : IAdvertService
                 query = query.Where(a => a.AdvertFeatures.Any(af => af.FeatureId == capturedFid));
             }
         }
-        
+
+        // Faza 5 of the category/attribute restructure: same one-EXISTS-subquery-per-criterion
+        // shape as FeatureIds above, against AdvertAttributeValue instead of AdvertFeatures. `a.Id`
+        // is the base Advert.Id (CarAdvert is TPT, shares the same Id), which is what
+        // AdvertAttributeValue.AdvertId FKs to.
+        if (dto.AttributeFilters != null && dto.AttributeFilters.Any())
+        {
+            foreach (var af in dto.AttributeFilters)
+            {
+                var defId = af.AttributeDefinitionId;
+                if (af.ValueBool.HasValue)
+                {
+                    var boolVal = af.ValueBool.Value;
+                    query = query.Where(a => _context.AdvertAttributeValues.Any(v =>
+                        v.AdvertId == a.Id && v.AttributeDefinitionId == defId && v.ValueBool == boolVal));
+                }
+                else if (af.ValueTextIn != null && af.ValueTextIn.Any())
+                {
+                    var values = af.ValueTextIn;
+                    query = query.Where(a => _context.AdvertAttributeValues.Any(v =>
+                        v.AdvertId == a.Id && v.AttributeDefinitionId == defId &&
+                        v.ValueText != null && values.Any(val => v.ValueText.Contains(val))));
+                }
+                else if (af.ValueNumberFrom.HasValue || af.ValueNumberTo.HasValue)
+                {
+                    var numFrom = af.ValueNumberFrom;
+                    var numTo = af.ValueNumberTo;
+                    query = query.Where(a => _context.AdvertAttributeValues.Any(v =>
+                        v.AdvertId == a.Id && v.AttributeDefinitionId == defId &&
+                        (!numFrom.HasValue || v.ValueNumber >= numFrom) &&
+                        (!numTo.HasValue || v.ValueNumber <= numTo)));
+                }
+            }
+        }
+
         if (dto.CategoryId.HasValue)
             query = query.Where(a => a.VehicleCategoryId == dto.CategoryId);
 

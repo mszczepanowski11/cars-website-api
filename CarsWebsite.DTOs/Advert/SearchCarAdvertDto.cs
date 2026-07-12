@@ -139,6 +139,11 @@ public class SearchCarAdvertDto
     [MaxLength(50)]
     public List<int>? FeatureIds { get; set; }
 
+    // Faza 5 of the category/attribute restructure: generic filters against AttributeDefinition-
+    // driven fields (the long tail migrated off extraFields in Faza 4), additive alongside every
+    // fixed filter above.
+    public List<AttributeFilterDto>? AttributeFilters { get; set; }
+
     [MaxLength(50)]
     public string? SortBy { get; set; }
 
