@@ -43,6 +43,10 @@ namespace CarsWebsite
         public DbSet<PartCategory> PartCategories { get; set; }
         public DbSet<PartSubcategory> PartSubcategories { get; set; }
 
+        // Faza 2 of the category/attribute restructure - generic per-category field system.
+        public DbSet<AttributeDefinition> AttributeDefinitions { get; set; }
+        public DbSet<AdvertAttributeValue> AdvertAttributeValues { get; set; }
+
         // Social / stats
         public DbSet<AdvertView> AdvertViews { get; set; }
         public DbSet<UserFollow> UserFollows { get; set; }
@@ -312,6 +316,58 @@ namespace CarsWebsite
                 .WithMany(a => a.PartCompatibilities)
                 .HasForeignKey(pc => pc.CarAdvertId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Faza 2 of the category/attribute restructure - lowercase table names from the start
+            // (see the comment above PartCompatibility/BrandAllowedFuelType for why: avoids ever
+            // hitting that PascalCase-vs-lowercase mismatch bug class on brand-new tables).
+            modelBuilder.Entity<AttributeDefinition>().ToTable("attributedefinitions");
+            modelBuilder.Entity<AdvertAttributeValue>().ToTable("advertattributevalues");
+
+            modelBuilder.Entity<AttributeDefinition>()
+                .HasOne(ad => ad.VehicleCategory)
+                .WithMany()
+                .HasForeignKey(ad => ad.VehicleCategoryId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired();
+
+            modelBuilder.Entity<AttributeDefinition>()
+                .HasOne(ad => ad.VehicleSubtype)
+                .WithMany()
+                .HasForeignKey(ad => ad.VehicleSubtypeId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
+            modelBuilder.Entity<AdvertAttributeValue>()
+                .HasOne(v => v.Advert)
+                .WithMany()
+                .HasForeignKey(v => v.AdvertId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Restrict: an AttributeDefinition with values attached can't be hard-deleted out from
+            // under them - the admin UI only offers IsActive=false (soft-disable) once any advert
+            // has a value for it, this is the DB-level backstop for that rule.
+            modelBuilder.Entity<AdvertAttributeValue>()
+                .HasOne(v => v.AttributeDefinition)
+                .WithMany(ad => ad.Values)
+                .HasForeignKey(v => v.AttributeDefinitionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // One value per attribute per advert - re-saving an edited listing must upsert, never
+            // accumulate duplicate rows.
+            modelBuilder.Entity<AdvertAttributeValue>()
+                .HasIndex(v => new { v.AdvertId, v.AttributeDefinitionId })
+                .IsUnique();
+
+            // Composite indexes supporting the Faza 5 faceted-filter query (filter by
+            // AttributeDefinitionId + a typed value range/match without a full table scan).
+            modelBuilder.Entity<AdvertAttributeValue>()
+                .HasIndex(v => new { v.AttributeDefinitionId, v.ValueNumber });
+            modelBuilder.Entity<AdvertAttributeValue>()
+                .HasIndex(v => new { v.AttributeDefinitionId, v.ValueText });
+            modelBuilder.Entity<AdvertAttributeValue>()
+                .HasIndex(v => new { v.AttributeDefinitionId, v.ValueBool });
+            modelBuilder.Entity<AdvertAttributeValue>()
+                .HasIndex(v => new { v.AttributeDefinitionId, v.ValueDate });
 
             modelBuilder.Entity<PartCompatibility>()
                 .HasOne(pc => pc.Brand)
