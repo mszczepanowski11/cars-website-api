@@ -20,7 +20,7 @@ namespace cars_website_api.CarsWebsite.Data;
 // run on every startup.
 public static class AttributeDefinitionMigrationSeeder
 {
-    private record DefSpec(string CategorySlug, string? SubtypeSlug, string Key, string LabelPl, AttributeDataType DataType, string? Unit, string[]? Options);
+    private record DefSpec(string CategorySlug, string? SubtypeSlug, string Key, string LabelPl, AttributeDataType DataType, string? Unit, string[]? Options, bool IsRequired = false);
 
     private static readonly DefSpec[] Specs =
     [
@@ -60,7 +60,7 @@ public static class AttributeDefinitionMigrationSeeder
         new("motocykle", null, "motorcycleType", "Typ motocykla", AttributeDataType.Select, null,
             ["Sportowy / Supersport", "Turystyczny (Tourer)", "Adventure / Enduro drogowe", "Enduro / Cross / Off-road",
              "Cruiser / Chopper", "Naked / Streetfighter", "Café Racer / Scrambler", "Skuter",
-             "Skuter 125 cm³ (AM)", "Trial", "Quad / ATV", "Z wózkiem bocznym", "Elektryczny", "Inny"]),
+             "Skuter 125 cm³ (AM)", "Trial", "Quad / ATV", "Z wózkiem bocznym", "Elektryczny", "Inny"], IsRequired: true),
         new("motocykle", null, "hasABS", "ABS", AttributeDataType.Boolean, null, null),
         new("motocykle", null, "hasTCS", "Kontrola trakcji (TCS)", AttributeDataType.Boolean, null, null),
         new("motocykle", null, "hasQuickshifter", "Quickshifter (bi-directional)", AttributeDataType.Boolean, null, null),
@@ -199,14 +199,14 @@ public static class AttributeDefinitionMigrationSeeder
             .GroupBy(s => s.Slug!, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
-        var existing = db.AttributeDefinitions.AsNoTracking()
-            .Select(ad => new { ad.VehicleCategoryId, ad.VehicleSubtypeId, ad.Key })
-            .ToList()
-            .Select(ad => (ad.VehicleCategoryId, ad.VehicleSubtypeId, ad.Key))
-            .ToHashSet();
+        // Tracked (not AsNoTracking): existing rows whose metadata drifted from Specs (e.g. a label
+        // typo fixed here, or - as happened once - a required flag corrected after the fact) get
+        // their fields synced in place rather than silently staying stale forever.
+        var existingDefs = db.AttributeDefinitions.ToList()
+            .ToDictionary(ad => (ad.VehicleCategoryId, ad.VehicleSubtypeId, ad.Key));
 
         var sortCounters = new Dictionary<(int CategoryId, int? SubtypeId), int>();
-        int added = 0, skippedNoCategory = 0, skippedNoSubtype = 0;
+        int added = 0, updated = 0, skippedNoCategory = 0, skippedNoSubtype = 0;
 
         foreach (var spec in Specs)
         {
@@ -219,14 +219,29 @@ public static class AttributeDefinitionMigrationSeeder
                 subtypeId = subtype.Id;
             }
 
+            var optionsJson = spec.Options != null ? JsonSerializer.Serialize(spec.Options) : null;
             var naturalKey = (category.Id, subtypeId, spec.Key);
-            if (existing.Contains(naturalKey)) continue;
+
+            if (existingDefs.TryGetValue(naturalKey, out var def))
+            {
+                if (def.LabelPl != spec.LabelPl || def.DataType != spec.DataType || def.Unit != spec.Unit ||
+                    def.OptionsJson != optionsJson || def.IsRequired != spec.IsRequired)
+                {
+                    def.LabelPl = spec.LabelPl;
+                    def.DataType = spec.DataType;
+                    def.Unit = spec.Unit;
+                    def.OptionsJson = optionsJson;
+                    def.IsRequired = spec.IsRequired;
+                    updated++;
+                }
+                continue;
+            }
 
             var scopeKey = (category.Id, subtypeId);
             var sortOrder = sortCounters.TryGetValue(scopeKey, out var n) ? n : 0;
             sortCounters[scopeKey] = sortOrder + 1;
 
-            db.AttributeDefinitions.Add(new AttributeDefinition
+            var newDef = new AttributeDefinition
             {
                 VehicleCategoryId = category.Id,
                 VehicleSubtypeId = subtypeId,
@@ -234,20 +249,21 @@ public static class AttributeDefinitionMigrationSeeder
                 LabelPl = spec.LabelPl,
                 DataType = spec.DataType,
                 Unit = spec.Unit,
-                OptionsJson = spec.Options != null ? JsonSerializer.Serialize(spec.Options) : null,
-                IsRequired = false,
+                OptionsJson = optionsJson,
+                IsRequired = spec.IsRequired,
                 IsFilterable = spec.DataType is AttributeDataType.Boolean or AttributeDataType.Select,
                 IsSearchable = false,
                 IsActive = true,
                 SortOrder = sortOrder,
-            });
-            existing.Add(naturalKey);
+            };
+            db.AttributeDefinitions.Add(newDef);
+            existingDefs[naturalKey] = newDef;
             added++;
         }
 
-        if (added > 0) db.SaveChanges();
+        if (added > 0 || updated > 0) db.SaveChanges();
         logger.LogWarning(
-            "[ATTR-MIGRATION] AttributeDefinitionMigrationSeeder done: added={Added} skippedNoCategory={SkippedNoCategory} skippedNoSubtype={SkippedNoSubtype}",
-            added, skippedNoCategory, skippedNoSubtype);
+            "[ATTR-MIGRATION] AttributeDefinitionMigrationSeeder done: added={Added} updated={Updated} skippedNoCategory={SkippedNoCategory} skippedNoSubtype={SkippedNoSubtype}",
+            added, updated, skippedNoCategory, skippedNoSubtype);
     }
 }
