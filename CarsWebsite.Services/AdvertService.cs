@@ -17,6 +17,14 @@ public class AdvertService : IAdvertService
     private readonly Cloudinary _cloudinary;
     private readonly IHierarchyValidationService _hierarchyValidationService;
 
+    // Faza 7 of the category/attribute restructure: thresholds for the calculated era/sport
+    // filters on "Auta osobowe" - named constants instead of magic numbers, per the plan.
+    private const int YoungtimerMinAgeYears = 15;
+    private const int YoungtimerMaxAgeYears = 30;
+    private const int ClassicMinAgeYears = 30;
+    private const int SportPowerThresholdHP = 250;
+    private static readonly string[] SportyBodyTypeNames = { "Coupe", "Roadster" };
+
     public AdvertService(AppDbContext context, IMapper mapper, ILogger<AdvertService> logger, Cloudinary cloudinary, IHierarchyValidationService hierarchyValidationService)
     {
         _context = context;
@@ -412,6 +420,30 @@ public class AdvertService : IAdvertService
 
         if (dto.VehicleSubtypeId.HasValue)
             query = query.Where(a => a.VehicleSubtypeId == dto.VehicleSubtypeId);
+
+        // Faza 7 of the category/attribute restructure: calculated filters for "Auta osobowe" -
+        // origin/luxury read straight off Brand (Faza 1 columns), era/sport are computed from
+        // Year/BodyType/PowerHP at query time, no new schema for either.
+        if (!string.IsNullOrWhiteSpace(dto.OriginCountry))
+        {
+            var originCountry = dto.OriginCountry;
+            query = query.Where(a => a.Brand != null && a.Brand.OriginCountry == originCountry);
+        }
+
+        if (dto.IsLuxuryBrand == true)
+            query = query.Where(a => a.Brand != null && a.Brand.IsLuxury);
+
+        if (!string.IsNullOrWhiteSpace(dto.Era))
+        {
+            var currentYear = DateTime.UtcNow.Year;
+            if (dto.Era == "youngtimer")
+                query = query.Where(a => a.Year >= currentYear - YoungtimerMaxAgeYears && a.Year <= currentYear - YoungtimerMinAgeYears);
+            else if (dto.Era == "classic")
+                query = query.Where(a => a.Year <= currentYear - ClassicMinAgeYears);
+        }
+
+        if (dto.IsSporty == true)
+            query = query.Where(a => a.BodyType != null && SportyBodyTypeNames.Contains(a.BodyType.Name) && a.PowerHP >= SportPowerThresholdHP);
 
         if (!string.IsNullOrWhiteSpace(dto.TextSearch))
         {
