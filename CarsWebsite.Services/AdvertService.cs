@@ -1,5 +1,6 @@
 using AutoMapper;
 using cars_website_api.CarsWebsite.Domain.Entities;
+using cars_website_api.CarsWebsite.DTOs.Admin;
 using cars_website_api.CarsWebsite.DTOs.Advert;
 using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
@@ -137,10 +138,29 @@ public class AdvertService : IAdvertService
         foreach (var c in compatibilities) c.CarAdvertId = advert.Id;
         if (compatibilities.Count > 0) _context.PartCompatibilities.AddRange(compatibilities);
 
+        if (dto.AttributeValues != null && dto.AttributeValues.Count > 0)
+            _context.AdvertAttributeValues.AddRange(BuildAttributeValues(dto.AttributeValues, advert.Id));
+
         await _context.SaveChangesAsync();
 
         return advert.Id;
     }
+
+    // Faza 3 of the category/attribute restructure - mirrors the FeatureIds pattern just above:
+    // the client sends only the fields the seller actually filled in, we trust AttributeDefinition
+    // to define what's valid (no server-side type re-validation here, matching how FeatureIds
+    // isn't re-validated against Feature.CategoryId either).
+    private static IEnumerable<AdvertAttributeValue> BuildAttributeValues(List<AdvertAttributeValueDto> values, int advertId) =>
+        values.Where(v => v.ValueText != null || v.ValueNumber != null || v.ValueBool != null || v.ValueDate != null)
+            .Select(v => new AdvertAttributeValue
+            {
+                AdvertId = advertId,
+                AttributeDefinitionId = v.AttributeDefinitionId,
+                ValueText = v.ValueText,
+                ValueNumber = v.ValueNumber,
+                ValueBool = v.ValueBool,
+                ValueDate = v.ValueDate,
+            });
     
     
     
@@ -200,6 +220,14 @@ public class AdvertService : IAdvertService
         _context.PartCompatibilities.RemoveRange(advert.PartCompatibilities);
         foreach (var c in newCompatibilities) c.CarAdvertId = advert.Id;
         if (newCompatibilities.Count > 0) _context.PartCompatibilities.AddRange(newCompatibilities);
+
+        if (dto.AttributeValues != null)
+        {
+            var oldValues = await _context.AdvertAttributeValues.Where(v => v.AdvertId == advert.Id).ToListAsync();
+            _context.AdvertAttributeValues.RemoveRange(oldValues);
+            if (dto.AttributeValues.Count > 0)
+                _context.AdvertAttributeValues.AddRange(BuildAttributeValues(dto.AttributeValues, advert.Id));
+        }
 
         await _context.SaveChangesAsync();
     }

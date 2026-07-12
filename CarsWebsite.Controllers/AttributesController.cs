@@ -25,6 +25,23 @@ public class AttributesController : ControllerBase
         _taxonomyCacheVersion = taxonomyCacheVersion;
     }
 
+    // Public: GET /api/Attributes/values/{advertId} - the saved values for one advert, so the
+    // edit form can pre-fill DynamicAttributeField inputs the same way it already pre-fills the
+    // hardcoded CarAdvert columns. Not auth-gated (matches GetAdvert/{id} being public too).
+    [HttpGet("values/{advertId}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetAdvertAttributeValues(int advertId)
+    {
+        var values = await _db.AdvertAttributeValues.AsNoTracking()
+            .Where(v => v.AdvertId == advertId)
+            .Select(v => new AdvertAttributeValueDto
+            {
+                AttributeDefinitionId = v.AttributeDefinitionId,
+                ValueText = v.ValueText, ValueNumber = v.ValueNumber, ValueBool = v.ValueBool, ValueDate = v.ValueDate,
+            }).ToListAsync();
+        return Ok(values);
+    }
+
     // Public: GET /api/Attributes?categoryId=5&subtypeId=12&activeOnly=true
     // Returns definitions scoped to the whole category (VehicleSubtypeId == null) plus, if a
     // subtypeId is given, the ones scoped to that specific subtype - mirrors how

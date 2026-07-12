@@ -110,6 +110,10 @@ public class UpdateCarAdvertDto
 
     public List<int>? FeatureIds { get; set; }
 
+    // Faza 3 of the category/attribute restructure: category-specific fields sourced from
+    // AttributeDefinition instead of the old extraFields-into-description text dump.
+    public List<cars_website_api.CarsWebsite.DTOs.Admin.AdvertAttributeValueDto>? AttributeValues { get; set; }
+
     // Premium listing fields
     [MaxLength(20)] public string? RegistrationPlate { get; set; }
     public bool HasVatInvoice { get; set; }
