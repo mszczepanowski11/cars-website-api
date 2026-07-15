@@ -169,7 +169,7 @@ namespace cars_website_api.CarsWebsite.Services
         {
             var advert = await _context.CarAdverts.FindAsync(advertId) ?? throw new KeyNotFoundException("Advert not found");
             advert.IsActive = true;
-            advert.ExpiresAt = DateTime.UtcNow.AddDays(30);
+            advert.ExpiresAt = DateTime.UtcNow.AddDays(90);
             advert.UpdatedAt = DateTime.UtcNow;
             _context.AdminActionLogs.Add(new AdminActionLog { AdminUserId = adminUserId, ActionType = AdminActionType.ActivateAdvert, TargetAdvertId = advertId, PerformedAt = DateTime.UtcNow });
             await _context.SaveChangesAsync();

@@ -4,14 +4,16 @@ public static class SubscriptionPlanConfig
 {
     public record PlanLimits(int MaxActiveAds, int EmissionDays, int FeaturedQuotaPerMonth);
 
+    // EmissionDays standardized to 90 (3 months) across every tier, matching the platform-wide
+    // default advert duration - other limits (ad count, featured quota) still differ by tier.
     public static PlanLimits GetLimits(SubscriptionTier tier) => tier switch
     {
-        SubscriptionTier.StartProgram => new(20,         30, 3),
-        SubscriptionTier.Start        => new(25,         30, 3),
-        SubscriptionTier.Biznes       => new(75,         45, 10),
-        SubscriptionTier.Premium      => new(200,        60, 30),
+        SubscriptionTier.StartProgram => new(20,         90, 3),
+        SubscriptionTier.Start        => new(25,         90, 3),
+        SubscriptionTier.Biznes       => new(75,         90, 10),
+        SubscriptionTier.Premium      => new(200,        90, 30),
         SubscriptionTier.Enterprise   => new(int.MaxValue, 90, int.MaxValue),
-        _                             => new(5,          30, 0),  // unsubscribed B2B grace
+        _                             => new(5,          90, 0),  // unsubscribed B2B grace
     };
 
     public static int GetEmissionDays(SubscriptionTier tier) => GetLimits(tier).EmissionDays;

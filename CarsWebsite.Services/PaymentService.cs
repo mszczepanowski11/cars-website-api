@@ -130,13 +130,9 @@ public class PaymentService : IPaymentService
             }
         }
 
-        // Launch promo grants ONE free boost per account (Top/Premium/Featured/Refresh/
-        // EventFeatured) while the promo window is open. Business subscriptions are excluded -
-        // dealer/business accounts get their own separate free allowance via the existing
-        // StartProgram tier (20 free active ads, see SubscriptionService.ActivateStartProgramAsync).
-        var freePromoEligible = IsFreePromoActive()
-            && dto.ServiceType != ServiceType.Subscription
-            && user.FreePromoBoostUsedAt == null;
+        // Launch promo: every paid service (boosts AND B2B subscriptions) activates for free,
+        // unlimited, while the promo window is open - not just a one-time boost.
+        var freePromoEligible = IsFreePromoActive();
 
         var guidPart = Guid.NewGuid().ToString("N")[..8];
         var orderId = $"CARIZO-{userId}-{DateTime.UtcNow:yyyyMMddHHmmss}-{guidPart}";
@@ -180,16 +176,11 @@ public class PaymentService : IPaymentService
         }
         _logger.LogInformation("[Payment/Initiate] Payment #{PaymentId} saved", payment.Id);
 
-        // Admin, or launch-promo window (one free boost per account): activate immediately
+        // Admin, or launch-promo window (everything free while it's open): activate immediately
         // without payment
         if (user.IsAdmin || freePromoEligible)
         {
             await ActivateServiceAsync(payment);
-            if (freePromoEligible && !user.IsAdmin)
-            {
-                await _context.Users.Where(u => u.Id == userId)
-                    .ExecuteUpdateAsync(s => s.SetProperty(u => u.FreePromoBoostUsedAt, DateTime.UtcNow));
-            }
             _logger.LogInformation(
                 "[Payment/Initiate] {Reason} bypass — service activated instantly for userId={UserId}",
                 user.IsAdmin ? "Admin" : "Free promo", userId);
