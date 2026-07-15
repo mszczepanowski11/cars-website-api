@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text;
 using CarsWebsite;
 using cars_website_api.CarsWebsite.DTOs.Invoice;
@@ -649,17 +650,21 @@ public class InvoiceService : IInvoiceService
         var monthName = ci.DateTimeFormat.GetMonthName(inv.Month);
         var user = inv.User;
 
-        // Determine buyer display data — prefer payment billing snapshot, fall back to user profile
+        // Determine buyer display data — prefer payment billing snapshot, fall back to user profile.
+        // All of these are user-editable (checkout billing form / profile "Dane firmy") and get
+        // interpolated straight into this HTML document, which is also sent as an email body -
+        // HTML-encode every one of them so a billing name/address containing markup can't inject
+        // into the rendered invoice or the email it's attached to.
         var firstPayment = inv.Payments.FirstOrDefault();
-        var buyerName = !string.IsNullOrWhiteSpace(firstPayment?.BillingName)
+        var buyerName = WebUtility.HtmlEncode(!string.IsNullOrWhiteSpace(firstPayment?.BillingName)
             ? firstPayment.BillingName
             : (user?.AccountType == AccountType.Business && !string.IsNullOrWhiteSpace(user.CompanyName)
                 ? user.CompanyName
-                : $"{user?.Name} {user?.Surname}");
+                : $"{user?.Name} {user?.Surname}"));
 
-        var buyerNip = !string.IsNullOrWhiteSpace(firstPayment?.BillingNip)
+        var buyerNip = WebUtility.HtmlEncode(!string.IsNullOrWhiteSpace(firstPayment?.BillingNip)
             ? firstPayment.BillingNip
-            : user?.Nip;
+            : user?.Nip);
 
         // Package/subscription purchases (pakiety.vue) never collect billing details at checkout -
         // only one-off advert/event boosts do via BillingDataForm - so this must fall back to the
@@ -669,8 +674,9 @@ public class InvoiceService : IInvoiceService
         var addrPostal = !string.IsNullOrWhiteSpace(firstPayment?.BillingPostalCode) ? firstPayment.BillingPostalCode : user?.PostalCode;
         var addrCity   = !string.IsNullOrWhiteSpace(firstPayment?.BillingCity) ? firstPayment.BillingCity : user?.City;
         var buyerAddress = (!string.IsNullOrWhiteSpace(addrStreet) || !string.IsNullOrWhiteSpace(addrCity))
-            ? $"{addrStreet}, {addrPostal} {addrCity}"
+            ? WebUtility.HtmlEncode($"{addrStreet}, {addrPostal} {addrCity}")
             : null;
+        var buyerEmail = WebUtility.HtmlEncode(user?.Email);
 
         var sName    = _config["Invoice:SellerName"]    ?? "CARIZO Wiktor Niezgoda";
         var sNip     = _config["Invoice:SellerNip"]     ?? "9452331007";
@@ -684,7 +690,7 @@ public class InvoiceService : IInvoiceService
             var bg = idx % 2 == 0 ? "#fafafa" : "#ffffff";
             rows.Append($"<tr style=\"background:{bg}\">" +
                 $"<td style=\"padding:11px 14px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#777\">{idx++}</td>" +
-                $"<td style=\"padding:11px 14px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#222\">{p.ServiceDescription}</td>" +
+                $"<td style=\"padding:11px 14px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#222\">{WebUtility.HtmlEncode(p.ServiceDescription)}</td>" +
                 $"<td style=\"padding:11px 14px;border-bottom:1px solid #f0f0f0;font-size:12px;color:#666\">{p.PaidAt?.ToString("dd.MM.yyyy") ?? "–"}</td>" +
                 $"<td style=\"padding:11px 14px;border-bottom:1px solid #f0f0f0;font-size:13px;font-weight:700;text-align:right;color:#222\">{p.Amount:0.00} PLN</td>" +
                 "</tr>");
@@ -757,7 +763,7 @@ public class InvoiceService : IInvoiceService
             <div style=""font-size:12px;color:#555;line-height:1.7"">
               {(string.IsNullOrWhiteSpace(buyerNip) ? "" : $"NIP: {buyerNip}<br/>")}
               {(string.IsNullOrWhiteSpace(buyerAddress) ? "" : $"{buyerAddress}<br/>")}
-              <span style=""color:#999"">{user?.Email}</span>
+              <span style=""color:#999"">{buyerEmail}</span>
             </div>
           </td>
         </tr>

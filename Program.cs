@@ -319,49 +319,59 @@ internal class Program
             // pending migrations (e.g. indexes). On an existing DB without migration
             // history we pre-mark historical migrations as applied so MigrateAsync
             // only runs the new ones.
-            db.Database.EnsureCreated();
-            try
+            //
+            // Wrapped in a MySQL advisory lock: with more than one instance starting
+            // concurrently (rolling deploy), each running EnsureCreated/Migrate/the raw ALTER
+            // TABLE guards below against the same schema would race. Only the instance that wins
+            // the lock actually runs DDL; the rest wait up to 30s for it to finish before
+            // proceeding to serve traffic, so nobody starts up assuming a schema change that's
+            // still mid-flight on a sibling instance.
+            AdvisoryLock.TryRunExclusive(db, "carizo:startup_migrate", () =>
             {
-                var histLogger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
-                db.Database.ExecuteSqlRaw(@"
-                    CREATE TABLE IF NOT EXISTS `__EFMigrationsHistory` (
-                        `MigrationId` varchar(150) CHARACTER SET utf8mb4 NOT NULL,
-                        `ProductVersion` varchar(32) CHARACTER SET utf8mb4 NOT NULL,
-                        PRIMARY KEY (`MigrationId`)
-                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-
-                var applied = db.Database.GetAppliedMigrations().ToHashSet();
-                if (!applied.Any())
+                db.Database.EnsureCreated();
+                try
                 {
-                    // DB was created via EnsureCreated — mark all pre-existing migrations
-                    // as applied so MigrateAsync only runs genuinely new ones.
-                    var allMigrations = db.Database.GetMigrations().ToList();
-                    var newMigrations = new HashSet<string>
-                    {
-                        "20260621120000_AddBrandModelToFeatureCategory",
-                        "20260621150000_AddFuelConsumptionToEngineVersion",
-                        "20260622100000_AddMissingIndexes2",
-                        "20260622120000_AddRefreshTokenRevokedAt",
-                        "20260623100000_AddTrimVehicleSubtypePartCategories",
-                        "20260623105000_AddVehicleCategoryIdToFeatureCategory",
-                        "20260623110000_AddCustomCategoryRequests",
-                    };
-                    foreach (var m in allMigrations.Where(m => !newMigrations.Contains(m)))
-                    {
-                        db.Database.ExecuteSqlRaw(
-                            "INSERT IGNORE INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) VALUES ({0}, '9.0.0')", m);
-                    }
-                    histLogger.LogInformation("[Migrations] Bootstrapped migration history with {Count} pre-existing migrations", allMigrations.Count - newMigrations.Count);
-                }
+                    var histLogger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
+                    db.Database.ExecuteSqlRaw(@"
+                        CREATE TABLE IF NOT EXISTS `__EFMigrationsHistory` (
+                            `MigrationId` varchar(150) CHARACTER SET utf8mb4 NOT NULL,
+                            `ProductVersion` varchar(32) CHARACTER SET utf8mb4 NOT NULL,
+                            PRIMARY KEY (`MigrationId`)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-                db.Database.Migrate();
-                histLogger.LogInformation("[Migrations] MigrateAsync completed");
-            }
-            catch (Exception ex)
-            {
-                var histLogger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
-                histLogger.LogWarning("[Migrations] Migration bootstrap failed (non-fatal): {Msg}", ex.Message);
-            }
+                    var applied = db.Database.GetAppliedMigrations().ToHashSet();
+                    if (!applied.Any())
+                    {
+                        // DB was created via EnsureCreated — mark all pre-existing migrations
+                        // as applied so MigrateAsync only runs genuinely new ones.
+                        var allMigrations = db.Database.GetMigrations().ToList();
+                        var newMigrations = new HashSet<string>
+                        {
+                            "20260621120000_AddBrandModelToFeatureCategory",
+                            "20260621150000_AddFuelConsumptionToEngineVersion",
+                            "20260622100000_AddMissingIndexes2",
+                            "20260622120000_AddRefreshTokenRevokedAt",
+                            "20260623100000_AddTrimVehicleSubtypePartCategories",
+                            "20260623105000_AddVehicleCategoryIdToFeatureCategory",
+                            "20260623110000_AddCustomCategoryRequests",
+                        };
+                        foreach (var m in allMigrations.Where(m => !newMigrations.Contains(m)))
+                        {
+                            db.Database.ExecuteSqlRaw(
+                                "INSERT IGNORE INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) VALUES ({0}, '9.0.0')", m);
+                        }
+                        histLogger.LogInformation("[Migrations] Bootstrapped migration history with {Count} pre-existing migrations", allMigrations.Count - newMigrations.Count);
+                    }
+
+                    db.Database.Migrate();
+                    histLogger.LogInformation("[Migrations] MigrateAsync completed");
+                }
+                catch (Exception ex)
+                {
+                    var histLogger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
+                    histLogger.LogWarning("[Migrations] Migration bootstrap failed (non-fatal): {Msg}", ex.Message);
+                }
+            });
 
             // Explicit column guards — idempotent fallback for any migration that
             // may have been silently swallowed (try/catch above) or pre-marked via

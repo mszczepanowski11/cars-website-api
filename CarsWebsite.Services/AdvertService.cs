@@ -59,6 +59,20 @@ public class AdvertService : IAdvertService
     private static string StripHtml(string input)
         => System.Text.RegularExpressions.Regex.Replace(input, @"[<>]", "");
 
+    // Turns free-text search input into a MySQL BOOLEAN MODE fulltext query: each word becomes
+    // a required prefix match (+word*), which is the closest boolean-mode equivalent to the
+    // substring search ("LIKE '%term%'") this replaces, while still using FT_Adverts_TitleDescription
+    // instead of a full table scan. Strips boolean-mode operator characters (+-<>()~*"@) out of each
+    // word first, since MySQL treats them specially and a stray one would throw a syntax error.
+    private static string BuildFullTextBooleanQuery(string textSearch)
+    {
+        var words = textSearch
+            .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)
+            .Select(w => new string(w.Where(c => "+-<>()~*\"@".IndexOf(c) < 0).ToArray()))
+            .Where(w => w.Length > 0);
+        return string.Join(' ', words.Select(w => $"+{w}*"));
+    }
+
     // Validates each compatibility entry's Brand/Model/Generation chain the same way the advert's
     // own vehicle chain is validated, so a part can't be marked "fits" a nonsensical combination.
     private async Task<List<PartCompatibility>> BuildPartCompatibilitiesAsync(List<PartCompatibilityEntryDto>? entries)
@@ -470,9 +484,19 @@ public class AdvertService : IAdvertService
 
         if (!string.IsNullOrWhiteSpace(dto.TextSearch))
         {
-            var textSearch = dto.TextSearch.Trim();
-            query = query.Where(a =>
-                a.Title.Contains(textSearch) || a.Description.Contains(textSearch));
+            // `Title.Contains(...)` compiles to `LIKE '%term%'`, which can never use the
+            // FT_Adverts_TitleDescription FULLTEXT index (leading wildcard) - at scale this is a
+            // full table scan on every search. Use MATCH...AGAINST in boolean mode instead, with
+            // each word turned into a required prefix match (+word*) so behaviour stays close to
+            // the substring search users are used to, while actually hitting the index.
+            var booleanQuery = BuildFullTextBooleanQuery(dto.TextSearch);
+            if (!string.IsNullOrEmpty(booleanQuery))
+            {
+                var matchedIds = await _context.Database
+                    .SqlQuery<int>($"SELECT Id FROM adverts WHERE MATCH(Title, Description) AGAINST ({booleanQuery} IN BOOLEAN MODE)")
+                    .ToListAsync();
+                query = query.Where(a => matchedIds.Contains(a.Id));
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(dto.City))

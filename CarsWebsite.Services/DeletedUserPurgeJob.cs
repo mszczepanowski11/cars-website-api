@@ -39,17 +39,20 @@ public class DeletedUserPurgeJob : BackgroundService
             using var scope = _scopeFactory.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-            var cutoff = DateTime.UtcNow.AddYears(-5);
-            var toDelete = await context.Users
-                .Where(u => u.Email.EndsWith("@carizo.deleted") && u.BlockedAt != null && u.BlockedAt < cutoff)
-                .ToListAsync(ct);
+            await AdvisoryLock.TryRunExclusiveAsync(context, "carizo:deleted_user_purge_job", async () =>
+            {
+                var cutoff = DateTime.UtcNow.AddYears(-5);
+                var toDelete = await context.Users
+                    .Where(u => u.Email.EndsWith("@carizo.deleted") && u.BlockedAt != null && u.BlockedAt < cutoff)
+                    .ToListAsync(ct);
 
-            if (toDelete.Count == 0) return;
+                if (toDelete.Count == 0) return;
 
-            context.Users.RemoveRange(toDelete);
-            await context.SaveChangesAsync(ct);
+                context.Users.RemoveRange(toDelete);
+                await context.SaveChangesAsync(ct);
 
-            _logger.LogInformation("[DeletedUserPurgeJob] Hard-deleted {Count} anonymized accounts older than 5 years.", toDelete.Count);
+                _logger.LogInformation("[DeletedUserPurgeJob] Hard-deleted {Count} anonymized accounts older than 5 years.", toDelete.Count);
+            }, ct);
         }
         catch (Exception ex)
         {

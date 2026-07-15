@@ -1,3 +1,4 @@
+using System.Net;
 using CarsWebsite;
 using cars_website_api.CarsWebsite.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -37,35 +38,41 @@ public class ExpiryReminderJob : BackgroundService
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var notifications = scope.ServiceProvider.GetRequiredService<INotificationService>();
 
-            var todayDt = today.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-
-            var expired = await context.Adverts
-                .Where(a => a.IsActive && a.ExpiresAt.HasValue && a.ExpiresAt.Value < todayDt)
-                .ToListAsync(ct);
-
-            foreach (var a in expired)
+            // _lastRunDate above only guards this one instance - the advisory lock is what
+            // actually prevents every replica from independently deciding "8am, nobody ran this
+            // yet" and sending duplicate expiry reminder emails.
+            await AdvisoryLock.TryRunExclusiveAsync(context, "carizo:expiry_reminder_job", async () =>
             {
-                a.IsActive = false;
-                await notifications.NotifyAsync(a.UserId, EmailNotificationType.AdvertExpired,
-                    "Ogłoszenie wygasło",
-                    $"Twoje ogłoszenie \"{a.Title}\" wygasło i zostało dezaktywowane. Możesz je odnowić lub dodać nowe.",
-                    advertId: a.Id);
-            }
-            if (expired.Any()) await context.SaveChangesAsync(ct);
+                var todayDt = today.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
 
-            await SendReminders(context, notifications, today, 1,
-                EmailNotificationType.AdvertExpiring1Day, "Ogłoszenie wygasa jutro",
-                t => $"Twoje ogłoszenie \"{t}\" wygaśnie jutro. Rozważ odnowienie.", ct);
+                var expired = await context.Adverts
+                    .Where(a => a.IsActive && a.ExpiresAt.HasValue && a.ExpiresAt.Value < todayDt)
+                    .ToListAsync(ct);
 
-            await SendReminders(context, notifications, today, 3,
-                EmailNotificationType.AdvertExpiring3Days, "Ogłoszenie wygasa za 3 dni",
-                t => $"Twoje ogłoszenie \"{t}\" wygaśnie za 3 dni.", ct);
+                foreach (var a in expired)
+                {
+                    a.IsActive = false;
+                    await notifications.NotifyAsync(a.UserId, EmailNotificationType.AdvertExpired,
+                        "Ogłoszenie wygasło",
+                        $"Twoje ogłoszenie \"{WebUtility.HtmlEncode(a.Title)}\" wygasło i zostało dezaktywowane. Możesz je odnowić lub dodać nowe.",
+                        advertId: a.Id);
+                }
+                if (expired.Any()) await context.SaveChangesAsync(ct);
 
-            await SendReminders(context, notifications, today, 7,
-                EmailNotificationType.AdvertExpiring7Days, "Ogłoszenie wygasa za 7 dni",
-                t => $"Twoje ogłoszenie \"{t}\" wygaśnie za 7 dni.", ct);
+                await SendReminders(context, notifications, today, 1,
+                    EmailNotificationType.AdvertExpiring1Day, "Ogłoszenie wygasa jutro",
+                    t => $"Twoje ogłoszenie \"{t}\" wygaśnie jutro. Rozważ odnowienie.", ct);
 
-            _logger.LogInformation("ExpiryReminderJob completed for {Date}", today);
+                await SendReminders(context, notifications, today, 3,
+                    EmailNotificationType.AdvertExpiring3Days, "Ogłoszenie wygasa za 3 dni",
+                    t => $"Twoje ogłoszenie \"{t}\" wygaśnie za 3 dni.", ct);
+
+                await SendReminders(context, notifications, today, 7,
+                    EmailNotificationType.AdvertExpiring7Days, "Ogłoszenie wygasa za 7 dni",
+                    t => $"Twoje ogłoszenie \"{t}\" wygaśnie za 7 dni.", ct);
+
+                _logger.LogInformation("ExpiryReminderJob completed for {Date}", today);
+            }, ct);
         }
         catch (Exception ex)
         {
@@ -90,6 +97,6 @@ public class ExpiryReminderJob : BackgroundService
             .ToListAsync(ct);
 
         foreach (var a in adverts)
-            await notifications.NotifyAsync(a.UserId, type, title, contentFn(a.Title), advertId: a.Id);
+            await notifications.NotifyAsync(a.UserId, type, title, contentFn(WebUtility.HtmlEncode(a.Title)), advertId: a.Id);
     }
 }
