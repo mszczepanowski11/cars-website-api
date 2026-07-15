@@ -116,6 +116,19 @@ internal class Program
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                 options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
             });
+        // Standardizes every error response ASP.NET Core generates itself (the [ApiController]
+        // attribute's automatic model-validation 400s, and the 500 written by UseExceptionHandler
+        // below) onto the RFC 7807 application/problem+json shape. `message` is added alongside
+        // the standard fields (not instead of them) because the frontend's proxy layer already
+        // reads `.message` off every error body - dropping it would silently blank out every
+        // error toast site-wide the moment this shipped.
+        builder.Services.AddProblemDetails(options =>
+        {
+            options.CustomizeProblemDetails = ctx =>
+            {
+                ctx.ProblemDetails.Extensions["message"] = ctx.ProblemDetails.Detail ?? ctx.ProblemDetails.Title;
+            };
+        });
         builder.Services.AddEndpointsApiExplorer();
         // Pooled: AppDbContext has no per-request state beyond DbContextOptions (verified - its
         // only constructor takes DbContextOptions<AppDbContext>), so reusing instances across
@@ -2507,8 +2520,25 @@ internal class Program
                         ex.StackTrace?.Split('\n').FirstOrDefault(l => l.Contains("cars_website_api") || l.Contains("CarsWebsite"))?.Trim() ?? ex.StackTrace?.Split('\n').FirstOrDefault()?.Trim() ?? "");
                 }
                 context.Response.StatusCode = 500;
-                context.Response.ContentType = "application/json";
-                await context.Response.WriteAsJsonAsync(new { message = "Internal server error" });
+                var problemDetailsService = context.RequestServices.GetService<IProblemDetailsService>();
+                if (problemDetailsService != null)
+                {
+                    await problemDetailsService.WriteAsync(new()
+                    {
+                        HttpContext = context,
+                        ProblemDetails = new ProblemDetails
+                        {
+                            Status = 500,
+                            Title = "Internal server error",
+                            Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                        },
+                    });
+                }
+                else
+                {
+                    context.Response.ContentType = "application/json";
+                    await context.Response.WriteAsJsonAsync(new { message = "Internal server error" });
+                }
             });
         });
 
