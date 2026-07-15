@@ -109,9 +109,9 @@ public class AdvertService : IAdvertService
         advert.CreatedAt = DateTime.UtcNow;
         advert.UserId = userId;
 
-        // Emission duration: business accounts get tier-based days; personal accounts default 30 days
+        // Emission duration: business accounts get tier-based days; personal accounts default 90 days (3 months)
         var advertUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
-        int emissionDays = 30;
+        int emissionDays = 90;
         if (advertUser?.AccountType == AccountType.Business)
         {
             var tier = advertUser.SubscriptionExpiresAt.HasValue && advertUser.SubscriptionExpiresAt < DateTime.UtcNow
@@ -747,7 +747,7 @@ public class AdvertService : IAdvertService
         advert.IsActive = true;
         advert.IsHidden = false;
         advert.SoldAt = null;
-        advert.ExpiresAt = DateTime.UtcNow.AddDays(30);
+        advert.ExpiresAt = DateTime.UtcNow.AddDays(90);
         advert.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
     }
@@ -788,7 +788,7 @@ public class AdvertService : IAdvertService
             throw new InvalidOperationException("Nie można odnowić sprzedanego ogłoszenia.");
         advert.IsActive = true;
         advert.IsHidden = false;
-        advert.ExpiresAt = DateTime.UtcNow.AddDays(30);
+        advert.ExpiresAt = DateTime.UtcNow.AddDays(90);
         advert.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
     }
