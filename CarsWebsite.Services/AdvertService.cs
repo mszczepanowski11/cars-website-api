@@ -97,17 +97,25 @@ public class AdvertService : IAdvertService
         if (dto.Description != null)
             dto.Description = StripHtml(dto.Description.Trim());
 
-        // Validate VIN — required per Regulamin §4 ust. 1
-        if (string.IsNullOrWhiteSpace(dto.Vin))
-            throw new ArgumentException("Numer VIN jest obowiązkowy (Regulamin §4 ust. 1).");
-        dto.Vin = dto.Vin.Trim().ToUpperInvariant();
-        if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Vin, @"^[A-HJ-NPR-Z0-9]{17}$"))
-            throw new ArgumentException("Numer VIN musi mieć dokładnie 17 znaków alfanumerycznych (bez liter I, O, Q).");
-        // Duplicate VIN check: reject if another non-deleted advert with same VIN exists for this user
-        var duplicateVin = await _context.CarAdverts
-            .AnyAsync(a => a.Vin == dto.Vin && a.UserId == userId && a.IsActive && !a.IsHidden);
-        if (duplicateVin)
-            throw new InvalidOperationException("Masz już aktywne ogłoszenie z tym numerem VIN.");
+        // VIN is recommended per Regulamin §4 ust. 1 but not mandatory - an advert without one
+        // simply doesn't earn the "VIN zweryfikowany" trust badge. If a VIN IS provided, though,
+        // it must be genuinely valid - Regulamin §4 ust. 1 still requires that a VIN, when given,
+        // be authentic and correctly formatted.
+        if (!string.IsNullOrWhiteSpace(dto.Vin))
+        {
+            dto.Vin = dto.Vin.Trim().ToUpperInvariant();
+            if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Vin, @"^[A-HJ-NPR-Z0-9]{17}$"))
+                throw new ArgumentException("Numer VIN musi mieć dokładnie 17 znaków alfanumerycznych (bez liter I, O, Q).");
+            // Duplicate VIN check: reject if another non-deleted advert with same VIN exists for this user
+            var duplicateVin = await _context.CarAdverts
+                .AnyAsync(a => a.Vin == dto.Vin && a.UserId == userId && a.IsActive && !a.IsHidden);
+            if (duplicateVin)
+                throw new InvalidOperationException("Masz już aktywne ogłoszenie z tym numerem VIN.");
+        }
+        else
+        {
+            dto.Vin = null;
+        }
 
         var chainCheck = await _hierarchyValidationService.ValidateVehicleChainAsync(
             dto.BrandId, dto.ModelId, dto.GenerationId, dto.TrimId, dto.EngineVersionId, dto.VehicleCategoryId);
