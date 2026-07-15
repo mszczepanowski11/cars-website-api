@@ -1,3 +1,4 @@
+using CarsWebsite;
 using cars_website_api.CarsWebsite.Interfaces;
 
 public class SubscriptionExpiryJob : BackgroundService
@@ -25,8 +26,10 @@ public class SubscriptionExpiryJob : BackgroundService
         try
         {
             using var scope = _scopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var subscriptionService = scope.ServiceProvider.GetRequiredService<ISubscriptionService>();
-            await subscriptionService.ResetExpiredSubscriptionsAsync();
+            await AdvisoryLock.TryRunExclusiveAsync(context, "carizo:subscription_expiry_job",
+                () => subscriptionService.ResetExpiredSubscriptionsAsync(), ct);
         }
         catch (Exception ex)
         {

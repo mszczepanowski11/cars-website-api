@@ -1,3 +1,4 @@
+using System.Net;
 using CarsWebsite;
 using cars_website_api.CarsWebsite.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -30,29 +31,37 @@ public class EventFeaturedExpiryJob : BackgroundService
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var notifications = scope.ServiceProvider.GetRequiredService<INotificationService>();
 
-            var now = DateTime.UtcNow;
-            var expired = await context.Events
-                .Where(e => e.IsFeatured && e.FeaturedUntil.HasValue && e.FeaturedUntil.Value < now)
-                .ToListAsync(ct);
-
-            foreach (var ev in expired)
+            await AdvisoryLock.TryRunExclusiveAsync(context, "carizo:event_featured_expiry_job", async () =>
             {
-                ev.IsFeatured = false;
-                ev.FeaturedUntil = null;
-                _ = notifications.NotifyAsync(ev.CreatedByUserId, EmailNotificationType.PromotionExpired,
-                    "Wyróżnienie wydarzenia wygasło",
-                    $"Wyróżnienie Twojego wydarzenia \"{ev.Name}\" wygasło. Możesz przedłużyć promocję w każdej chwili.");
-            }
-
-            if (expired.Count > 0)
-            {
-                await context.SaveChangesAsync(ct);
-                _logger.LogInformation("EventFeaturedExpiryJob: wygasło {Count} wyróżnień wydarzeń", expired.Count);
-            }
+                await RunAsync(context, notifications, ct);
+            }, ct);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "EventFeaturedExpiryJob failed");
+        }
+    }
+
+    private async Task RunAsync(AppDbContext context, INotificationService notifications, CancellationToken ct)
+    {
+        var now = DateTime.UtcNow;
+        var expired = await context.Events
+            .Where(e => e.IsFeatured && e.FeaturedUntil.HasValue && e.FeaturedUntil.Value < now)
+            .ToListAsync(ct);
+
+        foreach (var ev in expired)
+        {
+            ev.IsFeatured = false;
+            ev.FeaturedUntil = null;
+            _ = notifications.NotifyAsync(ev.CreatedByUserId, EmailNotificationType.PromotionExpired,
+                "Wyróżnienie wydarzenia wygasło",
+                $"Wyróżnienie Twojego wydarzenia \"{WebUtility.HtmlEncode(ev.Name)}\" wygasło. Możesz przedłużyć promocję w każdej chwili.");
+        }
+
+        if (expired.Count > 0)
+        {
+            await context.SaveChangesAsync(ct);
+            _logger.LogInformation("EventFeaturedExpiryJob: wygasło {Count} wyróżnień wydarzeń", expired.Count);
         }
     }
 }

@@ -1,3 +1,4 @@
+using System.Net;
 using cars_website_api.CarsWebsite.DTOs.Message;
 using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
@@ -200,9 +201,11 @@ public class MessageService : IMessageService
         var recipientId = conv.BuyerId == senderId ? conv.SellerId : conv.BuyerId;
         if (sender != null)
         {
+            var senderDisplayName = WebUtility.HtmlEncode($"{sender.Name} {sender.Surname}");
+            var contentPreview = WebUtility.HtmlEncode(content.Length > 100 ? content[..100] + "..." : content);
             _ = _notifications.NotifyAsync(recipientId, EmailNotificationType.NewMessage,
                 "Nowa wiadomość",
-                $"{sender.Name} {sender.Surname} wysłał(a) Ci wiadomość: \"{(content.Length > 100 ? content[..100] + "..." : content)}\"",
+                $"{senderDisplayName} wysłał(a) Ci wiadomość: \"{contentPreview}\"",
                 advertId: conv.AdvertId);
         }
 

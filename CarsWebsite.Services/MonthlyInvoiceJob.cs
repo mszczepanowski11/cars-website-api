@@ -39,24 +39,29 @@ public class MonthlyInvoiceJob : BackgroundService
                     using var scope = _scopeFactory.CreateScope();
                     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-                    var alreadyGenerated = await context.Invoices
-                        .AnyAsync(i => i.Month == invoiceMonth && i.Year == invoiceYear);
-                    if (alreadyGenerated)
+                    // The Invoices.Any() check below is a decent idempotency guard on its own, but
+                    // still leaves a race window where two replicas both see "not generated yet"
+                    // before either has inserted rows - the advisory lock closes that window so
+                    // only one instance ever actually runs GenerateMonthlyInvoicesAsync per month.
+                    var ran = await AdvisoryLock.TryRunExclusiveAsync(context, "carizo:monthly_invoice_job", async () =>
                     {
-                        _logger.LogInformation(
-                            "[MonthlyInvoiceJob] Faktury za {Month}/{Year} już zostały wygenerowane. Pomijam.",
-                            invoiceMonth, invoiceYear);
-                        _lastRunDate = DateOnly.FromDateTime(now);
-                        await Task.Delay(TimeSpan.FromMinutes(30), stoppingToken);
-                        continue;
-                    }
+                        var alreadyGenerated = await context.Invoices
+                            .AnyAsync(i => i.Month == invoiceMonth && i.Year == invoiceYear);
+                        if (alreadyGenerated)
+                        {
+                            _logger.LogInformation(
+                                "[MonthlyInvoiceJob] Faktury za {Month}/{Year} już zostały wygenerowane. Pomijam.",
+                                invoiceMonth, invoiceYear);
+                            return;
+                        }
 
-                    var service = scope.ServiceProvider.GetRequiredService<IInvoiceService>();
-                    await service.GenerateMonthlyInvoicesAsync(invoiceMonth, invoiceYear);
-                    _lastRunDate = DateOnly.FromDateTime(now);
-                    _logger.LogInformation(
-                        "[MonthlyInvoiceJob] Zakończono generowanie faktur za {Month}/{Year}",
-                        invoiceMonth, invoiceYear);
+                        var service = scope.ServiceProvider.GetRequiredService<IInvoiceService>();
+                        await service.GenerateMonthlyInvoicesAsync(invoiceMonth, invoiceYear);
+                        _logger.LogInformation(
+                            "[MonthlyInvoiceJob] Zakończono generowanie faktur za {Month}/{Year}",
+                            invoiceMonth, invoiceYear);
+                    });
+                    if (ran) _lastRunDate = DateOnly.FromDateTime(now);
                 }
                 catch (Exception ex)
                 {
