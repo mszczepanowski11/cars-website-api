@@ -99,10 +99,15 @@ namespace CarsWebsite
 
             modelBuilder.Entity<Advert>(entity =>
             {
+                // Restrict, not Cascade: a hard delete of a User must not silently wipe out
+                // their adverts (and everything cascading from those - images, conversations,
+                // messages with other users). DeletedUserPurgeJob removes the adverts explicitly
+                // before removing the user, so the FK is never actually hit for the one legitimate
+                // hard-delete path.
                 entity.HasOne<User>(a => a.createdBy)
                     .WithMany(u => u.Adverts)
                     .HasForeignKey(a => a.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<CarAdvert>().HasOne(a => a.Brand).WithMany().HasForeignKey(a => a.BrandId).IsRequired(false).OnDelete(DeleteBehavior.SetNull);

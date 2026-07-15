@@ -48,6 +48,11 @@ public class DeletedUserPurgeJob : BackgroundService
 
                 if (toDelete.Count == 0) return;
 
+                var userIds = toDelete.Select(u => u.Id).ToList();
+                // Adverts.UserId is now Restrict (not Cascade), so their adverts must be removed
+                // explicitly before the users themselves - the FK would otherwise reject the delete.
+                var adverts = await context.CarAdverts.Where(a => userIds.Contains(a.UserId)).ToListAsync(ct);
+                context.CarAdverts.RemoveRange(adverts);
                 context.Users.RemoveRange(toDelete);
                 await context.SaveChangesAsync(ct);
 
