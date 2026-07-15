@@ -138,11 +138,6 @@ public class PaymentService : IPaymentService
         var orderId = $"CARIZO-{userId}-{DateTime.UtcNow:yyyyMMddHHmmss}-{guidPart}";
         if (orderId.Length > 40) orderId = orderId[..40];
 
-        // For subscription payments, store tier int in DurationDays so ActivateSubscriptionServiceAsync can read it
-        var storedDurationDays = dto.ServiceType == ServiceType.Subscription && dto.SubscriptionTier.HasValue
-            ? (int)dto.SubscriptionTier.Value
-            : dto.DurationDays;
-
         var payment = new Payment
         {
             UserId = userId,
@@ -154,7 +149,8 @@ public class PaymentService : IPaymentService
             Currency = "PLN",
             Status = (user.IsAdmin || freePromoEligible) ? PaymentStatus.Completed : PaymentStatus.Pending,
             ImojeOrderId = orderId,
-            DurationDays = storedDurationDays,
+            DurationDays = dto.DurationDays,
+            SubscriptionTier = dto.ServiceType == ServiceType.Subscription ? dto.SubscriptionTier : null,
             CreatedAt = DateTime.UtcNow,
             BillingName = dto.BillingName,
             BillingNip = dto.BillingNip,
@@ -520,10 +516,10 @@ public class PaymentService : IPaymentService
 
     private async Task ActivateSubscriptionServiceAsync(Payment payment)
     {
-        var tier = (SubscriptionTier)(payment.DurationDays ?? (int)SubscriptionTier.None);
+        var tier = payment.SubscriptionTier ?? SubscriptionTier.None;
         if (tier == SubscriptionTier.None)
         {
-            _logger.LogWarning("[Subscription/Activate] Invalid tier in DurationDays for payment #{PaymentId}", payment.Id);
+            _logger.LogWarning("[Subscription/Activate] Missing SubscriptionTier for payment #{PaymentId}", payment.Id);
             return;
         }
 
@@ -653,6 +649,7 @@ public class PaymentService : IPaymentService
         PaidAt = p.PaidAt,
         AdvertId = p.AdvertId,
         EventId = p.EventId,
-        DurationDays = p.DurationDays
+        DurationDays = p.DurationDays,
+        SubscriptionTier = p.SubscriptionTier
     };
 }

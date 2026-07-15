@@ -864,7 +864,8 @@ public class InvoiceService : IInvoiceService
             CreatedAt = p.CreatedAt,
             PaidAt = p.PaidAt,
             AdvertId = p.AdvertId,
-            DurationDays = p.DurationDays
+            DurationDays = p.DurationDays,
+            SubscriptionTier = p.SubscriptionTier
         }).ToList()
     };
 }

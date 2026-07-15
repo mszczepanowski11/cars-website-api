@@ -44,6 +44,7 @@ public class PaymentResponseDto
     public int? AdvertId { get; set; }
     public int? EventId { get; set; }
     public int? DurationDays { get; set; }
+    public SubscriptionTier? SubscriptionTier { get; set; }
 }
 
 public class ServicePriceDto
