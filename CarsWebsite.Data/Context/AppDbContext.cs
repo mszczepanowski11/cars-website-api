@@ -535,6 +535,12 @@ namespace CarsWebsite
             modelBuilder.Entity<CarAdvert>().HasIndex(a => a.GearboxId);
             modelBuilder.Entity<CarAdvert>().HasIndex(a => a.BodyTypeId);
             modelBuilder.Entity<CarAdvert>().HasIndex(a => a.Mileage);
+            // City/Region are near-universal filters for a local marketplace search ("cars near
+            // me") but had no index at all; FeaturedUntil mirrors the already-indexed
+            // BadgeExpiresAt and is used to sort promoted listings to the top of results.
+            modelBuilder.Entity<Advert>().HasIndex(a => new { a.City, a.IsActive });
+            modelBuilder.Entity<Advert>().HasIndex(a => new { a.Region, a.IsActive });
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.FeaturedUntil);
             modelBuilder.Entity<Event>().HasIndex(e => e.Status);
             modelBuilder.Entity<Event>().HasIndex(e => e.StartDate);
             modelBuilder.Entity<Event>().HasIndex(e => e.CreatedByUserId);
