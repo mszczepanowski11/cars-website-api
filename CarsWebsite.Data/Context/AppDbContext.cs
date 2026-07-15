@@ -84,6 +84,10 @@ namespace CarsWebsite
         public DbSet<BrandAllowedFuelType> BrandAllowedFuelTypes { get; set; }
         public DbSet<ModelNamePlausibilityRule> ModelNamePlausibilityRules { get; set; }
 
+        // Transactions (reservations/viewings/purchases) and saved searches
+        public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<SavedSearch> SavedSearches { get; set; }
+
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -164,6 +168,26 @@ namespace CarsWebsite
             modelBuilder.Entity<Message>()
                 .HasOne(m => m.Sender).WithMany()
                 .HasForeignKey(m => m.SenderId).OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Transaction>().ToTable("Transactions").HasKey(t => t.Id);
+            modelBuilder.Entity<Transaction>()
+                .HasOne(t => t.Advert).WithMany()
+                .HasForeignKey(t => t.AdvertId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Transaction>()
+                .HasOne(t => t.Buyer).WithMany()
+                .HasForeignKey(t => t.BuyerId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Transaction>()
+                .HasOne(t => t.Seller).WithMany()
+                .HasForeignKey(t => t.SellerId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Transaction>().HasIndex(t => t.AdvertId);
+            modelBuilder.Entity<Transaction>().HasIndex(t => t.BuyerId);
+            modelBuilder.Entity<Transaction>().HasIndex(t => t.SellerId);
+
+            modelBuilder.Entity<SavedSearch>().ToTable("SavedSearches").HasKey(s => s.Id);
+            modelBuilder.Entity<SavedSearch>()
+                .HasOne(s => s.User).WithMany()
+                .HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<SavedSearch>().HasIndex(s => s.UserId);
 
             modelBuilder.Entity<Report>().ToTable("Reports").HasKey(r => r.Id);
             modelBuilder.Entity<Report>()
