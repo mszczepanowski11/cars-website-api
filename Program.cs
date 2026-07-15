@@ -58,6 +58,15 @@ internal class Program
         if (string.IsNullOrEmpty(connectionString))
             throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
 
+        // Explicit MySqlConnector-level pool bounds (defaults are 0/100) so pool exhaustion under
+        // load is a deliberate, tunable ceiling rather than an implicit default nobody set.
+        if (!connectionString.Contains("Pooling=", StringComparison.OrdinalIgnoreCase))
+        {
+            var minPoolSize = Environment.GetEnvironmentVariable("DB_MIN_POOL_SIZE") ?? "5";
+            var maxPoolSize = Environment.GetEnvironmentVariable("DB_MAX_POOL_SIZE") ?? "100";
+            connectionString += $"Pooling=true;MinimumPoolSize={minPoolSize};MaximumPoolSize={maxPoolSize};";
+        }
+
         // SMTP_ env vars (single underscore) take precedence over appsettings Smtp:* section
         // ASP.NET Core normally uses double-underscore (Smtp__Host), but we map explicitly
         // so operators can use the more natural SMTP_HOST convention.
@@ -108,11 +117,16 @@ internal class Program
                 options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
             });
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddDbContext<AppDbContext>(options => options
+        // Pooled: AppDbContext has no per-request state beyond DbContextOptions (verified - its
+        // only constructor takes DbContextOptions<AppDbContext>), so reusing instances across
+        // requests is safe and avoids re-allocating/re-initializing a DbContext on every request.
+        var dbContextPoolSize = int.TryParse(Environment.GetEnvironmentVariable("DB_CONTEXT_POOL_SIZE"), out var poolSize) ? poolSize : 128;
+        builder.Services.AddDbContextPool<AppDbContext>(options => options
             .UseMySql(connectionString, new MySqlServerVersion(new Version(9, 4, 0)), mySqlOptions =>
                 mySqlOptions.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null))
             .ConfigureWarnings(w =>
-                w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
+                w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)),
+            poolSize: dbContextPoolSize);
         
         builder.Services.AddScoped<UserService>();
         builder.Services.AddScoped<IUserService, UserService>();
