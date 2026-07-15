@@ -3,12 +3,11 @@ using cars_website_api.CarsWebsite.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using System.Security.Claims;
 
 [ApiController]
 [Route("api/[controller]")]
 [EnableRateLimiting("global")]
-public class EventController : ControllerBase
+public class EventController : CarizoControllerBase
 {
     private readonly IEventService _eventService;
 
@@ -16,14 +15,6 @@ public class EventController : ControllerBase
     {
         _eventService = eventService;
     }
-
-    private int? GetUserId()
-    {
-        var s = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return int.TryParse(s, out var id) ? id : null;
-    }
-
-    private bool IsAdmin() => User.FindFirstValue("isAdmin") == "true";
 
     [HttpGet]
     public async Task<IActionResult> GetEvents(
@@ -56,8 +47,8 @@ public class EventController : ControllerBase
         [FromQuery] int pageSize = 20)
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-        return Ok(await _eventService.GetMyEventsAsync(userId.Value, Math.Max(1, page), Math.Clamp(pageSize, 1, 100)));
+        if (userId <= 0) return Unauthorized();
+        return Ok(await _eventService.GetMyEventsAsync(userId, Math.Max(1, page), Math.Clamp(pageSize, 1, 100)));
     }
 
     [HttpPost]
@@ -68,9 +59,9 @@ public class EventController : ControllerBase
         [FromForm] List<IFormFile>? galleryImages)
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
+        if (userId <= 0) return Unauthorized();
 
-        var result = await _eventService.CreateEventAsync(dto, userId.Value, mainImage, galleryImages);
+        var result = await _eventService.CreateEventAsync(dto, userId, mainImage, galleryImages);
         return CreatedAtAction(nameof(GetEvent), new { id = result.Id }, result);
     }
 
@@ -79,9 +70,9 @@ public class EventController : ControllerBase
     public async Task<IActionResult> ReportEvent(int id, [FromBody] CreateEventReportDto dto)
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
+        if (userId <= 0) return Unauthorized();
 
-        await _eventService.ReportEventAsync(id, userId.Value, dto);
+        await _eventService.ReportEventAsync(id, userId, dto);
         return NoContent();
     }
 
@@ -90,8 +81,8 @@ public class EventController : ControllerBase
     public async Task<IActionResult> Attend(int id)
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-        await _eventService.AttendEventAsync(id, userId.Value);
+        if (userId <= 0) return Unauthorized();
+        await _eventService.AttendEventAsync(id, userId);
         return NoContent();
     }
 
@@ -100,8 +91,8 @@ public class EventController : ControllerBase
     public async Task<IActionResult> Unattend(int id)
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-        await _eventService.UnattendEventAsync(id, userId.Value);
+        if (userId <= 0) return Unauthorized();
+        await _eventService.UnattendEventAsync(id, userId);
         return NoContent();
     }
 
@@ -110,8 +101,8 @@ public class EventController : ControllerBase
     public async Task<IActionResult> Favourite(int id)
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-        await _eventService.FavouriteEventAsync(id, userId.Value);
+        if (userId <= 0) return Unauthorized();
+        await _eventService.FavouriteEventAsync(id, userId);
         return NoContent();
     }
 
@@ -120,8 +111,8 @@ public class EventController : ControllerBase
     public async Task<IActionResult> Unfavourite(int id)
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-        await _eventService.UnfavouriteEventAsync(id, userId.Value);
+        if (userId <= 0) return Unauthorized();
+        await _eventService.UnfavouriteEventAsync(id, userId);
         return NoContent();
     }
 
@@ -146,8 +137,8 @@ public class EventController : ControllerBase
     public async Task<IActionResult> PublishEvent(int id)
     {
         var adminId = GetUserId();
-        if (adminId == null) return Unauthorized();
-        await _eventService.PublishEventAsync(id, adminId.Value);
+        if (adminId <= 0) return Unauthorized();
+        await _eventService.PublishEventAsync(id, adminId);
         return NoContent();
     }
 
@@ -156,8 +147,8 @@ public class EventController : ControllerBase
     public async Task<IActionResult> RejectEvent(int id, [FromBody] AdminEventActionDto dto)
     {
         var adminId = GetUserId();
-        if (adminId == null) return Unauthorized();
-        await _eventService.RejectEventAsync(id, adminId.Value, dto.Note);
+        if (adminId <= 0) return Unauthorized();
+        await _eventService.RejectEventAsync(id, adminId, dto.Note);
         return NoContent();
     }
 
@@ -166,8 +157,8 @@ public class EventController : ControllerBase
     public async Task<IActionResult> ArchiveEvent(int id)
     {
         var adminId = GetUserId();
-        if (adminId == null) return Unauthorized();
-        await _eventService.ArchiveEventAsync(id, adminId.Value);
+        if (adminId <= 0) return Unauthorized();
+        await _eventService.ArchiveEventAsync(id, adminId);
         return NoContent();
     }
 
@@ -176,8 +167,8 @@ public class EventController : ControllerBase
     public async Task<IActionResult> FeatureEvent(int id)
     {
         var adminId = GetUserId();
-        if (adminId == null) return Unauthorized();
-        await _eventService.FeatureEventAsync(id, adminId.Value, true);
+        if (adminId <= 0) return Unauthorized();
+        await _eventService.FeatureEventAsync(id, adminId, true);
         return NoContent();
     }
 
@@ -186,8 +177,8 @@ public class EventController : ControllerBase
     public async Task<IActionResult> UnfeatureEvent(int id)
     {
         var adminId = GetUserId();
-        if (adminId == null) return Unauthorized();
-        await _eventService.FeatureEventAsync(id, adminId.Value, false);
+        if (adminId <= 0) return Unauthorized();
+        await _eventService.FeatureEventAsync(id, adminId, false);
         return NoContent();
     }
 
@@ -196,8 +187,8 @@ public class EventController : ControllerBase
     public async Task<IActionResult> DeleteEvent(int id)
     {
         var adminId = GetUserId();
-        if (adminId == null) return Unauthorized();
-        await _eventService.DeleteEventAsync(id, adminId.Value);
+        if (adminId <= 0) return Unauthorized();
+        await _eventService.DeleteEventAsync(id, adminId);
         return NoContent();
     }
 
@@ -206,8 +197,8 @@ public class EventController : ControllerBase
     public async Task<IActionResult> UpdateEvent(int id, [FromBody] CreateEventDto dto)
     {
         var adminId = GetUserId();
-        if (adminId == null) return Unauthorized();
-        var result = await _eventService.UpdateEventAsync(id, dto, adminId.Value);
+        if (adminId <= 0) return Unauthorized();
+        var result = await _eventService.UpdateEventAsync(id, dto, adminId);
         return Ok(result);
     }
 }

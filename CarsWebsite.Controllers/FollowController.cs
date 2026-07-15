@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace cars_website_api.CarsWebsite.Controllers;
 
@@ -12,7 +11,7 @@ namespace cars_website_api.CarsWebsite.Controllers;
 [Route("api/[controller]")]
 [Authorize]
 [EnableRateLimiting("global")]
-public class FollowController : ControllerBase
+public class FollowController : CarizoControllerBase
 {
     private readonly AppDbContext _context;
     private readonly IFollowService _followService;
@@ -23,12 +22,6 @@ public class FollowController : ControllerBase
         _context = context;
         _followService = followService;
         _logger = logger;
-    }
-
-    private int GetUserId()
-    {
-        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var uid);
-        return uid;
     }
 
     // ── Advert follows (maps to FavoriteAdverts) ─────────────────────────────

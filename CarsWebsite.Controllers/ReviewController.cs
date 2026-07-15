@@ -3,14 +3,13 @@ using cars_website_api.CarsWebsite.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using System.Security.Claims;
 
 namespace cars_website_api.CarsWebsite.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [EnableRateLimiting("global")]
-public class ReviewController : ControllerBase
+public class ReviewController : CarizoControllerBase
 {
     private readonly IReviewService _reviewService;
 
@@ -18,15 +17,6 @@ public class ReviewController : ControllerBase
     {
         _reviewService = reviewService;
     }
-
-    private int GetUserId()
-    {
-        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var uid);
-        return uid;
-    }
-
-    private bool IsAdmin()
-        => User.HasClaim("isAdmin", "true");
 
     [HttpGet]
     public async Task<IActionResult> GetSellerReviews(

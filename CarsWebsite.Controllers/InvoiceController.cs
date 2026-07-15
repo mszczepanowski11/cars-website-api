@@ -2,13 +2,12 @@ using cars_website_api.CarsWebsite.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using System.Security.Claims;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
 [EnableRateLimiting("global")]
-public class InvoiceController : ControllerBase
+public class InvoiceController : CarizoControllerBase
 {
     private readonly IInvoiceService _invoiceService;
 
@@ -17,20 +16,12 @@ public class InvoiceController : ControllerBase
         _invoiceService = invoiceService;
     }
 
-    private bool IsAdmin() => User.FindFirstValue("isAdmin") == "true";
-
     [HttpGet("test-pdf")]
     [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> TestPdf()
     {
         var bytes = await _invoiceService.GenerateTestPdfAsync();
         return File(bytes, "application/pdf", "CARIZO_faktura_testowa.pdf");
-    }
-
-    private int GetUserId()
-    {
-        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var uid);
-        return uid;
     }
 
     [HttpGet("my")]
