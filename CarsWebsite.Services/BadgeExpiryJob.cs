@@ -3,7 +3,10 @@ using CarsWebsite;
 using cars_website_api.CarsWebsite.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-public class BadgeExpiryJob : BackgroundService
+// Runs as a Hangfire recurring job (see Program.cs) instead of polling on its own timer - Hangfire's
+// MySQL-backed queue already guarantees only one server picks up a given scheduled occurrence, which
+// is what the old AdvisoryLock wrapping here existed to do by hand.
+public class BadgeExpiryJob
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<BadgeExpiryJob> _logger;
@@ -14,27 +17,14 @@ public class BadgeExpiryJob : BackgroundService
         _logger = logger;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            await ExpireAsync(stoppingToken);
-            await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
-        }
-    }
-
-    private async Task ExpireAsync(CancellationToken ct)
+    public async Task RunAsync(CancellationToken ct)
     {
         try
         {
             using var scope = _scopeFactory.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var notifications = scope.ServiceProvider.GetRequiredService<INotificationService>();
-
-            await AdvisoryLock.TryRunExclusiveAsync(context, "carizo:badge_expiry_job", async () =>
-            {
-                await RunAsync(context, notifications, ct);
-            }, ct);
+            await ExpireAsync(context, notifications, ct);
         }
         catch (Exception ex)
         {
@@ -42,7 +32,7 @@ public class BadgeExpiryJob : BackgroundService
         }
     }
 
-    private async Task RunAsync(AppDbContext context, INotificationService notifications, CancellationToken ct)
+    private async Task ExpireAsync(AppDbContext context, INotificationService notifications, CancellationToken ct)
     {
         var now = DateTime.UtcNow;
         var expired = await context.CarAdverts

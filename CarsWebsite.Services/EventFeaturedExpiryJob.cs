@@ -3,7 +3,9 @@ using CarsWebsite;
 using cars_website_api.CarsWebsite.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-public class EventFeaturedExpiryJob : BackgroundService
+// Runs as a Hangfire recurring job (see Program.cs) - see BadgeExpiryJob for why the old
+// AdvisoryLock wrapping was removed.
+public class EventFeaturedExpiryJob
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<EventFeaturedExpiryJob> _logger;
@@ -14,27 +16,14 @@ public class EventFeaturedExpiryJob : BackgroundService
         _logger = logger;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            await ExpireAsync(stoppingToken);
-            await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
-        }
-    }
-
-    private async Task ExpireAsync(CancellationToken ct)
+    public async Task RunAsync(CancellationToken ct)
     {
         try
         {
             using var scope = _scopeFactory.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var notifications = scope.ServiceProvider.GetRequiredService<INotificationService>();
-
-            await AdvisoryLock.TryRunExclusiveAsync(context, "carizo:event_featured_expiry_job", async () =>
-            {
-                await RunAsync(context, notifications, ct);
-            }, ct);
+            await ExpireAsync(context, notifications, ct);
         }
         catch (Exception ex)
         {
@@ -42,7 +31,7 @@ public class EventFeaturedExpiryJob : BackgroundService
         }
     }
 
-    private async Task RunAsync(AppDbContext context, INotificationService notifications, CancellationToken ct)
+    private async Task ExpireAsync(AppDbContext context, INotificationService notifications, CancellationToken ct)
     {
         var now = DateTime.UtcNow;
         var expired = await context.Events

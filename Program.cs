@@ -8,6 +8,9 @@ using cars_website_api.CarsWebsite.Services;
 using cars_website_api.CarsWebsite.Domain.Entities;
 using CarsWebsite;
 using CloudinaryDotNet;
+using Hangfire;
+using Hangfire.Dashboard;
+using Hangfire.MySql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -185,12 +188,30 @@ internal class Program
         builder.Services.AddHttpClient<IKSeFService, KSeFService>();
         builder.Services.AddHttpClient<ICepikService, CepikService>();
         builder.Services.AddScoped<IFinancingService, FinancingService>();
-        builder.Services.AddHostedService<SubscriptionExpiryJob>();
-        builder.Services.AddHostedService<MonthlyInvoiceJob>();
-        builder.Services.AddHostedService<ExpiryReminderJob>();
-        builder.Services.AddHostedService<BadgeExpiryJob>();
-        builder.Services.AddHostedService<EventFeaturedExpiryJob>();
-        builder.Services.AddHostedService<DeletedUserPurgeJob>();
+
+        // Background jobs run on Hangfire's own recurring-job schedule (registered after
+        // app.Build() below) instead of AddHostedService's polling-loop pattern - its MySQL-backed
+        // queue gives them a persistent, resumable-after-restart schedule and a dashboard for
+        // free, and guarantees only one server instance picks up a given scheduled occurrence
+        // (what AdvisoryLock used to do by hand for each job individually).
+        builder.Services.AddScoped<SubscriptionExpiryJob>();
+        builder.Services.AddScoped<MonthlyInvoiceJob>();
+        builder.Services.AddScoped<ExpiryReminderJob>();
+        builder.Services.AddScoped<BadgeExpiryJob>();
+        builder.Services.AddScoped<EventFeaturedExpiryJob>();
+        builder.Services.AddScoped<DeletedUserPurgeJob>();
+
+        builder.Services.AddHangfire(config => config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UseStorage(new MySqlStorage(connectionString, new MySqlStorageOptions
+            {
+                TablesPrefix = "Hangfire_",
+                PrepareSchemaIfNecessary = true,
+                QueuePollInterval = TimeSpan.FromSeconds(15),
+            })));
+        builder.Services.AddHangfireServer();
 
         builder.Services.AddRateLimiter(options =>
         {
@@ -2573,6 +2594,23 @@ internal class Program
         app.UseAuthorization();
         app.MapControllers();
         app.MapHealthChecks("/health").AllowAnonymous();
+
+        // Hangfire dashboard has no relationship to this API's own JWT-bearer auth (it's a
+        // browser-navigated page, not an endpoint a Bearer token gets attached to) - gate it with
+        // its own HTTP Basic Auth credentials instead. Fails closed: if the env vars are unset,
+        // nobody gets in rather than leaving the dashboard open to anyone who finds the URL.
+        app.UseHangfireDashboard("/hangfire", new DashboardOptions
+        {
+            Authorization = new[] { new HangfireDashboardAuthFilter(app.Configuration) },
+        });
+
+        var recurringJobs = app.Services.GetRequiredService<Hangfire.IRecurringJobManager>();
+        recurringJobs.AddOrUpdate<BadgeExpiryJob>("badge-expiry", job => job.RunAsync(CancellationToken.None), Cron.Hourly());
+        recurringJobs.AddOrUpdate<EventFeaturedExpiryJob>("event-featured-expiry", job => job.RunAsync(CancellationToken.None), Cron.Hourly());
+        recurringJobs.AddOrUpdate<ExpiryReminderJob>("expiry-reminder", job => job.RunAsync(CancellationToken.None), Cron.Daily(8));
+        recurringJobs.AddOrUpdate<SubscriptionExpiryJob>("subscription-expiry", job => job.RunAsync(CancellationToken.None), "0 */6 * * *");
+        recurringJobs.AddOrUpdate<MonthlyInvoiceJob>("monthly-invoice", job => job.RunAsync(CancellationToken.None), Cron.Monthly(1, 2));
+        recurringJobs.AddOrUpdate<DeletedUserPurgeJob>("deleted-user-purge", job => job.RunAsync(CancellationToken.None), Cron.Daily(3));
 
         // Email transport test — runs in background after startup so it appears in Railway logs
         _ = Task.Run(async () =>
