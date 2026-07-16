@@ -143,5 +143,12 @@ public class CarAdvert : Advert
     public bool HasHomologation { get; set; }
     public string? HomologationType { get; set; }
 
+    // Partner XML/CSV import: ExternalId is the partner's own identifier for this listing in
+    // their feed, used to match "update" vs "create" on repeat imports. Both null for adverts
+    // created normally through the site.
+    public int? PartnerId { get; set; }
+    public Partner? Partner { get; set; }
+    public string? ExternalId { get; set; }
+
     public ICollection<AdvertFeature> AdvertFeatures { get; set; } = new List<AdvertFeature>();
 }

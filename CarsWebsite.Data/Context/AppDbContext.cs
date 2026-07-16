@@ -88,6 +88,10 @@ namespace CarsWebsite
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<SavedSearch> SavedSearches { get; set; }
 
+        // Partner API (XML/CSV feed import)
+        public DbSet<Partner> Partners { get; set; }
+        public DbSet<PartnerImportLog> PartnerImportLogs { get; set; }
+
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -123,6 +127,25 @@ namespace CarsWebsite
             modelBuilder.Entity<CarAdvert>().HasOne(a => a.BodyType).WithMany().HasForeignKey(a => a.BodyTypeId);
             modelBuilder.Entity<CarAdvert>()
                 .HasOne(a => a.VehicleCategory).WithMany().HasForeignKey(a => a.VehicleCategoryId).IsRequired(false);
+            modelBuilder.Entity<CarAdvert>()
+                .HasOne(a => a.Partner).WithMany().HasForeignKey(a => a.PartnerId).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
+            // Unique per partner (not globally) - two different partners are free to both use "123"
+            // as their own internal listing id.
+            modelBuilder.Entity<CarAdvert>()
+                .HasIndex(a => new { a.PartnerId, a.ExternalId }).IsUnique()
+                .HasFilter("`PartnerId` IS NOT NULL");
+
+            modelBuilder.Entity<Partner>().ToTable("partners").HasKey(p => p.Id);
+            modelBuilder.Entity<Partner>()
+                .HasOne(p => p.LinkedUser).WithMany()
+                .HasForeignKey(p => p.LinkedUserId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Partner>().HasIndex(p => p.LinkedUserId);
+
+            modelBuilder.Entity<PartnerImportLog>().ToTable("partnerimportlogs").HasKey(l => l.Id);
+            modelBuilder.Entity<PartnerImportLog>()
+                .HasOne(l => l.Partner).WithMany()
+                .HasForeignKey(l => l.PartnerId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<PartnerImportLog>().HasIndex(l => l.PartnerId);
 
             modelBuilder.Entity<AdvertImage>().ToTable("AdvertImages").HasKey(i => i.Id);
             modelBuilder.Entity<Advert>().HasMany(a => a.Images).WithOne(i => i.Advert)
@@ -169,7 +192,7 @@ namespace CarsWebsite
                 .HasOne(m => m.Sender).WithMany()
                 .HasForeignKey(m => m.SenderId).OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Transaction>().ToTable("Transactions").HasKey(t => t.Id);
+            modelBuilder.Entity<Transaction>().ToTable("transactions").HasKey(t => t.Id);
             modelBuilder.Entity<Transaction>()
                 .HasOne(t => t.Advert).WithMany()
                 .HasForeignKey(t => t.AdvertId).OnDelete(DeleteBehavior.Restrict);
@@ -183,7 +206,7 @@ namespace CarsWebsite
             modelBuilder.Entity<Transaction>().HasIndex(t => t.BuyerId);
             modelBuilder.Entity<Transaction>().HasIndex(t => t.SellerId);
 
-            modelBuilder.Entity<SavedSearch>().ToTable("SavedSearches").HasKey(s => s.Id);
+            modelBuilder.Entity<SavedSearch>().ToTable("savedsearches").HasKey(s => s.Id);
             modelBuilder.Entity<SavedSearch>()
                 .HasOne(s => s.User).WithMany()
                 .HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);

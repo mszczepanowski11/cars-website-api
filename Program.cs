@@ -154,6 +154,8 @@ internal class Program
         builder.Services.AddScoped<IAdvertImageService, AdvertImageService>();
         builder.Services.AddScoped<ITransactionService, TransactionService>();
         builder.Services.AddScoped<ISavedSearchService, SavedSearchService>();
+        builder.Services.AddScoped<IPartnerService, PartnerService>();
+        builder.Services.AddScoped<IPartnerImportService, PartnerImportService>();
 
         var cloudName   = (Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME")   ?? "").Trim();
         var cloudApiKey = (Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY")       ?? "").Trim();
