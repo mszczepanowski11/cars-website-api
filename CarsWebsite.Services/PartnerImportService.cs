@@ -9,8 +9,10 @@ using Microsoft.EntityFrameworkCore;
 
 // v1 scope: core fields only (title/description/price/brand/model/year/mileage/fuel/gearbox/
 // power/vin/city/region/images), all imported adverts filed under "Auta osobowe". Brand/Model/
-// FuelType/Gearbox are resolved by exact case-insensitive name match only - no fuzzy matching.
-// Unmatched or invalid items are logged as per-item errors and skipped rather than guessed at.
+// FuelType/Gearbox are matched by exact case-insensitive name; if a partner references one that
+// doesn't exist yet, it's created on the fly (see GetOrCreate* below) rather than rejecting the
+// item - every auto-created row is recorded in the import log for admin review. Only items that
+// are missing a hard-required field or fail CreateCarAdvertAsync's own validation are skipped.
 public class PartnerImportService : IPartnerImportService
 {
     private const int MaxErrorSummaryLength = 8000;
@@ -48,19 +50,27 @@ public class PartnerImportService : IPartnerImportService
 
         log.ItemsTotal = items.Count;
 
-        var carCategoryId = await _context.VehicleCategories
-            .Where(c => c.Slug == "auta-osobowe")
-            .Select(c => c.Id)
-            .FirstOrDefaultAsync();
+        var carCategory = await _context.VehicleCategories.FirstOrDefaultAsync(c => c.Slug == "auta-osobowe");
+        if (carCategory == null)
+        {
+            log.CompletedAt = DateTime.UtcNow;
+            log.ErrorSummary = "Brak kategorii 'Auta osobowe' w bazie - import nie może być wykonany.";
+            await _context.SaveChangesAsync();
+            return new PartnerImportLogResponseDto
+            {
+                Id = log.Id, PartnerId = log.PartnerId, Format = log.Format.ToString(), StartedAt = log.StartedAt,
+                CompletedAt = log.CompletedAt, ItemsTotal = log.ItemsTotal, ItemsFailed = log.ItemsTotal, ErrorSummary = log.ErrorSummary,
+            };
+        }
 
         // Grouped rather than ToDictionaryAsync directly: taxonomy tables have no unique
         // constraint on Name, and a duplicate (e.g. inconsistent casing entered elsewhere)
         // must not crash the whole import run - first match wins.
-        var brandsByName = (await _context.Brands.AsNoTracking().ToListAsync())
+        var brandsByName = (await _context.Brands.ToListAsync())
             .GroupBy(b => b.Name.Trim().ToLowerInvariant()).ToDictionary(g => g.Key, g => g.First());
-        var fuelTypesByName = (await _context.FuelTypes.AsNoTracking().ToListAsync())
+        var fuelTypesByName = (await _context.FuelTypes.ToListAsync())
             .GroupBy(f => f.Name.Trim().ToLowerInvariant()).ToDictionary(g => g.Key, g => g.First());
-        var gearboxesByName = (await _context.Gearboxes.AsNoTracking().ToListAsync())
+        var gearboxesByName = (await _context.Gearboxes.ToListAsync())
             .GroupBy(g => g.Name.Trim().ToLowerInvariant()).ToDictionary(g => g.Key, g => g.First());
         var modelsByBrandId = new Dictionary<int, Dictionary<string, Model>>();
 
@@ -68,12 +78,15 @@ public class PartnerImportService : IPartnerImportService
         foreach (var item in items)
         {
             rowNumber++;
+            var createdNotes = new List<string>();
             try
             {
-                await ImportItemAsync(item, partner, carCategoryId, brandsByName, fuelTypesByName, gearboxesByName, modelsByBrandId, log);
+                await ImportItemAsync(item, partner, carCategory, brandsByName, fuelTypesByName, gearboxesByName, modelsByBrandId, log, createdNotes);
+                foreach (var note in createdNotes) errors.Add($"wiersz {rowNumber} ({item.ExternalId}): {note}");
             }
             catch (Exception ex)
             {
+                foreach (var note in createdNotes) errors.Add($"wiersz {rowNumber} ({item.ExternalId}): {note}");
                 log.ItemsFailed++;
                 errors.Add($"wiersz {rowNumber} ({item.ExternalId}): {ex.Message}");
             }
@@ -105,12 +118,13 @@ public class PartnerImportService : IPartnerImportService
     private async Task ImportItemAsync(
         PartnerFeedItem item,
         Partner partner,
-        int carCategoryId,
+        VehicleCategory carCategory,
         Dictionary<string, Brand> brandsByName,
         Dictionary<string, FuelType> fuelTypesByName,
         Dictionary<string, Gearbox> gearboxesByName,
         Dictionary<int, Dictionary<string, Model>> modelsByBrandId,
-        PartnerImportLog log)
+        PartnerImportLog log,
+        List<string> createdNotes)
     {
         // Manual bounds checks, not DataAnnotations: this path builds CreateCarAdvertDto/
         // UpdateCarAdvertDto directly and calls IAdvertService, bypassing the ModelState
@@ -129,26 +143,28 @@ public class PartnerImportService : IPartnerImportService
         if (item.Title.Length > 200) item.Title = item.Title[..200];
         if (item.Description?.Length > 5000) item.Description = item.Description[..5000];
 
-        if (string.IsNullOrWhiteSpace(item.BrandName) || !brandsByName.TryGetValue(item.BrandName.Trim().ToLowerInvariant(), out var brand))
-            throw new ArgumentException($"nieznana marka '{item.BrandName}'");
+        if (string.IsNullOrWhiteSpace(item.BrandName))
+            throw new ArgumentException("brak marki");
+        var brand = await GetOrCreateBrandAsync(item.BrandName, carCategory, brandsByName, createdNotes);
 
         if (!modelsByBrandId.TryGetValue(brand.Id, out var brandModels))
         {
-            brandModels = (await _context.Models.AsNoTracking().Where(m => m.BrandId == brand.Id).ToListAsync())
+            brandModels = (await _context.Models.Where(m => m.BrandId == brand.Id).ToListAsync())
                 .GroupBy(m => m.Name.Trim().ToLowerInvariant()).ToDictionary(g => g.Key, g => g.First());
             modelsByBrandId[brand.Id] = brandModels;
         }
 
-        if (string.IsNullOrWhiteSpace(item.ModelName) || !brandModels.TryGetValue(item.ModelName.Trim().ToLowerInvariant(), out var model))
-            throw new ArgumentException($"nieznany model '{item.ModelName}' dla marki '{item.BrandName}'");
+        if (string.IsNullOrWhiteSpace(item.ModelName))
+            throw new ArgumentException("brak modelu");
+        var model = await GetOrCreateModelAsync(item.ModelName, brand, brandModels, createdNotes);
 
         FuelType? fuelType = null;
-        if (!string.IsNullOrWhiteSpace(item.FuelTypeName) && !fuelTypesByName.TryGetValue(item.FuelTypeName.Trim().ToLowerInvariant(), out fuelType))
-            throw new ArgumentException($"nieznany rodzaj paliwa '{item.FuelTypeName}'");
+        if (!string.IsNullOrWhiteSpace(item.FuelTypeName))
+            fuelType = await GetOrCreateFuelTypeAsync(item.FuelTypeName, fuelTypesByName, createdNotes);
 
         Gearbox? gearbox = null;
-        if (!string.IsNullOrWhiteSpace(item.GearboxName) && !gearboxesByName.TryGetValue(item.GearboxName.Trim().ToLowerInvariant(), out gearbox))
-            throw new ArgumentException($"nieznana skrzynia biegów '{item.GearboxName}'");
+        if (!string.IsNullOrWhiteSpace(item.GearboxName))
+            gearbox = await GetOrCreateGearboxAsync(item.GearboxName, gearboxesByName, createdNotes);
 
         var existing = await _context.CarAdverts
             .FirstOrDefaultAsync(a => a.PartnerId == partner.Id && a.ExternalId == item.ExternalId);
@@ -158,7 +174,7 @@ public class PartnerImportService : IPartnerImportService
         {
             var createDto = new CreateCarAdvertDto
             {
-                VehicleCategoryId = carCategoryId,
+                VehicleCategoryId = carCategory.Id,
                 BrandId = brand.Id,
                 ModelId = model.Id,
                 FuelTypeId = fuelType?.Id,
@@ -190,7 +206,7 @@ public class PartnerImportService : IPartnerImportService
         {
             var updateDto = new UpdateCarAdvertDto
             {
-                VehicleCategoryId = carCategoryId,
+                VehicleCategoryId = carCategory.Id,
                 BrandId = brand.Id,
                 ModelId = model.Id,
                 FuelTypeId = fuelType?.Id,
@@ -232,6 +248,96 @@ public class PartnerImportService : IPartnerImportService
         }
 
         await _context.SaveChangesAsync();
+    }
+
+    // Partners commonly list vehicles from brands/models we haven't onboarded yet - rather than
+    // rejecting the whole item, the taxonomy is grown on the fly. This does mean a typo in a
+    // partner's feed (e.g. "Fiatt") creates a bogus brand; createdNotes records every auto-created
+    // row into the import log precisely so an admin can spot and merge/fix that after the fact.
+    private async Task<Brand> GetOrCreateBrandAsync(string name, VehicleCategory carCategory, Dictionary<string, Brand> brandsByName, List<string> createdNotes)
+    {
+        var key = name.Trim().ToLowerInvariant();
+        if (brandsByName.TryGetValue(key, out var existing)) return existing;
+
+        var brand = new Brand { Name = ClampName(name), Slug = Slugify(name), Categories = new List<VehicleCategory> { carCategory } };
+        _context.Brands.Add(brand);
+        await _context.SaveChangesAsync();
+
+        brandsByName[key] = brand;
+        createdNotes.Add($"utworzono nową markę '{brand.Name}'");
+        return brand;
+    }
+
+    private async Task<Model> GetOrCreateModelAsync(string name, Brand brand, Dictionary<string, Model> brandModels, List<string> createdNotes)
+    {
+        var key = name.Trim().ToLowerInvariant();
+        if (brandModels.TryGetValue(key, out var existing)) return existing;
+
+        var model = new Model { Name = ClampName(name), Slug = Slugify(name), BrandId = brand.Id };
+        _context.Models.Add(model);
+        await _context.SaveChangesAsync();
+
+        brandModels[key] = model;
+        createdNotes.Add($"utworzono nowy model '{model.Name}' dla marki '{brand.Name}'");
+        return model;
+    }
+
+    private async Task<FuelType> GetOrCreateFuelTypeAsync(string name, Dictionary<string, FuelType> fuelTypesByName, List<string> createdNotes)
+    {
+        var key = name.Trim().ToLowerInvariant();
+        if (fuelTypesByName.TryGetValue(key, out var existing)) return existing;
+
+        var fuelType = new FuelType { Name = ClampName(name) };
+        _context.FuelTypes.Add(fuelType);
+        await _context.SaveChangesAsync();
+
+        fuelTypesByName[key] = fuelType;
+        createdNotes.Add($"utworzono nowy rodzaj paliwa '{fuelType.Name}'");
+        return fuelType;
+    }
+
+    private async Task<Gearbox> GetOrCreateGearboxAsync(string name, Dictionary<string, Gearbox> gearboxesByName, List<string> createdNotes)
+    {
+        var key = name.Trim().ToLowerInvariant();
+        if (gearboxesByName.TryGetValue(key, out var existing)) return existing;
+
+        var gearbox = new Gearbox { Name = ClampName(name) };
+        _context.Gearboxes.Add(gearbox);
+        await _context.SaveChangesAsync();
+
+        gearboxesByName[key] = gearbox;
+        createdNotes.Add($"utworzono nową skrzynię biegów '{gearbox.Name}'");
+        return gearbox;
+    }
+
+    private static readonly Dictionary<char, string> DiacriticMap = new()
+    {
+        ['ą'] = "a", ['ć'] = "c", ['ę'] = "e", ['ł'] = "l", ['ń'] = "n",
+        ['ó'] = "o", ['ś'] = "s", ['ź'] = "z", ['ż'] = "z",
+        ['Ą'] = "a", ['Ć'] = "c", ['Ę'] = "e", ['Ł'] = "l", ['Ń'] = "n",
+        ['Ó'] = "o", ['Ś'] = "s", ['Ź'] = "z", ['Ż'] = "z",
+        ['ä'] = "a", ['ö'] = "o", ['ü'] = "u", ['ß'] = "ss",
+        ['č'] = "c", ['š'] = "s", ['ě'] = "e", ['é'] = "e", ['è'] = "e",
+    };
+
+    private static string Slugify(string s)
+    {
+        var sb = new StringBuilder();
+        foreach (var ch in s)
+        {
+            if (DiacriticMap.TryGetValue(ch, out var repl)) sb.Append(repl);
+            else if (char.IsLetterOrDigit(ch)) sb.Append(char.ToLowerInvariant(ch));
+            else sb.Append('-');
+        }
+        var slug = System.Text.RegularExpressions.Regex.Replace(sb.ToString(), "-{2,}", "-").Trim('-');
+        if (slug.Length == 0) slug = "brand";
+        return slug.Length > 100 ? slug[..100].TrimEnd('-') : slug;
+    }
+
+    private static string ClampName(string name)
+    {
+        var trimmed = name.Trim();
+        return trimmed.Length > 100 ? trimmed[..100] : trimmed;
     }
 
     private static List<PartnerFeedItem> ParseXml(string content)
