@@ -1,22 +1,15 @@
 ﻿using cars_website_api.CarsWebsite.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class FavoriteController : ControllerBase
+public class FavoriteController : CarizoControllerBase
 {
     private readonly IFavoriteService _favoriteService;
 
     public FavoriteController(IFavoriteService favoriteService) => _favoriteService = favoriteService;
-
-    private int GetUserId()
-    {
-        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var uid);
-        return uid;
-    }
 
     [HttpGet]
     public async Task<IActionResult> GetFavorites([FromQuery] int page = 1, [FromQuery] int pageSize = 20)

@@ -84,6 +84,15 @@ namespace CarsWebsite
         public DbSet<BrandAllowedFuelType> BrandAllowedFuelTypes { get; set; }
         public DbSet<ModelNamePlausibilityRule> ModelNamePlausibilityRules { get; set; }
 
+        // Transactions (reservations/viewings/purchases) and saved searches
+        public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<SavedSearch> SavedSearches { get; set; }
+
+        // Partner API (XML/CSV feed import)
+        public DbSet<Partner> Partners { get; set; }
+        public DbSet<PartnerImportLog> PartnerImportLogs { get; set; }
+        public DbSet<PartnerSignupRequest> PartnerSignupRequests { get; set; }
+
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -99,10 +108,15 @@ namespace CarsWebsite
 
             modelBuilder.Entity<Advert>(entity =>
             {
+                // Restrict, not Cascade: a hard delete of a User must not silently wipe out
+                // their adverts (and everything cascading from those - images, conversations,
+                // messages with other users). DeletedUserPurgeJob removes the adverts explicitly
+                // before removing the user, so the FK is never actually hit for the one legitimate
+                // hard-delete path.
                 entity.HasOne<User>(a => a.createdBy)
                     .WithMany(u => u.Adverts)
                     .HasForeignKey(a => a.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<CarAdvert>().HasOne(a => a.Brand).WithMany().HasForeignKey(a => a.BrandId).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
@@ -114,6 +128,32 @@ namespace CarsWebsite
             modelBuilder.Entity<CarAdvert>().HasOne(a => a.BodyType).WithMany().HasForeignKey(a => a.BodyTypeId);
             modelBuilder.Entity<CarAdvert>()
                 .HasOne(a => a.VehicleCategory).WithMany().HasForeignKey(a => a.VehicleCategoryId).IsRequired(false);
+            modelBuilder.Entity<CarAdvert>()
+                .HasOne(a => a.Partner).WithMany().HasForeignKey(a => a.PartnerId).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
+            // Unique per partner (not globally) - two different partners are free to both use "123"
+            // as their own internal listing id.
+            modelBuilder.Entity<CarAdvert>()
+                .HasIndex(a => new { a.PartnerId, a.ExternalId }).IsUnique()
+                .HasFilter("`PartnerId` IS NOT NULL");
+
+            modelBuilder.Entity<Partner>().ToTable("partners").HasKey(p => p.Id);
+            modelBuilder.Entity<Partner>()
+                .HasOne(p => p.LinkedUser).WithMany()
+                .HasForeignKey(p => p.LinkedUserId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Partner>().HasIndex(p => p.LinkedUserId);
+
+            modelBuilder.Entity<PartnerImportLog>().ToTable("partnerimportlogs").HasKey(l => l.Id);
+            modelBuilder.Entity<PartnerImportLog>()
+                .HasOne(l => l.Partner).WithMany()
+                .HasForeignKey(l => l.PartnerId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<PartnerImportLog>().HasIndex(l => l.PartnerId);
+
+            modelBuilder.Entity<PartnerSignupRequest>().ToTable("partnersignuprequests").HasKey(r => r.Id);
+            modelBuilder.Entity<PartnerSignupRequest>()
+                .HasOne(r => r.Partner).WithMany()
+                .HasForeignKey(r => r.PartnerId).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<PartnerSignupRequest>().HasIndex(r => r.Status);
+            modelBuilder.Entity<PartnerSignupRequest>().HasIndex(r => r.Email);
 
             modelBuilder.Entity<AdvertImage>().ToTable("AdvertImages").HasKey(i => i.Id);
             modelBuilder.Entity<Advert>().HasMany(a => a.Images).WithOne(i => i.Advert)
@@ -159,6 +199,26 @@ namespace CarsWebsite
             modelBuilder.Entity<Message>()
                 .HasOne(m => m.Sender).WithMany()
                 .HasForeignKey(m => m.SenderId).OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Transaction>().ToTable("transactions").HasKey(t => t.Id);
+            modelBuilder.Entity<Transaction>()
+                .HasOne(t => t.Advert).WithMany()
+                .HasForeignKey(t => t.AdvertId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Transaction>()
+                .HasOne(t => t.Buyer).WithMany()
+                .HasForeignKey(t => t.BuyerId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Transaction>()
+                .HasOne(t => t.Seller).WithMany()
+                .HasForeignKey(t => t.SellerId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Transaction>().HasIndex(t => t.AdvertId);
+            modelBuilder.Entity<Transaction>().HasIndex(t => t.BuyerId);
+            modelBuilder.Entity<Transaction>().HasIndex(t => t.SellerId);
+
+            modelBuilder.Entity<SavedSearch>().ToTable("savedsearches").HasKey(s => s.Id);
+            modelBuilder.Entity<SavedSearch>()
+                .HasOne(s => s.User).WithMany()
+                .HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<SavedSearch>().HasIndex(s => s.UserId);
 
             modelBuilder.Entity<Report>().ToTable("Reports").HasKey(r => r.Id);
             modelBuilder.Entity<Report>()
@@ -535,6 +595,12 @@ namespace CarsWebsite
             modelBuilder.Entity<CarAdvert>().HasIndex(a => a.GearboxId);
             modelBuilder.Entity<CarAdvert>().HasIndex(a => a.BodyTypeId);
             modelBuilder.Entity<CarAdvert>().HasIndex(a => a.Mileage);
+            // City/Region are near-universal filters for a local marketplace search ("cars near
+            // me") but had no index at all; FeaturedUntil mirrors the already-indexed
+            // BadgeExpiresAt and is used to sort promoted listings to the top of results.
+            modelBuilder.Entity<Advert>().HasIndex(a => new { a.City, a.IsActive });
+            modelBuilder.Entity<Advert>().HasIndex(a => new { a.Region, a.IsActive });
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.FeaturedUntil);
             modelBuilder.Entity<Event>().HasIndex(e => e.Status);
             modelBuilder.Entity<Event>().HasIndex(e => e.StartDate);
             modelBuilder.Entity<Event>().HasIndex(e => e.CreatedByUserId);

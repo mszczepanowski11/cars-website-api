@@ -30,6 +30,10 @@ public class Payment
 
     public int? DurationDays { get; set; }
 
+    // Only set for ServiceType.Subscription payments; DurationDays stays a genuine day count for
+    // those too (used for e.g. invoice display) instead of being overloaded to store the tier.
+    public SubscriptionTier? SubscriptionTier { get; set; }
+
     // Billing snapshot for invoice generation
     public string? BillingName { get; set; }
     public string? BillingNip { get; set; }

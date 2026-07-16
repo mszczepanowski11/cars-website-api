@@ -2,12 +2,11 @@ using cars_website_api.CarsWebsite.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using System.Security.Claims;
 
 [ApiController]
 [Route("api/[controller]")]
 [EnableRateLimiting("global")]
-public class SubscriptionController : ControllerBase
+public class SubscriptionController : CarizoControllerBase
 {
     private readonly ISubscriptionService _subscriptionService;
     private readonly ILogger<SubscriptionController> _logger;
@@ -16,12 +15,6 @@ public class SubscriptionController : ControllerBase
     {
         _subscriptionService = subscriptionService;
         _logger = logger;
-    }
-
-    private int GetUserId()
-    {
-        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var uid);
-        return uid;
     }
 
     [HttpGet("plans")]

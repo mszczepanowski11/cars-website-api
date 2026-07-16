@@ -4,14 +4,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
-using System.Security.Claims;
 
 namespace cars_website_api.CarsWebsite.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
 [EnableRateLimiting("global")]
-public class UserController : ControllerBase
+public class UserController : CarizoControllerBase
 {
     private readonly IUserService _userService;
     private readonly IFollowService _followService;
@@ -22,12 +21,6 @@ public class UserController : ControllerBase
         _userService = userService;
         _followService = followService;
         _logger = logger;
-    }
-
-    private int GetUserId()
-    {
-        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var uid);
-        return uid;
     }
 
     [Authorize]

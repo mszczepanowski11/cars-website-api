@@ -10,12 +10,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using MimeKit;
-using System.Security.Claims;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Policy = "AdminOnly")]
-public class AdminController : ControllerBase
+public class AdminController : CarizoControllerBase
 {
     private readonly IAdminService _adminService;
     private readonly AppDbContext _db;
@@ -32,12 +31,6 @@ public class AdminController : ControllerBase
         _logger = logger;
         _hierarchyValidationService = hierarchyValidationService;
         _taxonomyCacheVersion = taxonomyCacheVersion;
-    }
-
-    private int GetUserId()
-    {
-        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId);
-        return userId;
     }
 
     [HttpGet("stats")]

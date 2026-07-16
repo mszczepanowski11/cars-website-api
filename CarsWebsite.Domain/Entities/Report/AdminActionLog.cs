@@ -15,7 +15,9 @@
         DeleteUser,
         CreateAdvertForClient,
         ResendClientActivationEmail,
-        ActivateUser
+        ActivateUser,
+        ApprovePartnerSignup,
+        RejectPartnerSignup
     }
 
     public class AdminActionLog

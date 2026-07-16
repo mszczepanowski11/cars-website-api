@@ -4,12 +4,11 @@ using CarsWebsite;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using System.Security.Claims;
 
 [ApiController]
 [Route("api/[controller]")]
 [EnableRateLimiting("global")]
-public class AdvertController : ControllerBase
+public class AdvertController : CarizoControllerBase
 {
     private readonly IAdvertService _advertService;
     private readonly IAdvertImageService _imageService;
@@ -25,14 +24,6 @@ public class AdvertController : ControllerBase
         _subscriptionService = subscriptionService;
         _logger = logger;
     }
-
-    private int GetUserId()
-    {
-        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var uid);
-        return uid;
-    }
-
-    private bool IsAdmin() => User.FindFirstValue("isAdmin") == "true";
 
     [HttpGet("most-viewed")]
     public async Task<IActionResult> GetMostViewed([FromQuery] int count = 8)

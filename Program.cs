@@ -8,6 +8,9 @@ using cars_website_api.CarsWebsite.Services;
 using cars_website_api.CarsWebsite.Domain.Entities;
 using CarsWebsite;
 using CloudinaryDotNet;
+using Hangfire;
+using Hangfire.Dashboard;
+using Hangfire.MySql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -58,6 +61,15 @@ internal class Program
         if (string.IsNullOrEmpty(connectionString))
             throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
 
+        // Explicit MySqlConnector-level pool bounds (defaults are 0/100) so pool exhaustion under
+        // load is a deliberate, tunable ceiling rather than an implicit default nobody set.
+        if (!connectionString.Contains("Pooling=", StringComparison.OrdinalIgnoreCase))
+        {
+            var minPoolSize = Environment.GetEnvironmentVariable("DB_MIN_POOL_SIZE") ?? "5";
+            var maxPoolSize = Environment.GetEnvironmentVariable("DB_MAX_POOL_SIZE") ?? "100";
+            connectionString += $"Pooling=true;MinimumPoolSize={minPoolSize};MaximumPoolSize={maxPoolSize};";
+        }
+
         // SMTP_ env vars (single underscore) take precedence over appsettings Smtp:* section
         // ASP.NET Core normally uses double-underscore (Smtp__Host), but we map explicitly
         // so operators can use the more natural SMTP_HOST convention.
@@ -107,12 +119,30 @@ internal class Program
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                 options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
             });
+        // Standardizes every error response ASP.NET Core generates itself (the [ApiController]
+        // attribute's automatic model-validation 400s, and the 500 written by UseExceptionHandler
+        // below) onto the RFC 7807 application/problem+json shape. `message` is added alongside
+        // the standard fields (not instead of them) because the frontend's proxy layer already
+        // reads `.message` off every error body - dropping it would silently blank out every
+        // error toast site-wide the moment this shipped.
+        builder.Services.AddProblemDetails(options =>
+        {
+            options.CustomizeProblemDetails = ctx =>
+            {
+                ctx.ProblemDetails.Extensions["message"] = ctx.ProblemDetails.Detail ?? ctx.ProblemDetails.Title;
+            };
+        });
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddDbContext<AppDbContext>(options => options
+        // Pooled: AppDbContext has no per-request state beyond DbContextOptions (verified - its
+        // only constructor takes DbContextOptions<AppDbContext>), so reusing instances across
+        // requests is safe and avoids re-allocating/re-initializing a DbContext on every request.
+        var dbContextPoolSize = int.TryParse(Environment.GetEnvironmentVariable("DB_CONTEXT_POOL_SIZE"), out var poolSize) ? poolSize : 128;
+        builder.Services.AddDbContextPool<AppDbContext>(options => options
             .UseMySql(connectionString, new MySqlServerVersion(new Version(9, 4, 0)), mySqlOptions =>
                 mySqlOptions.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null))
             .ConfigureWarnings(w =>
-                w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
+                w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)),
+            poolSize: dbContextPoolSize);
         
         builder.Services.AddScoped<UserService>();
         builder.Services.AddScoped<IUserService, UserService>();
@@ -122,6 +152,13 @@ internal class Program
         builder.Services.AddScoped<IReviewService, ReviewService>();
         builder.Services.AddScoped<IAdvertService, AdvertService>();
         builder.Services.AddScoped<IAdvertImageService, AdvertImageService>();
+        builder.Services.AddScoped<ITransactionService, TransactionService>();
+        builder.Services.AddScoped<ISavedSearchService, SavedSearchService>();
+        builder.Services.AddScoped<IPartnerService, PartnerService>();
+        builder.Services.AddScoped<IPartnerImportService, PartnerImportService>();
+        builder.Services.AddScoped<IPartnerSignupService, PartnerSignupService>();
+        builder.Services.AddHttpClient<IPartnerFeedFetchService, PartnerFeedFetchService>()
+            .ConfigurePrimaryHttpMessageHandler(() => SsrfGuard.CreateHandler());
 
         var cloudName   = (Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME")   ?? "").Trim();
         var cloudApiKey = (Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY")       ?? "").Trim();
@@ -158,12 +195,32 @@ internal class Program
         builder.Services.AddHttpClient<IKSeFService, KSeFService>();
         builder.Services.AddHttpClient<ICepikService, CepikService>();
         builder.Services.AddScoped<IFinancingService, FinancingService>();
-        builder.Services.AddHostedService<SubscriptionExpiryJob>();
-        builder.Services.AddHostedService<MonthlyInvoiceJob>();
-        builder.Services.AddHostedService<ExpiryReminderJob>();
-        builder.Services.AddHostedService<BadgeExpiryJob>();
-        builder.Services.AddHostedService<EventFeaturedExpiryJob>();
-        builder.Services.AddHostedService<DeletedUserPurgeJob>();
+
+        // Background jobs run on Hangfire's own recurring-job schedule (registered after
+        // app.Build() below) instead of AddHostedService's polling-loop pattern - its MySQL-backed
+        // queue gives them a persistent, resumable-after-restart schedule and a dashboard for
+        // free, and guarantees only one server instance picks up a given scheduled occurrence
+        // (what AdvisoryLock used to do by hand for each job individually).
+        builder.Services.AddScoped<SubscriptionExpiryJob>();
+        builder.Services.AddScoped<MonthlyInvoiceJob>();
+        builder.Services.AddScoped<ExpiryReminderJob>();
+        builder.Services.AddScoped<BadgeExpiryJob>();
+        builder.Services.AddScoped<EventFeaturedExpiryJob>();
+        builder.Services.AddScoped<DeletedUserPurgeJob>();
+        builder.Services.AddScoped<SavedSearchAlertJob>();
+        builder.Services.AddScoped<PartnerFeedSyncJob>();
+
+        builder.Services.AddHangfire(config => config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UseStorage(new MySqlStorage(connectionString, new MySqlStorageOptions
+            {
+                TablesPrefix = "Hangfire_",
+                PrepareSchemaIfNecessary = true,
+                QueuePollInterval = TimeSpan.FromSeconds(15),
+            })));
+        builder.Services.AddHangfireServer();
 
         builder.Services.AddRateLimiter(options =>
         {
@@ -2493,8 +2550,25 @@ internal class Program
                         ex.StackTrace?.Split('\n').FirstOrDefault(l => l.Contains("cars_website_api") || l.Contains("CarsWebsite"))?.Trim() ?? ex.StackTrace?.Split('\n').FirstOrDefault()?.Trim() ?? "");
                 }
                 context.Response.StatusCode = 500;
-                context.Response.ContentType = "application/json";
-                await context.Response.WriteAsJsonAsync(new { message = "Internal server error" });
+                var problemDetailsService = context.RequestServices.GetService<IProblemDetailsService>();
+                if (problemDetailsService != null)
+                {
+                    await problemDetailsService.WriteAsync(new()
+                    {
+                        HttpContext = context,
+                        ProblemDetails = new ProblemDetails
+                        {
+                            Status = 500,
+                            Title = "Internal server error",
+                            Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                        },
+                    });
+                }
+                else
+                {
+                    context.Response.ContentType = "application/json";
+                    await context.Response.WriteAsJsonAsync(new { message = "Internal server error" });
+                }
             });
         });
 
@@ -2529,6 +2603,25 @@ internal class Program
         app.UseAuthorization();
         app.MapControllers();
         app.MapHealthChecks("/health").AllowAnonymous();
+
+        // Hangfire dashboard has no relationship to this API's own JWT-bearer auth (it's a
+        // browser-navigated page, not an endpoint a Bearer token gets attached to) - gate it with
+        // its own HTTP Basic Auth credentials instead. Fails closed: if the env vars are unset,
+        // nobody gets in rather than leaving the dashboard open to anyone who finds the URL.
+        app.UseHangfireDashboard("/hangfire", new DashboardOptions
+        {
+            Authorization = new[] { new HangfireDashboardAuthFilter(app.Configuration) },
+        });
+
+        var recurringJobs = app.Services.GetRequiredService<Hangfire.IRecurringJobManager>();
+        recurringJobs.AddOrUpdate<BadgeExpiryJob>("badge-expiry", job => job.RunAsync(CancellationToken.None), Cron.Hourly());
+        recurringJobs.AddOrUpdate<EventFeaturedExpiryJob>("event-featured-expiry", job => job.RunAsync(CancellationToken.None), Cron.Hourly());
+        recurringJobs.AddOrUpdate<ExpiryReminderJob>("expiry-reminder", job => job.RunAsync(CancellationToken.None), Cron.Daily(8));
+        recurringJobs.AddOrUpdate<SubscriptionExpiryJob>("subscription-expiry", job => job.RunAsync(CancellationToken.None), "0 */6 * * *");
+        recurringJobs.AddOrUpdate<MonthlyInvoiceJob>("monthly-invoice", job => job.RunAsync(CancellationToken.None), Cron.Monthly(1, 2));
+        recurringJobs.AddOrUpdate<DeletedUserPurgeJob>("deleted-user-purge", job => job.RunAsync(CancellationToken.None), Cron.Daily(3));
+        recurringJobs.AddOrUpdate<SavedSearchAlertJob>("saved-search-alerts", job => job.RunAsync(CancellationToken.None), "0 */2 * * *");
+        recurringJobs.AddOrUpdate<PartnerFeedSyncJob>("partner-feed-sync", job => job.RunAsync(CancellationToken.None), "0 */6 * * *");
 
         // Email transport test — runs in background after startup so it appears in Railway logs
         _ = Task.Run(async () =>
