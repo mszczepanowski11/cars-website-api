@@ -156,6 +156,9 @@ internal class Program
         builder.Services.AddScoped<ISavedSearchService, SavedSearchService>();
         builder.Services.AddScoped<IPartnerService, PartnerService>();
         builder.Services.AddScoped<IPartnerImportService, PartnerImportService>();
+        builder.Services.AddScoped<IPartnerSignupService, PartnerSignupService>();
+        builder.Services.AddHttpClient<IPartnerFeedFetchService, PartnerFeedFetchService>()
+            .ConfigurePrimaryHttpMessageHandler(() => SsrfGuard.CreateHandler());
 
         var cloudName   = (Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME")   ?? "").Trim();
         var cloudApiKey = (Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY")       ?? "").Trim();
@@ -205,6 +208,7 @@ internal class Program
         builder.Services.AddScoped<EventFeaturedExpiryJob>();
         builder.Services.AddScoped<DeletedUserPurgeJob>();
         builder.Services.AddScoped<SavedSearchAlertJob>();
+        builder.Services.AddScoped<PartnerFeedSyncJob>();
 
         builder.Services.AddHangfire(config => config
             .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
@@ -2617,6 +2621,7 @@ internal class Program
         recurringJobs.AddOrUpdate<MonthlyInvoiceJob>("monthly-invoice", job => job.RunAsync(CancellationToken.None), Cron.Monthly(1, 2));
         recurringJobs.AddOrUpdate<DeletedUserPurgeJob>("deleted-user-purge", job => job.RunAsync(CancellationToken.None), Cron.Daily(3));
         recurringJobs.AddOrUpdate<SavedSearchAlertJob>("saved-search-alerts", job => job.RunAsync(CancellationToken.None), "0 */2 * * *");
+        recurringJobs.AddOrUpdate<PartnerFeedSyncJob>("partner-feed-sync", job => job.RunAsync(CancellationToken.None), "0 */6 * * *");
 
         // Email transport test — runs in background after startup so it appears in Railway logs
         _ = Task.Run(async () =>

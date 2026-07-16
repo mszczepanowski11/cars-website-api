@@ -91,6 +91,7 @@ namespace CarsWebsite
         // Partner API (XML/CSV feed import)
         public DbSet<Partner> Partners { get; set; }
         public DbSet<PartnerImportLog> PartnerImportLogs { get; set; }
+        public DbSet<PartnerSignupRequest> PartnerSignupRequests { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -146,6 +147,13 @@ namespace CarsWebsite
                 .HasOne(l => l.Partner).WithMany()
                 .HasForeignKey(l => l.PartnerId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<PartnerImportLog>().HasIndex(l => l.PartnerId);
+
+            modelBuilder.Entity<PartnerSignupRequest>().ToTable("partnersignuprequests").HasKey(r => r.Id);
+            modelBuilder.Entity<PartnerSignupRequest>()
+                .HasOne(r => r.Partner).WithMany()
+                .HasForeignKey(r => r.PartnerId).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<PartnerSignupRequest>().HasIndex(r => r.Status);
+            modelBuilder.Entity<PartnerSignupRequest>().HasIndex(r => r.Email);
 
             modelBuilder.Entity<AdvertImage>().ToTable("AdvertImages").HasKey(i => i.Id);
             modelBuilder.Entity<Advert>().HasMany(a => a.Images).WithOne(i => i.Advert)

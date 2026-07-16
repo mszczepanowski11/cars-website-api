@@ -16,10 +16,12 @@ namespace cars_website_api.CarsWebsite.Controllers;
 public class AdminPartnerController : CarizoControllerBase
 {
     private readonly IPartnerService _partnerService;
+    private readonly IPartnerSignupService _signupService;
 
-    public AdminPartnerController(IPartnerService partnerService)
+    public AdminPartnerController(IPartnerService partnerService, IPartnerSignupService signupService)
     {
         _partnerService = partnerService;
+        _signupService = signupService;
     }
 
     [HttpGet]
@@ -58,4 +60,33 @@ public class AdminPartnerController : CarizoControllerBase
     [HttpGet("{id}/import-logs")]
     public async Task<IActionResult> GetImportLogs(int id, [FromQuery] int limit = 20)
         => Ok(await _partnerService.GetImportLogsAsync(id, limit));
+
+    // Reviews for the public "Dla firm" self-service signup form (PartnerSignupController) -
+    // separate from the CRUD above, which an admin uses to create partners directly.
+    [HttpGet("signup-requests")]
+    public async Task<IActionResult> GetSignupRequests([FromQuery] string? status)
+        => Ok(await _signupService.GetAllAsync(status));
+
+    [HttpPost("signup-requests/{id}/approve")]
+    public async Task<IActionResult> ApproveSignupRequest(int id)
+    {
+        try
+        {
+            return Ok(await _signupService.ApproveAsync(id, GetUserId()));
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    [HttpPost("signup-requests/{id}/reject")]
+    public async Task<IActionResult> RejectSignupRequest(int id, [FromBody] RejectPartnerSignupDto dto)
+    {
+        try
+        {
+            await _signupService.RejectAsync(id, GetUserId(), dto.Reason);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
 }

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace CarsWebsite;
 
 // A company that submits its own inventory to CARIZO via the Partner API (POST /api/partner/adverts/import),
@@ -21,4 +23,11 @@ public class Partner
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? LastImportAt { get; set; }
+
+    // Pull-sync: when set (typically from a self-service "Dla firm" signup), PartnerFeedSyncJob
+    // fetches this URL on a schedule and imports it, in addition to the push endpoint above -
+    // a partner can use either or both.
+    [MaxLength(500)] public string? FeedUrl { get; set; }
+    public PartnerFeedFormat? FeedFormat { get; set; }
+    public bool AutoSyncEnabled { get; set; } = true;
 }

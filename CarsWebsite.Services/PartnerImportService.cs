@@ -32,6 +32,12 @@ public class PartnerImportService : IPartnerImportService
         _advertService = advertService;
     }
 
+    public int CountFeedItems(string content, PartnerFeedFormat format)
+    {
+        var items = format == PartnerFeedFormat.Xml ? ParseXml(content) : ParseCsv(content);
+        return items.Count;
+    }
+
     public async Task<PartnerImportLogResponseDto> ImportAsync(Partner partner, string content, PartnerFeedFormat format)
     {
         var log = new PartnerImportLog
