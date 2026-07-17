@@ -1,10 +1,12 @@
+using CarsWebsite;
+
 namespace cars_website_api.CarsWebsite.Interfaces;
 
 public class PartnerFeedFetchResult
 {
     public bool Success { get; set; }
     public string? Content { get; set; }
-    public CarsWebsite.PartnerFeedFormat Format { get; set; }
+    public PartnerFeedFormat Format { get; set; }
     public string? Error { get; set; }
 }
 

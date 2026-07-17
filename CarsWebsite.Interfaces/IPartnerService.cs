@@ -13,5 +13,7 @@ public interface IPartnerService
     Task<List<PartnerImportLogResponseDto>> GetImportLogsAsync(int id, int limit = 20);
 
     // Authenticates the X-Api-Key header against ApiKeyHash; returns null if no active partner matches.
-    Task<CarsWebsite.Partner?> AuthenticateAsync(string apiKey);
+    // global:: because plain "CarsWebsite.Partner" resolves against the enclosing
+    // cars_website_api.CarsWebsite namespace here and fails to compile.
+    Task<global::CarsWebsite.Partner?> AuthenticateAsync(string apiKey);
 }

@@ -1,3 +1,5 @@
+using cars_website_api.CarsWebsite.Domain.Entities;
+
 namespace CarsWebsite;
 
 public enum TransactionType
