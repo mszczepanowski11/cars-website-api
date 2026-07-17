@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using CarsWebsite;
 using cars_website_api.CarsWebsite.DTOs.Advert;
+using cars_website_api.CarsWebsite.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 // Runs as a Hangfire recurring job (see Program.cs). Re-runs each SavedSearch's stored criteria
