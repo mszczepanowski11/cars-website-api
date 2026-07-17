@@ -2556,7 +2556,7 @@ internal class Program
                     await problemDetailsService.WriteAsync(new()
                     {
                         HttpContext = context,
-                        ProblemDetails = new ProblemDetails
+                        ProblemDetails = new Microsoft.AspNetCore.Mvc.ProblemDetails
                         {
                             Status = 500,
                             Title = "Internal server error",
