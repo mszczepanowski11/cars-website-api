@@ -1,3 +1,4 @@
+using CarsWebsite;
 using cars_website_api.CarsWebsite.Interfaces;
 
 namespace cars_website_api.CarsWebsite.Services;
@@ -55,7 +56,7 @@ public class PartnerFeedFetchService : IPartnerFeedFetchService
             if (trimmed.Length == 0)
                 return Fail("Plik pod podanym adresem jest pusty.");
 
-            var format = trimmed.StartsWith('<') ? CarsWebsite.PartnerFeedFormat.Xml : CarsWebsite.PartnerFeedFormat.Csv;
+            var format = trimmed.StartsWith('<') ? PartnerFeedFormat.Xml : PartnerFeedFormat.Csv;
             return new PartnerFeedFetchResult { Success = true, Content = content, Format = format };
         }
         catch (TaskCanceledException)
