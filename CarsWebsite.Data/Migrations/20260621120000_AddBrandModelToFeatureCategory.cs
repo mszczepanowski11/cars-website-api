@@ -10,28 +10,21 @@ namespace cars_website_api.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(@"
-                ALTER TABLE `featurecategories`
-                    ADD COLUMN IF NOT EXISTS `BrandId` int NULL,
-                    ADD COLUMN IF NOT EXISTS `ModelId` int NULL;
-            ");
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("featurecategories", "BrandId", "int NULL, ADD COLUMN IF NOT EXISTS `ModelId` int NULL"));
 
-            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS `IX_FeatureCategories_BrandId` ON `featurecategories` (`BrandId`)");
-            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS `IX_FeatureCategories_ModelId` ON `featurecategories` (`ModelId`)");
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("featurecategories", "IX_FeatureCategories_BrandId", "`BrandId`"));
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("featurecategories", "IX_FeatureCategories_ModelId", "`ModelId`"));
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(@"
-                ALTER TABLE `featurecategories`
-                    DROP FOREIGN KEY IF EXISTS `FK_FeatureCategories_Brands_BrandId`,
-                    DROP FOREIGN KEY IF EXISTS `FK_FeatureCategories_Models_ModelId`,
-                    DROP INDEX IF EXISTS `IX_FeatureCategories_BrandId`,
-                    DROP INDEX IF EXISTS `IX_FeatureCategories_ModelId`,
-                    DROP COLUMN IF EXISTS `BrandId`,
-                    DROP COLUMN IF EXISTS `ModelId`;
-            ");
+            migrationBuilder.Sql(MySqlGuard.DropForeignKeyIfExists("featurecategories", "FK_FeatureCategories_Brands_BrandId"));
+            migrationBuilder.Sql(MySqlGuard.DropForeignKeyIfExists("featurecategories", "FK_FeatureCategories_Models_ModelId"));
+            migrationBuilder.Sql(MySqlGuard.DropIndexIfExists("featurecategories", "IX_FeatureCategories_BrandId"));
+            migrationBuilder.Sql(MySqlGuard.DropIndexIfExists("featurecategories", "IX_FeatureCategories_ModelId"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("featurecategories", "BrandId"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("featurecategories", "ModelId"));
         }
     }
 }

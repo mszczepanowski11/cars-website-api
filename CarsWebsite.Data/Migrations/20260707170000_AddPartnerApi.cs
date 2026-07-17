@@ -47,11 +47,8 @@ namespace cars_website_api.Migrations
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             ");
 
-            migrationBuilder.Sql(@"
-                ALTER TABLE `caradverts`
-                ADD COLUMN IF NOT EXISTS `PartnerId` int NULL AFTER `Id`,
-                ADD COLUMN IF NOT EXISTS `ExternalId` varchar(200) NULL AFTER `PartnerId`;
-            ");
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("caradverts", "PartnerId", "int NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("caradverts", "ExternalId", "varchar(200) NULL"));
 
             migrationBuilder.Sql(@"
                 SET @idx_exists = (
@@ -82,10 +79,10 @@ namespace cars_website_api.Migrations
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("ALTER TABLE `caradverts` DROP FOREIGN KEY IF EXISTS `FK_caradverts_partners_PartnerId`;");
-            migrationBuilder.Sql("ALTER TABLE `caradverts` DROP INDEX IF EXISTS `IX_caradverts_PartnerId_ExternalId`;");
-            migrationBuilder.Sql("ALTER TABLE `caradverts` DROP COLUMN IF EXISTS `ExternalId`;");
-            migrationBuilder.Sql("ALTER TABLE `caradverts` DROP COLUMN IF EXISTS `PartnerId`;");
+            migrationBuilder.Sql(MySqlGuard.DropForeignKeyIfExists("caradverts", "FK_caradverts_partners_PartnerId"));
+            migrationBuilder.Sql(MySqlGuard.DropIndexIfExists("caradverts", "IX_caradverts_PartnerId_ExternalId"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("caradverts", "ExternalId"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("caradverts", "PartnerId"));
             migrationBuilder.Sql("DROP TABLE IF EXISTS `partnerimportlogs`;");
             migrationBuilder.Sql("DROP TABLE IF EXISTS `partners`;");
         }

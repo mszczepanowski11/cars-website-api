@@ -10,20 +10,14 @@ namespace cars_website_api.Migrations
         {
             // Without indexes, every password reset and email verification performs
             // a full table scan on the users table.
-            migrationBuilder.Sql(@"
-                CREATE UNIQUE INDEX IF NOT EXISTS `UX_Users_PasswordResetToken`
-                ON `users` (`PasswordResetToken`(255));
-            ");
-            migrationBuilder.Sql(@"
-                CREATE UNIQUE INDEX IF NOT EXISTS `UX_Users_EmailVerificationToken`
-                ON `users` (`EmailVerificationToken`(255));
-            ");
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("users", "UX_Users_PasswordResetToken", "`PasswordResetToken`(255)", "UNIQUE"));
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("users", "UX_Users_EmailVerificationToken", "`EmailVerificationToken`(255)", "UNIQUE"));
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("DROP INDEX IF EXISTS `UX_Users_PasswordResetToken` ON `users`;");
-            migrationBuilder.Sql("DROP INDEX IF EXISTS `UX_Users_EmailVerificationToken` ON `users`;");
+            migrationBuilder.Sql(MySqlGuard.DropIndexIfExists("users", "UX_Users_PasswordResetToken"));
+            migrationBuilder.Sql(MySqlGuard.DropIndexIfExists("users", "UX_Users_EmailVerificationToken"));
         }
     }
 }

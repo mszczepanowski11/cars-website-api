@@ -8,18 +8,14 @@ namespace cars_website_api.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(
-                "ALTER TABLE `Conversations` ADD COLUMN IF NOT EXISTS `IsPinned` tinyint(1) NOT NULL DEFAULT 0;");
-            migrationBuilder.Sql(
-                "ALTER TABLE `Conversations` ADD COLUMN IF NOT EXISTS `IsArchived` tinyint(1) NOT NULL DEFAULT 0;");
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("Conversations", "IsPinned", "tinyint(1) NOT NULL DEFAULT 0"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("Conversations", "IsArchived", "tinyint(1) NOT NULL DEFAULT 0"));
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(
-                "ALTER TABLE `Conversations` DROP COLUMN IF EXISTS `IsPinned`;");
-            migrationBuilder.Sql(
-                "ALTER TABLE `Conversations` DROP COLUMN IF EXISTS `IsArchived`;");
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("Conversations", "IsPinned"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("Conversations", "IsArchived"));
         }
     }
 }

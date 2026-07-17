@@ -15,12 +15,12 @@ namespace cars_website_api.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("ALTER TABLE `payments` ADD COLUMN IF NOT EXISTS `SubscriptionTier` int NULL");
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("payments", "SubscriptionTier", "int NULL"));
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("ALTER TABLE `payments` DROP COLUMN IF EXISTS `SubscriptionTier`");
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("payments", "SubscriptionTier"));
         }
     }
 }

@@ -12,16 +12,16 @@ namespace cars_website_api.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS `IX_Adverts_City_IsActive` ON `adverts` (`City`, `IsActive`)");
-            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS `IX_Adverts_Region_IsActive` ON `adverts` (`Region`, `IsActive`)");
-            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS `IX_CarAdverts_FeaturedUntil` ON `caradverts` (`FeaturedUntil`)");
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("adverts", "IX_Adverts_City_IsActive", "`City`, `IsActive`"));
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("adverts", "IX_Adverts_Region_IsActive", "`Region`, `IsActive`"));
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("caradverts", "IX_CarAdverts_FeaturedUntil", "`FeaturedUntil`"));
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("DROP INDEX IF EXISTS `IX_Adverts_City_IsActive` ON `adverts`");
-            migrationBuilder.Sql("DROP INDEX IF EXISTS `IX_Adverts_Region_IsActive` ON `adverts`");
-            migrationBuilder.Sql("DROP INDEX IF EXISTS `IX_CarAdverts_FeaturedUntil` ON `caradverts`");
+            migrationBuilder.Sql(MySqlGuard.DropIndexIfExists("adverts", "IX_Adverts_City_IsActive"));
+            migrationBuilder.Sql(MySqlGuard.DropIndexIfExists("adverts", "IX_Adverts_Region_IsActive"));
+            migrationBuilder.Sql(MySqlGuard.DropIndexIfExists("caradverts", "IX_CarAdverts_FeaturedUntil"));
         }
     }
 }

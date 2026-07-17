@@ -14,14 +14,16 @@ namespace cars_website_api.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("ALTER TABLE `adverts` DROP FOREIGN KEY IF EXISTS `FK_Adverts_Users_UserId`");
-            migrationBuilder.Sql("ALTER TABLE `adverts` ADD CONSTRAINT `FK_Adverts_Users_UserId` FOREIGN KEY (`UserId`) REFERENCES `users` (`Id`) ON DELETE RESTRICT");
+            migrationBuilder.Sql(MySqlGuard.DropForeignKeyIfExists("adverts", "FK_Adverts_Users_UserId"));
+            migrationBuilder.Sql(MySqlGuard.AddForeignKeyIfMissing("adverts", "FK_Adverts_Users_UserId",
+                "FOREIGN KEY (`UserId`) REFERENCES `users` (`Id`) ON DELETE RESTRICT"));
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("ALTER TABLE `adverts` DROP FOREIGN KEY IF EXISTS `FK_Adverts_Users_UserId`");
-            migrationBuilder.Sql("ALTER TABLE `adverts` ADD CONSTRAINT `FK_Adverts_Users_UserId` FOREIGN KEY (`UserId`) REFERENCES `users` (`Id`) ON DELETE CASCADE");
+            migrationBuilder.Sql(MySqlGuard.DropForeignKeyIfExists("adverts", "FK_Adverts_Users_UserId"));
+            migrationBuilder.Sql(MySqlGuard.AddForeignKeyIfMissing("adverts", "FK_Adverts_Users_UserId",
+                "FOREIGN KEY (`UserId`) REFERENCES `users` (`Id`) ON DELETE CASCADE"));
         }
     }
 }

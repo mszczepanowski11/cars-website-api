@@ -8,14 +8,12 @@ namespace cars_website_api.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(
-                "ALTER TABLE `refreshtokens` ADD COLUMN IF NOT EXISTS `RevokedAt` datetime(6) NULL;");
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("refreshtokens", "RevokedAt", "datetime(6) NULL"));
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(
-                "ALTER TABLE `refreshtokens` DROP COLUMN IF EXISTS `RevokedAt`;");
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("refreshtokens", "RevokedAt"));
         }
     }
 }

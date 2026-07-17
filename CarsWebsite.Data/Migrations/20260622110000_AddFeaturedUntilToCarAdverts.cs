@@ -13,12 +13,12 @@ namespace cars_website_api.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("ALTER TABLE `caradverts` ADD COLUMN IF NOT EXISTS `FeaturedUntil` datetime(6) NULL");
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("caradverts", "FeaturedUntil", "datetime(6) NULL"));
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("ALTER TABLE `caradverts` DROP COLUMN IF EXISTS `FeaturedUntil`");
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("caradverts", "FeaturedUntil"));
         }
     }
 }

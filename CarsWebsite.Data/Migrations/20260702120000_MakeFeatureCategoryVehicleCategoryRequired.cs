@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore.Migrations;
+using cars_website_api.Migrations;
 
 #nullable disable
 
@@ -22,9 +23,7 @@ namespace cars_website_api.CarsWebsite.Data.Migrations
                 "UPDATE `featurecategories` fc JOIN `vehiclecategories` vc ON vc.`Slug` = 'inne' " +
                 "SET fc.`VehicleCategoryId` = vc.`Id` WHERE fc.`VehicleCategoryId` IS NULL");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_FeatureCategories_VehicleCategories_VehicleCategoryId",
-                table: "FeatureCategories");
+            migrationBuilder.Sql(MySqlGuard.DropForeignKeyIfExists("featurecategories", "FK_FeatureCategories_VehicleCategories_VehicleCategoryId"));
 
             migrationBuilder.AlterColumn<int>(
                 name: "VehicleCategoryId",
@@ -35,21 +34,14 @@ namespace cars_website_api.CarsWebsite.Data.Migrations
                 oldType: "int",
                 oldNullable: true);
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_FeatureCategories_VehicleCategories_VehicleCategoryId",
-                table: "FeatureCategories",
-                column: "VehicleCategoryId",
-                principalTable: "VehicleCategories",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Restrict);
+            migrationBuilder.Sql(MySqlGuard.AddForeignKeyIfMissing("featurecategories", "FK_FeatureCategories_VehicleCategories_VehicleCategoryId",
+                "FOREIGN KEY (`VehicleCategoryId`) REFERENCES `vehiclecategories` (`Id`) ON DELETE RESTRICT"));
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_FeatureCategories_VehicleCategories_VehicleCategoryId",
-                table: "FeatureCategories");
+            migrationBuilder.Sql(MySqlGuard.DropForeignKeyIfExists("featurecategories", "FK_FeatureCategories_VehicleCategories_VehicleCategoryId"));
 
             migrationBuilder.AlterColumn<int?>(
                 name: "VehicleCategoryId",
@@ -59,13 +51,8 @@ namespace cars_website_api.CarsWebsite.Data.Migrations
                 oldClrType: typeof(int),
                 oldType: "int");
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_FeatureCategories_VehicleCategories_VehicleCategoryId",
-                table: "FeatureCategories",
-                column: "VehicleCategoryId",
-                principalTable: "VehicleCategories",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.SetNull);
+            migrationBuilder.Sql(MySqlGuard.AddForeignKeyIfMissing("featurecategories", "FK_FeatureCategories_VehicleCategories_VehicleCategoryId",
+                "FOREIGN KEY (`VehicleCategoryId`) REFERENCES `vehiclecategories` (`Id`) ON DELETE SET NULL"));
         }
     }
 }
