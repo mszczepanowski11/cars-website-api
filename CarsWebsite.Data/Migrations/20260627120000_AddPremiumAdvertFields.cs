@@ -8,38 +8,38 @@ namespace cars_website_api.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` ADD COLUMN IF NOT EXISTS `RegistrationPlate` varchar(20) NULL;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` ADD COLUMN IF NOT EXISTS `HasVatInvoice` tinyint(1) NOT NULL DEFAULT 0;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` ADD COLUMN IF NOT EXISTS `IsLeasingPossible` tinyint(1) NOT NULL DEFAULT 0;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` ADD COLUMN IF NOT EXISTS `IsCreditPossible` tinyint(1) NOT NULL DEFAULT 0;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` ADD COLUMN IF NOT EXISTS `IsExchangePossible` tinyint(1) NOT NULL DEFAULT 0;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` ADD COLUMN IF NOT EXISTS `GearCount` int NULL;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` ADD COLUMN IF NOT EXISTS `MetallicPaint` tinyint(1) NOT NULL DEFAULT 0;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` ADD COLUMN IF NOT EXISTS `MaxTrailerWeight` int NULL;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` ADD COLUMN IF NOT EXISTS `IsFirstOwner` tinyint(1) NOT NULL DEFAULT 0;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` ADD COLUMN IF NOT EXISTS `IsServicedAtASO` tinyint(1) NOT NULL DEFAULT 0;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` ADD COLUMN IF NOT EXISTS `IsGaraged` tinyint(1) NOT NULL DEFAULT 0;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` ADD COLUMN IF NOT EXISTS `KeyCount` int NULL;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` ADD COLUMN IF NOT EXISTS `InsuranceUntil` datetime(6) NULL;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` ADD COLUMN IF NOT EXISTS `YoutubeUrl` varchar(500) NULL;");
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("CarAdverts", "RegistrationPlate", "varchar(20) NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("CarAdverts", "HasVatInvoice", "tinyint(1) NOT NULL DEFAULT 0"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("CarAdverts", "IsLeasingPossible", "tinyint(1) NOT NULL DEFAULT 0"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("CarAdverts", "IsCreditPossible", "tinyint(1) NOT NULL DEFAULT 0"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("CarAdverts", "IsExchangePossible", "tinyint(1) NOT NULL DEFAULT 0"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("CarAdverts", "GearCount", "int NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("CarAdverts", "MetallicPaint", "tinyint(1) NOT NULL DEFAULT 0"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("CarAdverts", "MaxTrailerWeight", "int NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("CarAdverts", "IsFirstOwner", "tinyint(1) NOT NULL DEFAULT 0"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("CarAdverts", "IsServicedAtASO", "tinyint(1) NOT NULL DEFAULT 0"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("CarAdverts", "IsGaraged", "tinyint(1) NOT NULL DEFAULT 0"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("CarAdverts", "KeyCount", "int NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("CarAdverts", "InsuranceUntil", "datetime(6) NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("CarAdverts", "YoutubeUrl", "varchar(500) NULL"));
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` DROP COLUMN IF EXISTS `RegistrationPlate`;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` DROP COLUMN IF EXISTS `HasVatInvoice`;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` DROP COLUMN IF EXISTS `IsLeasingPossible`;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` DROP COLUMN IF EXISTS `IsCreditPossible`;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` DROP COLUMN IF EXISTS `IsExchangePossible`;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` DROP COLUMN IF EXISTS `GearCount`;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` DROP COLUMN IF EXISTS `MetallicPaint`;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` DROP COLUMN IF EXISTS `MaxTrailerWeight`;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` DROP COLUMN IF EXISTS `IsFirstOwner`;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` DROP COLUMN IF EXISTS `IsServicedAtASO`;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` DROP COLUMN IF EXISTS `IsGaraged`;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` DROP COLUMN IF EXISTS `KeyCount`;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` DROP COLUMN IF EXISTS `InsuranceUntil`;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` DROP COLUMN IF EXISTS `YoutubeUrl`;");
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("CarAdverts", "RegistrationPlate"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("CarAdverts", "HasVatInvoice"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("CarAdverts", "IsLeasingPossible"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("CarAdverts", "IsCreditPossible"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("CarAdverts", "IsExchangePossible"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("CarAdverts", "GearCount"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("CarAdverts", "MetallicPaint"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("CarAdverts", "MaxTrailerWeight"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("CarAdverts", "IsFirstOwner"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("CarAdverts", "IsServicedAtASO"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("CarAdverts", "IsGaraged"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("CarAdverts", "KeyCount"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("CarAdverts", "InsuranceUntil"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("CarAdverts", "YoutubeUrl"));
         }
     }
 }

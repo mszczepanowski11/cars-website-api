@@ -15,12 +15,9 @@ namespace cars_website_api.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(@"
-                ALTER TABLE `partners`
-                ADD COLUMN IF NOT EXISTS `FeedUrl` varchar(500) NULL,
-                ADD COLUMN IF NOT EXISTS `FeedFormat` int NULL,
-                ADD COLUMN IF NOT EXISTS `AutoSyncEnabled` tinyint(1) NOT NULL DEFAULT 1;
-            ");
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("partners", "FeedUrl", "varchar(500) NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("partners", "FeedFormat", "int NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("partners", "AutoSyncEnabled", "tinyint(1) NOT NULL DEFAULT 1"));
 
             migrationBuilder.Sql(@"
                 CREATE TABLE IF NOT EXISTS `partnersignuprequests` (
@@ -50,9 +47,9 @@ namespace cars_website_api.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql("DROP TABLE IF EXISTS `partnersignuprequests`;");
-            migrationBuilder.Sql("ALTER TABLE `partners` DROP COLUMN IF EXISTS `AutoSyncEnabled`;");
-            migrationBuilder.Sql("ALTER TABLE `partners` DROP COLUMN IF EXISTS `FeedFormat`;");
-            migrationBuilder.Sql("ALTER TABLE `partners` DROP COLUMN IF EXISTS `FeedUrl`;");
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("partners", "AutoSyncEnabled"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("partners", "FeedFormat"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("partners", "FeedUrl"));
         }
     }
 }

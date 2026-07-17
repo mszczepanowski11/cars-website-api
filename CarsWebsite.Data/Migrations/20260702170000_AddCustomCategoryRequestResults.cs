@@ -8,21 +8,18 @@ namespace cars_website_api.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("ALTER TABLE `customcategoryrequests` ADD COLUMN IF NOT EXISTS `ResultingVehicleCategoryId` int NULL;");
-            migrationBuilder.Sql("ALTER TABLE `customcategoryrequests` ADD COLUMN IF NOT EXISTS `ResultingVehicleSubtypeId` int NULL;");
-            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS `IX_customcategoryrequests_ResultingVehicleCategoryId` ON `customcategoryrequests` (`ResultingVehicleCategoryId`);");
-            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS `IX_customcategoryrequests_ResultingVehicleSubtypeId` ON `customcategoryrequests` (`ResultingVehicleSubtypeId`);");
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("customcategoryrequests", "ResultingVehicleCategoryId", "int NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("customcategoryrequests", "ResultingVehicleSubtypeId", "int NULL"));
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("customcategoryrequests", "IX_customcategoryrequests_ResultingVehicleCategoryId", "`ResultingVehicleCategoryId`"));
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("customcategoryrequests", "IX_customcategoryrequests_ResultingVehicleSubtypeId", "`ResultingVehicleSubtypeId`"));
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(@"
-                ALTER TABLE `customcategoryrequests`
-                    DROP FOREIGN KEY IF EXISTS `FK_customcategoryrequests_VehicleCategories_ResultingVehicleCategoryId`,
-                    DROP FOREIGN KEY IF EXISTS `FK_customcategoryrequests_VehicleSubtypes_ResultingVehicleSubtypeId`,
-                    DROP COLUMN IF EXISTS `ResultingVehicleCategoryId`,
-                    DROP COLUMN IF EXISTS `ResultingVehicleSubtypeId`;
-            ");
+            migrationBuilder.Sql(MySqlGuard.DropForeignKeyIfExists("customcategoryrequests", "FK_customcategoryrequests_VehicleCategories_ResultingVehicleCategoryId"));
+            migrationBuilder.Sql(MySqlGuard.DropForeignKeyIfExists("customcategoryrequests", "FK_customcategoryrequests_VehicleSubtypes_ResultingVehicleSubtypeId"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("customcategoryrequests", "ResultingVehicleCategoryId"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("customcategoryrequests", "ResultingVehicleSubtypeId"));
         }
     }
 }

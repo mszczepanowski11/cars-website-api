@@ -8,15 +8,12 @@ namespace cars_website_api.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(@"
-                CREATE INDEX IF NOT EXISTS `IX_AdvertViews_AdvertId_IpAddress_ViewedAt`
-                ON `AdvertViews` (`AdvertId`, `IpAddress`(45), `ViewedAt`);
-            ");
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("AdvertViews", "IX_AdvertViews_AdvertId_IpAddress_ViewedAt", "`AdvertId`, `IpAddress`(45), `ViewedAt`"));
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("DROP INDEX IF EXISTS `IX_AdvertViews_AdvertId_IpAddress_ViewedAt` ON `AdvertViews`;");
+            migrationBuilder.Sql(MySqlGuard.DropIndexIfExists("AdvertViews", "IX_AdvertViews_AdvertId_IpAddress_ViewedAt"));
         }
     }
 }

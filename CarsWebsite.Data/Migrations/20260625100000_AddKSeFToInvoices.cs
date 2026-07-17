@@ -8,18 +8,14 @@ namespace cars_website_api.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(
-                "ALTER TABLE `invoices` ADD COLUMN IF NOT EXISTS `KSeFReferenceNumber` varchar(200) NULL;");
-            migrationBuilder.Sql(
-                "ALTER TABLE `invoices` ADD COLUMN IF NOT EXISTS `IsKSeFSent` tinyint(1) NOT NULL DEFAULT 0;");
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("invoices", "KSeFReferenceNumber", "varchar(200) NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("invoices", "IsKSeFSent", "tinyint(1) NOT NULL DEFAULT 0"));
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(
-                "ALTER TABLE `invoices` DROP COLUMN IF EXISTS `KSeFReferenceNumber`;");
-            migrationBuilder.Sql(
-                "ALTER TABLE `invoices` DROP COLUMN IF EXISTS `IsKSeFSent`;");
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("invoices", "KSeFReferenceNumber"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("invoices", "IsKSeFSent"));
         }
     }
 }

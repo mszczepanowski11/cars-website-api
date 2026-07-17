@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore.Migrations;
+using cars_website_api.Migrations;
 
 #nullable disable
 
@@ -8,28 +9,28 @@ namespace cars_website_api.CarsWebsite.Data.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS `IX_caradverts_ExpiresAt` ON `caradverts` (`ExpiresAt`);");
-            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS `IX_caradverts_BadgeExpiresAt` ON `caradverts` (`BadgeExpiresAt`);");
-            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS `IX_caradverts_GearboxId` ON `caradverts` (`GearboxId`);");
-            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS `IX_caradverts_BodyTypeId` ON `caradverts` (`BodyTypeId`);");
-            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS `IX_caradverts_Mileage` ON `caradverts` (`Mileage`);");
-            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS `IX_events_Status` ON `events` (`Status`);");
-            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS `IX_events_StartDate` ON `events` (`StartDate`);");
-            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS `IX_events_CreatedByUserId` ON `events` (`CreatedByUserId`);");
-            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS `IX_payments_UserId` ON `payments` (`UserId`);");
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("caradverts", "IX_caradverts_ExpiresAt", "`ExpiresAt`"));
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("caradverts", "IX_caradverts_BadgeExpiresAt", "`BadgeExpiresAt`"));
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("caradverts", "IX_caradverts_GearboxId", "`GearboxId`"));
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("caradverts", "IX_caradverts_BodyTypeId", "`BodyTypeId`"));
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("caradverts", "IX_caradverts_Mileage", "`Mileage`"));
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("events", "IX_events_Status", "`Status`"));
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("events", "IX_events_StartDate", "`StartDate`"));
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("events", "IX_events_CreatedByUserId", "`CreatedByUserId`"));
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("payments", "IX_payments_UserId", "`UserId`"));
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("DROP INDEX IF EXISTS `IX_caradverts_ExpiresAt` ON `caradverts`;");
-            migrationBuilder.Sql("DROP INDEX IF EXISTS `IX_caradverts_BadgeExpiresAt` ON `caradverts`;");
-            migrationBuilder.Sql("DROP INDEX IF EXISTS `IX_caradverts_GearboxId` ON `caradverts`;");
-            migrationBuilder.Sql("DROP INDEX IF EXISTS `IX_caradverts_BodyTypeId` ON `caradverts`;");
-            migrationBuilder.Sql("DROP INDEX IF EXISTS `IX_caradverts_Mileage` ON `caradverts`;");
-            migrationBuilder.Sql("DROP INDEX IF EXISTS `IX_events_Status` ON `events`;");
-            migrationBuilder.Sql("DROP INDEX IF EXISTS `IX_events_StartDate` ON `events`;");
-            migrationBuilder.Sql("DROP INDEX IF EXISTS `IX_events_CreatedByUserId` ON `events`;");
-            migrationBuilder.Sql("DROP INDEX IF EXISTS `IX_payments_UserId` ON `payments`;");
+            migrationBuilder.Sql(MySqlGuard.DropIndexIfExists("caradverts", "IX_caradverts_ExpiresAt"));
+            migrationBuilder.Sql(MySqlGuard.DropIndexIfExists("caradverts", "IX_caradverts_BadgeExpiresAt"));
+            migrationBuilder.Sql(MySqlGuard.DropIndexIfExists("caradverts", "IX_caradverts_GearboxId"));
+            migrationBuilder.Sql(MySqlGuard.DropIndexIfExists("caradverts", "IX_caradverts_BodyTypeId"));
+            migrationBuilder.Sql(MySqlGuard.DropIndexIfExists("caradverts", "IX_caradverts_Mileage"));
+            migrationBuilder.Sql(MySqlGuard.DropIndexIfExists("events", "IX_events_Status"));
+            migrationBuilder.Sql(MySqlGuard.DropIndexIfExists("events", "IX_events_StartDate"));
+            migrationBuilder.Sql(MySqlGuard.DropIndexIfExists("events", "IX_events_CreatedByUserId"));
+            migrationBuilder.Sql(MySqlGuard.DropIndexIfExists("payments", "IX_payments_UserId"));
         }
     }
 }

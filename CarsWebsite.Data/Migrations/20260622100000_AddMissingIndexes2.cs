@@ -9,16 +9,16 @@ namespace cars_website_api.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             // payments — ImojeOrderId lookup (webhook processing, idempotency)
-            migrationBuilder.Sql("CREATE UNIQUE INDEX IF NOT EXISTS `UX_Payments_ImojeOrderId` ON `payments` (`ImojeOrderId`(255))");
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("payments", "UX_Payments_ImojeOrderId", "`ImojeOrderId`(255)", "UNIQUE"));
 
             // adverts — expiry-based queries (expiry reminder job, expired advert cleanup)
-            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS `IX_Adverts_ExpiresAt` ON `adverts` (`ExpiresAt`)");
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("adverts", "IX_Adverts_ExpiresAt", "`ExpiresAt`"));
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("DROP INDEX IF EXISTS `UX_Payments_ImojeOrderId` ON `payments`");
-            migrationBuilder.Sql("DROP INDEX IF EXISTS `IX_Adverts_ExpiresAt` ON `adverts`");
+            migrationBuilder.Sql(MySqlGuard.DropIndexIfExists("payments", "UX_Payments_ImojeOrderId"));
+            migrationBuilder.Sql(MySqlGuard.DropIndexIfExists("adverts", "IX_Adverts_ExpiresAt"));
         }
     }
 }

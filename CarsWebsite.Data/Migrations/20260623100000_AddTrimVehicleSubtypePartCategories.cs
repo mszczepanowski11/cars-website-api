@@ -61,49 +61,49 @@ namespace cars_website_api.Migrations
             ");
 
             // Add new columns to engineversions
-            migrationBuilder.Sql("ALTER TABLE `engineversions` ADD COLUMN IF NOT EXISTS `TrimId` int NULL");
-            migrationBuilder.Sql("ALTER TABLE `engineversions` ADD COLUMN IF NOT EXISTS `TorqueNm` int NULL");
-            migrationBuilder.Sql("ALTER TABLE `engineversions` ADD COLUMN IF NOT EXISTS `Co2EmissionGkm` int NULL");
-            migrationBuilder.Sql("ALTER TABLE `engineversions` ADD COLUMN IF NOT EXISTS `EuroNorm` varchar(20) NULL");
-            migrationBuilder.Sql("ALTER TABLE `engineversions` ADD COLUMN IF NOT EXISTS `AvgConsumptionL` decimal(4,1) NULL");
-            migrationBuilder.Sql("ALTER TABLE `engineversions` ADD COLUMN IF NOT EXISTS `Acceleration0100` decimal(4,1) NULL");
-            migrationBuilder.Sql("ALTER TABLE `engineversions` ADD COLUMN IF NOT EXISTS `TopSpeedKmh` int NULL");
-            migrationBuilder.Sql("ALTER TABLE `engineversions` ADD COLUMN IF NOT EXISTS `DriveType` varchar(10) NULL");
-            migrationBuilder.Sql("ALTER TABLE `engineversions` ADD COLUMN IF NOT EXISTS `GearboxType` varchar(20) NULL");
-            migrationBuilder.Sql("ALTER TABLE `engineversions` ADD COLUMN IF NOT EXISTS `Cylinders` int NULL");
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("engineversions", "TrimId", "int NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("engineversions", "TorqueNm", "int NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("engineversions", "Co2EmissionGkm", "int NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("engineversions", "EuroNorm", "varchar(20) NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("engineversions", "AvgConsumptionL", "decimal(4,1) NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("engineversions", "Acceleration0100", "decimal(4,1) NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("engineversions", "TopSpeedKmh", "int NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("engineversions", "DriveType", "varchar(10) NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("engineversions", "GearboxType", "varchar(20) NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("engineversions", "Cylinders", "int NULL"));
 
-            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS `IX_engineversions_TrimId` ON `engineversions` (`TrimId`)");
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("engineversions", "IX_engineversions_TrimId", "`TrimId`"));
 
             // Add new columns to caradverts
-            migrationBuilder.Sql("ALTER TABLE `caradverts` ADD COLUMN IF NOT EXISTS `TrimId` int NULL");
-            migrationBuilder.Sql("ALTER TABLE `caradverts` ADD COLUMN IF NOT EXISTS `VehicleSubtypeId` int NULL");
-            migrationBuilder.Sql("ALTER TABLE `caradverts` ADD COLUMN IF NOT EXISTS `PartCategoryId` int NULL");
-            migrationBuilder.Sql("ALTER TABLE `caradverts` ADD COLUMN IF NOT EXISTS `PartSubcategoryId` int NULL");
-            migrationBuilder.Sql("ALTER TABLE `caradverts` ADD COLUMN IF NOT EXISTS `OemNumber` varchar(100) NULL");
-            migrationBuilder.Sql("ALTER TABLE `caradverts` ADD COLUMN IF NOT EXISTS `ManufacturerPartNumber` varchar(100) NULL");
-            migrationBuilder.Sql("ALTER TABLE `caradverts` ADD COLUMN IF NOT EXISTS `PartManufacturer` varchar(100) NULL");
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("caradverts", "TrimId", "int NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("caradverts", "VehicleSubtypeId", "int NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("caradverts", "PartCategoryId", "int NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("caradverts", "PartSubcategoryId", "int NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("caradverts", "OemNumber", "varchar(100) NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("caradverts", "ManufacturerPartNumber", "varchar(100) NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("caradverts", "PartManufacturer", "varchar(100) NULL"));
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("ALTER TABLE `caradverts` DROP COLUMN IF EXISTS `PartManufacturer`");
-            migrationBuilder.Sql("ALTER TABLE `caradverts` DROP COLUMN IF EXISTS `ManufacturerPartNumber`");
-            migrationBuilder.Sql("ALTER TABLE `caradverts` DROP COLUMN IF EXISTS `OemNumber`");
-            migrationBuilder.Sql("ALTER TABLE `caradverts` DROP COLUMN IF EXISTS `PartSubcategoryId`");
-            migrationBuilder.Sql("ALTER TABLE `caradverts` DROP COLUMN IF EXISTS `PartCategoryId`");
-            migrationBuilder.Sql("ALTER TABLE `caradverts` DROP COLUMN IF EXISTS `VehicleSubtypeId`");
-            migrationBuilder.Sql("ALTER TABLE `caradverts` DROP COLUMN IF EXISTS `TrimId`");
-            migrationBuilder.Sql("ALTER TABLE `engineversions` DROP FOREIGN KEY IF EXISTS `FK_engineversions_trims_TrimId`");
-            migrationBuilder.Sql("ALTER TABLE `engineversions` DROP COLUMN IF EXISTS `Cylinders`");
-            migrationBuilder.Sql("ALTER TABLE `engineversions` DROP COLUMN IF EXISTS `GearboxType`");
-            migrationBuilder.Sql("ALTER TABLE `engineversions` DROP COLUMN IF EXISTS `DriveType`");
-            migrationBuilder.Sql("ALTER TABLE `engineversions` DROP COLUMN IF EXISTS `TopSpeedKmh`");
-            migrationBuilder.Sql("ALTER TABLE `engineversions` DROP COLUMN IF EXISTS `Acceleration0100`");
-            migrationBuilder.Sql("ALTER TABLE `engineversions` DROP COLUMN IF EXISTS `AvgConsumptionL`");
-            migrationBuilder.Sql("ALTER TABLE `engineversions` DROP COLUMN IF EXISTS `EuroNorm`");
-            migrationBuilder.Sql("ALTER TABLE `engineversions` DROP COLUMN IF EXISTS `Co2EmissionGkm`");
-            migrationBuilder.Sql("ALTER TABLE `engineversions` DROP COLUMN IF EXISTS `TorqueNm`");
-            migrationBuilder.Sql("ALTER TABLE `engineversions` DROP COLUMN IF EXISTS `TrimId`");
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("caradverts", "PartManufacturer"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("caradverts", "ManufacturerPartNumber"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("caradverts", "OemNumber"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("caradverts", "PartSubcategoryId"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("caradverts", "PartCategoryId"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("caradverts", "VehicleSubtypeId"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("caradverts", "TrimId"));
+            migrationBuilder.Sql(MySqlGuard.DropForeignKeyIfExists("engineversions", "FK_engineversions_trims_TrimId"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("engineversions", "Cylinders"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("engineversions", "GearboxType"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("engineversions", "DriveType"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("engineversions", "TopSpeedKmh"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("engineversions", "Acceleration0100"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("engineversions", "AvgConsumptionL"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("engineversions", "EuroNorm"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("engineversions", "Co2EmissionGkm"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("engineversions", "TorqueNm"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("engineversions", "TrimId"));
             migrationBuilder.Sql("DROP TABLE IF EXISTS `partsubcategories`");
             migrationBuilder.Sql("DROP TABLE IF EXISTS `partcategories`");
             migrationBuilder.Sql("DROP TABLE IF EXISTS `vehiclesubtypes`");

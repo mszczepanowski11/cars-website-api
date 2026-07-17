@@ -8,8 +8,8 @@ namespace cars_website_api.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` ADD COLUMN IF NOT EXISTS `Side` varchar(20) NULL;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` ADD COLUMN IF NOT EXISTS `Quantity` int NULL;");
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("CarAdverts", "Side", "varchar(20) NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("CarAdverts", "Quantity", "int NULL"));
 
             migrationBuilder.Sql(@"
                 CREATE TABLE IF NOT EXISTS `PartCompatibilities` (
@@ -34,8 +34,8 @@ namespace cars_website_api.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql("DROP TABLE IF EXISTS `PartCompatibilities`;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` DROP COLUMN IF EXISTS `Quantity`;");
-            migrationBuilder.Sql("ALTER TABLE `CarAdverts` DROP COLUMN IF EXISTS `Side`;");
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("CarAdverts", "Quantity"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("CarAdverts", "Side"));
         }
     }
 }

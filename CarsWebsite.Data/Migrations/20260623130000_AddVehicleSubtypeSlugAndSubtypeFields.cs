@@ -8,32 +8,20 @@ namespace cars_website_api.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(
-                "ALTER TABLE `vehiclesubtypes` ADD COLUMN IF NOT EXISTS `Slug` varchar(100) NULL;");
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("vehiclesubtypes", "Slug", "varchar(100) NULL"));
 
-            migrationBuilder.Sql(@"
-                ALTER TABLE `caradverts`
-                    ADD COLUMN IF NOT EXISTS `OperatingWeightKg`  int NULL,
-                    ADD COLUMN IF NOT EXISTS `WorkingWidthCm`     int NULL,
-                    ADD COLUMN IF NOT EXISTS `MaxDiggingDepthM`   decimal(5,2) NULL,
-                    ADD COLUMN IF NOT EXISTS `BucketCapacityL`    int NULL,
-                    ADD COLUMN IF NOT EXISTS `TankCapacityL`      int NULL;
-            ");
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("caradverts", "OperatingWeightKg", "int NULL, ADD COLUMN IF NOT EXISTS `WorkingWidthCm` int NULL, ADD COLUMN IF NOT EXISTS `MaxDiggingDepthM` decimal(5,2) NULL, ADD COLUMN IF NOT EXISTS `BucketCapacityL` int NULL, ADD COLUMN IF NOT EXISTS `TankCapacityL` int NULL"));
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(
-                "ALTER TABLE `vehiclesubtypes` DROP COLUMN IF EXISTS `Slug`;");
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("vehiclesubtypes", "Slug"));
 
-            migrationBuilder.Sql(@"
-                ALTER TABLE `caradverts`
-                    DROP COLUMN IF EXISTS `OperatingWeightKg`,
-                    DROP COLUMN IF EXISTS `WorkingWidthCm`,
-                    DROP COLUMN IF EXISTS `MaxDiggingDepthM`,
-                    DROP COLUMN IF EXISTS `BucketCapacityL`,
-                    DROP COLUMN IF EXISTS `TankCapacityL`;
-            ");
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("caradverts", "OperatingWeightKg"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("caradverts", "WorkingWidthCm"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("caradverts", "MaxDiggingDepthM"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("caradverts", "BucketCapacityL"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("caradverts", "TankCapacityL"));
         }
     }
 }

@@ -8,18 +8,15 @@ namespace cars_website_api.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("ALTER TABLE `featurecategories` ADD COLUMN IF NOT EXISTS `VehicleCategoryId` int NULL");
-            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS `IX_FeatureCategories_VehicleCategoryId` ON `featurecategories` (`VehicleCategoryId`)");
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("featurecategories", "VehicleCategoryId", "int NULL"));
+            migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("featurecategories", "IX_FeatureCategories_VehicleCategoryId", "`VehicleCategoryId`"));
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(@"
-                ALTER TABLE `featurecategories`
-                    DROP FOREIGN KEY IF EXISTS `FK_FeatureCategories_VehicleCategories_VehicleCategoryId`,
-                    DROP INDEX IF EXISTS `IX_FeatureCategories_VehicleCategoryId`,
-                    DROP COLUMN IF EXISTS `VehicleCategoryId`;
-            ");
+            migrationBuilder.Sql(MySqlGuard.DropForeignKeyIfExists("featurecategories", "FK_FeatureCategories_VehicleCategories_VehicleCategoryId"));
+            migrationBuilder.Sql(MySqlGuard.DropIndexIfExists("featurecategories", "IX_FeatureCategories_VehicleCategoryId"));
+            migrationBuilder.Sql(MySqlGuard.DropColumnIfExists("featurecategories", "VehicleCategoryId"));
         }
     }
 }
