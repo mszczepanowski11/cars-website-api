@@ -8,7 +8,13 @@ namespace cars_website_api.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("users", "SubscriptionTier", "INT NOT NULL DEFAULT 0, ADD COLUMN IF NOT EXISTS `SubscriptionExpiresAt` DATETIME(6) NULL, ADD COLUMN IF NOT EXISTS `SubscriptionStartedAt` DATETIME(6) NULL, ADD COLUMN IF NOT EXISTS `StartProgramActivatedAt` DATETIME(6) NULL, ADD COLUMN IF NOT EXISTS `FeaturedQuotaUsed` INT NOT NULL DEFAULT 0, ADD COLUMN IF NOT EXISTS `FeaturedQuotaResetAt` DATETIME(6) NULL, ADD COLUMN IF NOT EXISTS `IsVerifiedDealer` TINYINT(1) NOT NULL DEFAULT 0"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("users", "SubscriptionTier", "INT NOT NULL DEFAULT 0"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("users", "SubscriptionExpiresAt", "DATETIME(6) NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("users", "SubscriptionStartedAt", "DATETIME(6) NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("users", "StartProgramActivatedAt", "DATETIME(6) NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("users", "FeaturedQuotaUsed", "INT NOT NULL DEFAULT 0"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("users", "FeaturedQuotaResetAt", "DATETIME(6) NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("users", "IsVerifiedDealer", "TINYINT(1) NOT NULL DEFAULT 0"));
 
             migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("users", "IX_users_SubscriptionTier", "`SubscriptionTier`"));
 

@@ -10,7 +10,8 @@ namespace cars_website_api.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("featurecategories", "BrandId", "int NULL, ADD COLUMN IF NOT EXISTS `ModelId` int NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("featurecategories", "BrandId", "int NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("featurecategories", "ModelId", "int NULL"));
 
             migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("featurecategories", "IX_FeatureCategories_BrandId", "`BrandId`"));
             migrationBuilder.Sql(MySqlGuard.CreateIndexIfMissing("featurecategories", "IX_FeatureCategories_ModelId", "`ModelId`"));

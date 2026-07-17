@@ -10,7 +10,9 @@ namespace cars_website_api.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("engineversions", "FuelConsumptionCity", "decimal(5,2) NULL, ADD COLUMN IF NOT EXISTS `FuelConsumptionHighway` decimal(5,2) NULL, ADD COLUMN IF NOT EXISTS `FuelConsumptionCombined` decimal(5,2) NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("engineversions", "FuelConsumptionCity", "decimal(5,2) NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("engineversions", "FuelConsumptionHighway", "decimal(5,2) NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("engineversions", "FuelConsumptionCombined", "decimal(5,2) NULL"));
         }
 
         /// <inheritdoc />

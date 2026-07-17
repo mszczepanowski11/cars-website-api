@@ -10,7 +10,11 @@ namespace cars_website_api.Migrations
         {
             migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("vehiclesubtypes", "Slug", "varchar(100) NULL"));
 
-            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("caradverts", "OperatingWeightKg", "int NULL, ADD COLUMN IF NOT EXISTS `WorkingWidthCm` int NULL, ADD COLUMN IF NOT EXISTS `MaxDiggingDepthM` decimal(5,2) NULL, ADD COLUMN IF NOT EXISTS `BucketCapacityL` int NULL, ADD COLUMN IF NOT EXISTS `TankCapacityL` int NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("caradverts", "OperatingWeightKg", "int NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("caradverts", "WorkingWidthCm", "int NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("caradverts", "MaxDiggingDepthM", "decimal(5,2) NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("caradverts", "BucketCapacityL", "int NULL"));
+            migrationBuilder.Sql(MySqlGuard.AddColumnIfMissing("caradverts", "TankCapacityL", "int NULL"));
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
