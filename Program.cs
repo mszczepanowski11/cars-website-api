@@ -70,6 +70,15 @@ internal class Program
             connectionString += $"Pooling=true;MinimumPoolSize={minPoolSize};MaximumPoolSize={maxPoolSize};";
         }
 
+        // Migrations use MySQL user variables (SET @guard_... / PREPARE) for idempotent DDL guards;
+        // MySqlConnector treats @x in command text as an undefined parameter and throws
+        // "Parameter '@guard_exists' must be defined" unless this flag is set. Without it every
+        // migration since 20260621 silently no-ops (Database.Migrate is wrapped in a non-fatal catch).
+        if (!connectionString.Contains("AllowUserVariables=", StringComparison.OrdinalIgnoreCase))
+        {
+            connectionString += "AllowUserVariables=true;";
+        }
+
         // SMTP_ env vars (single underscore) take precedence over appsettings Smtp:* section
         // ASP.NET Core normally uses double-underscore (Smtp__Host), but we map explicitly
         // so operators can use the more natural SMTP_HOST convention.
@@ -426,7 +435,9 @@ internal class Program
                 catch (Exception ex)
                 {
                     var histLogger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
-                    histLogger.LogWarning("[Migrations] Migration bootstrap failed (non-fatal): {Msg}", ex.Message);
+                    // Full exception (not just Message) - the inner MySqlException carries the actual
+                    // failing statement/parameter and this swallowed line is the only diagnostic trace.
+                    histLogger.LogError(ex, "[Migrations] Migration bootstrap failed (non-fatal)");
                 }
             });
 
@@ -516,7 +527,13 @@ internal class Program
                 // table below instead, replacing the single YoutubeUrl/PdfBrochureUrl columns above
                 // (kept for one more release as deprecated/backward-compatible, per the plan).
                 "`HasHomologation` tinyint(1) NOT NULL DEFAULT 0",
-                "`HomologationType` varchar(100) NULL" })
+                "`HomologationType` varchar(100) NULL",
+                // Partner API import tagging (migrations AddPartnerApi / AddPartnerSignupAndFeedSync).
+                // The EF model selects these on every CarAdvert query, so their absence broke
+                // search/list/favorites sitewide ("Unknown column 'c.ExternalId'") - same
+                // bootstrap risk as the premium fields above.
+                "`PartnerId` int NULL",
+                "`ExternalId` varchar(200) NULL" })
             { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `caradverts` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] caradverts.{Col}: {Msg}", colDef, ex.Message); } }
 
             // customcategoryrequests result columns (migration AddCustomCategoryRequestResults) — same bootstrap risk.
@@ -531,6 +548,139 @@ internal class Program
                 "`OriginCountry` varchar(50) NULL",
                 "`IsLuxury` tinyint(1) NOT NULL DEFAULT 0" })
             { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `brands` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] brands.{Col}: {Msg}", colDef, ex.Message); } }
+
+            // Partner API + "Dla firm" signup + transactions/saved searches tables (migrations
+            // AddPartnerApi / AddTransactionsAndSavedSearches / AddPartnerSignupAndFeedSync).
+            // Same bootstrap risk as the tables below: these migrations sat behind a broken
+            // pending chain, so production ran without them while the endpoints already existed
+            // (POST /api/partner-signup 500'd with "Table 'railway.partnersignuprequests'
+            // doesn't exist"). Definitions mirror the migration SQL exactly, except partners
+            // includes the feed-sync columns up front (fresh create) with per-column ALTER
+            // guards right after (table created earlier by the migration, without them).
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"
+                    CREATE TABLE IF NOT EXISTS `partners` (
+                        `Id` int NOT NULL AUTO_INCREMENT,
+                        `CompanyName` varchar(200) NOT NULL,
+                        `ContactEmail` varchar(200) NOT NULL,
+                        `ApiKeyHash` varchar(200) NOT NULL,
+                        `LinkedUserId` int NOT NULL,
+                        `IsActive` tinyint(1) NOT NULL DEFAULT 1,
+                        `CreatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+                        `LastImportAt` datetime(6) NULL,
+                        `FeedUrl` varchar(500) NULL,
+                        `FeedFormat` int NULL,
+                        `AutoSyncEnabled` tinyint(1) NOT NULL DEFAULT 1,
+                        PRIMARY KEY (`Id`),
+                        KEY `IX_partners_LinkedUserId` (`LinkedUserId`),
+                        CONSTRAINT `FK_partners_users_LinkedUserId` FOREIGN KEY (`LinkedUserId`) REFERENCES `users` (`Id`) ON DELETE RESTRICT
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                ");
+            }
+            catch (Exception ex) { logger.LogWarning("[Schema] partners table: {Msg}", ex.Message); }
+
+            foreach (var colDef in new[] {
+                "`FeedUrl` varchar(500) NULL",
+                "`FeedFormat` int NULL",
+                "`AutoSyncEnabled` tinyint(1) NOT NULL DEFAULT 1" })
+            { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `partners` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] partners.{Col}: {Msg}", colDef, ex.Message); } }
+
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"
+                    CREATE TABLE IF NOT EXISTS `partnerimportlogs` (
+                        `Id` int NOT NULL AUTO_INCREMENT,
+                        `PartnerId` int NOT NULL,
+                        `Format` int NOT NULL,
+                        `StartedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+                        `CompletedAt` datetime(6) NULL,
+                        `ItemsTotal` int NOT NULL DEFAULT 0,
+                        `ItemsCreated` int NOT NULL DEFAULT 0,
+                        `ItemsUpdated` int NOT NULL DEFAULT 0,
+                        `ItemsFailed` int NOT NULL DEFAULT 0,
+                        `ErrorSummary` text NULL,
+                        PRIMARY KEY (`Id`),
+                        KEY `IX_partnerimportlogs_PartnerId` (`PartnerId`),
+                        CONSTRAINT `FK_partnerimportlogs_partners_PartnerId` FOREIGN KEY (`PartnerId`) REFERENCES `partners` (`Id`) ON DELETE CASCADE
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                ");
+            }
+            catch (Exception ex) { logger.LogWarning("[Schema] partnerimportlogs table: {Msg}", ex.Message); }
+
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"
+                    CREATE TABLE IF NOT EXISTS `partnersignuprequests` (
+                        `Id` int NOT NULL AUTO_INCREMENT,
+                        `CompanyName` varchar(200) NOT NULL,
+                        `Email` varchar(200) NOT NULL,
+                        `Phone` varchar(30) NOT NULL,
+                        `WebsiteUrl` varchar(300) NULL,
+                        `FeedUrl` varchar(500) NULL,
+                        `FeedFormat` int NULL,
+                        `DetectedItemCount` int NULL,
+                        `Status` int NOT NULL DEFAULT 0,
+                        `CreatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+                        `ReviewedAt` datetime(6) NULL,
+                        `ReviewedByAdminId` int NULL,
+                        `RejectionReason` varchar(500) NULL,
+                        `PartnerId` int NULL,
+                        PRIMARY KEY (`Id`),
+                        KEY `IX_partnersignuprequests_Status` (`Status`),
+                        KEY `IX_partnersignuprequests_Email` (`Email`),
+                        KEY `IX_partnersignuprequests_PartnerId` (`PartnerId`),
+                        CONSTRAINT `FK_partnersignuprequests_partners_PartnerId` FOREIGN KEY (`PartnerId`) REFERENCES `partners` (`Id`) ON DELETE SET NULL
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                ");
+            }
+            catch (Exception ex) { logger.LogWarning("[Schema] partnersignuprequests table: {Msg}", ex.Message); }
+
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"
+                    CREATE TABLE IF NOT EXISTS `transactions` (
+                        `Id` int NOT NULL AUTO_INCREMENT,
+                        `Type` int NOT NULL,
+                        `Status` int NOT NULL,
+                        `AdvertId` int NOT NULL,
+                        `BuyerId` int NOT NULL,
+                        `SellerId` int NOT NULL,
+                        `CreatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+                        `ScheduledAt` datetime(6) NULL,
+                        `CompletedAt` datetime(6) NULL,
+                        `Notes` text NULL,
+                        PRIMARY KEY (`Id`),
+                        KEY `IX_transactions_AdvertId` (`AdvertId`),
+                        KEY `IX_transactions_BuyerId` (`BuyerId`),
+                        KEY `IX_transactions_SellerId` (`SellerId`),
+                        CONSTRAINT `FK_transactions_caradverts_AdvertId` FOREIGN KEY (`AdvertId`) REFERENCES `caradverts` (`Id`) ON DELETE RESTRICT,
+                        CONSTRAINT `FK_transactions_users_BuyerId` FOREIGN KEY (`BuyerId`) REFERENCES `users` (`Id`) ON DELETE RESTRICT,
+                        CONSTRAINT `FK_transactions_users_SellerId` FOREIGN KEY (`SellerId`) REFERENCES `users` (`Id`) ON DELETE RESTRICT
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                ");
+            }
+            catch (Exception ex) { logger.LogWarning("[Schema] transactions table: {Msg}", ex.Message); }
+
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"
+                    CREATE TABLE IF NOT EXISTS `savedsearches` (
+                        `Id` int NOT NULL AUTO_INCREMENT,
+                        `UserId` int NOT NULL,
+                        `Name` varchar(200) NOT NULL,
+                        `CriteriaJson` longtext NOT NULL,
+                        `NotifyOnNew` tinyint(1) NOT NULL DEFAULT 1,
+                        `NewResultsCount` int NOT NULL DEFAULT 0,
+                        `LastCheckedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+                        `CreatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+                        PRIMARY KEY (`Id`),
+                        KEY `IX_savedsearches_UserId` (`UserId`),
+                        CONSTRAINT `FK_savedsearches_users_UserId` FOREIGN KEY (`UserId`) REFERENCES `users` (`Id`) ON DELETE CASCADE
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                ");
+            }
+            catch (Exception ex) { logger.LogWarning("[Schema] savedsearches table: {Msg}", ex.Message); }
 
             // These 3 tables were first created (via the CREATE TABLE IF NOT EXISTS guards right
             // below) with PascalCase names, shadowing the lowercase name EF's generated queries
