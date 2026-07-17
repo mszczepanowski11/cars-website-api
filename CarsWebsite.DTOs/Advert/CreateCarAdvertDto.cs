@@ -18,7 +18,10 @@ public class CreateCarAdvertDto
     public int? DriveTypeId { get; set; }
     public int? ColorId { get; set; }
 
-    [Range(1900, 2030)] public int Year { get; set; }
+    // Nullable: categories without a production year (felgi, akcesoria, usługi) simply omit it.
+    // Range validates only when a value is present; AutoMapper maps null -> 0 on the entity
+    // (0 = "not supplied", same convention as the partner feed import).
+    [Range(1900, 2030)] public int? Year { get; set; }
     [Range(0, 2000000)] public int Mileage { get; set; }
     [Range(0, 10000000)] public decimal Price { get; set; }
     public bool IsNegotiable { get; set; }

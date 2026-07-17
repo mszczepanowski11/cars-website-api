@@ -208,6 +208,9 @@ public static class AttributeDefinitionMigrationSeeder
         new("opony", null, "bieznik", "Głębokość bieżnika", AttributeDataType.Decimal, "mm", null),
         new("opony", null, "runFlat", "Run Flat (RFT)", AttributeDataType.Boolean, null, null),
         new("opony", null, "iloscSztuk", "Liczba sztuk w komplecie", AttributeDataType.Number, "szt.", null),
+        new("opony", null, "stan", "Stan", AttributeDataType.Select, null,
+            ["Nowe", "Używane"], IsRequired: true),
+        new("opony", null, "mozliwoscWysylki", "Możliwość wysyłki", AttributeDataType.Boolean, null, null),
 
         new("felgi", null, "srednica", "Średnica", AttributeDataType.Decimal, "\"", null, IsRequired: true),
         new("felgi", null, "szerokoscFelgi", "Szerokość", AttributeDataType.Decimal, "\"", null),
@@ -218,6 +221,11 @@ public static class AttributeDefinitionMigrationSeeder
         new("felgi", null, "material", "Materiał", AttributeDataType.Select, null,
             ["Aluminium", "Stal", "Carbon", "Magnez"], IsRequired: true),
         new("felgi", null, "iloscSztuk", "Liczba sztuk w komplecie", AttributeDataType.Number, "szt.", null),
+        new("felgi", null, "stan", "Stan", AttributeDataType.Select, null,
+            ["Nowe", "Używane", "Regenerowane"], IsRequired: true),
+        new("felgi", null, "kolor", "Kolor", AttributeDataType.Select, null,
+            ["Srebrny", "Czarny", "Czarny mat", "Grafitowy", "Antracytowy", "Biały", "Polerowany", "Inny"]),
+        new("felgi", null, "mozliwoscWysylki", "Możliwość wysyłki", AttributeDataType.Boolean, null, null),
 
         new("akcesoria", null, "typ", "Typ akcesorium", AttributeDataType.Select, null,
             ["Dywaniki i maty", "Pokrowce na siedzenia", "Bagażnik dachowy / box", "Hak holowniczy",
