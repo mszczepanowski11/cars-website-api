@@ -2186,6 +2186,22 @@ internal class Program
                     bgLogger.LogError(ex, "[STARTUP-TRACE] Tire/wheel brand seeding failed: {Msg}", ex.Message);
                 }
 
+                // Re-run the attribute-definition seeder AFTER the Faza 6 category block: the first
+                // pass (inside SeedDataIfEmpty above) runs before these categories exist on a fresh
+                // or partially-seeded DB, so every opony/felgi/akcesoria/usługi spec lands in
+                // skippedNoCategory and the add-advert form shows no size/parameter fields for them
+                // until the NEXT restart. The seeder is an idempotent upsert, so the second pass is
+                // a no-op when the first one already covered everything.
+                try
+                {
+                    AttributeDefinitionMigrationSeeder.Seed(bgDb, bgLogger);
+                    bgLogger.LogWarning("[STARTUP-TRACE] Post-category attribute seeding pass done");
+                }
+                catch (Exception ex)
+                {
+                    bgLogger.LogError(ex, "[STARTUP-TRACE] Post-category attribute seeding pass failed: {Msg}", ex.Message);
+                }
+
                 // przyczepy also accumulated ~12 "Naczepa X" subtypes from earlier seeding passes
                 // that predate the naczepy category — several are exact duplicates of an existing
                 // non-"Naczepa" row (e.g. both "Naczepa wywrotka" and "Przyczepa wywrotka" exist),
