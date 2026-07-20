@@ -21,14 +21,19 @@ public class DirectoryController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> List(
         [FromQuery] string? q, [FromQuery] string? category, [FromQuery] string? country,
-        [FromQuery] string? city, [FromQuery] int page = 1, [FromQuery] int pageSize = 24)
+        [FromQuery] string? city, [FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 24)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 60);
 
-        // Only surface rows that aren't closed. Seeded 'unverified' rows are still shown - the
-        // directory is useful before every entry is hand-confirmed - but flagged in the UI.
-        var query = _db.DirectoryCompanies.AsNoTracking().Where(d => d.Status != "closed");
+        var query = _db.DirectoryCompanies.AsNoTracking().AsQueryable();
+        if (!string.IsNullOrWhiteSpace(status))
+            // Explicit status filter (admin review, e.g. ?status=unverified or ?status=closed).
+            query = query.Where(d => d.Status == status);
+        else
+            // Default public view: everything that isn't closed. Seeded 'unverified' rows are still
+            // shown - the directory is useful before every entry is hand-confirmed - flagged in UI.
+            query = query.Where(d => d.Status != "closed");
 
         if (!string.IsNullOrWhiteSpace(category))
             query = query.Where(d => d.Category == category);
@@ -127,11 +132,11 @@ public class DirectoryController : ControllerBase
         return Ok(new { company.PublicId, company.Slug });
     }
 
-    [HttpPut("{id:int}")]
+    [HttpPut("{slug}")]
     [Authorize(Policy = "AdminOnly")]
-    public async Task<IActionResult> Update(int id, [FromBody] DirectoryCompanyInputDto dto)
+    public async Task<IActionResult> Update(string slug, [FromBody] DirectoryCompanyInputDto dto)
     {
-        var d = await _db.DirectoryCompanies.FirstOrDefaultAsync(x => x.Id == id);
+        var d = await _db.DirectoryCompanies.FirstOrDefaultAsync(x => x.Slug == slug);
         if (d == null) return NotFound();
 
         d.Name = dto.Name.Trim();
@@ -147,11 +152,11 @@ public class DirectoryController : ControllerBase
         return Ok(new { d.PublicId, d.Slug });
     }
 
-    [HttpDelete("{id:int}")]
+    [HttpDelete("{slug}")]
     [Authorize(Policy = "AdminOnly")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(string slug)
     {
-        var d = await _db.DirectoryCompanies.FirstOrDefaultAsync(x => x.Id == id);
+        var d = await _db.DirectoryCompanies.FirstOrDefaultAsync(x => x.Slug == slug);
         if (d == null) return NotFound();
         // Soft-close rather than hard-delete: keeps the Carizo ID stable if the row is re-seeded.
         d.Status = "closed";
