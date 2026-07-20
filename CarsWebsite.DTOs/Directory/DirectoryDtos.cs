@@ -42,6 +42,38 @@ public class DirectoryFacetDto
     public int Count { get; set; }
 }
 
+// One row in a bulk import batch (first ingestion connector, blueprint section 10).
+public class DirectoryImportRowDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string? Category { get; set; }
+    public string? CountryCode { get; set; }
+    public string? City { get; set; }
+    public string? Address { get; set; }
+    public string? PostalCode { get; set; }
+    public string? Phone { get; set; }
+    public string? Email { get; set; }
+    public string? Website { get; set; }
+}
+
+public class DirectoryImportRequestDto
+{
+    public List<DirectoryImportRowDto> Rows { get; set; } = new();
+    // Provenance tag stored on every created row, e.g. "import:ceidg" or "import:manual".
+    public string? Source { get; set; }
+    // Default category when a row omits its own.
+    public string? DefaultCategory { get; set; }
+}
+
+public class DirectoryImportResultDto
+{
+    public int Received { get; set; }
+    public int Created { get; set; }
+    public int Updated { get; set; }
+    public int Skipped { get; set; }
+    public List<string> Notes { get; set; } = new();
+}
+
 // Admin create/update payload.
 public class DirectoryCompanyInputDto
 {

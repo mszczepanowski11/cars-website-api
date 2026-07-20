@@ -160,6 +160,88 @@ public class DirectoryController : ControllerBase
         return NoContent();
     }
 
+    // POST /api/directory/import - first ingestion connector (blueprint section 10). Takes a batch
+    // of rows (parsed client-side from CSV/JSON, or later pushed by a source connector) and upserts
+    // them into the directory, deduplicating by normalized name. Idempotent: re-importing the same
+    // batch updates gaps instead of creating duplicates.
+    [HttpPost("import")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> Import([FromBody] DirectoryImportRequestDto req)
+    {
+        if (req.Rows == null || req.Rows.Count == 0)
+            return BadRequest("Brak wierszy do importu.");
+        if (req.Rows.Count > 5000)
+            return BadRequest("Maksymalnie 5000 wierszy na jeden import.");
+
+        var result = new DirectoryImportResultDto { Received = req.Rows.Count };
+        var source = string.IsNullOrWhiteSpace(req.Source) ? "import:manual" : req.Source!.Trim();
+        var defaultCategory = string.IsNullOrWhiteSpace(req.DefaultCategory) ? "firmy" : req.DefaultCategory!.Trim();
+
+        // Index existing rows by normalized name once, up front, for O(1) dedup across the batch.
+        var existing = (await _db.DirectoryCompanies.ToListAsync())
+            .GroupBy(d => d.NameNormalized)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+        var takenSlugs = new HashSet<string>(existing.Values.Select(e => e.Slug), StringComparer.OrdinalIgnoreCase);
+
+        foreach (var row in req.Rows)
+        {
+            if (string.IsNullOrWhiteSpace(row.Name)) { result.Skipped++; continue; }
+            var norm = CarizoId.Normalize(row.Name);
+            if (norm.Length == 0) { result.Skipped++; continue; }
+
+            if (existing.TryGetValue(norm, out var d))
+            {
+                // Fill only empty fields - never overwrite a curated/verified value with import data.
+                bool changed = false;
+                if (string.IsNullOrEmpty(d.City) && !string.IsNullOrWhiteSpace(row.City)) { d.City = row.City!.Trim(); changed = true; }
+                if (string.IsNullOrEmpty(d.Address) && !string.IsNullOrWhiteSpace(row.Address)) { d.Address = row.Address!.Trim(); changed = true; }
+                if (string.IsNullOrEmpty(d.PostalCode) && !string.IsNullOrWhiteSpace(row.PostalCode)) { d.PostalCode = row.PostalCode!.Trim(); changed = true; }
+                if (string.IsNullOrEmpty(d.Phone) && !string.IsNullOrWhiteSpace(row.Phone)) { d.Phone = row.Phone!.Trim(); changed = true; }
+                if (string.IsNullOrEmpty(d.Email) && !string.IsNullOrWhiteSpace(row.Email)) { d.Email = row.Email!.Trim(); d.EmailType = ClassifyEmail(row.Email); changed = true; }
+                if (string.IsNullOrEmpty(d.Website) && !string.IsNullOrWhiteSpace(row.Website)) { d.Website = row.Website!.Trim(); changed = true; }
+                if (changed) { d.UpdatedAt = DateTime.UtcNow; result.Updated++; } else { result.Skipped++; }
+                continue;
+            }
+
+            var slugBase = CarizoId.Slugify(row.Name);
+            var slug = slugBase;
+            if (takenSlugs.Contains(slug))
+                slug = $"{slugBase}-{Guid.NewGuid().ToString("N")[..6]}";
+            takenSlugs.Add(slug);
+
+            var company = new DirectoryCompany
+            {
+                PublicId = CarizoId.New("org", row.CountryCode),
+                Name = row.Name.Trim(),
+                NameNormalized = norm,
+                Category = string.IsNullOrWhiteSpace(row.Category) ? defaultCategory : row.Category!.Trim(),
+                CountryCode = string.IsNullOrWhiteSpace(row.CountryCode) ? null : row.CountryCode!.Trim().ToUpperInvariant(),
+                City = row.City?.Trim(), Address = row.Address?.Trim(), PostalCode = row.PostalCode?.Trim(),
+                Phone = row.Phone?.Trim(), Email = row.Email?.Trim(), EmailType = ClassifyEmail(row.Email),
+                Website = row.Website?.Trim(),
+                // Imported rows are unverified until confirmed - they came from an external source.
+                Status = "unverified",
+                Source = source,
+                Slug = slug,
+            };
+            _db.DirectoryCompanies.Add(company);
+            existing[norm] = company;
+            result.Created++;
+        }
+
+        await _db.SaveChangesAsync();
+        result.Notes.Add($"Import zakończony: {result.Created} nowych, {result.Updated} uzupełnionych, {result.Skipped} pominiętych.");
+        return Ok(result);
+    }
+
+    private static string? ClassifyEmail(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email) || !email.Contains('@')) return null;
+        var local = email.Split('@')[0].ToLowerInvariant();
+        string[] role = { "biuro", "office", "kontakt", "contact", "info", "sprzedaz", "sales", "sekretariat", "handel" };
+        return role.Any(r => local.Contains(r)) ? "role" : "personal";
+    }
+
     private async Task<string> UniqueSlugAsync(string name, string? city)
     {
         var baseSlug = CarizoId.Slugify(name);
