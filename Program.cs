@@ -724,6 +724,12 @@ internal class Program
             }
             catch (Exception ex) { logger.LogWarning("[Schema] directorycompanies table: {Msg}", ex.Message); }
 
+            // Directory i18n columns (multi-language foundation) - same bootstrap risk as above.
+            foreach (var colDef in new[] {
+                "`Description` varchar(2000) NULL",
+                "`I18n` longtext NULL" })
+            { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `directorycompanies` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] directorycompanies.{Col}: {Msg}", colDef, ex.Message); } }
+
             // These 3 tables were first created (via the CREATE TABLE IF NOT EXISTS guards right
             // below) with PascalCase names, shadowing the lowercase name EF's generated queries
             // actually look for on this DB (same class of bug documented in the rename block

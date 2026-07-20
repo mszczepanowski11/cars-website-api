@@ -40,6 +40,14 @@ public class DirectoryCompany
     [MaxLength(300)] public string? ProfileUrl { get; set; }
     [MaxLength(5)]   public string? Language { get; set; }      // ISO 639-1, e.g. "pl"
 
+    // Short public description (one paragraph). Base language = Language above.
+    [MaxLength(2000)] public string? Description { get; set; }
+
+    // Per-language translations of name/description (blueprint: i18n per field). JSON shape:
+    // {"de":{"name":"...","description":"..."},"en":{...}}. Null = only the base language exists.
+    // Populated later by the translation connector; the graph/model is ready for it now.
+    public string? I18n { get; set; }
+
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
 

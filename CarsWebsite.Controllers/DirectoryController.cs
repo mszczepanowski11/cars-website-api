@@ -88,21 +88,92 @@ public class DirectoryController : ControllerBase
         return Ok(new { categories, countries });
     }
 
-    // GET /api/directory/{slug}
+    // GET /api/directory/{slug}?lang=de
+    // If a translation for `lang` exists in the I18n JSON, name/description are returned in that
+    // language (falling back to the base value per field). This is the read side of the i18n model.
     [HttpGet("{slug}")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetBySlug(string slug)
+    public async Task<IActionResult> GetBySlug(string slug, [FromQuery] string? lang)
     {
         var d = await _db.DirectoryCompanies.AsNoTracking().FirstOrDefaultAsync(x => x.Slug == slug && x.Status != "closed");
         if (d == null) return NotFound();
+
+        var (name, description) = Localize(d, lang);
         return Ok(new DirectoryCompanyDetailDto
         {
-            PublicId = d.PublicId, Slug = d.Slug, Name = d.Name, Category = d.Category,
+            PublicId = d.PublicId, Slug = d.Slug, Name = name, Category = d.Category,
             CountryCode = d.CountryCode, City = d.City, Address = d.Address, PostalCode = d.PostalCode,
             Phone = d.Phone, Email = d.Email, Website = d.Website, ProfileUrl = d.ProfileUrl,
-            Language = d.Language, Latitude = d.Latitude, Longitude = d.Longitude,
+            Language = d.Language, Description = description, Latitude = d.Latitude, Longitude = d.Longitude,
+            Linked = d.PartnerId != null,
             Status = d.Status, CreatedAt = d.CreatedAt, UpdatedAt = d.UpdatedAt,
         });
+    }
+
+    // Returns (name, description) in `lang` if a translation exists, else the base values.
+    private static (string Name, string? Description) Localize(DirectoryCompany d, string? lang)
+    {
+        if (string.IsNullOrWhiteSpace(lang) || string.IsNullOrWhiteSpace(d.I18n)
+            || lang.Equals(d.Language, StringComparison.OrdinalIgnoreCase))
+            return (d.Name, d.Description);
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(d.I18n);
+            if (doc.RootElement.TryGetProperty(lang.ToLowerInvariant(), out var t))
+            {
+                var name = t.TryGetProperty("name", out var n) && n.ValueKind == System.Text.Json.JsonValueKind.String ? n.GetString()! : d.Name;
+                var desc = t.TryGetProperty("description", out var ds) && ds.ValueKind == System.Text.Json.JsonValueKind.String ? ds.GetString() : d.Description;
+                return (name, desc);
+            }
+        }
+        catch { /* malformed i18n JSON -> fall back to base */ }
+        return (d.Name, d.Description);
+    }
+
+    // GET /api/directory/{slug}/listings - adverts published by this company. The graph edge
+    // Firma -> Ogłoszenia (blueprint section 05): only resolvable for a company linked to a Carizo
+    // account (PartnerId set), via Partner.LinkedUserId -> that user's active adverts.
+    [HttpGet("{slug}/listings")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Listings(string slug, [FromQuery] int page = 1, [FromQuery] int pageSize = 12)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 24);
+
+        var company = await _db.DirectoryCompanies.AsNoTracking()
+            .FirstOrDefaultAsync(d => d.Slug == slug && d.Status != "closed");
+        if (company == null) return NotFound();
+        if (company.PartnerId == null)
+            return Ok(new DirectoryListingsResultDto { Linked = false });
+
+        var linkedUserId = await _db.Partners.AsNoTracking()
+            .Where(p => p.Id == company.PartnerId)
+            .Select(p => (int?)p.LinkedUserId).FirstOrDefaultAsync();
+        if (linkedUserId == null)
+            return Ok(new DirectoryListingsResultDto { Linked = false });
+
+        var now = DateTime.UtcNow;
+        var q = _db.CarAdverts.AsNoTracking()
+            .Where(a => a.UserId == linkedUserId && a.IsActive && !a.IsHidden && (a.ExpiresAt == null || a.ExpiresAt > now));
+
+        var total = await q.CountAsync();
+        var items = await q
+            .OrderByDescending(a => a.FeaturedUntil != null && a.FeaturedUntil > now)
+            .ThenByDescending(a => a.CreatedAt)
+            .Skip((page - 1) * pageSize).Take(pageSize)
+            .Select(a => new DirectoryListingCardDto
+            {
+                Id = a.Id, Slug = a.Slug, Title = a.Title, Price = a.Price, Currency = a.Currency,
+                Year = a.Year, Mileage = a.Mileage,
+                BrandName = a.Brand != null ? a.Brand.Name : null,
+                ModelName = a.Model != null ? a.Model.Name : null,
+                ImageUrl = a.Images.Where(i => i.IsMain).Select(i => i.Url).FirstOrDefault()
+                           ?? a.Images.OrderBy(i => i.Order).Select(i => i.Url).FirstOrDefault(),
+                Badge = a.Badge,
+            })
+            .ToListAsync();
+
+        return Ok(new DirectoryListingsResultDto { Items = items, Total = total, Linked = true });
     }
 
     // ── Admin ─────────────────────────────────────────────────────────────
@@ -123,6 +194,7 @@ public class DirectoryController : ControllerBase
             City = dto.City?.Trim(), Address = dto.Address?.Trim(), PostalCode = dto.PostalCode?.Trim(),
             Phone = dto.Phone?.Trim(), Email = dto.Email?.Trim(), Website = dto.Website?.Trim(),
             ProfileUrl = dto.ProfileUrl?.Trim(), Language = dto.Language?.Trim(),
+            Description = dto.Description?.Trim(),
             Status = string.IsNullOrWhiteSpace(dto.Status) ? "active" : dto.Status.Trim(),
             Source = "admin",
             Slug = await UniqueSlugAsync(dto.Name, dto.City),
@@ -146,6 +218,7 @@ public class DirectoryController : ControllerBase
         d.City = dto.City?.Trim(); d.Address = dto.Address?.Trim(); d.PostalCode = dto.PostalCode?.Trim();
         d.Phone = dto.Phone?.Trim(); d.Email = dto.Email?.Trim(); d.Website = dto.Website?.Trim();
         d.ProfileUrl = dto.ProfileUrl?.Trim(); d.Language = dto.Language?.Trim();
+        d.Description = dto.Description?.Trim();
         if (!string.IsNullOrWhiteSpace(dto.Status)) d.Status = dto.Status.Trim();
         d.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();

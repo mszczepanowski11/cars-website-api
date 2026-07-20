@@ -22,10 +22,36 @@ public class DirectoryCompanyDetailDto : DirectoryCompanyListDto
     public string? Email { get; set; }
     public string? ProfileUrl { get; set; }
     public string? Language { get; set; }
+    public string? Description { get; set; }
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
+    public bool Linked { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+}
+
+// A single advert card shown on a company profile (graph edge Firma -> Ogłoszenia).
+public class DirectoryListingCardDto
+{
+    public int Id { get; set; }
+    public string? Slug { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+    public string Currency { get; set; } = "PLN";
+    public int? Year { get; set; }
+    public int? Mileage { get; set; }
+    public string? BrandName { get; set; }
+    public string? ModelName { get; set; }
+    public string? ImageUrl { get; set; }
+    public string? Badge { get; set; }
+}
+
+public class DirectoryListingsResultDto
+{
+    public List<DirectoryListingCardDto> Items { get; set; } = new();
+    public int Total { get; set; }
+    // False when the company isn't linked to a Carizo account yet (nothing to show).
+    public bool Linked { get; set; }
 }
 
 public class DirectoryListResultDto
@@ -88,5 +114,6 @@ public class DirectoryCompanyInputDto
     public string? Website { get; set; }
     public string? ProfileUrl { get; set; }
     public string? Language { get; set; }
+    public string? Description { get; set; }
     public string? Status { get; set; }
 }
