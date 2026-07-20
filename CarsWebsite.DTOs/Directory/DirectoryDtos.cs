@@ -26,8 +26,29 @@ public class DirectoryCompanyDetailDto : DirectoryCompanyListDto
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
     public bool Linked { get; set; }
+    // Languages this company can be viewed in (base Language + every key in the I18n JSON).
+    public List<string> AvailableLanguages { get; set; } = new();
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+}
+
+// One language's translation of the localizable fields.
+public class LocalizedTextDto
+{
+    public string? Name { get; set; }
+    public string? Description { get; set; }
+}
+
+// Lightweight point for the company map (blueprint: geo layer).
+public class DirectoryMapPointDto
+{
+    public string PublicId { get; set; } = string.Empty;
+    public string Slug { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+    public string? City { get; set; }
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
 }
 
 // A single advert card shown on a company profile (graph edge Firma -> Ogłoszenia).
@@ -80,6 +101,8 @@ public class DirectoryImportRowDto
     public string? Phone { get; set; }
     public string? Email { get; set; }
     public string? Website { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
 }
 
 public class DirectoryImportRequestDto
@@ -115,5 +138,9 @@ public class DirectoryCompanyInputDto
     public string? ProfileUrl { get; set; }
     public string? Language { get; set; }
     public string? Description { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+    // Manual translations from the admin panel: {"de": {name, description}, ...}.
+    public Dictionary<string, LocalizedTextDto>? I18n { get; set; }
     public string? Status { get; set; }
 }

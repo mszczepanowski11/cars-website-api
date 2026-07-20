@@ -1,4 +1,5 @@
 using cars_website_api.CarsWebsite.DTOs.Directory;
+using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,8 +14,13 @@ namespace cars_website_api.CarsWebsite.Controllers;
 public class DirectoryController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly ITranslationProvider _translator;
 
-    public DirectoryController(AppDbContext db) => _db = db;
+    public DirectoryController(AppDbContext db, ITranslationProvider translator)
+    {
+        _db = db;
+        _translator = translator;
+    }
 
     // GET /api/directory?q=&category=&country=&city=&page=1&pageSize=24
     [HttpGet]
@@ -105,9 +111,28 @@ public class DirectoryController : ControllerBase
             CountryCode = d.CountryCode, City = d.City, Address = d.Address, PostalCode = d.PostalCode,
             Phone = d.Phone, Email = d.Email, Website = d.Website, ProfileUrl = d.ProfileUrl,
             Language = d.Language, Description = description, Latitude = d.Latitude, Longitude = d.Longitude,
-            Linked = d.PartnerId != null,
+            Linked = d.PartnerId != null, AvailableLanguages = AvailableLanguages(d),
             Status = d.Status, CreatedAt = d.CreatedAt, UpdatedAt = d.UpdatedAt,
         });
+    }
+
+    // Base language + every language present in the I18n JSON (deduped, base first).
+    private static List<string> AvailableLanguages(DirectoryCompany d)
+    {
+        var langs = new List<string>();
+        var baseLang = string.IsNullOrWhiteSpace(d.Language) ? "pl" : d.Language.ToLowerInvariant();
+        langs.Add(baseLang);
+        if (!string.IsNullOrWhiteSpace(d.I18n))
+        {
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(d.I18n);
+                foreach (var prop in doc.RootElement.EnumerateObject())
+                    if (!langs.Contains(prop.Name.ToLowerInvariant())) langs.Add(prop.Name.ToLowerInvariant());
+            }
+            catch { /* malformed -> just the base language */ }
+        }
+        return langs;
     }
 
     // Returns (name, description) in `lang` if a translation exists, else the base values.
@@ -128,6 +153,26 @@ public class DirectoryController : ControllerBase
         }
         catch { /* malformed i18n JSON -> fall back to base */ }
         return (d.Name, d.Description);
+    }
+
+    // GET /api/directory/map?category=&country= - companies that have coordinates, as lightweight
+    // points for the map view (blueprint: geo layer). Capped - the map clusters client-side.
+    [HttpGet("map")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Map([FromQuery] string? category, [FromQuery] string? country)
+    {
+        var query = _db.DirectoryCompanies.AsNoTracking()
+            .Where(d => d.Status != "closed" && d.Latitude != null && d.Longitude != null);
+        if (!string.IsNullOrWhiteSpace(category)) query = query.Where(d => d.Category == category);
+        if (!string.IsNullOrWhiteSpace(country)) query = query.Where(d => d.CountryCode == country);
+
+        var points = await query.Take(2000)
+            .Select(d => new DirectoryMapPointDto
+            {
+                PublicId = d.PublicId, Slug = d.Slug, Name = d.Name, Category = d.Category,
+                City = d.City, Latitude = d.Latitude!.Value, Longitude = d.Longitude!.Value,
+            }).ToListAsync();
+        return Ok(points);
     }
 
     // GET /api/directory/{slug}/listings - adverts published by this company. The graph edge
@@ -195,6 +240,8 @@ public class DirectoryController : ControllerBase
             Phone = dto.Phone?.Trim(), Email = dto.Email?.Trim(), Website = dto.Website?.Trim(),
             ProfileUrl = dto.ProfileUrl?.Trim(), Language = dto.Language?.Trim(),
             Description = dto.Description?.Trim(),
+            Latitude = dto.Latitude, Longitude = dto.Longitude,
+            I18n = SerializeI18n(dto.I18n),
             Status = string.IsNullOrWhiteSpace(dto.Status) ? "active" : dto.Status.Trim(),
             Source = "admin",
             Slug = await UniqueSlugAsync(dto.Name, dto.City),
@@ -219,10 +266,61 @@ public class DirectoryController : ControllerBase
         d.Phone = dto.Phone?.Trim(); d.Email = dto.Email?.Trim(); d.Website = dto.Website?.Trim();
         d.ProfileUrl = dto.ProfileUrl?.Trim(); d.Language = dto.Language?.Trim();
         d.Description = dto.Description?.Trim();
+        if (dto.Latitude != null) d.Latitude = dto.Latitude;
+        if (dto.Longitude != null) d.Longitude = dto.Longitude;
+        if (dto.I18n != null) d.I18n = SerializeI18n(dto.I18n);
         if (!string.IsNullOrWhiteSpace(dto.Status)) d.Status = dto.Status.Trim();
         d.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         return Ok(new { d.PublicId, d.Slug });
+    }
+
+    // POST /api/directory/{slug}/translate?langs=en,de,fr - on-demand auto-translation of one
+    // company (admin "Auto-tłumacz" button). Fills only the languages that are still missing.
+    // Returns 400 with a clear message if no translation provider is configured.
+    [HttpPost("{slug}/translate")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> Translate(string slug, [FromQuery] string? langs)
+    {
+        if (!_translator.IsConfigured)
+            return BadRequest("Silnik tłumaczeń nie jest skonfigurowany. Ustaw TRANSLATION_API_KEY w środowisku.");
+
+        var d = await _db.DirectoryCompanies.FirstOrDefaultAsync(x => x.Slug == slug);
+        if (d == null) return NotFound();
+
+        var targets = (string.IsNullOrWhiteSpace(langs) ? "en,de,fr" : langs)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(s => s.ToLowerInvariant()).Distinct().ToArray();
+        var baseLang = string.IsNullOrWhiteSpace(d.Language) ? "pl" : d.Language.ToLowerInvariant();
+
+        var existing = new Dictionary<string, LocalizedTextDto>();
+        if (!string.IsNullOrWhiteSpace(d.I18n))
+        {
+            try { existing = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, LocalizedTextDto>>(d.I18n) ?? new(); }
+            catch { existing = new(); }
+        }
+
+        var filled = new List<string>();
+        foreach (var lang in targets)
+        {
+            if (lang == baseLang || existing.ContainsKey(lang)) continue;
+            var name = await _translator.TranslateAsync(d.Name, lang, baseLang, HttpContext.RequestAborted);
+            string? desc = string.IsNullOrWhiteSpace(d.Description) ? null
+                : await _translator.TranslateAsync(d.Description!, lang, baseLang, HttpContext.RequestAborted);
+            if (!string.IsNullOrWhiteSpace(name) || !string.IsNullOrWhiteSpace(desc))
+            {
+                existing[lang] = new LocalizedTextDto { Name = name, Description = desc };
+                filled.Add(lang);
+            }
+        }
+
+        if (filled.Count > 0)
+        {
+            d.I18n = System.Text.Json.JsonSerializer.Serialize(existing);
+            d.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+        }
+        return Ok(new { filled, languages = existing.Keys.ToList() });
     }
 
     [HttpDelete("{slug}")]
@@ -296,7 +394,7 @@ public class DirectoryController : ControllerBase
                 CountryCode = string.IsNullOrWhiteSpace(row.CountryCode) ? null : row.CountryCode!.Trim().ToUpperInvariant(),
                 City = row.City?.Trim(), Address = row.Address?.Trim(), PostalCode = row.PostalCode?.Trim(),
                 Phone = row.Phone?.Trim(), Email = row.Email?.Trim(), EmailType = ClassifyEmail(row.Email),
-                Website = row.Website?.Trim(),
+                Website = row.Website?.Trim(), Latitude = row.Latitude, Longitude = row.Longitude,
                 // Imported rows are unverified until confirmed - they came from an external source.
                 Status = "unverified",
                 Source = source,
@@ -310,6 +408,20 @@ public class DirectoryController : ControllerBase
         await _db.SaveChangesAsync();
         result.Notes.Add($"Import zakończony: {result.Created} nowych, {result.Updated} uzupełnionych, {result.Skipped} pominiętych.");
         return Ok(result);
+    }
+
+    // Serializes the admin's per-language translations to the I18n column, dropping empty entries.
+    // Returns null when there's nothing to store (so the column stays clean).
+    private static string? SerializeI18n(Dictionary<string, LocalizedTextDto>? i18n)
+    {
+        if (i18n == null || i18n.Count == 0) return null;
+        var cleaned = i18n
+            .Where(kv => !string.IsNullOrWhiteSpace(kv.Key)
+                         && (!string.IsNullOrWhiteSpace(kv.Value?.Name) || !string.IsNullOrWhiteSpace(kv.Value?.Description)))
+            .ToDictionary(
+                kv => kv.Key.Trim().ToLowerInvariant(),
+                kv => new LocalizedTextDto { Name = kv.Value!.Name?.Trim(), Description = kv.Value.Description?.Trim() });
+        return cleaned.Count == 0 ? null : System.Text.Json.JsonSerializer.Serialize(cleaned);
     }
 
     private static string? ClassifyEmail(string? email)

@@ -218,6 +218,9 @@ internal class Program
         builder.Services.AddScoped<DeletedUserPurgeJob>();
         builder.Services.AddScoped<SavedSearchAlertJob>();
         builder.Services.AddScoped<PartnerFeedSyncJob>();
+        builder.Services.AddScoped<ITranslationProvider, HttpTranslationProvider>();
+        builder.Services.AddScoped<DirectoryTranslationJob>();
+        builder.Services.AddScoped<DirectoryGeocodeJob>();
 
         builder.Services.AddHangfire(config => config
             .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
@@ -2836,6 +2839,9 @@ internal class Program
         recurringJobs.AddOrUpdate<DeletedUserPurgeJob>("deleted-user-purge", job => job.RunAsync(CancellationToken.None), Cron.Daily(3));
         recurringJobs.AddOrUpdate<SavedSearchAlertJob>("saved-search-alerts", job => job.RunAsync(CancellationToken.None), "0 */2 * * *");
         recurringJobs.AddOrUpdate<PartnerFeedSyncJob>("partner-feed-sync", job => job.RunAsync(CancellationToken.None), "0 */6 * * *");
+        // Directory enrichment - both no-op unless configured (TRANSLATION_API_KEY / DIRECTORY_GEOCODE=1).
+        recurringJobs.AddOrUpdate<DirectoryTranslationJob>("directory-translation", job => job.RunAsync(CancellationToken.None), "0 */4 * * *");
+        recurringJobs.AddOrUpdate<DirectoryGeocodeJob>("directory-geocode", job => job.RunAsync(CancellationToken.None), "30 */3 * * *");
 
         // Email transport test — runs in background after startup so it appears in Railway logs
         _ = Task.Run(async () =>
