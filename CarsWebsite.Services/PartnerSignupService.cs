@@ -163,6 +163,53 @@ public class PartnerSignupService : IPartnerSignupService
         _context.Partners.Add(partner);
         await _context.SaveChangesAsync();
 
+        // Business Directory link: an approved partner is a confirmed company, so it belongs in the
+        // public catalogue (blueprint section 17). If a directory row already matches by normalized
+        // name (e.g. seeded earlier), claim it (link + mark verified); otherwise create a fresh one.
+        try
+        {
+            var norm = CarizoId.Normalize(request.CompanyName);
+            var existing = await _context.DirectoryCompanies.FirstOrDefaultAsync(d => d.NameNormalized == norm);
+            if (existing != null)
+            {
+                existing.PartnerId = partner.Id;
+                existing.Status = "active";
+                if (string.IsNullOrEmpty(existing.Email)) existing.Email = request.Email;
+                if (string.IsNullOrEmpty(existing.Phone) && !string.IsNullOrEmpty(request.Phone)) existing.Phone = request.Phone;
+                if (string.IsNullOrEmpty(existing.Website) && !string.IsNullOrEmpty(request.WebsiteUrl)) existing.Website = request.WebsiteUrl;
+                existing.UpdatedAt = DateTime.UtcNow;
+            }
+            else
+            {
+                var slugBase = CarizoId.Slugify(request.CompanyName);
+                var slug = await _context.DirectoryCompanies.AnyAsync(d => d.Slug == slugBase)
+                    ? $"{slugBase}-{Guid.NewGuid().ToString("N")[..6]}" : slugBase;
+                _context.DirectoryCompanies.Add(new DirectoryCompany
+                {
+                    PublicId = CarizoId.New("org", "PL"),
+                    Name = request.CompanyName,
+                    NameNormalized = norm,
+                    Category = "dealerzy",
+                    CountryCode = "PL",
+                    Email = request.Email,
+                    Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone,
+                    Website = request.WebsiteUrl,
+                    Language = "pl",
+                    Status = "active",
+                    Source = "partner-signup",
+                    PartnerId = partner.Id,
+                    Slug = slug,
+                });
+            }
+            await _context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            // Directory linking is a nice-to-have on approval, never a reason to fail the approval
+            // (the partner + account are already created and are what actually matters here).
+            _logger.LogWarning(ex, "[PartnerSignup] Directory link failed for partner {PartnerId} (non-fatal)", partner.Id);
+        }
+
         request.Status = PartnerSignupStatus.Approved;
         request.ReviewedAt = DateTime.UtcNow;
         request.ReviewedByAdminId = adminUserId;

@@ -92,6 +92,7 @@ namespace CarsWebsite
         public DbSet<Partner> Partners { get; set; }
         public DbSet<PartnerImportLog> PartnerImportLogs { get; set; }
         public DbSet<PartnerSignupRequest> PartnerSignupRequests { get; set; }
+        public DbSet<DirectoryCompany> DirectoryCompanies { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -154,6 +155,16 @@ namespace CarsWebsite
                 .HasForeignKey(r => r.PartnerId).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
             modelBuilder.Entity<PartnerSignupRequest>().HasIndex(r => r.Status);
             modelBuilder.Entity<PartnerSignupRequest>().HasIndex(r => r.Email);
+
+            modelBuilder.Entity<DirectoryCompany>().ToTable("directorycompanies").HasKey(d => d.Id);
+            modelBuilder.Entity<DirectoryCompany>().HasIndex(d => d.PublicId).IsUnique();
+            modelBuilder.Entity<DirectoryCompany>().HasIndex(d => d.Slug).IsUnique();
+            modelBuilder.Entity<DirectoryCompany>().HasIndex(d => new { d.Category, d.CountryCode });
+            modelBuilder.Entity<DirectoryCompany>().HasIndex(d => d.NameNormalized);
+            modelBuilder.Entity<DirectoryCompany>().HasIndex(d => d.Status);
+            modelBuilder.Entity<DirectoryCompany>()
+                .HasOne(d => d.Partner).WithMany()
+                .HasForeignKey(d => d.PartnerId).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<AdvertImage>().ToTable("AdvertImages").HasKey(i => i.Id);
             modelBuilder.Entity<Advert>().HasMany(a => a.Images).WithOne(i => i.Advert)

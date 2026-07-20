@@ -218,6 +218,9 @@ internal class Program
         builder.Services.AddScoped<DeletedUserPurgeJob>();
         builder.Services.AddScoped<SavedSearchAlertJob>();
         builder.Services.AddScoped<PartnerFeedSyncJob>();
+        builder.Services.AddScoped<ITranslationProvider, HttpTranslationProvider>();
+        builder.Services.AddScoped<DirectoryTranslationJob>();
+        builder.Services.AddScoped<DirectoryGeocodeJob>();
 
         builder.Services.AddHangfire(config => config
             .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
@@ -681,6 +684,54 @@ internal class Program
                 ");
             }
             catch (Exception ex) { logger.LogWarning("[Schema] savedsearches table: {Msg}", ex.Message); }
+
+            // Business Directory (blueprint section 17) - public catalogue of automotive/transport
+            // companies with a global Carizo ID. Same belt-and-braces guard as the tables above.
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"
+                    CREATE TABLE IF NOT EXISTS `directorycompanies` (
+                        `Id` int NOT NULL AUTO_INCREMENT,
+                        `PublicId` varchar(64) NOT NULL,
+                        `Slug` varchar(220) NOT NULL,
+                        `Name` varchar(200) NOT NULL,
+                        `NameNormalized` varchar(200) NOT NULL,
+                        `Category` varchar(60) NOT NULL,
+                        `CountryCode` varchar(2) NULL,
+                        `City` varchar(120) NULL,
+                        `Address` varchar(250) NULL,
+                        `PostalCode` varchar(20) NULL,
+                        `Phone` varchar(40) NULL,
+                        `Email` varchar(200) NULL,
+                        `EmailType` varchar(20) NULL,
+                        `Website` varchar(300) NULL,
+                        `ProfileUrl` varchar(300) NULL,
+                        `Language` varchar(5) NULL,
+                        `Latitude` double NULL,
+                        `Longitude` double NULL,
+                        `Status` varchar(20) NOT NULL DEFAULT 'unverified',
+                        `Source` varchar(60) NULL,
+                        `PartnerId` int NULL,
+                        `CreatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+                        `UpdatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+                        PRIMARY KEY (`Id`),
+                        UNIQUE KEY `IX_directorycompanies_PublicId` (`PublicId`),
+                        UNIQUE KEY `IX_directorycompanies_Slug` (`Slug`),
+                        KEY `IX_directorycompanies_Category_CountryCode` (`Category`, `CountryCode`),
+                        KEY `IX_directorycompanies_NameNormalized` (`NameNormalized`),
+                        KEY `IX_directorycompanies_Status` (`Status`),
+                        KEY `IX_directorycompanies_PartnerId` (`PartnerId`),
+                        CONSTRAINT `FK_directorycompanies_partners_PartnerId` FOREIGN KEY (`PartnerId`) REFERENCES `partners` (`Id`) ON DELETE SET NULL
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                ");
+            }
+            catch (Exception ex) { logger.LogWarning("[Schema] directorycompanies table: {Msg}", ex.Message); }
+
+            // Directory i18n columns (multi-language foundation) - same bootstrap risk as above.
+            foreach (var colDef in new[] {
+                "`Description` varchar(2000) NULL",
+                "`I18n` longtext NULL" })
+            { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `directorycompanies` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] directorycompanies.{Col}: {Msg}", colDef, ex.Message); } }
 
             // These 3 tables were first created (via the CREATE TABLE IF NOT EXISTS guards right
             // below) with PascalCase names, shadowing the lowercase name EF's generated queries
@@ -2788,6 +2839,9 @@ internal class Program
         recurringJobs.AddOrUpdate<DeletedUserPurgeJob>("deleted-user-purge", job => job.RunAsync(CancellationToken.None), Cron.Daily(3));
         recurringJobs.AddOrUpdate<SavedSearchAlertJob>("saved-search-alerts", job => job.RunAsync(CancellationToken.None), "0 */2 * * *");
         recurringJobs.AddOrUpdate<PartnerFeedSyncJob>("partner-feed-sync", job => job.RunAsync(CancellationToken.None), "0 */6 * * *");
+        // Directory enrichment - both no-op unless configured (TRANSLATION_API_KEY / DIRECTORY_GEOCODE=1).
+        recurringJobs.AddOrUpdate<DirectoryTranslationJob>("directory-translation", job => job.RunAsync(CancellationToken.None), "0 */4 * * *");
+        recurringJobs.AddOrUpdate<DirectoryGeocodeJob>("directory-geocode", job => job.RunAsync(CancellationToken.None), "30 */3 * * *");
 
         // Email transport test — runs in background after startup so it appears in Railway logs
         _ = Task.Run(async () =>
@@ -3925,6 +3979,8 @@ internal class Program
         AttributeDefinitionMigrationSeeder.Seed(db, logger);
         logger.LogWarning("[STARTUP-TRACE] Calling AdvertDocumentBackfillSeeder.Seed");
         AdvertDocumentBackfillSeeder.Seed(db, logger);
+        logger.LogWarning("[STARTUP-TRACE] Calling DirectoryBackfillSeeder.Seed");
+        DirectoryBackfillSeeder.Seed(db, logger);
         logger.LogWarning("[STARTUP-TRACE] SeedDataIfEmpty: all seeders completed");
     }
 }
