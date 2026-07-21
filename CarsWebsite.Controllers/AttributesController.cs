@@ -102,7 +102,36 @@ public class AttributesController : ControllerBase
                 IsActive = ad.IsActive, SortOrder = ad.SortOrder,
                 UsageCount = ad.Values.Count,
             }).ToListAsync();
+
+        // Resolve vehicle-scope names in-memory (Model.Name is a computed property EF can't project).
+        // Only the IDs actually present on this page are looked up, so the cost is bounded.
+        await ResolveScopeNamesAsync(items);
         return Ok(new { items, total, page, pageSize });
+    }
+
+    private async Task ResolveScopeNamesAsync(List<AttributeDefinitionDto> items)
+    {
+        var brandIds = items.Where(i => i.BrandId.HasValue).Select(i => i.BrandId!.Value).Distinct().ToList();
+        var modelIds = items.Where(i => i.ModelId.HasValue).Select(i => i.ModelId!.Value).Distinct().ToList();
+        var genIds = items.Where(i => i.GenerationId.HasValue).Select(i => i.GenerationId!.Value).Distinct().ToList();
+        var trimIds = items.Where(i => i.TrimId.HasValue).Select(i => i.TrimId!.Value).Distinct().ToList();
+
+        var brands = brandIds.Count == 0 ? new() : await _db.Brands.AsNoTracking()
+            .Where(b => brandIds.Contains(b.Id)).ToDictionaryAsync(b => b.Id, b => b.Name);
+        var models = modelIds.Count == 0 ? new() : (await _db.Models.AsNoTracking()
+            .Where(m => modelIds.Contains(m.Id)).ToListAsync()).ToDictionary(m => m.Id, m => m.Name);
+        var gens = genIds.Count == 0 ? new() : await _db.Generations.AsNoTracking()
+            .Where(g => genIds.Contains(g.Id)).ToDictionaryAsync(g => g.Id, g => g.Name);
+        var trims = trimIds.Count == 0 ? new() : await _db.Trims.AsNoTracking()
+            .Where(t => trimIds.Contains(t.Id)).ToDictionaryAsync(t => t.Id, t => t.Name);
+
+        foreach (var i in items)
+        {
+            if (i.BrandId.HasValue && brands.TryGetValue(i.BrandId.Value, out var bn)) i.BrandName = bn;
+            if (i.ModelId.HasValue && models.TryGetValue(i.ModelId.Value, out var mn)) i.ModelName = mn;
+            if (i.GenerationId.HasValue && gens.TryGetValue(i.GenerationId.Value, out var gn)) i.GenerationName = gn;
+            if (i.TrimId.HasValue && trims.TryGetValue(i.TrimId.Value, out var tn)) i.TrimName = tn;
+        }
     }
 
     [HttpPost]
