@@ -23,6 +23,16 @@ public class AttributeDefinition
     public int? VehicleSubtypeId { get; set; }
     public VehicleSubtype? VehicleSubtype { get; set; }
 
+    // Vehicle-specific scoping ("inteligentny formularz"): each level is null = "any" at that level.
+    // A field scoped BrandId=BMW (rest null) shows for every BMW; scoping down to GenerationId=F10
+    // shows only for that generation; scoping to TrimId shows only for one version (e.g. 530d).
+    // This is what makes selecting BMW → Seria 5 → F10 → 530d surface xDrive/Head-Up Display while
+    // a Golf GTI surfaces DSG/DCC - all configured from the admin panel, no code change.
+    public int? BrandId { get; set; }
+    public int? ModelId { get; set; }
+    public int? GenerationId { get; set; }
+    public int? TrimId { get; set; }
+
     [MaxLength(100)] public string Key { get; set; } = string.Empty;
     [MaxLength(200)] public string LabelPl { get; set; } = string.Empty;
     public AttributeDataType DataType { get; set; }

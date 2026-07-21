@@ -9,6 +9,14 @@ public class AttributeDefinitionDto
     public string? VehicleCategoryName { get; set; }
     public int? VehicleSubtypeId { get; set; }
     public string? VehicleSubtypeName { get; set; }
+    public int? BrandId { get; set; }
+    public string? BrandName { get; set; }
+    public int? ModelId { get; set; }
+    public string? ModelName { get; set; }
+    public int? GenerationId { get; set; }
+    public string? GenerationName { get; set; }
+    public int? TrimId { get; set; }
+    public string? TrimName { get; set; }
     public string Key { get; set; } = string.Empty;
     public string LabelPl { get; set; } = string.Empty;
     public AttributeDataType DataType { get; set; }
@@ -27,6 +35,10 @@ public class CreateAttributeDefinitionDto
 {
     public int VehicleCategoryId { get; set; }
     public int? VehicleSubtypeId { get; set; }
+    public int? BrandId { get; set; }
+    public int? ModelId { get; set; }
+    public int? GenerationId { get; set; }
+    public int? TrimId { get; set; }
     public string Key { get; set; } = string.Empty;
     public string LabelPl { get; set; } = string.Empty;
     public AttributeDataType DataType { get; set; }

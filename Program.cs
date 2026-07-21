@@ -733,6 +733,15 @@ internal class Program
                 "`I18n` longtext NULL" })
             { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `directorycompanies` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] directorycompanies.{Col}: {Msg}", colDef, ex.Message); } }
 
+            // Vehicle-specific attribute scoping (Brand/Model/Generation/Trim) - the "inteligentny
+            // formularz". Same belt-and-braces column guard for pre-existing DBs.
+            foreach (var colDef in new[] {
+                "`BrandId` int NULL",
+                "`ModelId` int NULL",
+                "`GenerationId` int NULL",
+                "`TrimId` int NULL" })
+            { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `attributedefinitions` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] attributedefinitions.{Col}: {Msg}", colDef, ex.Message); } }
+
             // These 3 tables were first created (via the CREATE TABLE IF NOT EXISTS guards right
             // below) with PascalCase names, shadowing the lowercase name EF's generated queries
             // actually look for on this DB (same class of bug documented in the rename block
@@ -1075,6 +1084,10 @@ internal class Program
   `Id` int NOT NULL AUTO_INCREMENT,
   `VehicleCategoryId` int NOT NULL,
   `VehicleSubtypeId` int NULL,
+  `BrandId` int NULL,
+  `ModelId` int NULL,
+  `GenerationId` int NULL,
+  `TrimId` int NULL,
   `Key` varchar(100) NOT NULL,
   `LabelPl` varchar(200) NOT NULL,
   `DataType` int NOT NULL,
@@ -1088,7 +1101,8 @@ internal class Program
   `SortOrder` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`Id`),
   KEY `IX_attributedefinitions_VehicleCategoryId` (`VehicleCategoryId`),
-  KEY `IX_attributedefinitions_VehicleSubtypeId` (`VehicleSubtypeId`)
+  KEY `IX_attributedefinitions_VehicleSubtypeId` (`VehicleSubtypeId`),
+  KEY `IX_attributedefinitions_scope` (`VehicleCategoryId`, `BrandId`, `ModelId`, `GenerationId`, `TrimId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
 
                 @"CREATE TABLE IF NOT EXISTS `advertattributevalues` (
@@ -3981,6 +3995,8 @@ internal class Program
         AdvertDocumentBackfillSeeder.Seed(db, logger);
         logger.LogWarning("[STARTUP-TRACE] Calling DirectoryBackfillSeeder.Seed");
         DirectoryBackfillSeeder.Seed(db, logger);
+        logger.LogWarning("[STARTUP-TRACE] Calling VehicleEquipmentSeeder.Seed");
+        VehicleEquipmentSeeder.Seed(db, logger);
         logger.LogWarning("[STARTUP-TRACE] SeedDataIfEmpty: all seeders completed");
     }
 }

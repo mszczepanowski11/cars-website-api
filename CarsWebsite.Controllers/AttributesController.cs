@@ -48,16 +48,29 @@ public class AttributesController : ControllerBase
     // CATEGORY_CONFIGS.extraFields + SUBTYPE_EXTRA_FIELDS combine today.
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> GetAttributeDefinitions([FromQuery] int categoryId, [FromQuery] int? subtypeId, [FromQuery] bool activeOnly = true)
+    public async Task<IActionResult> GetAttributeDefinitions(
+        [FromQuery] int categoryId, [FromQuery] int? subtypeId,
+        [FromQuery] int? brandId, [FromQuery] int? modelId, [FromQuery] int? generationId, [FromQuery] int? trimId,
+        [FromQuery] bool activeOnly = true)
     {
+        // Wildcard scoping ("inteligentny formularz"): a definition applies when, at every level, its
+        // scope is either null (= "any") or equals the selected vehicle. So a BMW-only field
+        // (BrandId=BMW, rest null) appears for any BMW; an F10-only field (GenerationId=F10) appears
+        // only for that generation; category-wide fields (all null) always appear.
         var q = _db.AttributeDefinitions.AsNoTracking()
-            .Where(ad => ad.VehicleCategoryId == categoryId && (ad.VehicleSubtypeId == null || ad.VehicleSubtypeId == subtypeId));
+            .Where(ad => ad.VehicleCategoryId == categoryId
+                && (ad.VehicleSubtypeId == null || ad.VehicleSubtypeId == subtypeId)
+                && (ad.BrandId == null || ad.BrandId == brandId)
+                && (ad.ModelId == null || ad.ModelId == modelId)
+                && (ad.GenerationId == null || ad.GenerationId == generationId)
+                && (ad.TrimId == null || ad.TrimId == trimId));
         if (activeOnly) q = q.Where(ad => ad.IsActive);
 
         var items = await q.OrderBy(ad => ad.SortOrder).ThenBy(ad => ad.Id)
             .Select(ad => new AttributeDefinitionDto
             {
                 Id = ad.Id, VehicleCategoryId = ad.VehicleCategoryId, VehicleSubtypeId = ad.VehicleSubtypeId,
+                BrandId = ad.BrandId, ModelId = ad.ModelId, GenerationId = ad.GenerationId, TrimId = ad.TrimId,
                 Key = ad.Key, LabelPl = ad.LabelPl, DataType = ad.DataType, Unit = ad.Unit,
                 ValidationJson = ad.ValidationJson, OptionsJson = ad.OptionsJson,
                 IsRequired = ad.IsRequired, IsFilterable = ad.IsFilterable, IsSearchable = ad.IsSearchable,
@@ -82,6 +95,7 @@ public class AttributesController : ControllerBase
             {
                 Id = ad.Id, VehicleCategoryId = ad.VehicleCategoryId, VehicleCategoryName = ad.VehicleCategory.Name,
                 VehicleSubtypeId = ad.VehicleSubtypeId, VehicleSubtypeName = ad.VehicleSubtype != null ? ad.VehicleSubtype.Name : null,
+                BrandId = ad.BrandId, ModelId = ad.ModelId, GenerationId = ad.GenerationId, TrimId = ad.TrimId,
                 Key = ad.Key, LabelPl = ad.LabelPl, DataType = ad.DataType, Unit = ad.Unit,
                 ValidationJson = ad.ValidationJson, OptionsJson = ad.OptionsJson,
                 IsRequired = ad.IsRequired, IsFilterable = ad.IsFilterable, IsSearchable = ad.IsSearchable,
@@ -100,12 +114,18 @@ public class AttributesController : ControllerBase
             return BadRequest("Nieznana kategoria.");
         if (dto.VehicleSubtypeId.HasValue && !await _db.VehicleSubtypes.AnyAsync(s => s.Id == dto.VehicleSubtypeId.Value && s.VehicleCategoryId == dto.VehicleCategoryId))
             return BadRequest("Podtyp nie należy do wskazanej kategorii.");
-        if (await _db.AttributeDefinitions.AnyAsync(ad => ad.VehicleCategoryId == dto.VehicleCategoryId && ad.VehicleSubtypeId == dto.VehicleSubtypeId && ad.Key == dto.Key))
+        // Uniqueness is per exact scope, so the same key (e.g. "xDrive") can exist for different
+        // brands/models without colliding - only a duplicate within the identical scope is rejected.
+        if (await _db.AttributeDefinitions.AnyAsync(ad => ad.VehicleCategoryId == dto.VehicleCategoryId
+                && ad.VehicleSubtypeId == dto.VehicleSubtypeId && ad.BrandId == dto.BrandId
+                && ad.ModelId == dto.ModelId && ad.GenerationId == dto.GenerationId && ad.TrimId == dto.TrimId
+                && ad.Key == dto.Key))
             return BadRequest($"Pole o kluczu '{dto.Key}' już istnieje w tym zakresie.");
 
         var def = new AttributeDefinition
         {
             VehicleCategoryId = dto.VehicleCategoryId, VehicleSubtypeId = dto.VehicleSubtypeId,
+            BrandId = dto.BrandId, ModelId = dto.ModelId, GenerationId = dto.GenerationId, TrimId = dto.TrimId,
             Key = dto.Key, LabelPl = dto.LabelPl, DataType = dto.DataType, Unit = dto.Unit,
             ValidationJson = dto.ValidationJson, OptionsJson = dto.OptionsJson,
             IsRequired = dto.IsRequired, IsFilterable = dto.IsFilterable, IsSearchable = dto.IsSearchable,
@@ -127,6 +147,10 @@ public class AttributesController : ControllerBase
 
         def.VehicleCategoryId = dto.VehicleCategoryId;
         def.VehicleSubtypeId = dto.VehicleSubtypeId;
+        def.BrandId = dto.BrandId;
+        def.ModelId = dto.ModelId;
+        def.GenerationId = dto.GenerationId;
+        def.TrimId = dto.TrimId;
         def.Key = dto.Key;
         def.LabelPl = dto.LabelPl;
         def.DataType = dto.DataType;
