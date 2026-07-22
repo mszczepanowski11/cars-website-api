@@ -807,8 +807,11 @@ internal class Program
             // simply loses the (now irrelevant) parts tag. Subcategories deleted first to be FK-agnostic.
             foreach (var sql in new[] {
                 "DELETE FROM `partsubcategories` WHERE `PartCategoryId` IN (SELECT `Id` FROM `partcategories` WHERE `Name` = 'Koła i opony')",
-                "DELETE FROM `partcategories` WHERE `Name` = 'Koła i opony'" })
-            { try { db.Database.ExecuteSqlRaw(sql); } catch (Exception ex) { logger.LogDebug("[Schema] drop Koła i opony: {Msg}", ex.Message); } }
+                "DELETE FROM `partcategories` WHERE `Name` = 'Koła i opony'",
+                // Felgi shipped with mdi-alloy-wheel, which does not exist in @mdi/font 7.4.47 -> empty
+                // icon box. Repoint existing rows to an icon that renders (a rim-like double ring).
+                "UPDATE `vehiclecategories` SET `IconName` = 'mdi-circle-double' WHERE `Slug` = 'felgi' AND `IconName` = 'mdi-alloy-wheel'" })
+            { try { db.Database.ExecuteSqlRaw(sql); } catch (Exception ex) { logger.LogDebug("[Schema] parts/icon cleanup: {Msg}", ex.Message); } }
 
             // These 3 tables were first created (via the CREATE TABLE IF NOT EXISTS guards right
             // below) with PascalCase names, shadowing the lowercase name EF's generated queries
@@ -2202,7 +2205,7 @@ internal class Program
                         },
                         new {
                             Slug = "felgi", Name = "Felgi",
-                            Description = "Felgi stalowe i aluminiowe do wszystkich typów pojazdów", IconName = "mdi-alloy-wheel", SortOrder = 19,
+                            Description = "Felgi stalowe i aluminiowe do wszystkich typów pojazdów", IconName = "mdi-circle-double", SortOrder = 19,
                             Subtypes = new (string Name, string Slug)[] {
                                 ("Osobowe", "felgi-osobowe"), ("Dostawcze / SUV", "felgi-dostawcze-suv"),
                                 ("Ciężarowe", "felgi-ciezarowe"), ("Motocyklowe", "felgi-motocyklowe"),
