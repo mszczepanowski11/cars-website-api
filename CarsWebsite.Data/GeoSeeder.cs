@@ -28,6 +28,7 @@ public static class GeoSeeder
             db.SaveChanges(); // persist regions so SeedCities can link cities to them
 
             SeedCities(db);
+            SeedStarterExchangeRates(db);
             db.SaveChanges();
 
             logger.LogWarning("[GEO] GeoSeeder done: countries={C} currencies={Cur} languages={L} cities={City}",
@@ -224,5 +225,24 @@ public static class GeoSeeder
                 Latitude = r.Lat, Longitude = r.Lng, Population = r.Pop,
             });
         }
+    }
+
+    // Starter FX rates to EUR (approximate, fixed seed date so re-runs are idempotent via the
+    // (CurrencyId, AsOf) unique index). A daily ECB/exchangerate.host job should append fresh rows;
+    // this only bootstraps PriceEur so cross-currency sort/filter works from day one.
+    private static void SeedStarterExchangeRates(AppDbContext db)
+    {
+        var seedDate = new DateTime(2024, 1, 1);
+        var byIso = db.Currencies.ToDictionary(c => c.Iso, c => c.Id);
+        var existing = db.ExchangeRates.Where(e => e.AsOf == seedDate).Select(e => e.CurrencyId).ToHashSet();
+        var rates = new (string Iso, decimal ToEur)[] {
+            ("EUR", 1.0m), ("PLN", 0.23m), ("USD", 0.92m), ("GBP", 1.17m), ("CHF", 1.04m), ("CZK", 0.040m),
+            ("SEK", 0.088m), ("NOK", 0.086m), ("DKK", 0.134m), ("HUF", 0.0026m), ("RON", 0.20m), ("BGN", 0.51m),
+            ("UAH", 0.024m), ("TRY", 0.030m), ("JPY", 0.0062m), ("CNY", 0.13m), ("CAD", 0.68m), ("AUD", 0.61m),
+            ("AED", 0.25m), ("BRL", 0.18m), ("INR", 0.011m), ("ZAR", 0.050m), ("MXN", 0.054m),
+        };
+        foreach (var (iso, toEur) in rates)
+            if (byIso.TryGetValue(iso, out var cid) && !existing.Contains(cid))
+                db.ExchangeRates.Add(new ExchangeRate { CurrencyId = cid, RateToEur = toEur, AsOf = seedDate });
     }
 }
