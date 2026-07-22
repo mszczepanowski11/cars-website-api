@@ -801,6 +801,15 @@ internal class Program
                   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;" })
             { try { db.Database.ExecuteSqlRaw(sql); } catch (Exception ex) { logger.LogWarning("[Schema] geo core table: {Msg}", ex.Message); } }
 
+            // Remove the "Koła i opony" parts category on existing DBs - Opony/Felgi are now their own
+            // top-level categories with dedicated forms, so they no longer belong under parts. FK on
+            // caradverts.PartCategoryId/PartSubcategoryId is SetNull, so any advert that referenced these
+            // simply loses the (now irrelevant) parts tag. Subcategories deleted first to be FK-agnostic.
+            foreach (var sql in new[] {
+                "DELETE FROM `partsubcategories` WHERE `PartCategoryId` IN (SELECT `Id` FROM `partcategories` WHERE `Name` = 'Koła i opony')",
+                "DELETE FROM `partcategories` WHERE `Name` = 'Koła i opony'" })
+            { try { db.Database.ExecuteSqlRaw(sql); } catch (Exception ex) { logger.LogDebug("[Schema] drop Koła i opony: {Msg}", ex.Message); } }
+
             // These 3 tables were first created (via the CREATE TABLE IF NOT EXISTS guards right
             // below) with PascalCase names, shadowing the lowercase name EF's generated queries
             // actually look for on this DB (same class of bug documented in the rename block
@@ -4010,7 +4019,8 @@ internal class Program
                 ("Elektryka i elektronika", 11, new[] { "Alternator", "Rozrusznik", "Akumulator", "Sterowniki ECU", "Czujniki", "Wiązki elektryczne" }),
                 ("Wnętrze", 12, new[] { "Fotele", "Tapicerka", "Deski rozdzielcze", "Dywaniki", "Kierownica", "Pasy bezpieczeństwa" }),
                 ("Klimatyzacja", 13, new[] { "Sprężarka", "Skraplacz", "Parownik", "Filtr kabinowy", "Wentylator", "Zawór rozprężny" }),
-                ("Koła i opony", 14, new[] { "Opony letnie", "Opony zimowe", "Felgi stalowe", "Felgi aluminiowe", "Śruby i nakrętki", "Czujniki TPMS" }),
+                // "Koła i opony" świadomie usunięte z części - Opony i Felgi to teraz osobne kategorie
+                // najwyższego poziomu z własnymi formularzami (AttributeDefinition), nie podkategorie części.
                 ("Akcesoria i tuning", 15, new[] { "Spoilery", "Dysze wydechowe", "Folie i oklejanie", "Systemy audio", "Haki holownicze", "Bagażniki dachowe" }),
             };
 

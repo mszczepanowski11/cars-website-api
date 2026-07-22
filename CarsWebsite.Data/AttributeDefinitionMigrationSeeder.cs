@@ -196,6 +196,7 @@ public static class AttributeDefinitionMigrationSeeder
         // ── Faza 6: brand-new categories (Opony/Felgi/Akcesoria/Usługi motoryzacyjne) ─────────
         // These aren't migrated from anywhere - genuinely new fields for genuinely new categories,
         // scoped by category only (no subtype - the vehicle-fit axis is already a VehicleSubtype).
+        new("opony", null, "producent", "Producent (marka opon)", AttributeDataType.Text, null, null, IsRequired: true),
         new("opony", null, "szerokosc", "Szerokość", AttributeDataType.Number, "mm", null, IsRequired: true),
         new("opony", null, "profil", "Profil", AttributeDataType.Number, "%", null, IsRequired: true),
         new("opony", null, "srednica", "Średnica felgi", AttributeDataType.Decimal, "\"", null, IsRequired: true),
@@ -212,6 +213,7 @@ public static class AttributeDefinitionMigrationSeeder
             ["Nowe", "Używane"], IsRequired: true),
         new("opony", null, "mozliwoscWysylki", "Możliwość wysyłki", AttributeDataType.Boolean, null, null),
 
+        new("felgi", null, "producent", "Producent (marka felg)", AttributeDataType.Text, null, null, IsRequired: true),
         new("felgi", null, "srednica", "Średnica", AttributeDataType.Decimal, "\"", null, IsRequired: true),
         new("felgi", null, "szerokoscFelgi", "Szerokość", AttributeDataType.Decimal, "\"", null),
         new("felgi", null, "et", "ET (offset)", AttributeDataType.Number, "mm", null),
