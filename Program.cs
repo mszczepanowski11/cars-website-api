@@ -801,6 +801,27 @@ internal class Program
                   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;" })
             { try { db.Database.ExecuteSqlRaw(sql); } catch (Exception ex) { logger.LogWarning("[Schema] geo core table: {Msg}", ex.Message); } }
 
+            // Global-location + currency columns on Adverts (Etap 3). Belt-and-braces on existing DBs.
+            foreach (var colDef in new[] {
+                "`CountryId` int NULL", "`RegionId` int NULL", "`CityId` bigint NULL",
+                "`PostalCode` varchar(16) NULL", "`AddressLine` varchar(250) NULL",
+                "`Latitude` double NULL", "`Longitude` double NULL",
+                "`CurrencyId` int NULL", "`PriceEur` decimal(15,2) NULL", "`PriceEurAsOf` datetime(6) NULL",
+                "`SourceLanguageId` int NULL", "`TimeZoneId` int NULL" })
+            { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `Adverts` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] Adverts.{Col}: {Msg}", colDef, ex.Message); } }
+
+            // Remove the "Koła i opony" parts category on existing DBs - Opony/Felgi are now their own
+            // top-level categories with dedicated forms, so they no longer belong under parts. FK on
+            // caradverts.PartCategoryId/PartSubcategoryId is SetNull, so any advert that referenced these
+            // simply loses the (now irrelevant) parts tag. Subcategories deleted first to be FK-agnostic.
+            foreach (var sql in new[] {
+                "DELETE FROM `partsubcategories` WHERE `PartCategoryId` IN (SELECT `Id` FROM `partcategories` WHERE `Name` = 'Koła i opony')",
+                "DELETE FROM `partcategories` WHERE `Name` = 'Koła i opony'",
+                // Felgi shipped with mdi-alloy-wheel, which does not exist in @mdi/font 7.4.47 -> empty
+                // icon box. Repoint existing rows to an icon that renders (a rim-like double ring).
+                "UPDATE `vehiclecategories` SET `IconName` = 'mdi-circle-double' WHERE `Slug` = 'felgi' AND `IconName` = 'mdi-alloy-wheel'" })
+            { try { db.Database.ExecuteSqlRaw(sql); } catch (Exception ex) { logger.LogDebug("[Schema] parts/icon cleanup: {Msg}", ex.Message); } }
+
             // These 3 tables were first created (via the CREATE TABLE IF NOT EXISTS guards right
             // below) with PascalCase names, shadowing the lowercase name EF's generated queries
             // actually look for on this DB (same class of bug documented in the rename block
@@ -2193,7 +2214,7 @@ internal class Program
                         },
                         new {
                             Slug = "felgi", Name = "Felgi",
-                            Description = "Felgi stalowe i aluminiowe do wszystkich typów pojazdów", IconName = "mdi-alloy-wheel", SortOrder = 19,
+                            Description = "Felgi stalowe i aluminiowe do wszystkich typów pojazdów", IconName = "mdi-circle-double", SortOrder = 19,
                             Subtypes = new (string Name, string Slug)[] {
                                 ("Osobowe", "felgi-osobowe"), ("Dostawcze / SUV", "felgi-dostawcze-suv"),
                                 ("Ciężarowe", "felgi-ciezarowe"), ("Motocyklowe", "felgi-motocyklowe"),
@@ -4010,7 +4031,8 @@ internal class Program
                 ("Elektryka i elektronika", 11, new[] { "Alternator", "Rozrusznik", "Akumulator", "Sterowniki ECU", "Czujniki", "Wiązki elektryczne" }),
                 ("Wnętrze", 12, new[] { "Fotele", "Tapicerka", "Deski rozdzielcze", "Dywaniki", "Kierownica", "Pasy bezpieczeństwa" }),
                 ("Klimatyzacja", 13, new[] { "Sprężarka", "Skraplacz", "Parownik", "Filtr kabinowy", "Wentylator", "Zawór rozprężny" }),
-                ("Koła i opony", 14, new[] { "Opony letnie", "Opony zimowe", "Felgi stalowe", "Felgi aluminiowe", "Śruby i nakrętki", "Czujniki TPMS" }),
+                // "Koła i opony" świadomie usunięte z części - Opony i Felgi to teraz osobne kategorie
+                // najwyższego poziomu z własnymi formularzami (AttributeDefinition), nie podkategorie części.
                 ("Akcesoria i tuning", 15, new[] { "Spoilery", "Dysze wydechowe", "Folie i oklejanie", "Systemy audio", "Haki holownicze", "Bagażniki dachowe" }),
             };
 
@@ -4058,6 +4080,19 @@ internal class Program
         VehicleEquipmentSeeder.Seed(db, logger);
         logger.LogWarning("[STARTUP-TRACE] Calling GeoSeeder.Seed");
         GeoSeeder.Seed(db, logger);
+
+        // Backfill existing adverts onto the new global reference columns (Etap 3). Runs after
+        // GeoSeeder so currencies/countries/languages/rates exist. All idempotent (only fills NULLs).
+        logger.LogWarning("[STARTUP-TRACE] Backfilling Adverts global columns");
+        foreach (var sql in new[] {
+            "UPDATE `Adverts` SET `CurrencyId` = (SELECT `Id` FROM `currencies` WHERE `Iso` = COALESCE(`Currency`, 'PLN') LIMIT 1) WHERE `CurrencyId` IS NULL",
+            "UPDATE `Adverts` SET `CountryId` = (SELECT `Id` FROM `countries` WHERE `Iso2` = 'PL' LIMIT 1) WHERE `CountryId` IS NULL",
+            "UPDATE `Adverts` SET `SourceLanguageId` = (SELECT `Id` FROM `languages` WHERE `Iso1` = 'pl' LIMIT 1) WHERE `SourceLanguageId` IS NULL",
+            @"UPDATE `Adverts` a JOIN `exchangerates` e ON e.`CurrencyId` = a.`CurrencyId`
+              SET a.`PriceEur` = ROUND(a.`Price` * e.`RateToEur`, 2), a.`PriceEurAsOf` = e.`AsOf`
+              WHERE a.`PriceEur` IS NULL AND a.`CurrencyId` IS NOT NULL" })
+        { try { db.Database.ExecuteSqlRaw(sql); } catch (Exception ex) { logger.LogDebug("[Backfill] Adverts: {Msg}", ex.Message); } }
+
         logger.LogWarning("[STARTUP-TRACE] SeedDataIfEmpty: all seeders completed");
     }
 }
