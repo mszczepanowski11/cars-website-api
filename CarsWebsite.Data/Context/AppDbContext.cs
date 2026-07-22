@@ -94,6 +94,16 @@ namespace CarsWebsite
         public DbSet<PartnerSignupRequest> PartnerSignupRequests { get; set; }
         public DbSet<DirectoryCompany> DirectoryCompanies { get; set; }
 
+        // Global reference-data core (Faza 0)
+        public DbSet<Continent> Continents { get; set; }
+        public DbSet<Country> Countries { get; set; }
+        public DbSet<Region> Regions { get; set; }
+        public DbSet<City> Cities { get; set; }
+        public DbSet<Language> Languages { get; set; }
+        public DbSet<Currency> Currencies { get; set; }
+        public DbSet<AppTimeZone> TimeZones { get; set; }
+        public DbSet<ExchangeRate> ExchangeRates { get; set; }
+
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -165,6 +175,33 @@ namespace CarsWebsite
             modelBuilder.Entity<DirectoryCompany>()
                 .HasOne(d => d.Partner).WithMany()
                 .HasForeignKey(d => d.PartnerId).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
+
+            // --- Global reference-data core (Faza 0) ---
+            modelBuilder.Entity<Continent>().ToTable("continents").HasIndex(c => c.Code).IsUnique();
+            modelBuilder.Entity<Currency>().ToTable("currencies").HasIndex(c => c.Iso).IsUnique();
+            modelBuilder.Entity<Language>().ToTable("languages").HasIndex(l => l.Iso1).IsUnique();
+            modelBuilder.Entity<AppTimeZone>().ToTable("timezones").HasIndex(t => t.IanaName).IsUnique();
+
+            modelBuilder.Entity<Country>().ToTable("countries");
+            modelBuilder.Entity<Country>().HasIndex(c => c.Iso2).IsUnique();
+            modelBuilder.Entity<Country>().HasOne(c => c.Continent).WithMany().HasForeignKey(c => c.ContinentId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Country>().HasOne(c => c.DefaultCurrency).WithMany().HasForeignKey(c => c.DefaultCurrencyId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Country>().HasOne(c => c.DefaultLanguage).WithMany().HasForeignKey(c => c.DefaultLanguageId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Country>().HasOne(c => c.DefaultTimeZone).WithMany().HasForeignKey(c => c.DefaultTimeZoneId).OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Region>().ToTable("regions");
+            modelBuilder.Entity<Region>().HasOne(r => r.Country).WithMany(c => c.Regions).HasForeignKey(r => r.CountryId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Region>().HasIndex(r => new { r.CountryId, r.Code });
+
+            modelBuilder.Entity<City>().ToTable("cities");
+            modelBuilder.Entity<City>().HasOne(c => c.Country).WithMany().HasForeignKey(c => c.CountryId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<City>().HasOne(c => c.Region).WithMany().HasForeignKey(c => c.RegionId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<City>().HasIndex(c => new { c.CountryId, c.RegionId });
+            modelBuilder.Entity<City>().HasIndex(c => new { c.CountryId, c.AsciiName });
+
+            modelBuilder.Entity<ExchangeRate>().ToTable("exchangerates");
+            modelBuilder.Entity<ExchangeRate>().HasOne(e => e.Currency).WithMany().HasForeignKey(e => e.CurrencyId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<ExchangeRate>().HasIndex(e => new { e.CurrencyId, e.AsOf }).IsUnique();
 
             modelBuilder.Entity<AdvertImage>().ToTable("AdvertImages").HasKey(i => i.Id);
             modelBuilder.Entity<Advert>().HasMany(a => a.Images).WithOne(i => i.Advert)

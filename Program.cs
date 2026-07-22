@@ -733,6 +733,74 @@ internal class Program
                 "`I18n` longtext NULL" })
             { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `directorycompanies` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] directorycompanies.{Col}: {Msg}", colDef, ex.Message); } }
 
+            // Vehicle-specific attribute scoping (Brand/Model/Generation/Trim) - the "inteligentny
+            // formularz". Same belt-and-braces column guard for pre-existing DBs.
+            foreach (var colDef in new[] {
+                "`BrandId` int NULL",
+                "`ModelId` int NULL",
+                "`GenerationId` int NULL",
+                "`TrimId` int NULL" })
+            { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `attributedefinitions` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] attributedefinitions.{Col}: {Msg}", colDef, ex.Message); } }
+
+            // Global reference-data core (Faza 0 of going worldwide). Belt-and-braces CREATE TABLE
+            // IF NOT EXISTS on pre-existing production DBs (EnsureCreated only builds these on a
+            // genuinely fresh DB). Order matters: parent tables (continents/currencies/languages/
+            // timezones) before countries, countries before regions, regions before cities.
+            foreach (var sql in new[] {
+                @"CREATE TABLE IF NOT EXISTS `continents` (
+                    `Id` int NOT NULL AUTO_INCREMENT, `Code` varchar(2) NOT NULL, `Name` varchar(80) NOT NULL,
+                    PRIMARY KEY (`Id`), UNIQUE KEY `IX_continents_Code` (`Code`)
+                  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
+                @"CREATE TABLE IF NOT EXISTS `currencies` (
+                    `Id` int NOT NULL AUTO_INCREMENT, `Iso` varchar(3) NOT NULL, `Symbol` varchar(8) NOT NULL,
+                    `Name` varchar(60) NOT NULL, `Decimals` tinyint unsigned NOT NULL DEFAULT 2,
+                    `SymbolPosition` varchar(4) NOT NULL DEFAULT 'pre', `IsActive` tinyint(1) NOT NULL DEFAULT 1,
+                    PRIMARY KEY (`Id`), UNIQUE KEY `IX_currencies_Iso` (`Iso`)
+                  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
+                @"CREATE TABLE IF NOT EXISTS `languages` (
+                    `Id` int NOT NULL AUTO_INCREMENT, `Iso1` varchar(2) NOT NULL, `Endonym` varchar(60) NOT NULL,
+                    `EnglishName` varchar(60) NOT NULL, `IsRtl` tinyint(1) NOT NULL DEFAULT 0,
+                    `IsActive` tinyint(1) NOT NULL DEFAULT 1,
+                    PRIMARY KEY (`Id`), UNIQUE KEY `IX_languages_Iso1` (`Iso1`)
+                  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
+                @"CREATE TABLE IF NOT EXISTS `timezones` (
+                    `Id` int NOT NULL AUTO_INCREMENT, `IanaName` varchar(60) NOT NULL,
+                    `UtcOffsetMinutes` int NOT NULL DEFAULT 0, `DisplayName` varchar(80) NOT NULL DEFAULT '',
+                    PRIMARY KEY (`Id`), UNIQUE KEY `IX_timezones_IanaName` (`IanaName`)
+                  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
+                @"CREATE TABLE IF NOT EXISTS `countries` (
+                    `Id` int NOT NULL AUTO_INCREMENT, `Iso2` varchar(2) NOT NULL, `Iso3` varchar(3) NOT NULL,
+                    `Name` varchar(80) NOT NULL, `NativeName` varchar(80) NOT NULL DEFAULT '',
+                    `ContinentId` int NULL, `DefaultCurrencyId` int NULL, `DefaultLanguageId` int NULL,
+                    `DefaultTimeZoneId` int NULL, `PhonePrefix` varchar(8) NULL,
+                    `MeasurementSystem` varchar(8) NOT NULL DEFAULT 'metric', `DrivingSide` varchar(1) NOT NULL DEFAULT 'R',
+                    `PostalCodeRegex` varchar(24) NULL, `IsActive` tinyint(1) NOT NULL DEFAULT 1,
+                    PRIMARY KEY (`Id`), UNIQUE KEY `IX_countries_Iso2` (`Iso2`),
+                    KEY `IX_countries_ContinentId` (`ContinentId`)
+                  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
+                @"CREATE TABLE IF NOT EXISTS `regions` (
+                    `Id` int NOT NULL AUTO_INCREMENT, `CountryId` int NOT NULL, `Code` varchar(10) NULL,
+                    `Name` varchar(120) NOT NULL, `Type` varchar(30) NOT NULL DEFAULT 'region',
+                    PRIMARY KEY (`Id`), KEY `IX_regions_CountryId_Code` (`CountryId`, `Code`),
+                    CONSTRAINT `FK_regions_countries` FOREIGN KEY (`CountryId`) REFERENCES `countries` (`Id`) ON DELETE CASCADE
+                  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
+                @"CREATE TABLE IF NOT EXISTS `cities` (
+                    `Id` bigint NOT NULL AUTO_INCREMENT, `CountryId` int NOT NULL, `RegionId` int NULL,
+                    `Name` varchar(160) NOT NULL, `AsciiName` varchar(160) NOT NULL DEFAULT '',
+                    `Latitude` double NULL, `Longitude` double NULL, `Population` int NOT NULL DEFAULT 0,
+                    `GeonameId` bigint NULL,
+                    PRIMARY KEY (`Id`), KEY `IX_cities_CountryId_RegionId` (`CountryId`, `RegionId`),
+                    KEY `IX_cities_CountryId_AsciiName` (`CountryId`, `AsciiName`),
+                    CONSTRAINT `FK_cities_countries` FOREIGN KEY (`CountryId`) REFERENCES `countries` (`Id`) ON DELETE CASCADE
+                  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
+                @"CREATE TABLE IF NOT EXISTS `exchangerates` (
+                    `Id` bigint NOT NULL AUTO_INCREMENT, `CurrencyId` int NOT NULL,
+                    `RateToEur` decimal(18,8) NOT NULL, `AsOf` datetime(6) NOT NULL,
+                    PRIMARY KEY (`Id`), UNIQUE KEY `IX_exchangerates_CurrencyId_AsOf` (`CurrencyId`, `AsOf`),
+                    CONSTRAINT `FK_exchangerates_currencies` FOREIGN KEY (`CurrencyId`) REFERENCES `currencies` (`Id`) ON DELETE CASCADE
+                  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;" })
+            { try { db.Database.ExecuteSqlRaw(sql); } catch (Exception ex) { logger.LogWarning("[Schema] geo core table: {Msg}", ex.Message); } }
+
             // These 3 tables were first created (via the CREATE TABLE IF NOT EXISTS guards right
             // below) with PascalCase names, shadowing the lowercase name EF's generated queries
             // actually look for on this DB (same class of bug documented in the rename block
@@ -1075,6 +1143,10 @@ internal class Program
   `Id` int NOT NULL AUTO_INCREMENT,
   `VehicleCategoryId` int NOT NULL,
   `VehicleSubtypeId` int NULL,
+  `BrandId` int NULL,
+  `ModelId` int NULL,
+  `GenerationId` int NULL,
+  `TrimId` int NULL,
   `Key` varchar(100) NOT NULL,
   `LabelPl` varchar(200) NOT NULL,
   `DataType` int NOT NULL,
@@ -1088,7 +1160,8 @@ internal class Program
   `SortOrder` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`Id`),
   KEY `IX_attributedefinitions_VehicleCategoryId` (`VehicleCategoryId`),
-  KEY `IX_attributedefinitions_VehicleSubtypeId` (`VehicleSubtypeId`)
+  KEY `IX_attributedefinitions_VehicleSubtypeId` (`VehicleSubtypeId`),
+  KEY `IX_attributedefinitions_scope` (`VehicleCategoryId`, `BrandId`, `ModelId`, `GenerationId`, `TrimId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
 
                 @"CREATE TABLE IF NOT EXISTS `advertattributevalues` (
@@ -3981,6 +4054,10 @@ internal class Program
         AdvertDocumentBackfillSeeder.Seed(db, logger);
         logger.LogWarning("[STARTUP-TRACE] Calling DirectoryBackfillSeeder.Seed");
         DirectoryBackfillSeeder.Seed(db, logger);
+        logger.LogWarning("[STARTUP-TRACE] Calling VehicleEquipmentSeeder.Seed");
+        VehicleEquipmentSeeder.Seed(db, logger);
+        logger.LogWarning("[STARTUP-TRACE] Calling GeoSeeder.Seed");
+        GeoSeeder.Seed(db, logger);
         logger.LogWarning("[STARTUP-TRACE] SeedDataIfEmpty: all seeders completed");
     }
 }
