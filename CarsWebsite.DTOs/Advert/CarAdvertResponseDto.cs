@@ -6,6 +6,10 @@ public class CarAdvertResponseDto
 {
     public int Id { get; set; }
     public int UserId { get; set; }
+    // Never exposed before - the add-advert edit flow has no way to know which category an
+    // existing advert belongs to without it, so every category-specific field (and the whole
+    // "Rodzaj pojazdu" section) silently vanished the moment an advert was reopened for editing.
+    public int? CategoryId { get; set; }
 
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
