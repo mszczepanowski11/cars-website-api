@@ -487,8 +487,21 @@ internal class Program
                 "`TopSpeedKmh` int NULL",
                 "`DriveType` varchar(10) NULL",
                 "`GearboxType` varchar(20) NULL",
-                "`Cylinders` int NULL" })
+                "`Cylinders` int NULL",
+                "`EngineCode` varchar(30) NULL" })
             { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `engineversions` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] engineversions.{Col}: {Msg}", colDef, ex.Message); } }
+
+            // Physical dimensions (audit §5/§6): belong on Generation, not CarAdvert, since every
+            // advert of the same generation shares the same body dimensions.
+            foreach (var colDef in new[] {
+                "`LengthMm` int NULL",
+                "`WidthMm` int NULL",
+                "`HeightMm` int NULL",
+                "`WheelbaseMm` int NULL",
+                "`TrunkCapacityL` int NULL",
+                "`DefaultSeatsCount` int NULL",
+                "`DefaultDoorsCount` int NULL" })
+            { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `generations` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] generations.{Col}: {Msg}", colDef, ex.Message); } }
 
             foreach (var colDef in new[] {
                 "`TrimId` int NULL",
