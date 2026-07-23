@@ -2894,6 +2894,31 @@ internal class Program
             ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
                              | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
         });
+
+        // This API has no routes at any of these paths — they're the well-known scanner
+        // signature for exposed config/credential files and debug endpoints (config.js,
+        // .aws/config, phpinfo.php, /_debugbar, wp-login.php, ...). Reject them here, before
+        // static files, CORS, rate limiting or auth do any work, so scan traffic is as cheap
+        // as possible to turn away and doesn't add noise to the normal request pipeline.
+        var scannerProbePathPrefixes = new[]
+        {
+            "/config.js", "/aws.config.js", "/aws-config.js", "/aws.json", "/aws-credentials",
+            "/.aws/", "/.env", "/debugbar", "/_debugbar", "/debug", "/info.php", "/phpinfo.php",
+            "/test.php", "/wp-admin", "/wp-login.php", "/.git/", "/.svn/", "/xmlrpc.php",
+        };
+        app.Use(async (context, next) =>
+        {
+            var path = context.Request.Path.Value ?? "";
+            if (scannerProbePathPrefixes.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+            {
+                context.RequestServices.GetRequiredService<ILogger<Program>>()
+                    .LogDebug("[ScannerProbe] Rejected probe request for {Path} from {IP}", path, context.Connection.RemoteIpAddress);
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                return;
+            }
+            await next();
+        });
+
         app.Use(async (context, next) =>
         {
             context.Response.Headers["X-Content-Type-Options"] = "nosniff";
