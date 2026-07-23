@@ -223,12 +223,12 @@ public static class ExternalTaxonomySeeder
         "auta-osobowe|Peugeot|2008||2013|2024",
         "auta-osobowe|Peugeot|406||1995|2004",
         "auta-osobowe|Peugeot|407||2004|2011",
-        "auta-osobowe|Citroen|C3|I-III|2002|2024",
-        "auta-osobowe|Citroen|C4|I-III|2004|2024",
-        "auta-osobowe|Citroen|C5|I-III|2001|2017",
-        "auta-osobowe|Citroen|C5 Aircross||2018|2024",
-        "auta-osobowe|Citroen|Xsara||1997|2006",
-        "auta-osobowe|Citroen|Saxo||1996|2004",
+        "auta-osobowe|Citroën|C3|I-III|2002|2024",
+        "auta-osobowe|Citroën|C4|I-III|2004|2024",
+        "auta-osobowe|Citroën|C5|I-III|2001|2017",
+        "auta-osobowe|Citroën|C5 Aircross||2018|2024",
+        "auta-osobowe|Citroën|Xsara||1997|2006",
+        "auta-osobowe|Citroën|Saxo||1996|2004",
         "auta-osobowe|Seat|Ibiza|I-V|1984|2024",
         "auta-osobowe|Seat|Leon|I-IV|1999|2024",
         "auta-osobowe|Seat|Ateca||2016|2024",
@@ -339,7 +339,7 @@ public static class ExternalTaxonomySeeder
         "auta-osobowe|Ferrari|458||2009|2015",
         "auta-osobowe|Ferrari|488||2015|2019",
         "auta-osobowe|Ferrari|F430||2004|2009",
-        "auta-osobowe|Lamborghini|Huracan||2014|2024",
+        "auta-osobowe|Lamborghini|Huracán||2014|2024",
         "auta-osobowe|Lamborghini|Gallardo||2003|2013",
         "auta-osobowe|Lamborghini|Urus||2018|2024",
         "auta-osobowe|Aston Martin|DB9||2003|2016",
@@ -404,9 +404,9 @@ public static class ExternalTaxonomySeeder
         "dostawcze|Peugeot|Boxer||1994|2024",
         "dostawcze|Peugeot|Expert||1995|2024",
         "dostawcze|Peugeot|Partner||1996|2024",
-        "dostawcze|Citroen|Jumper||1994|2024",
-        "dostawcze|Citroen|Jumpy||1994|2024",
-        "dostawcze|Citroen|Berlingo||1996|2024",
+        "dostawcze|Citroën|Jumper||1994|2024",
+        "dostawcze|Citroën|Jumpy||1994|2024",
+        "dostawcze|Citroën|Berlingo||1996|2024",
         "dostawcze|Opel|Movano||1998|2024",
         "dostawcze|Opel|Vivaro||2001|2024",
         "dostawcze|Opel|Combo||1993|2024",
@@ -425,8 +425,8 @@ public static class ExternalTaxonomySeeder
         "ciezarowe|MAN|TGL||2005|2024",
         "ciezarowe|Scania|3-series||1987|1996",
         "ciezarowe|Scania|4-series||1995|2005",
-        "ciezarowe|Scania|R-series||2004|2024",
-        "ciezarowe|Scania|S-series||2016|2024",
+        "ciezarowe|Scania|R-Series||2004|2024",
+        "ciezarowe|Scania|S-Series||2016|2024",
         "ciezarowe|Scania|G-series||2009|2024",
         "ciezarowe|Scania|P-series||2004|2024",
         "ciezarowe|Volvo|F10/F12||1977|1993",
@@ -572,8 +572,8 @@ public static class ExternalTaxonomySeeder
         "motocykle|Husqvarna|Vitpilen||2018|2024",
         "motocykle|CFMoto|700CL-X||2020|2024",
         "motocykle|Zundapp|KS750||1938|1984",
-        "przyczepy|Niewiadow|N1||1990|2024",
-        "przyczepy|Niewiadow|Furgon||1990|2024",
+        "przyczepy|Niewiadów|N1||1990|2024",
+        "przyczepy|Niewiadów|Furgon||1990|2024",
         "przyczepy|Wiola|W02||1995|2024",
         "przyczepy|Wiola|Laweta||1995|2024",
         "przyczepy|Boro|B450||2000|2024",
@@ -727,7 +727,7 @@ public static class ExternalTaxonomySeeder
         "naczepy|Wielton|Platforma||1996|2024",
         "naczepy|Wielton|Chlodnia||1996|2024",
         "naczepy|Kogel|Cargo||1993|2024",
-        "naczepy|Schwarzmuller|Tautliner||1990|2024",
+        "naczepy|Schwarzmüller|Tautliner||1990|2024",
         "naczepy|Fliegl|DHKA||1998|2024",
         "naczepy|Fliegl|Wywrotka||1998|2024",
         "naczepy|Wielton|Wanna||1996|2024",
@@ -798,7 +798,11 @@ public static class ExternalTaxonomySeeder
         var rows = ParseRows().ToList();
         if (rows.Count == 0) return;
 
-        var categories = db.VehicleCategories.AsNoTracking().ToList()
+        // Tracked (not AsNoTracking): brandsByName below loads Brand.Categories WITH tracking, so a
+        // detached VehicleCategory instance here would collide with the already-tracked one in the
+        // context's identity map the moment a new Brand's Categories list embeds it (EF throws
+        // "cannot be tracked because another instance with the same key... is already being tracked").
+        var categories = db.VehicleCategories.ToList()
             .GroupBy(c => c.Slug, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 

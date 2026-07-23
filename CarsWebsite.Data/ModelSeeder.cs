@@ -1777,7 +1777,7 @@ public static class ModelSeeder
         ]);
 
         // ─── DAF ──────────────────────────────────────────────────────────────────
-        if (B("DAF") > 0) models.AddRange([
+        if (NeedsSeeding("DAF")) models.AddRange([
             new Model { BrandId = B("DAF"), Name = "XF", Slug = "daf-xf", Generations = [
                 G("XF105 (2006–2017)", "daf-xf105-2006", 2006, 2017,
                     E("MX-340 340 KM", 340, 250, 12902, die, 30.0m, 25.0m, 28.0m), E("MX-375 375 KM", 375, 276, 12902, die, 30.0m, 25.0m, 28.0m),
@@ -1799,7 +1799,7 @@ public static class ModelSeeder
         ]);
 
         // ─── IVECO ────────────────────────────────────────────────────────────────
-        if (B("Iveco") > 0) models.AddRange([
+        if (NeedsSeeding("Iveco")) models.AddRange([
             new Model { BrandId = B("Iveco"), Name = "Stralis", Slug = "iveco-stralis", Generations = [
                 G("Stralis I (2002–2012)", "iveco-stralis-i", 2002, 2012,
                     E("Cursor 10 400 KM", 400, 294, 10308, die, 30.0m, 25.0m, 28.0m), E("Cursor 10 430 KM", 430, 316, 10308, die, 30.0m, 25.0m, 28.0m),
@@ -1820,7 +1820,7 @@ public static class ModelSeeder
         ]);
 
         // ─── RENAULT TRUCKS ───────────────────────────────────────────────────────
-        if (B("Renault Trucks") > 0) models.AddRange([
+        if (NeedsSeeding("Renault Trucks")) models.AddRange([
             new Model { BrandId = B("Renault Trucks"), Name = "T-series", Slug = "renault-trucks-t", Generations = [
                 G("T (2013–)", "renault-trucks-t-2013", 2013, null,
                     E("DTI11 380 KM", 380, 279, 10837, die, 30.0m, 25.0m, 28.0m), E("DTI11 430 KM", 430, 316, 10837, die, 30.0m, 25.0m, 28.0m),
@@ -1836,7 +1836,7 @@ public static class ModelSeeder
         ]);
 
         // ─── BMW (motorcycles) ────────────────────────────────────────────────────
-        if (B("BMW") > 0) models.AddRange([
+        if (NeedsSeeding("BMW")) models.AddRange([
             new Model { BrandId = B("BMW"), Name = "R 1250 GS", Slug = "bmw-r1250gs", Generations = [
                 G("2018–", "bmw-r1250gs-2018", 2018, null,
                     E("1254cc Boxer 136 KM", 136, 100, 1254, ben, 7.5m, 6.0m, 6.5m)) ]},
@@ -1854,7 +1854,7 @@ public static class ModelSeeder
         ]);
 
         // ─── HONDA (motorcycles) ──────────────────────────────────────────────────
-        if (B("Honda") > 0) models.AddRange([
+        if (NeedsSeeding("Honda")) models.AddRange([
             new Model { BrandId = B("Honda"), Name = "CB500F", Slug = "honda-cb500f", Generations = [
                 G("2013–", "honda-cb500f-2013", 2013, null,
                     E("471cc parallel twin 47 KM", 47, 35, 471, ben, 4.5m, 3.5m, 4.0m)) ]},
@@ -1873,7 +1873,7 @@ public static class ModelSeeder
         ]);
 
         // ─── SUZUKI (motorcycles) ─────────────────────────────────────────────────
-        if (B("Suzuki") > 0) models.AddRange([
+        if (NeedsSeeding("Suzuki")) models.AddRange([
             new Model { BrandId = B("Suzuki"), Name = "GSX-R1000", Slug = "suzuki-gsx-r1000", Generations = [
                 G("2017–", "suzuki-gsx-r1000-2017", 2017, null,
                     E("999cc inline-4 202 KM", 202, 149, 999, ben, 8.0m, 6.0m, 7.0m)) ]},
@@ -1889,7 +1889,7 @@ public static class ModelSeeder
         ]);
 
         // ─── APRILIA ──────────────────────────────────────────────────────────────
-        if (B("Aprilia") > 0) models.AddRange([
+        if (NeedsSeeding("Aprilia")) models.AddRange([
             new Model { BrandId = B("Aprilia"), Name = "RSV4", Slug = "aprilia-rsv4", Generations = [
                 G("2021–", "aprilia-rsv4-2021", 2021, null,
                     E("1099cc V4 217 KM", 217, 160, 1099, ben, 8.0m, 6.0m, 7.0m)) ]},
@@ -1902,7 +1902,7 @@ public static class ModelSeeder
         ]);
 
         // ─── ROYAL ENFIELD ────────────────────────────────────────────────────────
-        if (B("Royal Enfield") > 0) models.AddRange([
+        if (NeedsSeeding("Royal Enfield")) models.AddRange([
             new Model { BrandId = B("Royal Enfield"), Name = "Classic 350", Slug = "royal-enfield-classic-350", Generations = [
                 G("2021–", "royal-enfield-classic-350-2021", 2021, null,
                     E("349cc single-cylinder 20 KM", 20, 15, 349, ben, 4.5m, 3.5m, 4.0m)) ]},
@@ -1915,7 +1915,7 @@ public static class ModelSeeder
         ]);
 
         // ─── INDIAN ───────────────────────────────────────────────────────────────
-        if (B("Indian") > 0) models.AddRange([
+        if (NeedsSeeding("Indian")) models.AddRange([
             new Model { BrandId = B("Indian"), Name = "Scout", Slug = "indian-scout", Generations = [
                 G("2015–", "indian-scout-2015", 2015, null,
                     E("1133cc V-twin 100 KM", 100, 74, 1133, ben, 7.5m, 6.0m, 6.5m)) ]},
@@ -1928,7 +1928,7 @@ public static class ModelSeeder
         ]);
 
         // ─── MV AGUSTA ────────────────────────────────────────────────────────────
-        if (B("MV Agusta") > 0) models.AddRange([
+        if (NeedsSeeding("MV Agusta")) models.AddRange([
             new Model { BrandId = B("MV Agusta"), Name = "Brutale 800", Slug = "mv-agusta-brutale-800", Generations = [
                 G("2012–", "mv-agusta-brutale-800-2012", 2012, null,
                     E("798cc inline-3 140 KM", 140, 103, 798, ben, 8.0m, 6.0m, 7.0m)) ]},
@@ -1938,7 +1938,7 @@ public static class ModelSeeder
         ]);
 
         // ─── HUSQVARNA ────────────────────────────────────────────────────────────
-        if (B("Husqvarna") > 0) models.AddRange([
+        if (NeedsSeeding("Husqvarna")) models.AddRange([
             new Model { BrandId = B("Husqvarna"), Name = "Vitpilen 401", Slug = "husqvarna-vitpilen-401", Generations = [
                 G("2018–", "husqvarna-vitpilen-401-2018", 2018, null,
                     E("373cc single-cylinder 44 KM", 44, 32, 373, ben, 4.5m, 3.5m, 4.0m)) ]},
@@ -1951,7 +1951,7 @@ public static class ModelSeeder
         ]);
 
         // ─── CASE IH ──────────────────────────────────────────────────────────────
-        if (B("Case IH") > 0) models.AddRange([
+        if (NeedsSeeding("Case IH")) models.AddRange([
             new Model { BrandId = B("Case IH"), Name = "Puma", Slug = "case-ih-puma", Generations = [
                 G("Puma (2014–)", "case-ih-puma-2014", 2014, null,
                     E("FPT F5H 150 KM", 150, 110, 4485, die, null, null, null), E("FPT F5H 185 KM", 185, 136, 4485, die, null, null, null),
@@ -1967,7 +1967,7 @@ public static class ModelSeeder
         ]);
 
         // ─── CLAAS ────────────────────────────────────────────────────────────────
-        if (B("Claas") > 0) models.AddRange([
+        if (NeedsSeeding("Claas")) models.AddRange([
             new Model { BrandId = B("Claas"), Name = "Axion 800", Slug = "claas-axion-800", Generations = [
                 G("Axion 800 (2015–)", "claas-axion-800-2015", 2015, null,
                     E("FPT Cursor 9 205 KM", 205, 151, 8728, die, null, null, null), E("FPT Cursor 9 245 KM", 245, 180, 8728, die, null, null, null),
@@ -1989,7 +1989,7 @@ public static class ModelSeeder
         ]);
 
         // ─── MASSEY FERGUSON ──────────────────────────────────────────────────────
-        if (B("Massey Ferguson") > 0) models.AddRange([
+        if (NeedsSeeding("Massey Ferguson")) models.AddRange([
             new Model { BrandId = B("Massey Ferguson"), Name = "5700S", Slug = "massey-ferguson-5700s", Generations = [
                 G("5700S (2017–)", "massey-ferguson-5700s-2017", 2017, null,
                     E("AGCO Power 4.4L 105 KM", 105, 77, 4400, die, null, null, null), E("AGCO Power 4.4L 120 KM", 120, 88, 4400, die, null, null, null),
@@ -2005,7 +2005,7 @@ public static class ModelSeeder
         ]);
 
         // ─── ZETOR ────────────────────────────────────────────────────────────────
-        if (B("Zetor") > 0) models.AddRange([
+        if (NeedsSeeding("Zetor")) models.AddRange([
             new Model { BrandId = B("Zetor"), Name = "Forterra", Slug = "zetor-forterra", Generations = [
                 G("Forterra (2010–)", "zetor-forterra-2010", 2010, null,
                     E("Z 1006 100 KM", 100, 74, 6211, die, null, null, null), E("Z 1006 115 KM", 115, 85, 6211, die, null, null, null),
@@ -2017,7 +2017,7 @@ public static class ModelSeeder
         ]);
 
         // ─── KUBOTA ───────────────────────────────────────────────────────────────
-        if (B("Kubota") > 0) models.AddRange([
+        if (NeedsSeeding("Kubota")) models.AddRange([
             new Model { BrandId = B("Kubota"), Name = "M7", Slug = "kubota-m7", Generations = [
                 G("M7 (2015–)", "kubota-m7-2015", 2015, null,
                     E("V6108 121 KM", 121, 89, 6100, die, null, null, null), E("V6108 145 KM", 145, 107, 6100, die, null, null, null),
@@ -2033,7 +2033,7 @@ public static class ModelSeeder
         ]);
 
         // ─── CATERPILLAR ──────────────────────────────────────────────────────────
-        if (B("Caterpillar") > 0) models.AddRange([
+        if (NeedsSeeding("Caterpillar")) models.AddRange([
             new Model { BrandId = B("Caterpillar"), Name = "320", Slug = "caterpillar-320", Generations = [
                 G("320 (2019–)", "caterpillar-320-2019", 2019, null,
                     E("Cat C4.4 ACERT 121 KM", 121, 89, 4400, die, null, null, null)) ]},
@@ -2049,7 +2049,7 @@ public static class ModelSeeder
         ]);
 
         // ─── JCB ──────────────────────────────────────────────────────────────────
-        if (B("JCB") > 0) models.AddRange([
+        if (NeedsSeeding("JCB")) models.AddRange([
             new Model { BrandId = B("JCB"), Name = "3CX", Slug = "jcb-3cx", Generations = [
                 G("3CX (2008–)", "jcb-3cx-2008", 2008, null,
                     E("JCB EcoMAX 109 KM", 109, 80, 4400, die, null, null, null)) ]},
@@ -2065,7 +2065,7 @@ public static class ModelSeeder
         ]);
 
         // ─── KOMATSU ──────────────────────────────────────────────────────────────
-        if (B("Komatsu") > 0) models.AddRange([
+        if (NeedsSeeding("Komatsu")) models.AddRange([
             new Model { BrandId = B("Komatsu"), Name = "PC200", Slug = "komatsu-pc200", Generations = [
                 G("PC200 (2012–)", "komatsu-pc200-2012", 2012, null,
                     E("SAA6D107E 112 KM", 112, 82, 6690, die, null, null, null)) ]},
@@ -2078,7 +2078,7 @@ public static class ModelSeeder
         ]);
 
         // ─── LIEBHERR ─────────────────────────────────────────────────────────────
-        if (B("Liebherr") > 0) models.AddRange([
+        if (NeedsSeeding("Liebherr")) models.AddRange([
             new Model { BrandId = B("Liebherr"), Name = "R 924", Slug = "liebherr-r-924", Generations = [
                 G("R 924 (2018–)", "liebherr-r-924-2018", 2018, null,
                     E("Liebherr D934 156 KM", 156, 115, 6700, die, null, null, null)) ]},
@@ -2091,7 +2091,7 @@ public static class ModelSeeder
         ]);
 
         // ─── BOBCAT ───────────────────────────────────────────────────────────────
-        if (B("Bobcat") > 0) models.AddRange([
+        if (NeedsSeeding("Bobcat")) models.AddRange([
             new Model { BrandId = B("Bobcat"), Name = "E50", Slug = "bobcat-e50", Generations = [
                 G("E50 (2014–)", "bobcat-e50-2014", 2014, null,
                     E("Kubota V2607 41 KM", 41, 30, 2615, die, null, null, null)) ]},
@@ -2101,7 +2101,7 @@ public static class ModelSeeder
         ]);
 
         // ─── TAKEUCHI ─────────────────────────────────────────────────────────────
-        if (B("Takeuchi") > 0) models.AddRange([
+        if (NeedsSeeding("Takeuchi")) models.AddRange([
             new Model { BrandId = B("Takeuchi"), Name = "TB216", Slug = "takeuchi-tb216", Generations = [
                 G("TB216 (2018–)", "takeuchi-tb216-2018", 2018, null,
                     E("Yanmar 3TNV70 13 KM", 13, 10, 854, die, null, null, null)) ]},
