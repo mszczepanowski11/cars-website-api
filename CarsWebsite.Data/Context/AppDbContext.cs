@@ -689,6 +689,37 @@ namespace CarsWebsite
             modelBuilder.Entity<Event>().HasIndex(e => e.CreatedByUserId);
             modelBuilder.Entity<Payment>().HasIndex(p => p.UserId);
 
+            // Missing FK indexes identified in the database architecture audit - present on the
+            // FK column itself but never indexed, unlike sibling columns like BrandId/ModelId.
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.GenerationId);
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.EngineVersionId);
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.DriveTypeId);
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.ColorId);
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.TrimId);
+            modelBuilder.Entity<Advert>().HasIndex(a => a.CountryId);
+            modelBuilder.Entity<Advert>().HasIndex(a => a.RegionId);
+            modelBuilder.Entity<Advert>().HasIndex(a => a.CityId);
+            modelBuilder.Entity<Advert>().HasIndex(a => a.CurrencyId);
+
+            // Uniqueness for the vehicle taxonomy chain - without these, nothing at the database
+            // level stops the same brand/model/generation/engine from being seeded or imported
+            // twice under a different Id (the actual cause of Models being 54% duplicate rows and
+            // EngineVersions 12%, per the architecture audit). The physical constraints are added
+            // by a guarded, idempotent ALTER TABLE in Program.cs (this codebase doesn't run
+            // `dotnet ef database update` in production) - these declarations just keep the EF
+            // model in sync with what that guard creates.
+            modelBuilder.Entity<Brand>().HasIndex(b => b.Name).IsUnique();
+            modelBuilder.Entity<Model>().HasIndex(m => new { m.BrandId, m.Name }).IsUnique();
+            modelBuilder.Entity<Generation>().HasIndex(g => new { g.ModelId, g.Name }).IsUnique();
+            modelBuilder.Entity<EngineVersion>().HasIndex(e => new { e.GenerationId, e.EngineName }).IsUnique();
+            modelBuilder.Entity<Trim>().HasIndex(t => new { t.GenerationId, t.Name }).IsUnique();
+            modelBuilder.Entity<FuelType>().HasIndex(f => f.Name).IsUnique();
+            modelBuilder.Entity<Gearbox>().HasIndex(g => g.Name).IsUnique();
+            modelBuilder.Entity<DriveType>().HasIndex(d => d.Name).IsUnique();
+            modelBuilder.Entity<BodyType>().HasIndex(b => b.Name).IsUnique();
+            modelBuilder.Entity<CarColor>().HasIndex(c => c.Name).IsUnique();
+            modelBuilder.Entity<VehicleSubtype>().HasIndex(s => new { s.VehicleCategoryId, s.Name }).IsUnique();
+
             // Lowercase every table name so EF Core generates lowercase SQL,
             // matching Railway Linux MySQL where tables were imported with
             // lowercase names from Windows (case-insensitive) MySQL.

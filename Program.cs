@@ -3474,6 +3474,174 @@ internal class Program
             logger.LogWarning("Brand deduplication skipped: {Message}", ex.Message);
         }
 
+        // Deduplicate models (same Brand + same Name) - the audit found 863 excess rows here
+        // (54% of the table), caused by the heavy-equipment seeders re-inserting the same
+        // brand+model repeatedly without checking for an existing row first (e.g. "Iveco Stralis"
+        // existed as 14 identical rows). Re-point every child FK to the surviving (lowest-Id) row
+        // before deleting the rest, so no CarAdvert/Generation/etc. is left dangling mid-repair.
+        try
+        {
+            var modelKeys = db.Models.Select(m => new { m.Id, m.BrandId, m.Name }).ToList();
+            var duplicateModelGroups = modelKeys
+                .GroupBy(m => (m.BrandId, Name: (m.Name ?? "").Trim().ToLowerInvariant()))
+                .Where(g => g.Count() > 1)
+                .ToList();
+
+            if (duplicateModelGroups.Any())
+            {
+                logger.LogWarning("Found {Count} duplicate model groups — deduplicating", duplicateModelGroups.Count);
+                foreach (var group in duplicateModelGroups)
+                {
+                    var ids = group.Select(m => m.Id).OrderBy(id => id).ToList();
+                    var keepId = ids.First();
+                    var deleteIds = string.Join(",", ids.Skip(1));
+                    db.Database.ExecuteSqlRaw($"UPDATE `generations` SET `ModelId` = {keepId} WHERE `ModelId` IN ({deleteIds})");
+                    db.Database.ExecuteSqlRaw($"UPDATE `caradverts` SET `ModelId` = {keepId} WHERE `ModelId` IN ({deleteIds})");
+                    db.Database.ExecuteSqlRaw($"UPDATE `featurecategories` SET `ModelId` = {keepId} WHERE `ModelId` IN ({deleteIds})");
+                    db.Database.ExecuteSqlRaw($"UPDATE `partcompatibilities` SET `ModelId` = {keepId} WHERE `ModelId` IN ({deleteIds})");
+                    db.Database.ExecuteSqlRaw($"UPDATE `attributedefinitions` SET `ModelId` = {keepId} WHERE `ModelId` IN ({deleteIds})");
+                    db.Database.ExecuteSqlRaw($"DELETE FROM `models` WHERE `Id` IN ({deleteIds})");
+                }
+                logger.LogInformation("Model deduplication complete");
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning("Model deduplication skipped: {Message}", ex.Message);
+        }
+
+        // Deduplicate generations (same Model + same Name) - not part of the original audit
+        // (Generations were clean at the time), but re-verifying before adding the unique
+        // constraint below turned up 889 excess rows freshly accumulated from repeated local
+        // restarts, confirming the same non-idempotent-seeder root cause reaches this table too.
+        // Runs before the EngineVersion dedup below so engines under two now-merged duplicate
+        // generations end up sharing one GenerationId and can be deduplicated against each other.
+        try
+        {
+            var generationKeys = db.Generations.Select(g => new { g.Id, g.ModelId, g.Name }).ToList();
+            var duplicateGenerationGroups = generationKeys
+                .GroupBy(g => (g.ModelId, Name: (g.Name ?? "").Trim().ToLowerInvariant()))
+                .Where(g => g.Count() > 1)
+                .ToList();
+
+            if (duplicateGenerationGroups.Any())
+            {
+                logger.LogWarning("Found {Count} duplicate generation groups — deduplicating", duplicateGenerationGroups.Count);
+                foreach (var group in duplicateGenerationGroups)
+                {
+                    var ids = group.Select(g => g.Id).OrderBy(id => id).ToList();
+                    var keepId = ids.First();
+                    var deleteIds = string.Join(",", ids.Skip(1));
+                    db.Database.ExecuteSqlRaw($"UPDATE `engineversions` SET `GenerationId` = {keepId} WHERE `GenerationId` IN ({deleteIds})");
+                    db.Database.ExecuteSqlRaw($"UPDATE `trims` SET `GenerationId` = {keepId} WHERE `GenerationId` IN ({deleteIds})");
+                    db.Database.ExecuteSqlRaw($"UPDATE `caradverts` SET `GenerationId` = {keepId} WHERE `GenerationId` IN ({deleteIds})");
+                    db.Database.ExecuteSqlRaw($"UPDATE `attributedefinitions` SET `GenerationId` = {keepId} WHERE `GenerationId` IN ({deleteIds})");
+                    db.Database.ExecuteSqlRaw($"DELETE FROM `generations` WHERE `Id` IN ({deleteIds})");
+                }
+                logger.LogInformation("Generation deduplication complete");
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning("Generation deduplication skipped: {Message}", ex.Message);
+        }
+
+        // Deduplicate engine versions (same Generation + same EngineName) - the audit found 576
+        // excess rows here (12% of the table). Root cause: a two-pass seeding process where the
+        // later "enrichment" pass (torque/CO2/euro norm/etc.) inserted a brand new row instead of
+        // updating the existing one, leaving two near-identical rows per engine - one bare, one
+        // enriched. Merge the enrichment fields onto the surviving row (in case the enriched data
+        // landed on whichever row doesn't happen to survive) before deleting the duplicates.
+        try
+        {
+            var allEngines = db.EngineVersions.ToList();
+            var duplicateEngineGroups = allEngines
+                .GroupBy(e => (e.GenerationId, Name: (e.EngineName ?? "").Trim().ToLowerInvariant()))
+                .Where(g => g.Count() > 1)
+                .ToList();
+
+            if (duplicateEngineGroups.Any())
+            {
+                logger.LogWarning("Found {Count} duplicate engine-version groups — deduplicating", duplicateEngineGroups.Count);
+                foreach (var group in duplicateEngineGroups)
+                {
+                    var rows = group.OrderBy(e => e.Id).ToList();
+                    var canonical = rows.First();
+                    foreach (var dup in rows.Skip(1))
+                    {
+                        canonical.TorqueNm ??= dup.TorqueNm;
+                        canonical.Co2EmissionGkm ??= dup.Co2EmissionGkm;
+                        canonical.EuroNorm ??= dup.EuroNorm;
+                        canonical.FuelConsumptionCity ??= dup.FuelConsumptionCity;
+                        canonical.FuelConsumptionHighway ??= dup.FuelConsumptionHighway;
+                        canonical.FuelConsumptionCombined ??= dup.FuelConsumptionCombined;
+                        canonical.AvgConsumptionL ??= dup.AvgConsumptionL;
+                        canonical.Acceleration0100 ??= dup.Acceleration0100;
+                        canonical.TopSpeedKmh ??= dup.TopSpeedKmh;
+                        canonical.Cylinders ??= dup.Cylinders;
+                        canonical.DriveType ??= dup.DriveType;
+                        canonical.GearboxType ??= dup.GearboxType;
+                        canonical.TrimId ??= dup.TrimId;
+                    }
+                    var deleteIds = string.Join(",", rows.Skip(1).Select(e => e.Id));
+                    db.Database.ExecuteSqlRaw($"UPDATE `caradverts` SET `EngineVersionId` = {canonical.Id} WHERE `EngineVersionId` IN ({deleteIds})");
+                    db.Database.ExecuteSqlRaw($"DELETE FROM `engineversions` WHERE `Id` IN ({deleteIds})");
+                }
+                db.SaveChanges();
+                logger.LogInformation("EngineVersion deduplication complete");
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning("EngineVersion deduplication skipped: {Message}", ex.Message);
+        }
+
+        // Uniqueness constraints for the vehicle taxonomy chain (audit §2) - must run after the
+        // dedup blocks above, since a duplicate-free table is a precondition for the constraint
+        // to even be addable. Guarded/idempotent like every other schema change in this file,
+        // since this codebase does not run `dotnet ef database update` in production.
+        // Several of these Name columns were never given a [MaxLength] on their entity, so EF/
+        // Pomelo mapped them to `longtext` instead of `varchar` - MySQL refuses to index a
+        // BLOB/TEXT column without an explicit key-length prefix, hence the "(100)" on those.
+        // Harmless for these tables (short lookup labels, never anywhere near 100 characters).
+        foreach (var (table, columns, constraintName) in new[] {
+            ("brands", "(`Name`)", "UQ_brands_Name"),
+            ("models", "(`BrandId`, `Name`)", "UQ_models_BrandId_Name"),
+            ("generations", "(`ModelId`, `Name`)", "UQ_generations_ModelId_Name"),
+            ("engineversions", "(`GenerationId`, `EngineName`(100))", "UQ_engineversions_GenerationId_EngineName"),
+            ("trims", "(`GenerationId`, `Name`(100))", "UQ_trims_GenerationId_Name"),
+            ("fueltypes", "(`Name`(100))", "UQ_fueltypes_Name"),
+            ("gearboxes", "(`Name`(100))", "UQ_gearboxes_Name"),
+            ("drivetypes", "(`Name`(100))", "UQ_drivetypes_Name"),
+            ("bodytypes", "(`Name`(100))", "UQ_bodytypes_Name"),
+            ("carcolors", "(`Name`(100))", "UQ_carcolors_Name"),
+            ("vehiclesubtypes", "(`VehicleCategoryId`, `Name`)", "UQ_vehiclesubtypes_CategoryId_Name"),
+        })
+        {
+            try { db.Database.ExecuteSqlRaw($"ALTER TABLE `{table}` ADD CONSTRAINT `{constraintName}` UNIQUE {columns}"); }
+            catch (Exception ex) { logger.LogDebug("[Schema] {Table} unique constraint skipped: {Message}", table, ex.Message); }
+        }
+
+        // Missing FK indexes from the architecture audit. Declared in AppDbContext's Fluent API
+        // too, but (like everything else in this file) not relied on to actually create anything
+        // on an already-existing database - EnsureCreated() only applies schema to a brand new
+        // one, and this repo doesn't run real migrations in production.
+        foreach (var (table, column, indexName) in new[] {
+            ("caradverts", "GenerationId", "IX_caradverts_GenerationId"),
+            ("caradverts", "EngineVersionId", "IX_caradverts_EngineVersionId"),
+            ("caradverts", "DriveTypeId", "IX_caradverts_DriveTypeId"),
+            ("caradverts", "ColorId", "IX_caradverts_ColorId"),
+            ("caradverts", "TrimId", "IX_caradverts_TrimId"),
+            ("adverts", "CountryId", "IX_adverts_CountryId"),
+            ("adverts", "RegionId", "IX_adverts_RegionId"),
+            ("adverts", "CityId", "IX_adverts_CityId"),
+            ("adverts", "CurrencyId", "IX_adverts_CurrencyId"),
+        })
+        {
+            try { db.Database.ExecuteSqlRaw($"CREATE INDEX `{indexName}` ON `{table}` (`{column}`)"); }
+            catch (Exception ex) { logger.LogDebug("[Schema] {Table}.{Column} index skipped: {Message}", table, column, ex.Message); }
+        }
+
         if (!db.Brands.Any())
         {
             var catList = db.VehicleCategories.ToList();
