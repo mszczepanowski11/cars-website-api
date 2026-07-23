@@ -4,6 +4,7 @@ using CarsWebsite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace cars_website_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260723191433_ConsolidatedSchemaBaseline")]
+    partial class ConsolidatedSchemaBaseline
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -787,7 +790,7 @@ namespace cars_website_api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("financinginquiries", (string)null);
+                    b.ToTable("financinginquiries");
                 });
 
             modelBuilder.Entity("CarsWebsite.Invoice", b =>
@@ -1500,7 +1503,7 @@ namespace cars_website_api.Migrations
                     b.HasIndex("PasswordResetToken")
                         .IsUnique();
 
-                    b.ToTable("users", (string)null);
+                    b.ToTable("users");
                 });
 
             modelBuilder.Entity("CarsWebsite.UserNotificationSetting", b =>
@@ -1717,7 +1720,7 @@ namespace cars_website_api.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("bodytypes", (string)null);
+                    b.ToTable("bodytypes");
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Brand", b =>
@@ -1750,7 +1753,7 @@ namespace cars_website_api.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("brands", (string)null);
+                    b.ToTable("brands");
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.BrandAllowedFuelType", b =>
@@ -2281,7 +2284,7 @@ namespace cars_website_api.Migrations
                     b.HasIndex("GenerationId", "EngineName")
                         .IsUnique();
 
-                    b.ToTable("engineversions", (string)null);
+                    b.ToTable("engineversions");
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.ExchangeRate", b =>
@@ -2328,7 +2331,7 @@ namespace cars_website_api.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("features", (string)null);
+                    b.ToTable("features");
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.FeatureCategory", b =>
@@ -2360,7 +2363,7 @@ namespace cars_website_api.Migrations
 
                     b.HasIndex("VehicleCategoryId");
 
-                    b.ToTable("featurecategories", (string)null);
+                    b.ToTable("featurecategories");
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.FuelType", b =>
@@ -2380,7 +2383,7 @@ namespace cars_website_api.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("fueltypes", (string)null);
+                    b.ToTable("fueltypes");
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Gearbox", b =>
@@ -2400,7 +2403,7 @@ namespace cars_website_api.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("gearboxes", (string)null);
+                    b.ToTable("gearboxes");
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Generation", b =>
@@ -2456,7 +2459,7 @@ namespace cars_website_api.Migrations
                     b.HasIndex("ModelId", "Name")
                         .IsUnique();
 
-                    b.ToTable("generations", (string)null);
+                    b.ToTable("generations");
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Language", b =>
@@ -2522,7 +2525,7 @@ namespace cars_website_api.Migrations
                     b.HasIndex("BrandId", "Name")
                         .IsUnique();
 
-                    b.ToTable("models", (string)null);
+                    b.ToTable("models");
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.ModelNamePlausibilityRule", b =>
@@ -2568,7 +2571,7 @@ namespace cars_website_api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("partcategories", (string)null);
+                    b.ToTable("partcategories");
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.PartCompatibility", b =>
@@ -2629,7 +2632,7 @@ namespace cars_website_api.Migrations
 
                     b.HasIndex("PartCategoryId");
 
-                    b.ToTable("partsubcategories", (string)null);
+                    b.ToTable("partsubcategories");
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.Region", b =>
@@ -2718,7 +2721,7 @@ namespace cars_website_api.Migrations
                     b.HasIndex("GenerationId", "Name")
                         .IsUnique();
 
-                    b.ToTable("trims", (string)null);
+                    b.ToTable("trims");
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.UserFollow", b =>
@@ -2816,7 +2819,7 @@ namespace cars_website_api.Migrations
                     b.HasIndex("VehicleCategoryId", "Name")
                         .IsUnique();
 
-                    b.ToTable("vehiclesubtypes", (string)null);
+                    b.ToTable("vehiclesubtypes");
                 });
 
             modelBuilder.Entity("cars_website_api.CarsWebsite.Domain.Entities.CarAdvert", b =>
