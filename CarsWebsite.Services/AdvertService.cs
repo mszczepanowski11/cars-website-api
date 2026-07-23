@@ -16,6 +16,7 @@ public class AdvertService : IAdvertService
     private readonly ILogger<AdvertService> _logger;
     private readonly Cloudinary _cloudinary;
     private readonly IHierarchyValidationService _hierarchyValidationService;
+    private readonly IAdvertSearchIndexService _searchIndexService;
 
     // Faza 7 of the category/attribute restructure: thresholds for the calculated era/sport
     // filters on "Auta osobowe" - named constants instead of magic numbers, per the plan.
@@ -25,13 +26,14 @@ public class AdvertService : IAdvertService
     private const int SportPowerThresholdHP = 250;
     private static readonly string[] SportyBodyTypeNames = { "Coupe", "Roadster" };
 
-    public AdvertService(AppDbContext context, IMapper mapper, ILogger<AdvertService> logger, Cloudinary cloudinary, IHierarchyValidationService hierarchyValidationService)
+    public AdvertService(AppDbContext context, IMapper mapper, ILogger<AdvertService> logger, Cloudinary cloudinary, IHierarchyValidationService hierarchyValidationService, IAdvertSearchIndexService searchIndexService)
     {
         _context = context;
         _mapper = mapper;
         _logger = logger;
         _cloudinary = cloudinary;
         _hierarchyValidationService = hierarchyValidationService;
+        _searchIndexService = searchIndexService;
     }
 
     // Extracts the Cloudinary public_id from a secure URL.
@@ -204,6 +206,8 @@ public class AdvertService : IAdvertService
 
         await _context.SaveChangesAsync();
 
+        await _searchIndexService.IndexAsync(advert);
+
         return advert.Id;
     }
 
@@ -312,6 +316,8 @@ public class AdvertService : IAdvertService
         }
 
         await _context.SaveChangesAsync();
+
+        await _searchIndexService.IndexAsync(advert);
     }
 
 
@@ -331,6 +337,8 @@ public class AdvertService : IAdvertService
         advert.IsHidden = true;
         advert.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+
+        await _searchIndexService.DeleteAsync(advert.Id);
 
         // Clean up Cloudinary images in parallel — wrap in try/catch so Cloudinary failures
         // do not prevent the soft-delete from being persisted.
@@ -521,18 +529,33 @@ public class AdvertService : IAdvertService
 
         if (!string.IsNullOrWhiteSpace(dto.TextSearch))
         {
-            // `Title.Contains(...)` compiles to `LIKE '%term%'`, which can never use the
-            // FT_Adverts_TitleDescription FULLTEXT index (leading wildcard) - at scale this is a
-            // full table scan on every search. Use MATCH...AGAINST in boolean mode instead, with
-            // each word turned into a required prefix match (+word*) so behaviour stays close to
-            // the substring search users are used to, while actually hitting the index.
-            var booleanQuery = BuildFullTextBooleanQuery(dto.TextSearch);
-            if (!string.IsNullOrEmpty(booleanQuery))
+            // Meilisearch first when configured (typo tolerance + relevance ranking - see
+            // docs/search-engine-evaluation.md), falling back to MySQL FULLTEXT whenever it's
+            // disabled, unreachable, or erroring (SearchIdsAsync returns null in every one of those
+            // cases - that's the fail-open signal, an empty list is a genuine "no matches").
+            var meiliIds = _searchIndexService.IsEnabled
+                ? await _searchIndexService.SearchIdsAsync(dto.TextSearch, limit: 1000)
+                : null;
+
+            if (meiliIds != null)
             {
-                var matchedIds = await _context.Database
-                    .SqlQuery<int>($"SELECT Id FROM adverts WHERE MATCH(Title, Description) AGAINST ({booleanQuery} IN BOOLEAN MODE)")
-                    .ToListAsync();
-                query = query.Where(a => matchedIds.Contains(a.Id));
+                query = query.Where(a => meiliIds.Contains(a.Id));
+            }
+            else
+            {
+                // `Title.Contains(...)` compiles to `LIKE '%term%'`, which can never use the
+                // FT_Adverts_TitleDescription FULLTEXT index (leading wildcard) - at scale this is a
+                // full table scan on every search. Use MATCH...AGAINST in boolean mode instead, with
+                // each word turned into a required prefix match (+word*) so behaviour stays close to
+                // the substring search users are used to, while actually hitting the index.
+                var booleanQuery = BuildFullTextBooleanQuery(dto.TextSearch);
+                if (!string.IsNullOrEmpty(booleanQuery))
+                {
+                    var matchedIds = await _context.Database
+                        .SqlQuery<int>($"SELECT Id FROM adverts WHERE MATCH(Title, Description) AGAINST ({booleanQuery} IN BOOLEAN MODE)")
+                        .ToListAsync();
+                    query = query.Where(a => matchedIds.Contains(a.Id));
+                }
             }
         }
 
@@ -792,6 +815,8 @@ public class AdvertService : IAdvertService
         advert.IsHidden = true;
         advert.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+
+        await _searchIndexService.DeleteAsync(advert.Id);
     }
 
     public async Task PublishAsync(int advertId, int userId)
@@ -811,6 +836,8 @@ public class AdvertService : IAdvertService
         advert.ExpiresAt = DateTime.UtcNow.AddDays(90);
         advert.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+
+        await _searchIndexService.IndexAsync(advert);
     }
 
     public async Task<(int activeCount, int yearCount)> GetPersonalAdCountsAsync(int userId)

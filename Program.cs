@@ -183,6 +183,17 @@ internal class Program
         var cloudinary = new Cloudinary(cloudinaryAccount);
         cloudinary.Api.Secure = true;
         builder.Services.AddSingleton(cloudinary);
+
+        // Meilisearch (see docs/search-engine-evaluation.md): an accelerator for advert free-text
+        // search, never a hard dependency - unset MEILISEARCH_HOST/Meilisearch:Host means the
+        // registered client is null and IAdvertSearchIndexService.IsEnabled is false, so every
+        // caller skips straight to the existing MySQL FULLTEXT path with no network attempt at all.
+        var meilisearchHost = (Environment.GetEnvironmentVariable("MEILISEARCH_HOST") ?? builder.Configuration["Meilisearch:Host"] ?? "").Trim();
+        var meilisearchApiKey = (Environment.GetEnvironmentVariable("MEILISEARCH_API_KEY") ?? builder.Configuration["Meilisearch:ApiKey"] ?? "").Trim();
+        builder.Services.AddSingleton<Meilisearch.MeilisearchClient?>(_ =>
+            string.IsNullOrEmpty(meilisearchHost) ? null : new Meilisearch.MeilisearchClient(meilisearchHost, meilisearchApiKey));
+        builder.Services.AddScoped<IAdvertSearchIndexService, MeilisearchAdvertIndexService>();
+
         builder.Services.AddMemoryCache(); // B-27: taxonomy caching
         builder.Services.AddSingleton<ITaxonomyCacheVersion, TaxonomyCacheVersion>();
         builder.Services.AddScoped<ITaxonomyService, TaxonomyService>();

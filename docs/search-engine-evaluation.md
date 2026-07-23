@@ -1,9 +1,24 @@
 # Dedykowany silnik wyszukiwania (Meilisearch / OpenSearch) — ocena
 
-Status: **do rozważenia, nie zaimplementowane.** Ten dokument to ocena, o którą prosił audyt
-("rozważ dedykowany silnik wyszukiwania") — decyzja o wdrożeniu należy do właściciela produktu,
-ponieważ wiąże się z nowym komponentem infrastruktury (koszt hostingu, dodatkowa usługa do
-utrzymania) i nie jest tak jednoznacznie bezpieczna jak reszta poprawek z tej sesji.
+Status: **pierwsza faza zaimplementowana (kod), instancja Meilisearch NIE jest jeszcze
+provisionowana.** Zaimplementowano dokładnie szkic planu poniżej: `IAdvertSearchIndexService`/
+`MeilisearchAdvertIndexService` (`CarsWebsite.Services`), hook synchronizujący w `AdvertService`
+przy tworzeniu/edycji/usuwaniu/sprzedaniu/publikacji ogłoszenia, zamiana zapytania
+MATCH...AGAINST na Meilisearch w `SearchCarAdvertsAsync` z fail-open fallbackiem do MySQL FULLTEXT,
+oraz endpoint `POST /api/Admin/search-index/reindex` do pełnego reindeksu na żądanie. Konfiguracja:
+`Meilisearch:Host`/`Meilisearch:ApiKey` w appsettings lub `MEILISEARCH_HOST`/`MEILISEARCH_API_KEY`
+jako zmienne środowiskowe — puste/nieustawione = usługa wyłączona, wyszukiwanie działa dokładnie
+jak przed tą zmianą (zero narzutu, zero zmiany zachowania). Frontend nie wymaga żadnych zmian —
+ten sam request/response kontrakt na `/api/Advert/search`.
+
+**Do zrobienia, żeby to zaczęło faktycznie działać:** (1) provisioning instancji Meilisearch
+(Railway addon lub inny hosting — wymaga akcji właściciela), (2) ustawienie
+`Meilisearch:Host`/`ApiKey`, (3) jednorazowe wywołanie `POST /api/Admin/search-index/reindex` do
+populacji indeksu, (4) weryfikacja end-to-end na żywej instancji — nie było to możliwe z tej sesji
+(brak dostępu do sieci poza wąską listą registries pakietów: npm/NuGet/PyPI/crates.io/Go proxy;
+Docker niedostępny w tym sandboxie), więc kod jest zweryfikowany na poziomie kompilacji, logiki i
+pełnego cyklu CRUD z klientem WYŁĄCZONYM (fail-open ścieżka), ale NIE end-to-end z realnym
+Meilisearch.
 
 ## Stan obecny
 

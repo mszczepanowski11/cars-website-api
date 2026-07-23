@@ -22,8 +22,9 @@ public class AdminController : CarizoControllerBase
     private readonly ILogger<AdminController> _logger;
     private readonly IHierarchyValidationService _hierarchyValidationService;
     private readonly ITaxonomyCacheVersion _taxonomyCacheVersion;
+    private readonly IAdvertSearchIndexService _searchIndexService;
 
-    public AdminController(IAdminService adminService, AppDbContext db, IConfiguration config, ILogger<AdminController> logger, IHierarchyValidationService hierarchyValidationService, ITaxonomyCacheVersion taxonomyCacheVersion)
+    public AdminController(IAdminService adminService, AppDbContext db, IConfiguration config, ILogger<AdminController> logger, IHierarchyValidationService hierarchyValidationService, ITaxonomyCacheVersion taxonomyCacheVersion, IAdvertSearchIndexService searchIndexService)
     {
         _adminService = adminService;
         _db = db;
@@ -31,6 +32,20 @@ public class AdminController : CarizoControllerBase
         _logger = logger;
         _hierarchyValidationService = hierarchyValidationService;
         _taxonomyCacheVersion = taxonomyCacheVersion;
+        _searchIndexService = searchIndexService;
+    }
+
+    // Meilisearch (docs/search-engine-evaluation.md): on-demand, not run automatically at startup -
+    // populates the index for the first time, or recovers it after an outage/settings change.
+    // Deliberately admin-triggered rather than an "every startup" guard (this codebase already has
+    // enough of those) since a full reindex is O(all searchable adverts), not O(1).
+    [HttpPost("search-index/reindex")]
+    public async Task<IActionResult> ReindexSearch()
+    {
+        if (!_searchIndexService.IsEnabled)
+            return BadRequest(new { message = "Meilisearch is not configured (Meilisearch:Host / MEILISEARCH_HOST is empty)." });
+        var count = await _searchIndexService.ReindexAllAsync();
+        return Ok(new { indexed = count });
     }
 
     [HttpGet("stats")]
