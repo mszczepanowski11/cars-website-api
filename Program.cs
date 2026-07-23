@@ -808,7 +808,24 @@ internal class Program
                 "`Latitude` double NULL", "`Longitude` double NULL",
                 "`CurrencyId` int NULL", "`PriceEur` decimal(15,2) NULL", "`PriceEurAsOf` datetime(6) NULL",
                 "`SourceLanguageId` int NULL", "`TimeZoneId` int NULL" })
-            { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `Adverts` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] Adverts.{Col}: {Msg}", colDef, ex.Message); } }
+            { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `adverts` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] Adverts.{Col}: {Msg}", colDef, ex.Message); } }
+
+            // FULLTEXT index backing AdvertService.SearchCarAdvertsAsync's MATCH...AGAINST text search.
+            // Migration 20260622100000_AddPerformanceIndexesAndFullText only creates it via a raw
+            // migrationBuilder.Sql() call - EnsureCreated() (used above to bootstrap a pre-existing DB's
+            // schema) has no way to reflect that, and the migration-history bootstrap right after marks
+            // this migration "applied" without ever running it. Net effect: on any DB that went through
+            // that bootstrap path, the index never gets created, and every search with a text term 500s
+            // with "Can't find FULLTEXT index matching the column list". Belt-and-braces every startup.
+            try
+            {
+                var ftIndexExists = db.Database.SqlQuery<int>(
+                    $"SELECT COUNT(1) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'adverts' AND INDEX_NAME = 'FT_Adverts_TitleDescription'")
+                    .ToList().FirstOrDefault();
+                if (ftIndexExists == 0)
+                    db.Database.ExecuteSqlRaw("CREATE FULLTEXT INDEX `FT_Adverts_TitleDescription` ON `adverts` (`Title`, `Description`)");
+            }
+            catch (Exception ex) { logger.LogWarning("[Schema] Adverts fulltext index: {Msg}", ex.Message); }
 
             // Remove the "Koła i opony" parts category on existing DBs - Opony/Felgi are now their own
             // top-level categories with dedicated forms, so they no longer belong under parts. FK on
@@ -4110,10 +4127,10 @@ internal class Program
         // GeoSeeder so currencies/countries/languages/rates exist. All idempotent (only fills NULLs).
         logger.LogWarning("[STARTUP-TRACE] Backfilling Adverts global columns");
         foreach (var sql in new[] {
-            "UPDATE `Adverts` SET `CurrencyId` = (SELECT `Id` FROM `currencies` WHERE `Iso` = COALESCE(`Currency`, 'PLN') LIMIT 1) WHERE `CurrencyId` IS NULL",
-            "UPDATE `Adverts` SET `CountryId` = (SELECT `Id` FROM `countries` WHERE `Iso2` = 'PL' LIMIT 1) WHERE `CountryId` IS NULL",
-            "UPDATE `Adverts` SET `SourceLanguageId` = (SELECT `Id` FROM `languages` WHERE `Iso1` = 'pl' LIMIT 1) WHERE `SourceLanguageId` IS NULL",
-            @"UPDATE `Adverts` a JOIN `exchangerates` e ON e.`CurrencyId` = a.`CurrencyId`
+            "UPDATE `adverts` SET `CurrencyId` = (SELECT `Id` FROM `currencies` WHERE `Iso` = COALESCE(`Currency`, 'PLN') LIMIT 1) WHERE `CurrencyId` IS NULL",
+            "UPDATE `adverts` SET `CountryId` = (SELECT `Id` FROM `countries` WHERE `Iso2` = 'PL' LIMIT 1) WHERE `CountryId` IS NULL",
+            "UPDATE `adverts` SET `SourceLanguageId` = (SELECT `Id` FROM `languages` WHERE `Iso1` = 'pl' LIMIT 1) WHERE `SourceLanguageId` IS NULL",
+            @"UPDATE `adverts` a JOIN `exchangerates` e ON e.`CurrencyId` = a.`CurrencyId`
               SET a.`PriceEur` = ROUND(a.`Price` * e.`RateToEur`, 2), a.`PriceEurAsOf` = e.`AsOf`
               WHERE a.`PriceEur` IS NULL AND a.`CurrencyId` IS NOT NULL" })
         { try { db.Database.ExecuteSqlRaw(sql); } catch (Exception ex) { logger.LogDebug("[Backfill] Adverts: {Msg}", ex.Message); } }
