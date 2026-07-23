@@ -4,7 +4,13 @@ namespace cars_website_api.CarsWebsite.Domain.Entities;
 
 public enum AttributeDataType
 {
-    Text, Number, Decimal, Boolean, Select, MultiSelect, Date, File
+    Text, Number, Decimal, Boolean, Select, MultiSelect, Date, File,
+    // Same free-text-string storage as Select (one AdvertAttributeValue.ValueText row), but the
+    // frontend populates its options by fetching Brands scoped to this definition's own
+    // VehicleCategoryId instead of a fixed OptionsJson list - used for "Producent" on
+    // opony/felgi, where the manufacturer catalog is a live, admin-editable Brand list (Michelin,
+    // Continental, BBS, ...) rather than a fixed set of strings baked into this row.
+    BrandReference
 }
 
 // Faza 2 of the category/attribute restructure (see /root/.claude/plans/crispy-riding-mochi.md):

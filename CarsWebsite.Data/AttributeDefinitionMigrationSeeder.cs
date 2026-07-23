@@ -83,6 +83,15 @@ public static class AttributeDefinitionMigrationSeeder
         new("przyczepy", null, "hasHydraulics", "Hydraulika", AttributeDataType.Boolean, null, null),
         new("przyczepy", null, "hasLift", "Winda załadunkowa", AttributeDataType.Boolean, null, null),
         new("przyczepy", null, "hasBrakes", "Hamulec najazdowy", AttributeDataType.Boolean, null, null),
+        new("przyczepy", null, "axleType", "Typ osi", AttributeDataType.Select, null,
+            ["Sztywna", "Skrętna", "Podnoszona"]),
+
+        // ── naczepy ──────────────────────────────────────────────────────────
+        // Had zero AttributeDefinition rows before this pass - fully dependent on the hardcoded
+        // CATEGORY_CONFIGS fields (axles/payload/gvw/curbWeight/cargoHeight). axleType is the
+        // same concept as przyczepy's above; this is a starting point, not full parity.
+        new("naczepy", null, "axleType", "Typ osi", AttributeDataType.Select, null,
+            ["Sztywna", "Skrętna", "Podnoszona"]),
 
         // ── rolnicze ─────────────────────────────────────────────────────────
         new("rolnicze", null, "engineHp", "Moc silnika (HP)", AttributeDataType.Number, "HP", null),
@@ -113,6 +122,18 @@ public static class AttributeDefinitionMigrationSeeder
         new("lodzie-i-jachty", null, "hullMaterial", "Materiał kadłuba", AttributeDataType.Select, null,
             ["Laminat / włókno szklane", "Aluminium", "Stal", "Drewno", "Ponton gumowy / PVC"]),
         new("lodzie-i-jachty", null, "lengthM", "Długość całkowita", AttributeDataType.Decimal, "m", null),
+        // Faza 4 of the audit rebuild: the category previously had only 2 fields against a much
+        // deeper list of properties an actual boat listing needs (hull type, dimensions, engine
+        // count, berths/cabins) - engineManufacturer deliberately left out for now, since it would
+        // need its own Brand↔VehicleCategory seed data (outboard/inboard engine brands, distinct
+        // from the boat/hull brands already seeded here) rather than fitting this pass.
+        new("lodzie-i-jachty", null, "hullType", "Typ kadłuba", AttributeDataType.Select, null,
+            ["Kabinowy", "Otwarty (bez kabiny)", "RIB / pontonowy", "Katamaran", "Żaglowy", "Houseboat"]),
+        new("lodzie-i-jachty", null, "beamM", "Szerokość (beam)", AttributeDataType.Decimal, "m", null),
+        new("lodzie-i-jachty", null, "draftM", "Zanurzenie", AttributeDataType.Decimal, "m", null),
+        new("lodzie-i-jachty", null, "engineCount", "Liczba silników", AttributeDataType.Number, null, null),
+        new("lodzie-i-jachty", null, "berthCount", "Liczba koi", AttributeDataType.Number, null, null),
+        new("lodzie-i-jachty", null, "cabinCount", "Liczba kabin", AttributeDataType.Number, null, null),
 
         // ── kampery ──────────────────────────────────────────────────────────
         new("kampery", null, "berths", "Liczba miejsc do spania", AttributeDataType.Number, null, null),
@@ -196,7 +217,7 @@ public static class AttributeDefinitionMigrationSeeder
         // ── Faza 6: brand-new categories (Opony/Felgi/Akcesoria/Usługi motoryzacyjne) ─────────
         // These aren't migrated from anywhere - genuinely new fields for genuinely new categories,
         // scoped by category only (no subtype - the vehicle-fit axis is already a VehicleSubtype).
-        new("opony", null, "producent", "Producent (marka opon)", AttributeDataType.Text, null, null, IsRequired: true),
+        new("opony", null, "producent", "Producent (marka opon)", AttributeDataType.BrandReference, null, null, IsRequired: true),
         new("opony", null, "szerokosc", "Szerokość", AttributeDataType.Number, "mm", null, IsRequired: true),
         new("opony", null, "profil", "Profil", AttributeDataType.Number, "%", null, IsRequired: true),
         new("opony", null, "srednica", "Średnica felgi", AttributeDataType.Decimal, "\"", null, IsRequired: true),
@@ -213,7 +234,7 @@ public static class AttributeDefinitionMigrationSeeder
             ["Nowe", "Używane"], IsRequired: true),
         new("opony", null, "mozliwoscWysylki", "Możliwość wysyłki", AttributeDataType.Boolean, null, null),
 
-        new("felgi", null, "producent", "Producent (marka felg)", AttributeDataType.Text, null, null, IsRequired: true),
+        new("felgi", null, "producent", "Producent (marka felg)", AttributeDataType.BrandReference, null, null, IsRequired: true),
         new("felgi", null, "srednica", "Średnica", AttributeDataType.Decimal, "\"", null, IsRequired: true),
         new("felgi", null, "szerokoscFelgi", "Szerokość", AttributeDataType.Decimal, "\"", null),
         new("felgi", null, "et", "ET (offset)", AttributeDataType.Number, "mm", null),
