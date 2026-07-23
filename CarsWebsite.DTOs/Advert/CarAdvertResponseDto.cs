@@ -132,6 +132,7 @@ public class CarAdvertResponseDto
     public bool IsExchangePossible { get; set; }
     public int? GearCount { get; set; }
     public bool MetallicPaint { get; set; }
+    public string? ColorFinish { get; set; }
     public int? MaxTrailerWeight { get; set; }
     public bool IsFirstOwner { get; set; }
     public bool IsServicedAtASO { get; set; }

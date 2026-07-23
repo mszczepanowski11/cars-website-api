@@ -514,6 +514,7 @@ internal class Program
                 "`IsExchangePossible` tinyint(1) NOT NULL DEFAULT 0",
                 "`GearCount` int NULL",
                 "`MetallicPaint` tinyint(1) NOT NULL DEFAULT 0",
+                "`ColorFinish` varchar(20) NULL",
                 "`MaxTrailerWeight` int NULL",
                 "`IsFirstOwner` tinyint(1) NOT NULL DEFAULT 0",
                 "`IsServicedAtASO` tinyint(1) NOT NULL DEFAULT 0",
