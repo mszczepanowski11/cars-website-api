@@ -126,6 +126,11 @@ public class CarAdvert : Advert
     public bool IsExchangePossible { get; set; }
     public int? GearCount { get; set; }
     public bool MetallicPaint { get; set; }
+    // solid | metallic | pearl | matte | bicolor | chrome | multicolor - the form collected this
+    // from the start but had nowhere to save it; MetallicPaint (derived from this) was the only
+    // survivor. Kept alongside MetallicPaint rather than replacing it, since existing code/filters
+    // already read that bool.
+    public string? ColorFinish { get; set; }
     public int? MaxTrailerWeight { get; set; }
 
     // Premium history fields

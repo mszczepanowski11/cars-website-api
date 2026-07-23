@@ -134,6 +134,7 @@ public class UpdateCarAdvertDto
     public bool IsExchangePossible { get; set; }
     [Range(1, 20)] public int? GearCount { get; set; }
     public bool MetallicPaint { get; set; }
+    [MaxLength(20)] public string? ColorFinish { get; set; }
     [Range(0, 100000)] public int? MaxTrailerWeight { get; set; }
     public bool IsFirstOwner { get; set; }
     public bool IsServicedAtASO { get; set; }
