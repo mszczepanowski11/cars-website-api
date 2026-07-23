@@ -23,4 +23,5 @@ public class EngineVersionDto
     public string? DriveType { get; set; }
     public string? GearboxType { get; set; }
     public int? Cylinders { get; set; }
+    public string? EngineCode { get; set; }
 }
