@@ -35,6 +35,7 @@ public class AdvertMappingProfile : Profile
             .ForMember(dest => dest.GenerationName, opt => opt.MapFrom(src => src.Generation != null ? src.Generation.Name : null));
 
         CreateMap<CarAdvert, CarAdvertResponseDto>()
+            .ForMember(dest => dest.CategoryId, opt => opt.MapFrom(src => src.VehicleCategoryId))
             .ForMember(dest => dest.Features, opt => opt.MapFrom(src =>
                 src.AdvertFeatures.Select(af => af.Feature)))
             .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images))
