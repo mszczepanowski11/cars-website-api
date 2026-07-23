@@ -18,6 +18,19 @@ public class CarAdvertResponseDto
     public string? Condition { get; set; }
     public string? City { get; set; }
     public string? Region { get; set; }
+
+    // Global location cascade (Etap 1/3 of the globalization roadmap).
+    public int? CountryId { get; set; }
+    public int? RegionId { get; set; }
+    public long? CityId { get; set; }
+    public string? PostalCode { get; set; }
+    public string? AddressLine { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+    public int? CurrencyId { get; set; }
+    public decimal? PriceEur { get; set; }
+    public DateTime? PriceEurAsOf { get; set; }
+
     public bool IsActive { get; set; }
     public bool IsHidden { get; set; }
     public DateTime? ExpiresAt { get; set; }

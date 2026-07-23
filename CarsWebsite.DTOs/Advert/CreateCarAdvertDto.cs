@@ -32,6 +32,18 @@ public class CreateCarAdvertDto
     [MaxLength(5000)] public string? Description { get; set; }
     [MaxLength(100)] public string? City { get; set; }
     [MaxLength(100)] public string? Region { get; set; }
+
+    // Global location cascade (Etap 1/3 of the globalization roadmap): structured references
+    // alongside the free-text City/Region above (kept for backward compat / display cache).
+    public int? CountryId { get; set; }
+    public int? RegionId { get; set; }
+    public long? CityId { get; set; }
+    [MaxLength(16)] public string? PostalCode { get; set; }
+    [MaxLength(250)] public string? AddressLine { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+    // Seller's chosen currency; PriceEur is derived server-side from CurrencyId + ExchangeRate.
+    public int? CurrencyId { get; set; }
     [MaxLength(17)]
     [RegularExpression(@"^[A-HJ-NPR-Z0-9]{17}$", ErrorMessage = "VIN musi mieć dokładnie 17 znaków alfanumerycznych (bez liter I, O, Q).")]
     public string? Vin { get; set; }

@@ -59,6 +59,34 @@ public class AdvertService : IAdvertService
     private static string StripHtml(string input)
         => System.Text.RegularExpressions.Regex.Replace(input, @"[<>]", "");
 
+    // Etap 1/3 of the globalization roadmap: keeps the legacy `Currency` ISO-string cache in sync
+    // with the structured CurrencyId, and (re)computes the cross-market PriceEur/PriceEurAsOf pair
+    // from the latest known exchange rate. Falls back to PLN when no currency was picked, matching
+    // the one-time Etap 3 backfill's assumption for pre-existing adverts. Called after the DTO has
+    // been mapped onto the entity, before the advert is saved, for both create and update.
+    private async Task SetCurrencyAndConvertedPriceAsync(CarAdvert advert)
+    {
+        if (!advert.CurrencyId.HasValue)
+        {
+            var defaultCurrency = await _context.Currencies.AsNoTracking().FirstOrDefaultAsync(c => c.Iso == "PLN");
+            if (defaultCurrency != null) advert.CurrencyId = defaultCurrency.Id;
+        }
+        if (!advert.CurrencyId.HasValue) return;
+
+        var currency = await _context.Currencies.AsNoTracking().FirstOrDefaultAsync(c => c.Id == advert.CurrencyId);
+        if (currency != null) advert.Currency = currency.Iso;
+
+        var rate = await _context.ExchangeRates.AsNoTracking()
+            .Where(e => e.CurrencyId == advert.CurrencyId)
+            .OrderByDescending(e => e.AsOf)
+            .FirstOrDefaultAsync();
+        if (rate != null)
+        {
+            advert.PriceEur = Math.Round(advert.Price * rate.RateToEur, 2);
+            advert.PriceEurAsOf = rate.AsOf;
+        }
+    }
+
     // Turns free-text search input into a MySQL BOOLEAN MODE fulltext query: each word becomes
     // a required prefix match (+word*), which is the closest boolean-mode equivalent to the
     // substring search ("LIKE '%term%'") this replaces, while still using FT_Adverts_TitleDescription
@@ -142,8 +170,8 @@ public class AdvertService : IAdvertService
             emissionDays = SubscriptionPlanConfig.GetEmissionDays(tier);
         }
         advert.ExpiresAt = DateTime.UtcNow.AddDays(emissionDays);
-        
-        
+        await SetCurrencyAndConvertedPriceAsync(advert);
+
         _context.CarAdverts.Add(advert);
         await _context.SaveChangesAsync(); // first save to get advert.Id
 
@@ -248,6 +276,7 @@ public class AdvertService : IAdvertService
         var newCompatibilities = await BuildPartCompatibilitiesAsync(dto.Compatibilities);
 
         _mapper.Map(dto, advert);
+        await SetCurrencyAndConvertedPriceAsync(advert);
 
         _context.AdvertFeatures.RemoveRange(advert.AdvertFeatures);
 
