@@ -1,4 +1,5 @@
 using cars_website_api.CarsWebsite.DTOs.Directory;
+using cars_website_api.CarsWebsite.Domain.Entities.Directory;
 using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
 using Microsoft.AspNetCore.Authorization;
@@ -104,6 +105,19 @@ public class DirectoryController : ControllerBase
         var d = await _db.DirectoryCompanies.AsNoTracking().FirstOrDefaultAsync(x => x.Slug == slug && x.Status != "closed");
         if (d == null) return NotFound();
 
+        var branches = await _db.CompanyBranches.AsNoTracking()
+            .Include(b => b.Country).Include(b => b.Region).Include(b => b.City).Include(b => b.TimeZone)
+            .Include(b => b.Phones).Include(b => b.OpeningHours)
+            .Where(b => b.DirectoryCompanyId == d.Id)
+            .OrderByDescending(b => b.IsPrimary).ThenBy(b => b.Id)
+            .ToListAsync();
+
+        var contactLanguages = await _db.CompanyLanguages.AsNoTracking()
+            .Where(l => l.DirectoryCompanyId == d.Id)
+            .Include(l => l.Language)
+            .Select(l => l.Language!.Iso1)
+            .ToListAsync();
+
         var (name, description) = Localize(d, lang);
         return Ok(new DirectoryCompanyDetailDto
         {
@@ -112,8 +126,84 @@ public class DirectoryController : ControllerBase
             Phone = d.Phone, Email = d.Email, Website = d.Website, ProfileUrl = d.ProfileUrl,
             Language = d.Language, Description = description, Latitude = d.Latitude, Longitude = d.Longitude,
             Linked = d.PartnerId != null, AvailableLanguages = AvailableLanguages(d),
+            ContactLanguages = contactLanguages,
+            Branches = branches.Select(b => new CompanyBranchDto
+            {
+                Id = b.Id, Name = b.Name, IsPrimary = b.IsPrimary,
+                CountryIso2 = b.Country?.Iso2, RegionName = b.Region?.Name, CityName = b.City?.Name,
+                PostalCode = b.PostalCode, AddressLine = b.AddressLine,
+                Latitude = b.Latitude, Longitude = b.Longitude, TimeZone = b.TimeZone?.IanaName,
+                Phones = b.Phones.Select(p => new CompanyPhoneDto { Number = p.Number, Label = p.Label }).ToList(),
+                OpeningHours = b.OpeningHours.Select(h => new CompanyOpeningHourDto
+                {
+                    DayOfWeek = h.DayOfWeek, IsClosed = h.IsClosed, OpenTime = h.OpenTime, CloseTime = h.CloseTime,
+                }).ToList(),
+            }).ToList(),
             Status = d.Status, CreatedAt = d.CreatedAt, UpdatedAt = d.UpdatedAt,
         });
+    }
+
+    // POST /api/directory/{slug}/branches - admin: add a new branch/location.
+    [HttpPost("{slug}/branches")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> CreateBranch(string slug, [FromBody] CompanyBranchInputDto dto)
+    {
+        var company = await _db.DirectoryCompanies.FirstOrDefaultAsync(x => x.Slug == slug);
+        if (company == null) return NotFound();
+
+        var branch = new CompanyBranch
+        {
+            DirectoryCompanyId = company.Id, Name = dto.Name, IsPrimary = dto.IsPrimary,
+            CountryId = dto.CountryId, RegionId = dto.RegionId, CityId = dto.CityId,
+            PostalCode = dto.PostalCode, AddressLine = dto.AddressLine,
+            Latitude = dto.Latitude, Longitude = dto.Longitude, TimeZoneId = dto.TimeZoneId,
+            Phones = dto.Phones.Select(p => new CompanyPhone { Number = p.Number, Label = p.Label }).ToList(),
+            OpeningHours = dto.OpeningHours.Select(h => new CompanyOpeningHour
+            {
+                DayOfWeek = h.DayOfWeek, IsClosed = h.IsClosed, OpenTime = h.OpenTime, CloseTime = h.CloseTime,
+            }).ToList(),
+        };
+        _db.CompanyBranches.Add(branch);
+        await _db.SaveChangesAsync();
+        return Ok(new { id = branch.Id });
+    }
+
+    // PUT /api/directory/branches/{id} - admin: update a branch (phones/hours replaced wholesale).
+    [HttpPut("branches/{id}")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> UpdateBranch(int id, [FromBody] CompanyBranchInputDto dto)
+    {
+        var branch = await _db.CompanyBranches.Include(b => b.Phones).Include(b => b.OpeningHours)
+            .FirstOrDefaultAsync(b => b.Id == id);
+        if (branch == null) return NotFound();
+
+        branch.Name = dto.Name; branch.IsPrimary = dto.IsPrimary;
+        branch.CountryId = dto.CountryId; branch.RegionId = dto.RegionId; branch.CityId = dto.CityId;
+        branch.PostalCode = dto.PostalCode; branch.AddressLine = dto.AddressLine;
+        branch.Latitude = dto.Latitude; branch.Longitude = dto.Longitude; branch.TimeZoneId = dto.TimeZoneId;
+
+        _db.CompanyPhones.RemoveRange(branch.Phones);
+        _db.CompanyOpeningHours.RemoveRange(branch.OpeningHours);
+        branch.Phones = dto.Phones.Select(p => new CompanyPhone { CompanyBranchId = id, Number = p.Number, Label = p.Label }).ToList();
+        branch.OpeningHours = dto.OpeningHours.Select(h => new CompanyOpeningHour
+        {
+            CompanyBranchId = id, DayOfWeek = h.DayOfWeek, IsClosed = h.IsClosed, OpenTime = h.OpenTime, CloseTime = h.CloseTime,
+        }).ToList();
+
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // DELETE /api/directory/branches/{id} - admin: remove a branch (cascades to its phones/hours).
+    [HttpDelete("branches/{id}")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> DeleteBranch(int id)
+    {
+        var branch = await _db.CompanyBranches.FirstOrDefaultAsync(b => b.Id == id);
+        if (branch == null) return NotFound();
+        _db.CompanyBranches.Remove(branch);
+        await _db.SaveChangesAsync();
+        return NoContent();
     }
 
     // Base language + every language present in the I18n JSON (deduped, base first).

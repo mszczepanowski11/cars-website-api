@@ -28,8 +28,63 @@ public class DirectoryCompanyDetailDto : DirectoryCompanyListDto
     public bool Linked { get; set; }
     // Languages this company can be viewed in (base Language + every key in the I18n JSON).
     public List<string> AvailableLanguages { get; set; } = new();
+    // Contact languages the company can be reached in (Etap 4), distinct from AvailableLanguages
+    // above (which is about which languages the profile TEXT is translated into).
+    public List<string> ContactLanguages { get; set; } = new();
+    // Multiple locations (Etap 4 of the globalization roadmap). Empty for companies that haven't
+    // been migrated to structured branches yet - callers should fall back to Address/Phone above.
+    public List<CompanyBranchDto> Branches { get; set; } = new();
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+}
+
+public class CompanyBranchDto
+{
+    public int Id { get; set; }
+    public string? Name { get; set; }
+    public bool IsPrimary { get; set; }
+    public string? CountryIso2 { get; set; }
+    public string? RegionName { get; set; }
+    public string? CityName { get; set; }
+    public string? PostalCode { get; set; }
+    public string? AddressLine { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+    public string? TimeZone { get; set; }
+    public List<CompanyPhoneDto> Phones { get; set; } = new();
+    public List<CompanyOpeningHourDto> OpeningHours { get; set; } = new();
+}
+
+public class CompanyPhoneDto
+{
+    public string Number { get; set; } = string.Empty;
+    public string? Label { get; set; }
+}
+
+public class CompanyOpeningHourDto
+{
+    public DayOfWeek DayOfWeek { get; set; }
+    public bool IsClosed { get; set; }
+    public TimeSpan? OpenTime { get; set; }
+    public TimeSpan? CloseTime { get; set; }
+}
+
+// Admin create/update payload for a single branch. Phones/OpeningHours are replaced wholesale on
+// each write, same convention AdvertService uses for AdvertFeatures/Compatibilities.
+public class CompanyBranchInputDto
+{
+    public string? Name { get; set; }
+    public bool IsPrimary { get; set; }
+    public int? CountryId { get; set; }
+    public int? RegionId { get; set; }
+    public long? CityId { get; set; }
+    public string? PostalCode { get; set; }
+    public string? AddressLine { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+    public int? TimeZoneId { get; set; }
+    public List<CompanyPhoneDto> Phones { get; set; } = new();
+    public List<CompanyOpeningHourDto> OpeningHours { get; set; } = new();
 }
 
 // One language's translation of the localizable fields.

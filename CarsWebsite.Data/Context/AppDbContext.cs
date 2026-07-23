@@ -1,5 +1,6 @@
 using System;
 using cars_website_api.CarsWebsite.Domain.Entities;
+using cars_website_api.CarsWebsite.Domain.Entities.Directory;
 using CarsWebsite;
 using Microsoft.EntityFrameworkCore;
 using DriveType = cars_website_api.CarsWebsite.Domain.Entities.DriveType;
@@ -93,6 +94,10 @@ namespace CarsWebsite
         public DbSet<PartnerImportLog> PartnerImportLogs { get; set; }
         public DbSet<PartnerSignupRequest> PartnerSignupRequests { get; set; }
         public DbSet<DirectoryCompany> DirectoryCompanies { get; set; }
+        public DbSet<CompanyBranch> CompanyBranches { get; set; }
+        public DbSet<CompanyPhone> CompanyPhones { get; set; }
+        public DbSet<CompanyOpeningHour> CompanyOpeningHours { get; set; }
+        public DbSet<CompanyLanguage> CompanyLanguages { get; set; }
 
         // Global reference-data core (Faza 0)
         public DbSet<Continent> Continents { get; set; }
@@ -175,6 +180,36 @@ namespace CarsWebsite
             modelBuilder.Entity<DirectoryCompany>()
                 .HasOne(d => d.Partner).WithMany()
                 .HasForeignKey(d => d.PartnerId).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
+
+            // --- Company branches / locations (Etap 4) ---
+            modelBuilder.Entity<CompanyBranch>().ToTable("companybranches").HasKey(b => b.Id);
+            modelBuilder.Entity<CompanyBranch>()
+                .HasOne(b => b.DirectoryCompany).WithMany()
+                .HasForeignKey(b => b.DirectoryCompanyId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<CompanyBranch>().HasOne(b => b.Country).WithMany().HasForeignKey(b => b.CountryId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<CompanyBranch>().HasOne(b => b.Region).WithMany().HasForeignKey(b => b.RegionId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<CompanyBranch>().HasOne(b => b.City).WithMany().HasForeignKey(b => b.CityId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<CompanyBranch>().HasOne(b => b.TimeZone).WithMany().HasForeignKey(b => b.TimeZoneId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<CompanyBranch>().HasIndex(b => b.DirectoryCompanyId);
+
+            modelBuilder.Entity<CompanyPhone>().ToTable("companyphones").HasKey(p => p.Id);
+            modelBuilder.Entity<CompanyPhone>()
+                .HasOne(p => p.Branch).WithMany(b => b.Phones)
+                .HasForeignKey(p => p.CompanyBranchId).OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<CompanyOpeningHour>().ToTable("companyopeninghours").HasKey(h => h.Id);
+            modelBuilder.Entity<CompanyOpeningHour>()
+                .HasOne(h => h.Branch).WithMany(b => b.OpeningHours)
+                .HasForeignKey(h => h.CompanyBranchId).OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<CompanyLanguage>().ToTable("companylanguages").HasKey(l => l.Id);
+            modelBuilder.Entity<CompanyLanguage>()
+                .HasOne(l => l.DirectoryCompany).WithMany()
+                .HasForeignKey(l => l.DirectoryCompanyId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<CompanyLanguage>()
+                .HasOne(l => l.Language).WithMany()
+                .HasForeignKey(l => l.LanguageId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<CompanyLanguage>().HasIndex(l => new { l.DirectoryCompanyId, l.LanguageId }).IsUnique();
 
             // --- Global reference-data core (Faza 0) ---
             modelBuilder.Entity<Continent>().ToTable("continents").HasIndex(c => c.Code).IsUnique();

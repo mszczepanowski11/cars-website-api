@@ -827,6 +827,48 @@ internal class Program
             }
             catch (Exception ex) { logger.LogWarning("[Schema] Adverts fulltext index: {Msg}", ex.Message); }
 
+            // Company branches/locations, phones, opening hours, contact languages (Etap 4 of the
+            // globalization roadmap). New tables only - no `dotnet ef migrations add` here on purpose:
+            // this repo's model snapshot has drifted so far from the actual schema (years of raw-SQL
+            // guards like this one, never reflected back into a migration) that scaffolding a real
+            // migration for this change produced 266 DROP statements against unrelated tables. Belt-
+            // and-braces CREATE TABLE IF NOT EXISTS, consistent with every other new-table addition
+            // in this file, is the only safe way to add schema here until that drift is cleaned up.
+            foreach (var sql in new[] {
+                @"CREATE TABLE IF NOT EXISTS `companybranches` (
+                    `Id` int NOT NULL AUTO_INCREMENT, `DirectoryCompanyId` int NOT NULL,
+                    `Name` varchar(120) NULL, `IsPrimary` tinyint(1) NOT NULL DEFAULT 0,
+                    `CountryId` int NULL, `RegionId` int NULL, `CityId` bigint NULL,
+                    `PostalCode` varchar(20) NULL, `AddressLine` varchar(250) NULL,
+                    `Latitude` double NULL, `Longitude` double NULL, `TimeZoneId` int NULL,
+                    PRIMARY KEY (`Id`), KEY `IX_companybranches_DirectoryCompanyId` (`DirectoryCompanyId`),
+                    CONSTRAINT `FK_companybranches_directorycompanies` FOREIGN KEY (`DirectoryCompanyId`) REFERENCES `directorycompanies` (`Id`) ON DELETE CASCADE,
+                    CONSTRAINT `FK_companybranches_countries` FOREIGN KEY (`CountryId`) REFERENCES `countries` (`Id`) ON DELETE SET NULL,
+                    CONSTRAINT `FK_companybranches_regions` FOREIGN KEY (`RegionId`) REFERENCES `regions` (`Id`) ON DELETE SET NULL,
+                    CONSTRAINT `FK_companybranches_cities` FOREIGN KEY (`CityId`) REFERENCES `cities` (`Id`) ON DELETE SET NULL,
+                    CONSTRAINT `FK_companybranches_timezones` FOREIGN KEY (`TimeZoneId`) REFERENCES `timezones` (`Id`) ON DELETE SET NULL
+                  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
+                @"CREATE TABLE IF NOT EXISTS `companyphones` (
+                    `Id` int NOT NULL AUTO_INCREMENT, `CompanyBranchId` int NOT NULL,
+                    `Number` varchar(40) NOT NULL, `Label` varchar(40) NULL,
+                    PRIMARY KEY (`Id`), KEY `IX_companyphones_CompanyBranchId` (`CompanyBranchId`),
+                    CONSTRAINT `FK_companyphones_companybranches` FOREIGN KEY (`CompanyBranchId`) REFERENCES `companybranches` (`Id`) ON DELETE CASCADE
+                  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
+                @"CREATE TABLE IF NOT EXISTS `companyopeninghours` (
+                    `Id` int NOT NULL AUTO_INCREMENT, `CompanyBranchId` int NOT NULL,
+                    `DayOfWeek` int NOT NULL, `IsClosed` tinyint(1) NOT NULL DEFAULT 0,
+                    `OpenTime` time(6) NULL, `CloseTime` time(6) NULL,
+                    PRIMARY KEY (`Id`), KEY `IX_companyopeninghours_CompanyBranchId` (`CompanyBranchId`),
+                    CONSTRAINT `FK_companyopeninghours_companybranches` FOREIGN KEY (`CompanyBranchId`) REFERENCES `companybranches` (`Id`) ON DELETE CASCADE
+                  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
+                @"CREATE TABLE IF NOT EXISTS `companylanguages` (
+                    `Id` int NOT NULL AUTO_INCREMENT, `DirectoryCompanyId` int NOT NULL, `LanguageId` int NOT NULL,
+                    PRIMARY KEY (`Id`), UNIQUE KEY `IX_companylanguages_DirectoryCompanyId_LanguageId` (`DirectoryCompanyId`, `LanguageId`),
+                    CONSTRAINT `FK_companylanguages_directorycompanies` FOREIGN KEY (`DirectoryCompanyId`) REFERENCES `directorycompanies` (`Id`) ON DELETE CASCADE,
+                    CONSTRAINT `FK_companylanguages_languages` FOREIGN KEY (`LanguageId`) REFERENCES `languages` (`Id`) ON DELETE CASCADE
+                  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;" })
+            { try { db.Database.ExecuteSqlRaw(sql); } catch (Exception ex) { logger.LogWarning("[Schema] company branch tables: {Msg}", ex.Message); } }
+
             // Remove the "Koła i opony" parts category on existing DBs - Opony/Felgi are now their own
             // top-level categories with dedicated forms, so they no longer belong under parts. FK on
             // caradverts.PartCategoryId/PartSubcategoryId is SetNull, so any advert that referenced these
