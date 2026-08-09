@@ -279,8 +279,13 @@ public static class AttributeDefinitionMigrationSeeder
         // Tracked (not AsNoTracking): existing rows whose metadata drifted from Specs (e.g. a label
         // typo fixed here, or - as happened once - a required flag corrected after the fact) get
         // their fields synced in place rather than silently staying stale forever.
+        // Dedup-tolerant (audit M2): a plain ToDictionary throws ArgumentException the moment two rows
+        // share the natural key (e.g. a concurrent rolling-deploy double-insert), which would abort the
+        // entire seeder for every category. GroupBy + First keeps the lowest-Id row and ignores dups;
+        // the startup guard in Program.cs then physically removes the surplus rows.
         var existingDefs = db.AttributeDefinitions.ToList()
-            .ToDictionary(ad => (ad.VehicleCategoryId, ad.VehicleSubtypeId, ad.Key));
+            .GroupBy(ad => (ad.VehicleCategoryId, ad.VehicleSubtypeId, ad.Key))
+            .ToDictionary(g => g.Key, g => g.OrderBy(ad => ad.Id).First());
 
         var sortCounters = new Dictionary<(int CategoryId, int? SubtypeId), int>();
         int added = 0, updated = 0, skippedNoCategory = 0, skippedNoSubtype = 0;
