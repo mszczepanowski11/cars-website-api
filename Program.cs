@@ -767,6 +767,31 @@ internal class Program
                 "`TrimId` int NULL" })
             { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `attributedefinitions` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] attributedefinitions.{Col}: {Msg}", colDef, ex.Message); } }
 
+            // Audit M2: remove surplus duplicate attributedefinitions (same full scope + key) that a
+            // past concurrent rolling-deploy could have double-inserted, keeping the lowest Id. `<=>`
+            // is NULL-safe equality (the scope columns are mostly NULL = "any"). Only unreferenced
+            // rows are deleted (LEFT JOIN advertattributevalues ... IS NULL) to respect the FK. A real
+            // UNIQUE index can't enforce this on its own — MySQL treats NULLs as distinct, so the
+            // dominant subtype/brand=NULL rows would slip past it; this cleanup + the seeder's
+            // dedup-tolerant read + insert-if-missing are the actual guard.
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"
+                    DELETE ad1 FROM `attributedefinitions` ad1
+                      JOIN `attributedefinitions` ad2
+                        ON ad1.`VehicleCategoryId` = ad2.`VehicleCategoryId`
+                       AND ad1.`VehicleSubtypeId` <=> ad2.`VehicleSubtypeId`
+                       AND ad1.`BrandId` <=> ad2.`BrandId`
+                       AND ad1.`ModelId` <=> ad2.`ModelId`
+                       AND ad1.`GenerationId` <=> ad2.`GenerationId`
+                       AND ad1.`TrimId` <=> ad2.`TrimId`
+                       AND ad1.`Key` = ad2.`Key`
+                       AND ad1.`Id` > ad2.`Id`
+                      LEFT JOIN `advertattributevalues` v ON v.`AttributeDefinitionId` = ad1.`Id`
+                      WHERE v.`Id` IS NULL");
+            }
+            catch (Exception ex) { logger.LogDebug("[Schema] attributedefinitions dedup: {Msg}", ex.Message); }
+
             // Global reference-data core (Faza 0 of going worldwide). Belt-and-braces CREATE TABLE
             // IF NOT EXISTS on pre-existing production DBs (EnsureCreated only builds these on a
             // genuinely fresh DB). Order matters: parent tables (continents/currencies/languages/
@@ -4365,7 +4390,14 @@ internal class Program
             "UPDATE `adverts` SET `CurrencyId` = (SELECT `Id` FROM `currencies` WHERE `Iso` = COALESCE(`Currency`, 'PLN') LIMIT 1) WHERE `CurrencyId` IS NULL",
             "UPDATE `adverts` SET `CountryId` = (SELECT `Id` FROM `countries` WHERE `Iso2` = 'PL' LIMIT 1) WHERE `CountryId` IS NULL",
             "UPDATE `adverts` SET `SourceLanguageId` = (SELECT `Id` FROM `languages` WHERE `Iso1` = 'pl' LIMIT 1) WHERE `SourceLanguageId` IS NULL",
-            @"UPDATE `adverts` a JOIN `exchangerates` e ON e.`CurrencyId` = a.`CurrencyId`
+            // Join the LATEST rate per currency (audit M1). A plain JOIN on CurrencyId picks an
+            // arbitrary matching row once the daily FX-append job stores >1 rate per currency; the
+            // inner MAX(AsOf) subquery pins it to the newest known rate.
+            @"UPDATE `adverts` a
+              JOIN (SELECT e.`CurrencyId`, e.`RateToEur`, e.`AsOf` FROM `exchangerates` e
+                    JOIN (SELECT `CurrencyId`, MAX(`AsOf`) AS `AsOf` FROM `exchangerates` GROUP BY `CurrencyId`) m
+                      ON m.`CurrencyId` = e.`CurrencyId` AND m.`AsOf` = e.`AsOf`) e
+                ON e.`CurrencyId` = a.`CurrencyId`
               SET a.`PriceEur` = ROUND(a.`Price` * e.`RateToEur`, 2), a.`PriceEurAsOf` = e.`AsOf`
               WHERE a.`PriceEur` IS NULL AND a.`CurrencyId` IS NOT NULL" })
         { try { db.Database.ExecuteSqlRaw(sql); } catch (Exception ex) { logger.LogDebug("[Backfill] Adverts: {Msg}", ex.Message); } }
