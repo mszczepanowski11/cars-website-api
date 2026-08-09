@@ -249,39 +249,38 @@ internal class Program
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-            // B-26: Global rate limiter — applies to all endpoints via app.UseRateLimiter()
-            // and [EnableRateLimiting("global")] on sensitive controllers.
-            options.AddFixedWindowLimiter("global", o =>
+            // Audit SEC M1: partition every policy per principal (authenticated user id, else client
+            // IP), not one global bucket. A shared bucket let a single attacker exhaust the "auth"/
+            // "strict" quota and lock out login/reset/contact for everyone, and made the "ai" per-user
+            // cost cap actually global. Client IP prefers CF-Connecting-IP (trustworthy behind
+            // Cloudflare) over the spoofable leftmost X-Forwarded-For.
+            static string RateLimitKey(HttpContext ctx)
             {
-                o.PermitLimit = 100;
-                o.Window = TimeSpan.FromMinutes(1);
-                o.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
-                o.QueueLimit = 2;
-            });
+                var userId = ctx.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                             ?? ctx.User?.FindFirst("sub")?.Value;
+                if (!string.IsNullOrEmpty(userId)) return "u:" + userId;
+                var ip = ctx.Request.Headers["CF-Connecting-IP"].FirstOrDefault()
+                         ?? ctx.Connection.RemoteIpAddress?.ToString();
+                return "ip:" + (ip ?? "unknown");
+            }
 
-            // Per-endpoint stricter policies
-            options.AddFixedWindowLimiter("auth", o =>
-            {
-                o.PermitLimit = 10;
-                o.Window = TimeSpan.FromMinutes(1);
-                o.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
-                o.QueueLimit = 0;
-            });
-            options.AddFixedWindowLimiter("strict", o =>
-            {
-                o.PermitLimit = 5;
-                o.Window = TimeSpan.FromMinutes(5);
-                o.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
-                o.QueueLimit = 0;
-            });
-            // AI endpoints that call paid external APIs — limit per user to cap cost.
-            options.AddFixedWindowLimiter("ai", o =>
-            {
-                o.PermitLimit = 10;
-                o.Window = TimeSpan.FromHours(1);
-                o.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
-                o.QueueLimit = 0;
-            });
+            System.Threading.RateLimiting.RateLimitPartition<string> Partition(HttpContext ctx,
+                int permit, TimeSpan window, int queue) =>
+                System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+                    RateLimitKey(ctx), _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = permit,
+                        Window = window,
+                        QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst,
+                        QueueLimit = queue,
+                    });
+
+            // B-26: applied to all endpoints via app.UseRateLimiter() + [EnableRateLimiting("...")].
+            options.AddPolicy("global", ctx => Partition(ctx, 100, TimeSpan.FromMinutes(1), 2));
+            options.AddPolicy("auth",   ctx => Partition(ctx, 10,  TimeSpan.FromMinutes(1), 0));
+            options.AddPolicy("strict", ctx => Partition(ctx, 5,   TimeSpan.FromMinutes(5), 0));
+            // AI endpoints call paid external APIs — now genuinely per-user (authenticated) cost cap.
+            options.AddPolicy("ai",     ctx => Partition(ctx, 10,  TimeSpan.FromHours(1),  0));
         });
 
         builder.Services.AddMemoryCache();
