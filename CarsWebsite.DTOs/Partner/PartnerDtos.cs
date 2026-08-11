@@ -12,6 +12,12 @@ public class PartnerResponseDto
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? LastImportAt { get; set; }
+
+    // CTO audit Etap 2: previously only settable via the "Dla firm" self-service signup approval
+    // flow - an admin creating/editing a partner directly had no way to see or configure these.
+    public string? FeedUrl { get; set; }
+    public string? FeedFormat { get; set; }
+    public bool AutoSyncEnabled { get; set; }
 }
 
 public class CreatePartnerDto
@@ -20,6 +26,10 @@ public class CreatePartnerDto
     [Required] [EmailAddress] [MaxLength(200)] public string ContactEmail { get; set; } = string.Empty;
 
     [Required] public int LinkedUserId { get; set; }
+
+    [MaxLength(500)] public string? FeedUrl { get; set; }
+    public global::CarsWebsite.PartnerFeedFormat? FeedFormat { get; set; }
+    public bool AutoSyncEnabled { get; set; } = true;
 }
 
 public class UpdatePartnerDto
@@ -27,6 +37,10 @@ public class UpdatePartnerDto
     [Required] [MaxLength(200)] public string CompanyName { get; set; } = string.Empty;
     [Required] [EmailAddress] [MaxLength(200)] public string ContactEmail { get; set; } = string.Empty;
     public bool IsActive { get; set; }
+
+    [MaxLength(500)] public string? FeedUrl { get; set; }
+    public global::CarsWebsite.PartnerFeedFormat? FeedFormat { get; set; }
+    public bool AutoSyncEnabled { get; set; } = true;
 }
 
 // Returned only once, right after creation or key regeneration - the plaintext key is never
