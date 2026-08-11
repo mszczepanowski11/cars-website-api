@@ -23,9 +23,13 @@ public class PhotoController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.ImageUrl))
             return BadRequest("imageUrl is required");
 
+        // CTO audit finding (MEDIUM): EndsWith("cloudinary.com") is bypassable by suffix matching
+        // (e.g. "attacker-controlled-cloudinary.com" also ends with "cloudinary.com"). Cloudinary's
+        // actual delivery host is always exactly res.cloudinary.com (see AdvertImageService.cs:173,
+        // useImageUrl.ts) - match it exactly instead.
         if (!Uri.TryCreate(request.ImageUrl, UriKind.Absolute, out var uri) ||
             (uri.Scheme != "https" && uri.Scheme != "http") ||
-            !uri.Host.EndsWith("cloudinary.com", StringComparison.OrdinalIgnoreCase))
+            !uri.Host.Equals("res.cloudinary.com", StringComparison.OrdinalIgnoreCase))
             return BadRequest("Nieprawidłowy adres URL zdjęcia.");
 
         var result = await _photoAnalysisService.AnalyzeAsync(request.ImageUrl);

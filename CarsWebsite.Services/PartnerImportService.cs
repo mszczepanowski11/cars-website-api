@@ -310,6 +310,17 @@ public class PartnerImportService : IPartnerImportService
             await _advertService.UpdateCarAdvertAsync(existing.Id, updateDto, partner.LinkedUserId);
             advertId = existing.Id;
 
+            // CTO audit finding (CRITICAL): UpdateCarAdvertDto has no ExpiresAt field, so
+            // UpdateCarAdvertAsync never touches it - ExpiresAt is set once at CreateCarAdvertAsync
+            // and ExpiryReminderJob deactivates any advert past it, regardless of source. Without
+            // this, a partner advert present in EVERY sync (i.e. still genuinely for sale) would
+            // still silently deactivate 90 days after its original creation date, since nothing
+            // else ever pushes ExpiresAt forward. Every successful sync of an existing item is
+            // exactly the confirmation that this listing is still live - renew it the same way
+            // AdvertService.PublishAsync renews a manually-republished advert (flat 90 days).
+            existing.ExpiresAt = DateTime.UtcNow.AddDays(90);
+            await _context.SaveChangesAsync();
+
             log.ItemsUpdated++;
         }
 

@@ -1,0 +1,41 @@
+# CTO audit finding: Dockerfile did `COPY . .` with no .dockerignore, pulling .git history and
+# local build artifacts into the build context - unnecessary build-context bloat and, in the
+# build stage's own filesystem, exposure of anything that shouldn't be there even though the
+# final runtime stage only copies /app/publish out of it.
+
+## Build outputs (rebuilt fresh inside the image)
+bin/
+obj/
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+[Bb]uild/
+[Bb]uilds/
+[Pp]ublish/
+
+## VCS / editor
+.git
+.gitignore
+.vs/
+.idea/
+
+## Secrets - never let a local override with real credentials end up in the build context
+appsettings.*.local.json
+appsettings.Production.json
+secrets.json
+
+## Logs
+*.log
+
+## Python cache (import_autoplac_v3.py)
+__pycache__/
+*.pyc
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Claude/CI-local files not needed at build/runtime
+.claude/
+.github/
