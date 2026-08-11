@@ -13,6 +13,7 @@ using Hangfire.Dashboard;
 using Hangfire.MySql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -106,6 +107,18 @@ internal class Program
             throw new InvalidOperationException("JWT configuration is incomplete. Ensure Jwt:Key, Jwt:Issuer, Jwt:Audience, and Jwt:ExpiresInMinutes are set.");
         if (!double.TryParse(jwtExpiresInMinutes, out _))
             throw new InvalidOperationException("Jwt:ExpiresInMinutes must be a valid number.");
+        // CTO audit finding (HIGH): appsettings.Development.json ships a literal placeholder string
+        // as Jwt:Key ("SET_VIA_JWT_SECRET_KEY_ENV_VAR_OR_DOTNET_USER_SECRETS"). Before this check,
+        // the only validation above was "non-empty" — that placeholder IS non-empty, so if
+        // JWT_SECRET_KEY were ever unset while this config layer loaded (e.g. ASPNETCORE_ENVIRONMENT
+        // accidentally set to Development in production), the app would boot successfully and sign
+        // every token with a key sitting in cleartext in git history. Reject the known placeholder
+        // outright, and require real key material to be at least 256 bits (32 bytes) — the minimum
+        // HMAC-SHA256 (the algorithm used below) actually needs to resist brute-force.
+        if (jwtKey.Contains("SET_VIA_JWT_SECRET_KEY", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Jwt:Key is still the placeholder value from appsettings.Development.json. Set a real secret via the JWT_SECRET_KEY environment variable.");
+        if (Encoding.UTF8.GetByteCount(jwtKey) < 32)
+            throw new InvalidOperationException("Jwt:Key / JWT_SECRET_KEY must be at least 32 bytes (256 bits) for HMAC-SHA256 to be secure.");
 
         // B-02: Validate Imoje payment credentials at startup.
         // Read from environment variables (preferred in production) or appsettings fallback.
