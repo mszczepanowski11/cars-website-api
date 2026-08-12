@@ -37,4 +37,14 @@
       <Folder Include="CarsWebsite.Domain\Entities\Part\" />
     </ItemGroup>
 
+    <!-- CarsWebsite.Tests is its own project (CarsWebsite.Tests.csproj), not a subfolder of this
+         one - without this, this project's default **/*.cs glob would also compile the test
+         project's files directly into this assembly, dragging in the xunit dependency and
+         causing duplicate-type build failures. -->
+    <ItemGroup>
+      <Compile Remove="CarsWebsite.Tests\**\*.cs" />
+      <EmbeddedResource Remove="CarsWebsite.Tests\**\*" />
+      <None Remove="CarsWebsite.Tests\**\*" />
+    </ItemGroup>
+
 </Project>
