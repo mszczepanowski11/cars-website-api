@@ -93,6 +93,8 @@ namespace CarsWebsite
         public DbSet<Partner> Partners { get; set; }
         public DbSet<PartnerImportLog> PartnerImportLogs { get; set; }
         public DbSet<PartnerSignupRequest> PartnerSignupRequests { get; set; }
+        public DbSet<PartnerFieldMapping> PartnerFieldMappings { get; set; }
+        public DbSet<PartnerValueMapping> PartnerValueMappings { get; set; }
         public DbSet<DirectoryCompany> DirectoryCompanies { get; set; }
         public DbSet<CompanyBranch> CompanyBranches { get; set; }
         public DbSet<CompanyPhone> CompanyPhones { get; set; }
@@ -170,6 +172,18 @@ namespace CarsWebsite
                 .HasForeignKey(r => r.PartnerId).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
             modelBuilder.Entity<PartnerSignupRequest>().HasIndex(r => r.Status);
             modelBuilder.Entity<PartnerSignupRequest>().HasIndex(r => r.Email);
+
+            modelBuilder.Entity<PartnerFieldMapping>().ToTable("partnerfieldmappings").HasKey(m => m.Id);
+            modelBuilder.Entity<PartnerFieldMapping>()
+                .HasOne(m => m.Partner).WithMany()
+                .HasForeignKey(m => m.PartnerId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<PartnerFieldMapping>().HasIndex(m => new { m.PartnerId, m.OurField }).IsUnique();
+
+            modelBuilder.Entity<PartnerValueMapping>().ToTable("partnervaluemappings").HasKey(m => m.Id);
+            modelBuilder.Entity<PartnerValueMapping>()
+                .HasOne(m => m.Partner).WithMany()
+                .HasForeignKey(m => m.PartnerId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<PartnerValueMapping>().HasIndex(m => new { m.PartnerId, m.Field, m.ExternalValue }).IsUnique();
 
             modelBuilder.Entity<DirectoryCompany>().ToTable("directorycompanies").HasKey(d => d.Id);
             modelBuilder.Entity<DirectoryCompany>().HasIndex(d => d.PublicId).IsUnique();

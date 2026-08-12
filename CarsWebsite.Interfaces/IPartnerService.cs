@@ -18,6 +18,13 @@ public interface IPartnerService
     // instead of having to wait for the next cron cycle to find out something's wrong.
     Task<PartnerImportLogResponseDto> SyncNowAsync(int id);
 
+    // Schema adapter layer (CTO audit Etap 2) - per-partner field/value mapping so onboarding a
+    // new integrator (AKOL, 44FOX, ...) with its own feed schema is a config change, not new code.
+    Task<List<PartnerFieldMappingDto>> GetFieldMappingsAsync(int partnerId);
+    Task<List<PartnerFieldMappingDto>> SetFieldMappingsAsync(int partnerId, List<PartnerFieldMappingDto> mappings);
+    Task<List<PartnerValueMappingDto>> GetValueMappingsAsync(int partnerId);
+    Task<List<PartnerValueMappingDto>> SetValueMappingsAsync(int partnerId, List<PartnerValueMappingDto> mappings);
+
     // Authenticates the X-Api-Key header against ApiKeyHash; returns null if no active partner matches.
     // global:: because plain "CarsWebsite.Partner" resolves against the enclosing
     // cars_website_api.CarsWebsite namespace here and fails to compile.

@@ -34,7 +34,10 @@ public class PartnerImportService : IPartnerImportService
 
     public int CountFeedItems(string content, PartnerFeedFormat format)
     {
-        var items = format == PartnerFeedFormat.Xml ? ParseXml(content) : ParseCsv(content);
+        // Item boundaries (<Advert> elements / CSV rows) are the same regardless of field naming,
+        // so this doesn't need field-mapping awareness - and can't have any yet anyway, since it's
+        // used by the signup preview before a Partner row (and its mappings) exist.
+        var items = format == PartnerFeedFormat.Xml ? ParseXml(content, null) : ParseCsv(content, null);
         return items.Count;
     }
 
@@ -48,11 +51,21 @@ public class PartnerImportService : IPartnerImportService
         };
         _context.PartnerImportLogs.Add(log);
 
+        // Schema adapter layer (CTO audit Etap 2): a partner's own field names ("CenaNetto" instead
+        // of "Price") and taxonomy strings ("Osobowe" instead of the "auta-osobowe" slug) rarely
+        // match CARIZO's schema exactly - this used to mean writing new parsing code per
+        // integrator. An empty mapping set (the default for every partner today) falls back
+        // exactly to CARIZO's own field names, so this is fully backward compatible.
+        var fieldMap = (await _context.PartnerFieldMappings.Where(m => m.PartnerId == partner.Id).ToListAsync())
+            .ToDictionary(m => m.OurField, m => m.SourcePath);
+        var valueMap = (await _context.PartnerValueMappings.Where(m => m.PartnerId == partner.Id).ToListAsync())
+            .ToDictionary(m => (m.Field, m.ExternalValue.Trim().ToLowerInvariant()), m => m.InternalValue);
+
         var errors = new List<string>();
         List<PartnerFeedItem> items;
         try
         {
-            items = format == PartnerFeedFormat.Xml ? ParseXml(content) : ParseCsv(content);
+            items = format == PartnerFeedFormat.Xml ? ParseXml(content, fieldMap) : ParseCsv(content, fieldMap);
         }
         catch (Exception ex)
         {
@@ -87,10 +100,11 @@ public class PartnerImportService : IPartnerImportService
             var createdNotes = new List<string>();
             try
             {
-                if (!categoriesBySlug.TryGetValue(item.CategorySlug.Trim().ToLowerInvariant(), out var category))
+                var categoryKey = MapValue(valueMap, "Category", item.CategorySlug);
+                if (!categoriesBySlug.TryGetValue(categoryKey.Trim().ToLowerInvariant(), out var category))
                     throw new ArgumentException($"nieznana kategoria '{item.CategorySlug}'");
 
-                await ImportItemAsync(item, partner, category, brandsByName, fuelTypesByName, gearboxesByName,
+                await ImportItemAsync(item, partner, category, valueMap, brandsByName, fuelTypesByName, gearboxesByName,
                     partCategoriesByName, partSubcategoriesByName, modelsByBrandId, subtypesByCategoryId, log, createdNotes);
                 foreach (var note in createdNotes) errors.Add($"wiersz {rowNumber} ({item.ExternalId}): {note}");
             }
@@ -129,6 +143,7 @@ public class PartnerImportService : IPartnerImportService
         PartnerFeedItem item,
         Partner partner,
         VehicleCategory category,
+        Dictionary<(string Field, string ExternalValue), string> valueMap,
         Dictionary<string, Brand> brandsByName,
         Dictionary<string, FuelType> fuelTypesByName,
         Dictionary<string, Gearbox> gearboxesByName,
@@ -164,7 +179,8 @@ public class PartnerImportService : IPartnerImportService
         Model? model = null;
         if (!string.IsNullOrWhiteSpace(item.BrandName))
         {
-            brand = await GetOrCreateBrandAsync(item.BrandName, category, brandsByName, createdNotes);
+            var brandKey = MapValue(valueMap, "Brand", item.BrandName);
+            brand = await GetOrCreateBrandAsync(brandKey, category, brandsByName, createdNotes);
 
             if (!string.IsNullOrWhiteSpace(item.ModelName))
             {
@@ -180,11 +196,11 @@ public class PartnerImportService : IPartnerImportService
 
         FuelType? fuelType = null;
         if (!string.IsNullOrWhiteSpace(item.FuelTypeName))
-            fuelType = await GetOrCreateFuelTypeAsync(item.FuelTypeName, fuelTypesByName, createdNotes);
+            fuelType = await GetOrCreateFuelTypeAsync(MapValue(valueMap, "FuelType", item.FuelTypeName), fuelTypesByName, createdNotes);
 
         Gearbox? gearbox = null;
         if (!string.IsNullOrWhiteSpace(item.GearboxName))
-            gearbox = await GetOrCreateGearboxAsync(item.GearboxName, gearboxesByName, createdNotes);
+            gearbox = await GetOrCreateGearboxAsync(MapValue(valueMap, "Gearbox", item.GearboxName), gearboxesByName, createdNotes);
 
         PartCategory? partCategory = null;
         if (!string.IsNullOrWhiteSpace(item.PartCategoryName))
@@ -213,7 +229,8 @@ public class PartnerImportService : IPartnerImportService
             else createdNotes.Add($"nieznany podtyp '{item.VehicleSubtypeName}' dla kategorii '{category.Name}' - pominięto");
         }
 
-        var condition = item.ConditionText?.Trim().ToLowerInvariant() == "new" ? "new" : "used";
+        var mappedCondition = string.IsNullOrWhiteSpace(item.ConditionText) ? item.ConditionText : MapValue(valueMap, "Condition", item.ConditionText);
+        var condition = mappedCondition?.Trim().ToLowerInvariant() == "new" ? "new" : "used";
 
         var existing = await _context.CarAdverts
             .FirstOrDefaultAsync(a => a.PartnerId == partner.Id && a.ExternalId == item.ExternalId);
@@ -233,7 +250,7 @@ public class PartnerImportService : IPartnerImportService
                 Mileage = item.Mileage,
                 Price = item.Price,
                 Title = item.Title,
-                Description = item.Description,
+                Description = item.Description ?? string.Empty,
                 City = item.City,
                 Region = item.Region,
                 Vin = item.Vin,
@@ -282,7 +299,7 @@ public class PartnerImportService : IPartnerImportService
                 Mileage = item.Mileage,
                 Price = item.Price,
                 Title = item.Title,
-                Description = item.Description,
+                Description = item.Description ?? string.Empty,
                 City = item.City,
                 Region = item.Region,
                 Vin = item.Vin,
@@ -446,48 +463,62 @@ public class PartnerImportService : IPartnerImportService
         return trimmed.Length > 100 ? trimmed[..100] : trimmed;
     }
 
-    private static List<PartnerFeedItem> ParseXml(string content)
+    // Value-mapping lookup: an unmapped raw value passes through unchanged (falls to the existing
+    // exact-name matching/auto-create logic), exactly like an empty fieldMap falls back to
+    // CARIZO's own element/column names below.
+    private static string MapValue(Dictionary<(string Field, string ExternalValue), string> valueMap, string field, string rawValue)
+        => valueMap.TryGetValue((field, rawValue.Trim().ToLowerInvariant()), out var mapped) ? mapped : rawValue;
+
+    // A partner's own element name for OurField, or CARIZO's own default (the literal field name)
+    // when nothing is mapped - so an empty fieldMap reproduces today's fixed-schema behavior exactly.
+    private static string XmlName(Dictionary<string, string>? fieldMap, string ourField)
+        => fieldMap != null && fieldMap.TryGetValue(ourField, out var mapped) ? mapped : ourField;
+
+    private static List<PartnerFeedItem> ParseXml(string content, Dictionary<string, string>? fieldMap)
     {
         var doc = XDocument.Parse(content);
         var items = new List<PartnerFeedItem>();
+        string N(string ourField) => XmlName(fieldMap, ourField);
 
         foreach (var node in doc.Descendants("Advert"))
         {
             items.Add(new PartnerFeedItem
             {
-                ExternalId = (string?)node.Element("ExternalId") ?? string.Empty,
-                Title = (string?)node.Element("Title") ?? string.Empty,
-                Description = (string?)node.Element("Description"),
-                Price = (decimal?)node.Element("Price") ?? 0,
-                CategorySlug = (string?)node.Element("Category") ?? string.Empty,
-                VehicleSubtypeName = (string?)node.Element("VehicleSubtype"),
-                BrandName = (string?)node.Element("Brand") ?? string.Empty,
-                ModelName = (string?)node.Element("Model") ?? string.Empty,
-                Year = (int?)node.Element("Year") ?? 0,
-                Mileage = (int?)node.Element("Mileage") ?? 0,
-                FuelTypeName = (string?)node.Element("FuelType"),
-                GearboxName = (string?)node.Element("Gearbox"),
-                PowerHP = (int?)node.Element("PowerHP"),
-                Vin = (string?)node.Element("Vin"),
-                City = (string?)node.Element("City"),
-                Region = (string?)node.Element("Region"),
-                ConditionText = (string?)node.Element("Condition"),
-                PartCategoryName = (string?)node.Element("PartCategory"),
-                PartSubcategoryName = (string?)node.Element("PartSubcategory"),
-                CatalogNumber = (string?)node.Element("CatalogNumber"),
-                OemNumber = (string?)node.Element("OemNumber"),
-                PartManufacturer = (string?)node.Element("PartManufacturer"),
-                Compatibility = (string?)node.Element("Compatibility"),
-                AxleCount = (int?)node.Element("AxleCount"),
-                Payload = (int?)node.Element("Payload"),
-                CargoLength = (decimal?)node.Element("CargoLength"),
-                CargoHeight = (decimal?)node.Element("CargoHeight"),
-                Volume = (decimal?)node.Element("Volume"),
-                OperatingWeightKg = (int?)node.Element("OperatingWeightKg"),
-                WorkingWidthCm = (int?)node.Element("WorkingWidthCm"),
-                MaxDiggingDepthM = (decimal?)node.Element("MaxDiggingDepthM"),
-                BucketCapacityL = (int?)node.Element("BucketCapacityL"),
-                TankCapacityL = (int?)node.Element("TankCapacityL"),
+                ExternalId = (string?)node.Element(N("ExternalId")) ?? string.Empty,
+                Title = (string?)node.Element(N("Title")) ?? string.Empty,
+                Description = (string?)node.Element(N("Description")),
+                Price = (decimal?)node.Element(N("Price")) ?? 0,
+                CategorySlug = (string?)node.Element(N("Category")) ?? string.Empty,
+                VehicleSubtypeName = (string?)node.Element(N("VehicleSubtype")),
+                BrandName = (string?)node.Element(N("Brand")) ?? string.Empty,
+                ModelName = (string?)node.Element(N("Model")) ?? string.Empty,
+                Year = (int?)node.Element(N("Year")) ?? 0,
+                Mileage = (int?)node.Element(N("Mileage")) ?? 0,
+                FuelTypeName = (string?)node.Element(N("FuelType")),
+                GearboxName = (string?)node.Element(N("Gearbox")),
+                PowerHP = (int?)node.Element(N("PowerHP")),
+                Vin = (string?)node.Element(N("Vin")),
+                City = (string?)node.Element(N("City")),
+                Region = (string?)node.Element(N("Region")),
+                ConditionText = (string?)node.Element(N("Condition")),
+                PartCategoryName = (string?)node.Element(N("PartCategory")),
+                PartSubcategoryName = (string?)node.Element(N("PartSubcategory")),
+                CatalogNumber = (string?)node.Element(N("CatalogNumber")),
+                OemNumber = (string?)node.Element(N("OemNumber")),
+                PartManufacturer = (string?)node.Element(N("PartManufacturer")),
+                Compatibility = (string?)node.Element(N("Compatibility")),
+                AxleCount = (int?)node.Element(N("AxleCount")),
+                Payload = (int?)node.Element(N("Payload")),
+                CargoLength = (decimal?)node.Element(N("CargoLength")),
+                CargoHeight = (decimal?)node.Element(N("CargoHeight")),
+                Volume = (decimal?)node.Element(N("Volume")),
+                OperatingWeightKg = (int?)node.Element(N("OperatingWeightKg")),
+                WorkingWidthCm = (int?)node.Element(N("WorkingWidthCm")),
+                MaxDiggingDepthM = (decimal?)node.Element(N("MaxDiggingDepthM")),
+                BucketCapacityL = (int?)node.Element(N("BucketCapacityL")),
+                TankCapacityL = (int?)node.Element(N("TankCapacityL")),
+                // Images list is not field-mappable (see PartnerFieldMapping.FieldNames) - always
+                // CARIZO's own Images/Image container/child names.
                 ImageUrls = node.Element("Images")?.Elements("Image")
                     .Select(e => e.Value.Trim())
                     .Where(v => v.Length > 0)
@@ -498,7 +529,7 @@ public class PartnerImportService : IPartnerImportService
         return items;
     }
 
-    private static List<PartnerFeedItem> ParseCsv(string content)
+    private static List<PartnerFeedItem> ParseCsv(string content, Dictionary<string, string>? fieldMap)
     {
         var lines = content.Replace("\r\n", "\n").Replace("\r", "\n")
             .Split('\n', StringSplitOptions.RemoveEmptyEntries);
@@ -506,63 +537,68 @@ public class PartnerImportService : IPartnerImportService
 
         var header = SplitCsvLine(lines[0]).Select(h => h.Trim().ToLowerInvariant()).ToList();
         var items = new List<PartnerFeedItem>();
+        // CARIZO's own default column name for OurField is simply its lowercase form
+        // ("PowerHP" -> "powerhp") - see PartnerFieldMapping's comment for why this holds for
+        // every mappable field.
+        string N(string ourField) => (fieldMap != null && fieldMap.TryGetValue(ourField, out var mapped) ? mapped : ourField).Trim().ToLowerInvariant();
 
         for (var i = 1; i < lines.Length; i++)
         {
             var fields = SplitCsvLine(lines[i]);
-            string Get(string col)
+            string Get(string ourField)
             {
-                var idx = header.IndexOf(col);
+                var idx = header.IndexOf(N(ourField));
                 return idx >= 0 && idx < fields.Count ? fields[idx].Trim() : string.Empty;
             }
-            string? GetOrNull(string col) => string.IsNullOrEmpty(Get(col)) ? null : Get(col);
-            int? GetIntOrNull(string col) => int.TryParse(Get(col), out var n) && n > 0 ? n : null;
-            decimal? GetDecimalOrNull(string col) => decimal.TryParse(Get(col), out var n) && n > 0 ? n : null;
+            string? GetOrNull(string ourField) => string.IsNullOrEmpty(Get(ourField)) ? null : Get(ourField);
+            int? GetIntOrNull(string ourField) => int.TryParse(Get(ourField), out var n) && n > 0 ? n : null;
+            decimal? GetDecimalOrNull(string ourField) => decimal.TryParse(Get(ourField), out var n) && n > 0 ? n : null;
 
-            decimal.TryParse(Get("price"), out var price);
-            int.TryParse(Get("year"), out var year);
-            int.TryParse(Get("mileage"), out var mileage);
+            decimal.TryParse(Get("Price"), out var price);
+            int.TryParse(Get("Year"), out var year);
+            int.TryParse(Get("Mileage"), out var mileage);
 
-            var imageUrls = Get("imageurls").Split('|', StringSplitOptions.RemoveEmptyEntries)
+            // Image list is not field-mappable - always CARIZO's own "imageurls" column.
+            var imageUrls = Get("ImageUrls").Split('|', StringSplitOptions.RemoveEmptyEntries)
                 .Select(u => u.Trim())
                 .Where(u => u.Length > 0)
                 .ToList();
 
             items.Add(new PartnerFeedItem
             {
-                ExternalId = Get("externalid"),
-                Title = Get("title"),
-                Description = GetOrNull("description"),
+                ExternalId = Get("ExternalId"),
+                Title = Get("Title"),
+                Description = GetOrNull("Description"),
                 Price = price,
-                CategorySlug = Get("category"),
-                VehicleSubtypeName = GetOrNull("vehiclesubtype"),
-                BrandName = Get("brand"),
-                ModelName = Get("model"),
+                CategorySlug = Get("Category"),
+                VehicleSubtypeName = GetOrNull("VehicleSubtype"),
+                BrandName = Get("Brand"),
+                ModelName = Get("Model"),
                 Year = year,
                 Mileage = mileage,
-                FuelTypeName = GetOrNull("fueltype"),
-                GearboxName = GetOrNull("gearbox"),
-                PowerHP = GetIntOrNull("powerhp"),
-                Vin = GetOrNull("vin"),
-                City = GetOrNull("city"),
-                Region = GetOrNull("region"),
-                ConditionText = GetOrNull("condition"),
-                PartCategoryName = GetOrNull("partcategory"),
-                PartSubcategoryName = GetOrNull("partsubcategory"),
-                CatalogNumber = GetOrNull("catalognumber"),
-                OemNumber = GetOrNull("oemnumber"),
-                PartManufacturer = GetOrNull("partmanufacturer"),
-                Compatibility = GetOrNull("compatibility"),
-                AxleCount = GetIntOrNull("axlecount"),
-                Payload = GetIntOrNull("payload"),
-                CargoLength = GetDecimalOrNull("cargolength"),
-                CargoHeight = GetDecimalOrNull("cargoheight"),
-                Volume = GetDecimalOrNull("volume"),
-                OperatingWeightKg = GetIntOrNull("operatingweightkg"),
-                WorkingWidthCm = GetIntOrNull("workingwidthcm"),
-                MaxDiggingDepthM = GetDecimalOrNull("maxdiggingdepthm"),
-                BucketCapacityL = GetIntOrNull("bucketcapacityl"),
-                TankCapacityL = GetIntOrNull("tankcapacityl"),
+                FuelTypeName = GetOrNull("FuelType"),
+                GearboxName = GetOrNull("Gearbox"),
+                PowerHP = GetIntOrNull("PowerHP"),
+                Vin = GetOrNull("Vin"),
+                City = GetOrNull("City"),
+                Region = GetOrNull("Region"),
+                ConditionText = GetOrNull("Condition"),
+                PartCategoryName = GetOrNull("PartCategory"),
+                PartSubcategoryName = GetOrNull("PartSubcategory"),
+                CatalogNumber = GetOrNull("CatalogNumber"),
+                OemNumber = GetOrNull("OemNumber"),
+                PartManufacturer = GetOrNull("PartManufacturer"),
+                Compatibility = GetOrNull("Compatibility"),
+                AxleCount = GetIntOrNull("AxleCount"),
+                Payload = GetIntOrNull("Payload"),
+                CargoLength = GetDecimalOrNull("CargoLength"),
+                CargoHeight = GetDecimalOrNull("CargoHeight"),
+                Volume = GetDecimalOrNull("Volume"),
+                OperatingWeightKg = GetIntOrNull("OperatingWeightKg"),
+                WorkingWidthCm = GetIntOrNull("WorkingWidthCm"),
+                MaxDiggingDepthM = GetDecimalOrNull("MaxDiggingDepthM"),
+                BucketCapacityL = GetIntOrNull("BucketCapacityL"),
+                TankCapacityL = GetIntOrNull("TankCapacityL"),
                 ImageUrls = imageUrls,
             });
         }
