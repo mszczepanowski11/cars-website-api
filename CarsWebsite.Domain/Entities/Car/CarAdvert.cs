@@ -155,5 +155,17 @@ public class CarAdvert : Advert
     public Partner? Partner { get; set; }
     public string? ExternalId { get; set; }
 
+    // Cross-source duplicate detection (CTO audit Etap 2): AKOL/44FOX-style integrators likely
+    // resell overlapping dealer inventory, so the same physical car can arrive via two different
+    // partners (or a partner and a manual listing). Set only at CREATE time by
+    // PartnerImportService.DetectDuplicateAsync - VIN match first, falling back to a fuzzy match
+    // (same brand+model+year, price within 5%, mileage within 10%) only when exactly one candidate
+    // exists. Never retroactively re-evaluated, never auto-hides or deletes anything: it just
+    // points at the older/canonical listing so the public search can skip this one while the
+    // advert itself, and an admin review of the flag, both stay intact.
+    public int? DuplicateOfId { get; set; }
+    public CarAdvert? DuplicateOf { get; set; }
+    public string? DuplicateMatchReason { get; set; }
+
     public ICollection<AdvertFeature> AdvertFeatures { get; set; } = new List<AdvertFeature>();
 }

@@ -412,6 +412,13 @@ public class AdvertService : IAdvertService
 
         if (dto.UserId.HasValue)
             query = query.Where(a => a.UserId == dto.UserId);
+        else
+            // Cross-source duplicate detection (CTO audit Etap 2): hide adverts flagged as a
+            // duplicate of another listing from the general marketplace search, so buyers never
+            // see the same car twice when it arrived through two overlapping partner feeds. Scoped
+            // to dto.UserId == null (the public search) only - a user/partner viewing their OWN
+            // adverts (dashboard) must still see everything they submitted, flagged or not.
+            query = query.Where(a => a.DuplicateOfId == null);
 
         if (dto.BrandId.HasValue)
             query = query.Where(a => a.BrandId == dto.BrandId);
@@ -907,7 +914,7 @@ public class AdvertService : IAdvertService
             .Include(a => a.Images)
             .Include(a => a.AdvertFeatures)
                 .ThenInclude(af => af.Feature)
-            .Where(a => advertIds.Contains(a.Id) && a.IsActive && !a.IsHidden && (a.ExpiresAt == null || a.ExpiresAt > DateTime.UtcNow))
+            .Where(a => advertIds.Contains(a.Id) && a.IsActive && !a.IsHidden && a.DuplicateOfId == null && (a.ExpiresAt == null || a.ExpiresAt > DateTime.UtcNow))
             .ToListAsync();
 
         var viewCountMap = topAdvertIds.ToDictionary(x => x.AdvertId, x => x.ViewCount);
@@ -942,7 +949,7 @@ public class AdvertService : IAdvertService
             .Include(a => a.Images)
             .Include(a => a.AdvertFeatures)
                 .ThenInclude(af => af.Feature)
-            .Where(a => a.IsActive && !a.IsHidden && (a.ExpiresAt == null || a.ExpiresAt > DateTime.UtcNow)
+            .Where(a => a.IsActive && !a.IsHidden && a.DuplicateOfId == null && (a.ExpiresAt == null || a.ExpiresAt > DateTime.UtcNow)
                 && (a.Brand != null && premiumBrands.Contains(a.Brand.Name) || a.Badge == "PREMIUM"))
             .OrderByDescending(a => a.CreatedAt)
             .Take(count)

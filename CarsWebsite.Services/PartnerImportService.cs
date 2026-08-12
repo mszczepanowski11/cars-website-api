@@ -283,6 +283,14 @@ public class PartnerImportService : IPartnerImportService
             advert.PartnerId = partner.Id;
             advert.ExternalId = item.ExternalId;
 
+            var duplicate = await DetectDuplicateAsync(advert, brand, model);
+            if (duplicate != null)
+            {
+                advert.DuplicateOfId = duplicate.Value.CanonicalId;
+                advert.DuplicateMatchReason = duplicate.Value.Reason;
+                createdNotes.Add($"oznaczono jako duplikat ogłoszenia #{duplicate.Value.CanonicalId} ({duplicate.Value.Reason})");
+            }
+
             log.ItemsCreated++;
         }
         else
@@ -359,6 +367,51 @@ public class PartnerImportService : IPartnerImportService
         }
 
         await _context.SaveChangesAsync();
+    }
+
+    // Cross-source duplicate detection (CTO audit Etap 2): "AKOL i 44FOX prawdopodobnie odsprzedają
+    // nakładający się inwentarz dealerski" - the same physical car can arrive from two different
+    // partners (or a partner and a manually-created listing). Called only right after a NEW advert
+    // is created during import (not on update - an already-linked ExternalId is by definition the
+    // same listing being refreshed, not a new duplicate candidate).
+    private async Task<(int CanonicalId, string Reason)?> DetectDuplicateAsync(CarAdvert advert, Brand? brand, Model? model)
+    {
+        // VIN-first: CreateCarAdvertAsync already normalizes VIN to uppercase before saving (see
+        // AdvertService.CreateCarAdvertAsync), so a plain equality comparison is safe here. Matches
+        // only against non-duplicate ("canonical") adverts and picks the oldest one, so repeated
+        // imports build a flat star shape (everything points at the original) rather than a chain.
+        if (!string.IsNullOrWhiteSpace(advert.Vin))
+        {
+            var vinMatch = await _context.CarAdverts
+                .Where(a => a.Id != advert.Id && a.Vin == advert.Vin && a.IsActive && a.DuplicateOfId == null)
+                .OrderBy(a => a.CreatedAt)
+                .FirstOrDefaultAsync();
+            if (vinMatch != null) return (vinMatch.Id, "VIN");
+        }
+
+        // Fuzzy fallback: only meaningful once brand+model+year actually resolved - a parts/
+        // accessories/machinery listing has no comparable signal here. Deliberately conservative:
+        // only auto-flags when EXACTLY one candidate matches, to avoid guessing which of several
+        // genuinely different cars of the same brand/model/year is the "real" duplicate.
+        if (brand == null || model == null || advert.Year <= 0 || advert.Price <= 0) return null;
+
+        var priceLow = advert.Price * 0.95m;
+        var priceHigh = advert.Price * 1.05m;
+        var mileageLow = (int)(advert.Mileage * 0.9);
+        var mileageHigh = (int)(advert.Mileage * 1.1);
+
+        var candidates = await _context.CarAdverts
+            .Where(a => a.Id != advert.Id && a.IsActive && a.DuplicateOfId == null
+                && a.BrandId == brand.Id && a.ModelId == model.Id && a.Year == advert.Year
+                && a.Price >= priceLow && a.Price <= priceHigh
+                && a.Mileage >= mileageLow && a.Mileage <= mileageHigh)
+            .OrderBy(a => a.CreatedAt)
+            .Take(2)
+            .ToListAsync();
+
+        return candidates.Count == 1
+            ? (candidates[0].Id, "Fuzzy: marka+model+rok, cena ±5%, przebieg ±10%")
+            : null;
     }
 
     // Partners commonly list brands/models we haven't onboarded yet - rather than rejecting the
