@@ -1,6 +1,8 @@
 using System.Text;
 using System.Xml.Linq;
 using CarsWebsite;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using cars_website_api.CarsWebsite.Domain.Entities;
 using cars_website_api.CarsWebsite.DTOs.Advert;
 using cars_website_api.CarsWebsite.DTOs.Partner;
@@ -22,14 +24,20 @@ using Microsoft.EntityFrameworkCore;
 public class PartnerImportService : IPartnerImportService
 {
     private const int MaxErrorSummaryLength = 8000;
+    // A partner feed listing 20 images per item, times a large batch, times a per-image Cloudinary
+    // round-trip, would make one sync request take unreasonably long - this caps it per item
+    // without rejecting the item outright for having "too many" images.
+    private const int MaxImagesRehostedPerItem = 20;
 
     private readonly AppDbContext _context;
     private readonly IAdvertService _advertService;
+    private readonly Cloudinary _cloudinary;
 
-    public PartnerImportService(AppDbContext context, IAdvertService advertService)
+    public PartnerImportService(AppDbContext context, IAdvertService advertService, Cloudinary cloudinary)
     {
         _context = context;
         _advertService = advertService;
+        _cloudinary = cloudinary;
     }
 
     public int CountFeedItems(string content, PartnerFeedFormat format)
@@ -354,16 +362,52 @@ public class PartnerImportService : IPartnerImportService
             var existingImages = await _context.AdvertImages.Where(i => i.AdvertId == advertId).ToListAsync();
             _context.AdvertImages.RemoveRange(existingImages);
 
-            for (var i = 0; i < item.ImageUrls.Count; i++)
+            // CTO audit Etap 2 (🟢 "re-hosting zdjęć partnera"): previously stored the partner's
+            // own image URL verbatim, so every photo on the advert silently broke the moment the
+            // partner's own hosting went down, moved, or expired an old listing's images - a risk
+            // entirely outside CARIZO's control. Re-uploads each one to Cloudinary (server-side
+            // fetch-by-URL, not proxied through our own HttpClient) and stores OUR OWN stable URL
+            // instead. A single image's fetch failing (dead link, timeout, not actually an image)
+            // is noted and skipped, not a reason to fail the whole item - a partner feed with one
+            // stale photo URL among ten good ones shouldn't lose the listing over it.
+            var order = 0;
+            foreach (var sourceUrl in item.ImageUrls.Take(MaxImagesRehostedPerItem))
             {
+                string hostedUrl;
+                try
+                {
+                    var uploadParams = new ImageUploadParams
+                    {
+                        File = new FileDescription(sourceUrl),
+                        PublicId = $"photos/{advertId}/{Guid.NewGuid()}",
+                        Overwrite = false,
+                        Transformation = new Transformation().Quality("auto"),
+                    };
+                    var result = await _cloudinary.UploadAsync(uploadParams);
+                    if (result.Error != null)
+                    {
+                        createdNotes.Add($"nie udało się pobrać zdjęcia '{sourceUrl}': {result.Error.Message}");
+                        continue;
+                    }
+                    hostedUrl = result.SecureUrl.ToString();
+                }
+                catch (Exception ex)
+                {
+                    createdNotes.Add($"nie udało się pobrać zdjęcia '{sourceUrl}': {ex.Message}");
+                    continue;
+                }
+
                 _context.AdvertImages.Add(new AdvertImage
                 {
                     AdvertId = advertId,
-                    Url = item.ImageUrls[i],
-                    Order = i,
-                    IsMain = i == 0,
+                    Url = hostedUrl,
+                    Order = order,
+                    IsMain = order == 0,
                 });
+                order++;
             }
+            if (item.ImageUrls.Count > MaxImagesRehostedPerItem)
+                createdNotes.Add($"pominięto {item.ImageUrls.Count - MaxImagesRehostedPerItem} zdjęć powyżej limitu {MaxImagesRehostedPerItem}");
         }
 
         await _context.SaveChangesAsync();
