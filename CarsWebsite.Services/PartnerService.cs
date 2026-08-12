@@ -225,6 +225,9 @@ public class PartnerService : IPartnerService
         FeedUrl = p.FeedUrl,
         FeedFormat = p.FeedFormat?.ToString(),
         AutoSyncEnabled = p.AutoSyncEnabled,
+        ConsecutiveSyncFailures = p.ConsecutiveSyncFailures,
+        LastSyncError = p.LastSyncError,
+        LastSyncAttemptAt = p.LastSyncAttemptAt,
     };
 
     private static PartnerImportLogResponseDto MapLogToDto(PartnerImportLog l) => new()

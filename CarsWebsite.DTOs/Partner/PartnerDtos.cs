@@ -18,6 +18,12 @@ public class PartnerResponseDto
     public string? FeedUrl { get; set; }
     public string? FeedFormat { get; set; }
     public bool AutoSyncEnabled { get; set; }
+
+    // Sync health (CTO audit Etap 2) - tracked only by the scheduled PartnerFeedSyncJob run, not
+    // by a manual "sync now" (see Partner.cs for why).
+    public int ConsecutiveSyncFailures { get; set; }
+    public string? LastSyncError { get; set; }
+    public DateTime? LastSyncAttemptAt { get; set; }
 }
 
 public class CreatePartnerDto

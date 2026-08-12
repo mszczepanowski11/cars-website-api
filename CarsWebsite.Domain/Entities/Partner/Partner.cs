@@ -30,4 +30,12 @@ public class Partner
     [MaxLength(500)] public string? FeedUrl { get; set; }
     public PartnerFeedFormat? FeedFormat { get; set; }
     public bool AutoSyncEnabled { get; set; } = true;
+
+    // Sync health (CTO audit Etap 2 "alertowanie o nieudanej synchronizacji" - "zepsuty feed dziś
+    // zawodzi niewidocznie"). Updated only by PartnerFeedSyncJob's scheduled cron run, not by the
+    // admin "sync now" button - a manual retry's result is already shown directly in the UI, this
+    // tracks the UNATTENDED, scheduled path where a break would otherwise go unnoticed for days.
+    public int ConsecutiveSyncFailures { get; set; }
+    [MaxLength(1000)] public string? LastSyncError { get; set; }
+    public DateTime? LastSyncAttemptAt { get; set; }
 }
