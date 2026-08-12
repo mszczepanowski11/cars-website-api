@@ -251,14 +251,13 @@ public class PaymentService : IPaymentService
                     return;
                 }
 
-                if (payment.Status == PaymentStatus.Completed)
-                {
-                    await tx.CommitAsync();
-                    return;
-                }
-
                 if (dto.ResolvedStatus is "settled" or "confirmed" or "authorized" or "completed" or "Completed")
                 {
+                    // Idempotency guard belongs to THIS branch only - it must not also swallow a
+                    // later Refunded webhook for the same (by-then-Completed) payment (CTO audit
+                    // Etap 3: that used to be exactly why a refund was a dead-end no-op).
+                    if (payment.Status == PaymentStatus.Completed) { await tx.CommitAsync(); return; }
+
                     payment.Status = PaymentStatus.Completed;
                     payment.PaidAt = DateTime.UtcNow;
                     payment.ImojeTransactionId = dto.ResolvedTransactionId;
@@ -271,8 +270,31 @@ public class PaymentService : IPaymentService
                         $"Twoja płatność za usługę \"{payment.ServiceDescription}\" w kwocie {payment.Amount:0.00} PLN została pomyślnie zrealizowana.",
                         advertId: payment.AdvertId, paymentId: payment.Id);
                 }
-                else if (dto.ResolvedStatus is "rejected" or "cancelled" or "error" or "Failed" or "Cancelled" or "Refunded")
+                else if (dto.ResolvedStatus == "Refunded")
                 {
+                    // Own idempotency guard (not shared with the branch above): a duplicate Refunded
+                    // webhook for an already-refunded payment must not subtract badge/subscription
+                    // days a second time.
+                    if (payment.Status == PaymentStatus.Refunded) { await tx.CommitAsync(); return; }
+
+                    // Only revoke if the entitlement was actually granted in the first place - a
+                    // payment refunded before ever reaching Completed (e.g. authorized-then-refunded
+                    // without settling) never ran ActivateServiceAsync, so there's nothing to undo.
+                    var wasCompleted = payment.Status == PaymentStatus.Completed;
+                    payment.Status = PaymentStatus.Refunded;
+                    await _context.SaveChangesAsync();
+                    if (wasCompleted) await RevokeServiceAsync(payment);
+                    await tx.CommitAsync();
+
+                    _ = _notifications.NotifyAsync(payment.UserId, EmailNotificationType.PaymentRefunded,
+                        "Płatność zwrócona",
+                        $"Płatność za usługę \"{payment.ServiceDescription}\" w kwocie {payment.Amount:0.00} PLN została zwrócona. Odpowiadające jej uprawnienia zostały cofnięte.",
+                        advertId: payment.AdvertId, paymentId: payment.Id);
+                }
+                else if (dto.ResolvedStatus is "rejected" or "cancelled" or "error" or "Failed" or "Cancelled")
+                {
+                    if (payment.Status == PaymentStatus.Completed) { await tx.CommitAsync(); return; }
+
                     payment.Status = PaymentStatus.Failed;
                     await _context.SaveChangesAsync();
                     await tx.CommitAsync();
@@ -512,6 +534,62 @@ public class PaymentService : IPaymentService
             $"{typeName} aktywowane",
             $"Usługa \"{payment.ServiceDescription}\" została aktywowana na {payment.DurationDays} dni.",
             advertId: payment.AdvertId, paymentId: payment.Id);
+    }
+
+    // CTO audit Etap 3 (🔴 "Przepływ zwrotów faktycznie cofający przyznane uprawnienia"): a
+    // "Refunded" webhook used to just set Payment.Status = Failed - the entitlement
+    // ActivateServiceAsync already granted (badge, subscription tier, featured event) stayed active
+    // forever, since nothing ever reversed it. Mirrors ActivateServiceAsync's own branching, in
+    // reverse. For badge/event durations, subtracts exactly the days THIS payment granted rather
+    // than clearing the field outright - if the same advert stacked a second, still-unrefunded
+    // purchase on top, that purchase's remaining time survives; only fully clears the badge/feature
+    // if the subtraction leaves nothing (or a past date) remaining. Subscriptions don't stack the
+    // same way (see RevokeSubscriptionAsync), so those go to None immediately.
+    private async Task RevokeServiceAsync(Payment payment)
+    {
+        if (payment.ServiceType == ServiceType.Subscription)
+        {
+            await _subscriptionService.RevokeSubscriptionAsync(payment.UserId);
+            return;
+        }
+
+        if (payment.ServiceType == ServiceType.EventFeatured)
+        {
+            if (payment.EventId == null) return;
+            var ev = await _context.Events.FirstOrDefaultAsync(e => e.Id == payment.EventId);
+            if (ev == null) return;
+
+            if (ev.FeaturedUntil.HasValue)
+            {
+                var reduced = ev.FeaturedUntil.Value.AddDays(-(payment.DurationDays ?? 7));
+                if (reduced <= DateTime.UtcNow) { ev.IsFeatured = false; ev.FeaturedUntil = null; }
+                else ev.FeaturedUntil = reduced;
+            }
+            await _context.SaveChangesAsync();
+            return;
+        }
+
+        if (payment.ServiceType == ServiceType.Refresh || payment.AdvertId == null) return;
+
+        var advert = await _context.CarAdverts.FirstOrDefaultAsync(a => a.Id == payment.AdvertId);
+        if (advert == null) return;
+
+        var badge = payment.ServiceType switch
+        {
+            ServiceType.Top      => "TOP",
+            ServiceType.Premium  => "PREMIUM",
+            ServiceType.Featured => "FEATURED",
+            _                    => null
+        };
+        if (badge == null || advert.Badge != badge || !advert.BadgeExpiresAt.HasValue) return;
+
+        var reducedExpiry = advert.BadgeExpiresAt.Value.AddDays(-(payment.DurationDays ?? 30));
+        if (reducedExpiry <= DateTime.UtcNow) { advert.Badge = null; advert.BadgeExpiresAt = null; }
+        else advert.BadgeExpiresAt = reducedExpiry;
+
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("[Refund] Revoked {ServiceType} for advert {AdvertId}, payment #{PaymentId}",
+            payment.ServiceType, payment.AdvertId, payment.Id);
     }
 
     private async Task ActivateSubscriptionServiceAsync(Payment payment)

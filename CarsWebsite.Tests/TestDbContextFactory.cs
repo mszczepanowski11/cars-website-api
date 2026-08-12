@@ -19,8 +19,47 @@ public static class TestDbContextFactory
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(dbName ?? Guid.NewGuid().ToString())
+            // PaymentService.HandleWebhookAsync explicitly opens a DB transaction (see its own
+            // comment on why - Pomelo's retrying execution strategy forbids ambient transactions).
+            // The InMemory provider doesn't support real transactions and throws by default when
+            // one is requested; tests don't need real transactional isolation, only that the code
+            // path under test runs without EF Core treating "no-op transaction" as an error.
+            .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
             .Options;
         return new AppDbContext(options);
+    }
+
+    // A handful of code paths (PaymentService.HandleWebhookAsync's row lock via
+    // ExecuteSqlRawAsync("... FOR UPDATE") and its explicit BeginTransactionAsync) are genuinely
+    // relational and have no InMemory-provider equivalent - InMemory throws
+    // "Relational-specific methods can only be used when the context is using a relational
+    // database provider" the moment ExecuteSqlRawAsync runs. Those tests need a real MySQL
+    // database instead. TEST_MYSQL_CONNECTION_STRING lets CI point this at its own service
+    // container; the default matches this repo's own established local-dev credentials
+    // (appsettings.Development.json) against a separate `cars_website_test` schema, never the
+    // real `cars_website` dev database.
+    public static async Task<AppDbContext> CreateMySqlContextAsync(string testName)
+    {
+        // MySQL database identifiers cap at 64 chars and a raw test method name can easily exceed
+        // that - hash down to a short, still-unique-per-test-name name instead of relying on every
+        // caller to remember the limit.
+        var dbName = "t_" + Math.Abs(testName.GetHashCode());
+
+        var baseConnectionString = Environment.GetEnvironmentVariable("TEST_MYSQL_CONNECTION_STRING")
+            ?? "Server=localhost;Database=cars_website_test;User=root;Password=carswebsite;Port=3306;";
+        var connectionString = baseConnectionString.Replace("cars_website_test", dbName);
+
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseMySql(connectionString, new MySqlServerVersion(new Version(9, 4, 0)))
+            .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning))
+            .Options;
+        var context = new AppDbContext(options);
+        // EnsureCreated (not Migrate): builds the schema fresh from the current model, which is
+        // enough for these tests and avoids replaying the full migration history against a
+        // throwaway per-test-run database.
+        await context.Database.EnsureDeletedAsync();
+        await context.Database.EnsureCreatedAsync();
+        return context;
     }
 
     public static async Task<VehicleCategory> SeedCategoryAsync(AppDbContext context, string slug = "auta-osobowe", string name = "Auta osobowe")

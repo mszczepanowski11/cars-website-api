@@ -270,4 +270,18 @@ public class SubscriptionService : ISubscriptionService
         if (expired.Count > 0)
             await _context.SaveChangesAsync();
     }
+
+    public async Task RevokeSubscriptionAsync(int userId)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId)
+            ?? throw new KeyNotFoundException("Użytkownik nie istnieje.");
+
+        _logger.LogInformation("[Subscription] Revoking tier={Tier} for userId={UserId} (refund)", user.SubscriptionTier, userId);
+        user.SubscriptionTier = SubscriptionTier.None;
+        user.SubscriptionExpiresAt = null;
+        user.FeaturedQuotaUsed = 0;
+        user.FeaturedQuotaResetAt = null;
+
+        await _context.SaveChangesAsync();
+    }
 }
