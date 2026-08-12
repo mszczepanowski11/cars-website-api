@@ -512,6 +512,25 @@ public class AdminController : CarizoControllerBase
         var pendingCustomCategoryRequestCount = await _db.CustomCategoryRequests.CountAsync(r => r.Status == CustomCategoryRequestStatus.Pending);
         var vehicleCategoryCount = await _db.VehicleCategories.CountAsync();
 
+        // Cross-source duplicate detection (CTO audit Etap 2): adverts PartnerImportService flagged
+        // as a likely duplicate of another listing (VIN match or brand+model+year+price+mileage
+        // fuzzy match). Read-only, same as every other section here - un-flagging a false positive
+        // is a manual DB fix for now, not exposed as a one-click admin action.
+        var duplicateAdverts = await _db.CarAdverts
+            .Where(a => a.DuplicateOfId != null)
+            .OrderByDescending(a => a.CreatedAt)
+            .Select(a => new
+            {
+                a.Id,
+                a.Title,
+                a.CreatedAt,
+                DuplicateOfId = a.DuplicateOfId!.Value,
+                a.DuplicateMatchReason,
+                PartnerCompanyName = a.Partner != null ? a.Partner.CompanyName : null,
+            })
+            .Take(100)
+            .ToListAsync();
+
         return Ok(new
         {
             summary = new
@@ -529,6 +548,7 @@ public class AdminController : CarizoControllerBase
                 categoriesWithoutFeatureCategoriesCount = categoriesWithoutFeatureCategories.Count,
                 categoriesWithoutSubtypesCount          = categoriesWithoutSubtypes.Count,
                 partAdvertsMissingStructuredCategoryCount = partAdvertsMissingStructuredCategory.Count,
+                duplicateAdvertsCount          = duplicateAdverts.Count,
             },
             brandsWithoutModels,
             modelsWithoutGenerations,
@@ -543,6 +563,7 @@ public class AdminController : CarizoControllerBase
             categoriesWithoutFeatureCategories,
             categoriesWithoutSubtypes,
             partAdvertsMissingStructuredCategory,
+            duplicateAdverts,
             vehicleCategoryCount,
             enginePlausibilityRuleCount,
             pendingCustomCategoryRequestCount,

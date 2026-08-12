@@ -148,6 +148,8 @@ namespace CarsWebsite
                 .HasOne(a => a.VehicleCategory).WithMany().HasForeignKey(a => a.VehicleCategoryId).IsRequired(false);
             modelBuilder.Entity<CarAdvert>()
                 .HasOne(a => a.Partner).WithMany().HasForeignKey(a => a.PartnerId).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<CarAdvert>()
+                .HasOne(a => a.DuplicateOf).WithMany().HasForeignKey(a => a.DuplicateOfId).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
             // Unique per partner (not globally) - two different partners are free to both use "123"
             // as their own internal listing id.
             modelBuilder.Entity<CarAdvert>()
