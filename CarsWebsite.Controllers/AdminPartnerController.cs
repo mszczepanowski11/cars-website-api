@@ -61,6 +61,20 @@ public class AdminPartnerController : CarizoControllerBase
     public async Task<IActionResult> GetImportLogs(int id, [FromQuery] int limit = 20)
         => Ok(await _partnerService.GetImportLogsAsync(id, limit));
 
+    // Manual trigger for a partner's FeedUrl - previously the only way to run a sync was to wait
+    // up to 6h for the next PartnerFeedSyncJob cycle, with no way to check "is this partner's feed
+    // actually working" without waiting for it to fail silently in the background first.
+    [HttpPost("{id}/sync-now")]
+    public async Task<IActionResult> SyncNow(int id)
+    {
+        try
+        {
+            return Ok(await _partnerService.SyncNowAsync(id));
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
     // Reviews for the public "Dla firm" self-service signup form (PartnerSignupController) -
     // separate from the CRUD above, which an admin uses to create partners directly.
     [HttpGet("signup-requests")]

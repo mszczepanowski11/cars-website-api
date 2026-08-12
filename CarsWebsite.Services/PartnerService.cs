@@ -7,10 +7,14 @@ using Microsoft.EntityFrameworkCore;
 public class PartnerService : IPartnerService
 {
     private readonly AppDbContext _context;
+    private readonly IPartnerFeedFetchService _feedFetch;
+    private readonly IPartnerImportService _partnerImport;
 
-    public PartnerService(AppDbContext context)
+    public PartnerService(AppDbContext context, IPartnerFeedFetchService feedFetch, IPartnerImportService partnerImport)
     {
         _context = context;
+        _feedFetch = feedFetch;
+        _partnerImport = partnerImport;
     }
 
     public async Task<List<PartnerResponseDto>> GetAllAsync()
@@ -46,6 +50,9 @@ public class PartnerService : IPartnerService
             LinkedUserId = dto.LinkedUserId,
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
+            FeedUrl = string.IsNullOrWhiteSpace(dto.FeedUrl) ? null : dto.FeedUrl.Trim(),
+            FeedFormat = dto.FeedFormat,
+            AutoSyncEnabled = dto.AutoSyncEnabled,
         };
 
         _context.Partners.Add(entity);
@@ -63,9 +70,26 @@ public class PartnerService : IPartnerService
         entity.CompanyName = dto.CompanyName.Trim();
         entity.ContactEmail = dto.ContactEmail.Trim();
         entity.IsActive = dto.IsActive;
+        entity.FeedUrl = string.IsNullOrWhiteSpace(dto.FeedUrl) ? null : dto.FeedUrl.Trim();
+        entity.FeedFormat = dto.FeedFormat;
+        entity.AutoSyncEnabled = dto.AutoSyncEnabled;
 
         await _context.SaveChangesAsync();
         return MapToDto(entity);
+    }
+
+    public async Task<PartnerImportLogResponseDto> SyncNowAsync(int id)
+    {
+        var partner = await _context.Partners.FirstOrDefaultAsync(p => p.Id == id)
+            ?? throw new KeyNotFoundException("Partner nie istnieje.");
+        if (string.IsNullOrWhiteSpace(partner.FeedUrl))
+            throw new InvalidOperationException("Partner nie ma skonfigurowanego adresu feedu (FeedUrl) - synchronizacja ręczna wymaga pull-feedu.");
+
+        var fetch = await _feedFetch.FetchAsync(partner.FeedUrl);
+        if (!fetch.Success)
+            throw new InvalidOperationException($"Pobranie feedu nie powiodło się: {fetch.Error}");
+
+        return await _partnerImport.ImportAsync(partner, fetch.Content!, fetch.Format);
     }
 
     public async Task<string> RegenerateApiKeyAsync(int id)
@@ -130,6 +154,9 @@ public class PartnerService : IPartnerService
         IsActive = p.IsActive,
         CreatedAt = p.CreatedAt,
         LastImportAt = p.LastImportAt,
+        FeedUrl = p.FeedUrl,
+        FeedFormat = p.FeedFormat?.ToString(),
+        AutoSyncEnabled = p.AutoSyncEnabled,
     };
 
     private static PartnerImportLogResponseDto MapLogToDto(PartnerImportLog l) => new()
