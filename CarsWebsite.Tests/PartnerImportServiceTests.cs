@@ -30,7 +30,7 @@ public class PartnerImportServiceTests
         await context.SaveChangesAsync();
 
         var advertService = TestDbContextFactory.CreateAdvertService(context);
-        var importService = new PartnerImportService(context, advertService);
+        var importService = new PartnerImportService(context, advertService, TestDbContextFactory.CreateDummyCloudinary());
         return (context, importService, partner);
     }
 
@@ -218,7 +218,7 @@ public class PartnerImportServiceTests
         context.Partners.AddRange(partnerA, partnerB);
         await context.SaveChangesAsync();
         var advertService = TestDbContextFactory.CreateAdvertService(context);
-        var service = new PartnerImportService(context, advertService);
+        var service = new PartnerImportService(context, advertService, TestDbContextFactory.CreateDummyCloudinary());
 
         const string vin = "WAUZZZ8K9BA123456";
         var xmlA = $"""
@@ -259,5 +259,30 @@ public class PartnerImportServiceTests
         Assert.Equal(1, log.ItemsCreated);
         var advert = await context.CarAdverts.Include(a => a.Brand).FirstAsync(a => a.ExternalId == "CSV-1");
         Assert.Equal("Opel", advert.Brand!.Name);
+    }
+
+    [Fact]
+    public async Task ImportAsync_ImageRehostFails_StillCreatesTheAdvert()
+    {
+        // TestDbContextFactory's Cloudinary client uses fake credentials, so every re-host upload
+        // genuinely fails here - exactly the case this test guards: a partner's image (dead link,
+        // unreachable host, Cloudinary outage) must not take the whole item down with it. CTO audit
+        // Etap 2 "re-hosting zdjęć partnera na Cloudinary zamiast linkowania".
+        var (context, service, partner) = await SetupAsync(nameof(ImportAsync_ImageRehostFails_StillCreatesTheAdvert));
+        var xml = """
+            <Adverts><Advert>
+                <ExternalId>IMG-1</ExternalId><Title>Renault Clio</Title><Price>25000</Price>
+                <Category>auta-osobowe</Category><Brand>Renault</Brand><Model>Clio</Model>
+                <Year>2015</Year><Mileage>140000</Mileage>
+                <Images><Image>https://example.com/photo1.jpg</Image></Images>
+            </Advert></Adverts>
+            """;
+
+        var log = await service.ImportAsync(partner, xml, PartnerFeedFormat.Xml);
+
+        Assert.Equal(1, log.ItemsCreated);
+        Assert.Equal(0, log.ItemsFailed);
+        var advert = await context.CarAdverts.FirstAsync(a => a.ExternalId == "IMG-1");
+        Assert.False(await context.AdvertImages.AnyAsync(i => i.AdvertId == advert.Id));
     }
 }
