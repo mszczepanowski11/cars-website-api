@@ -92,6 +92,74 @@ public class PartnerService : IPartnerService
         return await _partnerImport.ImportAsync(partner, fetch.Content!, fetch.Format);
     }
 
+    public async Task<List<PartnerFieldMappingDto>> GetFieldMappingsAsync(int partnerId)
+        => await _context.PartnerFieldMappings.Where(m => m.PartnerId == partnerId)
+            .Select(m => new PartnerFieldMappingDto { OurField = m.OurField, SourcePath = m.SourcePath })
+            .ToListAsync();
+
+    public async Task<List<PartnerFieldMappingDto>> SetFieldMappingsAsync(int partnerId, List<PartnerFieldMappingDto> mappings)
+    {
+        if (!await _context.Partners.AnyAsync(p => p.Id == partnerId))
+            throw new KeyNotFoundException("Partner nie istnieje.");
+
+        var unknown = mappings.Select(m => m.OurField).Except(PartnerFieldMapping.FieldNames).ToList();
+        if (unknown.Count > 0)
+            throw new ArgumentException($"Nieznane pole(a): {string.Join(", ", unknown)}.");
+        var duplicates = mappings.GroupBy(m => m.OurField).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+        if (duplicates.Count > 0)
+            throw new ArgumentException($"Zduplikowane mapowanie dla pola: {string.Join(", ", duplicates)}.");
+
+        var existing = await _context.PartnerFieldMappings.Where(m => m.PartnerId == partnerId).ToListAsync();
+        _context.PartnerFieldMappings.RemoveRange(existing);
+        foreach (var m in mappings.Where(m => !string.IsNullOrWhiteSpace(m.SourcePath)))
+        {
+            _context.PartnerFieldMappings.Add(new PartnerFieldMapping
+            {
+                PartnerId = partnerId,
+                OurField = m.OurField,
+                SourcePath = m.SourcePath.Trim(),
+            });
+        }
+        await _context.SaveChangesAsync();
+
+        return await GetFieldMappingsAsync(partnerId);
+    }
+
+    public async Task<List<PartnerValueMappingDto>> GetValueMappingsAsync(int partnerId)
+        => await _context.PartnerValueMappings.Where(m => m.PartnerId == partnerId)
+            .Select(m => new PartnerValueMappingDto { Field = m.Field, ExternalValue = m.ExternalValue, InternalValue = m.InternalValue })
+            .ToListAsync();
+
+    public async Task<List<PartnerValueMappingDto>> SetValueMappingsAsync(int partnerId, List<PartnerValueMappingDto> mappings)
+    {
+        if (!await _context.Partners.AnyAsync(p => p.Id == partnerId))
+            throw new KeyNotFoundException("Partner nie istnieje.");
+
+        var unknown = mappings.Select(m => m.Field).Except(PartnerValueMapping.FieldNames).ToList();
+        if (unknown.Count > 0)
+            throw new ArgumentException($"Nieznane pole(a): {string.Join(", ", unknown)}.");
+        var duplicates = mappings.GroupBy(m => (m.Field, ExternalValue: m.ExternalValue.Trim().ToLowerInvariant()))
+            .Where(g => g.Count() > 1).Select(g => $"{g.Key.Field}:{g.Key.ExternalValue}").ToList();
+        if (duplicates.Count > 0)
+            throw new ArgumentException($"Zduplikowane mapowanie dla: {string.Join(", ", duplicates)}.");
+
+        var existing = await _context.PartnerValueMappings.Where(m => m.PartnerId == partnerId).ToListAsync();
+        _context.PartnerValueMappings.RemoveRange(existing);
+        foreach (var m in mappings.Where(m => !string.IsNullOrWhiteSpace(m.ExternalValue) && !string.IsNullOrWhiteSpace(m.InternalValue)))
+        {
+            _context.PartnerValueMappings.Add(new PartnerValueMapping
+            {
+                PartnerId = partnerId,
+                Field = m.Field,
+                ExternalValue = m.ExternalValue.Trim(),
+                InternalValue = m.InternalValue.Trim(),
+            });
+        }
+        await _context.SaveChangesAsync();
+
+        return await GetValueMappingsAsync(partnerId);
+    }
+
     public async Task<string> RegenerateApiKeyAsync(int id)
     {
         var entity = await _context.Partners.FirstOrDefaultAsync(p => p.Id == id)

@@ -51,6 +51,19 @@ public class PartnerApiKeyResponseDto
     public string ApiKey { get; set; } = string.Empty;
 }
 
+public class PartnerFieldMappingDto
+{
+    [Required] public string OurField { get; set; } = string.Empty;
+    [Required] [MaxLength(200)] public string SourcePath { get; set; } = string.Empty;
+}
+
+public class PartnerValueMappingDto
+{
+    [Required] public string Field { get; set; } = string.Empty;
+    [Required] [MaxLength(200)] public string ExternalValue { get; set; } = string.Empty;
+    [Required] [MaxLength(200)] public string InternalValue { get; set; } = string.Empty;
+}
+
 public class PartnerImportLogResponseDto
 {
     public int Id { get; set; }

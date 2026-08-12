@@ -75,6 +75,34 @@ public class AdminPartnerController : CarizoControllerBase
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
     }
 
+    // Schema adapter layer (CTO audit Etap 2): lets an admin configure a partner's own field
+    // names and taxonomy value strings without writing new C# parsing code per integrator. Each
+    // PUT replaces the partner's full mapping set (matches the edit-form save pattern used
+    // elsewhere in this controller), not a granular per-row CRUD.
+    [HttpGet("{id}/field-mappings")]
+    public async Task<IActionResult> GetFieldMappings(int id)
+        => Ok(await _partnerService.GetFieldMappingsAsync(id));
+
+    [HttpPut("{id}/field-mappings")]
+    public async Task<IActionResult> SetFieldMappings(int id, [FromBody] List<PartnerFieldMappingDto> mappings)
+    {
+        try { return Ok(await _partnerService.SetFieldMappingsAsync(id, mappings)); }
+        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    [HttpGet("{id}/value-mappings")]
+    public async Task<IActionResult> GetValueMappings(int id)
+        => Ok(await _partnerService.GetValueMappingsAsync(id));
+
+    [HttpPut("{id}/value-mappings")]
+    public async Task<IActionResult> SetValueMappings(int id, [FromBody] List<PartnerValueMappingDto> mappings)
+    {
+        try { return Ok(await _partnerService.SetValueMappingsAsync(id, mappings)); }
+        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
     // Reviews for the public "Dla firm" self-service signup form (PartnerSignupController) -
     // separate from the CRUD above, which an admin uses to create partners directly.
     [HttpGet("signup-requests")]
