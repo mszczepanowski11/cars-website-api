@@ -1,0 +1,29 @@
+name: Backend tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore cars-website-api.sln
+
+      - name: Build
+        run: dotnet build cars-website-api.sln --no-restore --configuration Release
+
+      # CarsWebsite.Tests uses EF Core's InMemory provider (see CarsWebsite.Tests/TestDbContextFactory.cs)
+      # rather than a real MySQL service container - the tests exercise PartnerImportService and
+      # AdvertService's own logic (parsing, field/value mapping, dedup detection, search filtering)
+      # against a real AppDbContext, not MySQL-specific SQL generation.
+      - name: Test
+        run: dotnet test CarsWebsite.Tests/CarsWebsite.Tests.csproj --no-build --configuration Release --logger "console;verbosity=normal"
