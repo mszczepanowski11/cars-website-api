@@ -14,16 +14,24 @@ public class AdvertController : CarizoControllerBase
     private readonly IAdvertImageService _imageService;
     private readonly IUserService _userService;
     private readonly ISubscriptionService _subscriptionService;
+    private readonly ICompanyService _companyService;
     private readonly ILogger<AdvertController> _logger;
 
-    public AdvertController(IAdvertService advertService, IAdvertImageService imageService, IUserService userService, ISubscriptionService subscriptionService, ILogger<AdvertController> logger)
+    public AdvertController(IAdvertService advertService, IAdvertImageService imageService, IUserService userService, ISubscriptionService subscriptionService, ICompanyService companyService, ILogger<AdvertController> logger)
     {
         _advertService = advertService;
         _imageService = imageService;
         _userService = userService;
         _subscriptionService = subscriptionService;
+        _companyService = companyService;
         _logger = logger;
     }
+
+    // A Member acting on a company account manages the Owner's adverts, not their own - resolve
+    // once up front so every ownership check further down the stack (advert.UserId == userId)
+    // keeps working unchanged. Deliberately NOT used for payments/subscription/account endpoints,
+    // which stay scoped to the caller's own id.
+    private Task<int> ResolveActingUserIdAsync(int callerId) => _companyService.GetEffectiveOwnerIdAsync(callerId);
 
     [HttpGet("most-viewed")]
     public async Task<IActionResult> GetMostViewed([FromQuery] int count = 8)
@@ -55,6 +63,7 @@ public class AdvertController : CarizoControllerBase
     {
         var userId = GetUserId();
         if (userId == 0) return Unauthorized();
+        userId = await ResolveActingUserIdAsync(userId);
         return Ok(await _advertService.GetUserAdvertsAsync(userId, page, pageSize));
     }
 
@@ -86,6 +95,7 @@ public class AdvertController : CarizoControllerBase
     {
         var userId = GetUserId();
         if (userId == 0) return Unauthorized();
+        userId = await ResolveActingUserIdAsync(userId);
 
         var user = await _userService.GetById(userId);
         if (!IsAdmin())
@@ -145,6 +155,7 @@ public class AdvertController : CarizoControllerBase
     {
         var userId = GetUserId();
         if (userId == 0) return Unauthorized();
+        userId = await ResolveActingUserIdAsync(userId);
         try
         {
             await _advertService.UpdateCarAdvertAsync(id, dto, userId, IsAdmin());
@@ -161,6 +172,7 @@ public class AdvertController : CarizoControllerBase
     {
         var userId = GetUserId();
         if (userId == 0) return Unauthorized();
+        userId = await ResolveActingUserIdAsync(userId);
         try
         {
             await _advertService.DeleteCarAdvertAsync(id, userId);
@@ -175,6 +187,7 @@ public class AdvertController : CarizoControllerBase
     {
         var userId = GetUserId();
         if (userId == 0) return Unauthorized();
+        userId = await ResolveActingUserIdAsync(userId);
         try
         {
             await _advertService.MarkAsSoldAsync(id, userId);
@@ -190,6 +203,7 @@ public class AdvertController : CarizoControllerBase
     {
         var userId = GetUserId();
         if (userId == 0) return Unauthorized();
+        userId = await ResolveActingUserIdAsync(userId);
         try
         {
             await _advertService.PublishAsync(id, userId);
@@ -221,6 +235,7 @@ public class AdvertController : CarizoControllerBase
     {
         var userId = GetUserId();
         if (userId == 0) return Unauthorized();
+        userId = await ResolveActingUserIdAsync(userId);
         try
         {
             await _advertService.DeactivateAsync(id, userId);
@@ -236,6 +251,7 @@ public class AdvertController : CarizoControllerBase
     {
         var userId = GetUserId();
         if (userId == 0) return Unauthorized();
+        userId = await ResolveActingUserIdAsync(userId);
         try
         {
             await _advertService.RenewAsync(id, userId);
@@ -255,6 +271,7 @@ public class AdvertController : CarizoControllerBase
 
         var userId = GetUserId();
         if (userId == 0) return Unauthorized();
+        userId = await ResolveActingUserIdAsync(userId);
 
         _logger.LogInformation("[ImageUpload] advertId={AdvertId} userId={UserId} file={File} size={Size}B type={Type}",
             advertId, userId, file.FileName, file.Length, file.ContentType);
@@ -298,6 +315,7 @@ public class AdvertController : CarizoControllerBase
     {
         var userId = GetUserId();
         if (userId == 0) return Unauthorized();
+        userId = await ResolveActingUserIdAsync(userId);
         try
         {
             await _imageService.SetMainImageAsync(advertId, imageId, userId, IsAdmin());
@@ -313,6 +331,7 @@ public class AdvertController : CarizoControllerBase
     {
         var userId = GetUserId();
         if (userId == 0) return Unauthorized();
+        userId = await ResolveActingUserIdAsync(userId);
         try
         {
             await _imageService.DeleteImageAsync(advertId, imageId, userId, IsAdmin());
@@ -331,6 +350,7 @@ public class AdvertController : CarizoControllerBase
 
         var userId = GetUserId();
         if (userId == 0) return Unauthorized();
+        userId = await ResolveActingUserIdAsync(userId);
 
         const long maxSize = 25 * 1024 * 1024;
         if (file.Length > maxSize)
@@ -384,6 +404,7 @@ public class AdvertController : CarizoControllerBase
     {
         var userId = GetUserId();
         if (userId == 0) return Unauthorized();
+        userId = await ResolveActingUserIdAsync(userId);
         var advert = await _advertService.GetCarAdvertEntityAsync(advertId);
         if (advert == null) return NotFound();
         if (advert.UserId != userId) return Forbid();

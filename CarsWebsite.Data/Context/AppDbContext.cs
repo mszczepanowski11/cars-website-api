@@ -36,6 +36,7 @@ namespace CarsWebsite
         public DbSet<EventReport> EventReports { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Invoice> Invoices { get; set; }
+        public DbSet<CompanyMembership> CompanyMemberships { get; set; }
 
         // Taxonomy extensions
         public DbSet<DriveType> DriveTypes { get; set; }
@@ -298,6 +299,25 @@ namespace CarsWebsite
             modelBuilder.Entity<Message>()
                 .HasOne(m => m.Sender).WithMany()
                 .HasForeignKey(m => m.SenderId).OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CompanyMembership>().ToTable("CompanyMemberships").HasKey(cm => cm.Id);
+            modelBuilder.Entity<CompanyMembership>()
+                .HasOne(cm => cm.Owner).WithMany()
+                .HasForeignKey(cm => cm.OwnerId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<CompanyMembership>()
+                .HasOne(cm => cm.Member).WithMany()
+                .HasForeignKey(cm => cm.MemberId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<CompanyMembership>()
+                .HasIndex(cm => cm.InviteToken).IsUnique();
+            // A user can be an active Member of at most one company at a time - enforced at the
+            // DB level via a filtered unique index (MySQL: unique index that ignores NULL member
+            // rows the same way, since only Active rows ever carry a non-null MemberId that matters
+            // here) is awkward across providers, so this is enforced in CompanyService instead;
+            // this index just speeds up the "who do I work for" and "who works for me" lookups.
+            modelBuilder.Entity<CompanyMembership>()
+                .HasIndex(cm => new { cm.OwnerId, cm.Status });
+            modelBuilder.Entity<CompanyMembership>()
+                .HasIndex(cm => new { cm.MemberId, cm.Status });
 
             modelBuilder.Entity<Transaction>().ToTable("transactions").HasKey(t => t.Id);
             modelBuilder.Entity<Transaction>()
