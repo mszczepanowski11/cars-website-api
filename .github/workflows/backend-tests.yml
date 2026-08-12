@@ -8,6 +8,28 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+
+    # PaymentRefundTests needs a real relational database - PaymentService.HandleWebhookAsync
+    # opens an explicit transaction and takes a row lock via ExecuteSqlRawAsync("... FOR UPDATE"),
+    # neither of which the InMemory provider (used by every other test) can emulate. Credentials
+    # match this repo's own local-dev convention (appsettings.Development.json), consumed via
+    # TEST_MYSQL_CONNECTION_STRING below - not a secret, just a throwaway CI-only database.
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: carswebsite
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      TEST_MYSQL_CONNECTION_STRING: "Server=127.0.0.1;Database=cars_website_test;User=root;Password=carswebsite;Port=3306;"
+
     steps:
       - uses: actions/checkout@v4
 
@@ -21,9 +43,5 @@ jobs:
       - name: Build
         run: dotnet build cars-website-api.sln --no-restore --configuration Release
 
-      # CarsWebsite.Tests uses EF Core's InMemory provider (see CarsWebsite.Tests/TestDbContextFactory.cs)
-      # rather than a real MySQL service container - the tests exercise PartnerImportService and
-      # AdvertService's own logic (parsing, field/value mapping, dedup detection, search filtering)
-      # against a real AppDbContext, not MySQL-specific SQL generation.
       - name: Test
         run: dotnet test CarsWebsite.Tests/CarsWebsite.Tests.csproj --no-build --configuration Release --logger "console;verbosity=normal"
