@@ -1066,7 +1066,7 @@ public class AdvertService : IAdvertService
                 a.Brand?.Name ?? "",
                 a.Model?.Name ?? "",
                 a.Year > 0 ? a.Year.ToString(System.Globalization.CultureInfo.InvariantCulture) : "",
-                a.Price.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                a.Price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture),
                 a.Currency,
                 a.Mileage.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 a.Vin ?? "",
