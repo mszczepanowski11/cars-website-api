@@ -101,7 +101,9 @@ public static class TestDbContextFactory
 
     public static IAdvertService CreateAdvertService(AppDbContext context)
         => new AdvertService(context, CreateMapper(), NullLogger<AdvertService>.Instance, CreateDummyCloudinary(),
-            CreateHierarchyValidationService(context), new NullAdvertSearchIndexService());
+            CreateHierarchyValidationService(context), new NullAdvertSearchIndexService(),
+            new Microsoft.Extensions.Caching.Distributed.MemoryDistributedCache(
+                Microsoft.Extensions.Options.Options.Create(new Microsoft.Extensions.Caching.Memory.MemoryDistributedCacheOptions())));
 }
 
 // Fail-open by design (see the real interface's comment): tests never touch Meilisearch, so this

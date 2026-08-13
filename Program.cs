@@ -17,6 +17,7 @@ using System.Threading.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using StackExchange.Redis;
 using DriveType = cars_website_api.CarsWebsite.Domain.Entities.DriveType;
 
 
@@ -207,7 +208,25 @@ internal class Program
             string.IsNullOrEmpty(meilisearchHost) ? null : new Meilisearch.MeilisearchClient(meilisearchHost, meilisearchApiKey));
         builder.Services.AddScoped<IAdvertSearchIndexService, MeilisearchAdvertIndexService>();
 
-        builder.Services.AddMemoryCache(); // B-27: taxonomy caching
+        // Redis (CTO audit Etap 4): distributed cache + rate limiter state, so taxonomy cache
+        // invalidation and rate limits stay correct once the app runs with more than one replica -
+        // today's IMemoryCache/in-process FixedWindowRateLimiter each give a different, wrong
+        // answer per replica. REDIS_URL is Railway's convention for its Redis add-on
+        // (redis://[:password@]host:port); unset means every consumer below falls back to an
+        // in-process equivalent - safe for local dev and a single-replica deployment, but no
+        // longer correct once horizontal scaling (Etap 5) is turned on without Redis configured.
+        var redisUrl = (Environment.GetEnvironmentVariable("REDIS_URL") ?? builder.Configuration["Redis:ConnectionString"] ?? "").Trim();
+        var redisConnectionString = ParseRedisConnectionString(redisUrl);
+        var redisMultiplexer = redisConnectionString != null ? ConnectionMultiplexer.Connect(redisConnectionString) : null;
+        if (redisMultiplexer != null)
+            builder.Services.AddSingleton<IConnectionMultiplexer>(redisMultiplexer);
+
+        if (redisConnectionString != null)
+            builder.Services.AddStackExchangeRedisCache(o => o.Configuration = redisConnectionString);
+        else
+            builder.Services.AddDistributedMemoryCache();
+
+        builder.Services.AddMemoryCache(); // B-27: admin stats cache (see AdminService) - taxonomy caching moved to IDistributedCache above
         builder.Services.AddSingleton<ITaxonomyCacheVersion, TaxonomyCacheVersion>();
         builder.Services.AddScoped<ITaxonomyService, TaxonomyService>();
         builder.Services.AddScoped<IHierarchyValidationService, HierarchyValidationService>();
@@ -278,23 +297,36 @@ internal class Program
                 return "ip:" + (ip ?? "unknown");
             }
 
+            // Redis-backed when configured (see redisMultiplexer above) so the counter is shared
+            // across every replica instead of each one enforcing its own separate quota - the
+            // "stan rate limitera" half of CTO audit Etap 4. Falls back to the original in-process
+            // limiter otherwise, unchanged.
             System.Threading.RateLimiting.RateLimitPartition<string> Partition(HttpContext ctx,
-                int permit, TimeSpan window, int queue) =>
-                System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
-                    RateLimitKey(ctx), _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+                string policyName, int permit, TimeSpan window, int queue)
+            {
+                var key = RateLimitKey(ctx);
+                if (redisMultiplexer != null)
+                {
+                    return System.Threading.RateLimiting.RateLimitPartition.Get(
+                        $"{policyName}:{key}",
+                        _ => new RedisFixedWindowRateLimiter(redisMultiplexer, $"ratelimit:{policyName}:{key}", permit, window));
+                }
+                return System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+                    key, _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
                     {
                         PermitLimit = permit,
                         Window = window,
                         QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst,
                         QueueLimit = queue,
                     });
+            }
 
             // B-26: applied to all endpoints via app.UseRateLimiter() + [EnableRateLimiting("...")].
-            options.AddPolicy("global", ctx => Partition(ctx, 100, TimeSpan.FromMinutes(1), 2));
-            options.AddPolicy("auth",   ctx => Partition(ctx, 10,  TimeSpan.FromMinutes(1), 0));
-            options.AddPolicy("strict", ctx => Partition(ctx, 5,   TimeSpan.FromMinutes(5), 0));
+            options.AddPolicy("global", ctx => Partition(ctx, "global", 100, TimeSpan.FromMinutes(1), 2));
+            options.AddPolicy("auth",   ctx => Partition(ctx, "auth",   10,  TimeSpan.FromMinutes(1), 0));
+            options.AddPolicy("strict", ctx => Partition(ctx, "strict", 5,   TimeSpan.FromMinutes(5), 0));
             // AI endpoints call paid external APIs — now genuinely per-user (authenticated) cost cap.
-            options.AddPolicy("ai",     ctx => Partition(ctx, 10,  TimeSpan.FromHours(1),  0));
+            options.AddPolicy("ai",     ctx => Partition(ctx, "ai",     10,  TimeSpan.FromHours(1),  0));
         });
 
         builder.Services.AddMemoryCache();
@@ -3135,6 +3167,36 @@ internal class Program
         });
 
         app.Run();
+    }
+
+    // Railway (and most managed Redis add-ons) hand out a redis://[:password@]host:port URL, which
+    // StackExchange.Redis does not parse natively - it wants its own "host:port,password=..." form.
+    // Returns null for an empty/unset input so callers can treat that as "Redis not configured"
+    // without a separate blank check. AbortOnConnectFail=false: a brief Redis hiccup on boot
+    // should not crash the whole API process, ConnectionMultiplexer retries in the background.
+    private static string? ParseRedisConnectionString(string urlOrConnectionString)
+    {
+        if (string.IsNullOrWhiteSpace(urlOrConnectionString)) return null;
+        if (!urlOrConnectionString.StartsWith("redis://", StringComparison.OrdinalIgnoreCase) &&
+            !urlOrConnectionString.StartsWith("rediss://", StringComparison.OrdinalIgnoreCase))
+        {
+            return urlOrConnectionString; // already in StackExchange.Redis's own connection-string format
+        }
+
+        var uri = new Uri(urlOrConnectionString);
+        var options = new ConfigurationOptions
+        {
+            Ssl = urlOrConnectionString.StartsWith("rediss://", StringComparison.OrdinalIgnoreCase),
+            AbortOnConnectFail = false,
+        };
+        options.EndPoints.Add(uri.Host, uri.Port);
+        if (!string.IsNullOrEmpty(uri.UserInfo))
+        {
+            var parts = uri.UserInfo.Split(':', 2);
+            if (parts.Length == 2 && !string.IsNullOrEmpty(parts[1]))
+                options.Password = Uri.UnescapeDataString(parts[1]);
+        }
+        return options.ToString();
     }
 
     // Merges duplicate Brand rows sharing the same Name (e.g. two "Krone" rows) into the

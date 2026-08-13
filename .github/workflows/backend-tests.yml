@@ -14,6 +14,9 @@ jobs:
     # neither of which the InMemory provider (used by every other test) can emulate. Credentials
     # match this repo's own local-dev convention (appsettings.Development.json), consumed via
     # TEST_MYSQL_CONNECTION_STRING below - not a secret, just a throwaway CI-only database.
+    # RedisInfrastructureTests needs a real Redis - it proves cross-replica correctness (CTO audit
+    # Etap 4) by pointing two independent client instances at the same Redis and checking they see
+    # each other's writes, which nothing in-process can honestly stand in for.
     services:
       mysql:
         image: mysql:8.0
@@ -26,9 +29,19 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     env:
       TEST_MYSQL_CONNECTION_STRING: "Server=127.0.0.1;Database=cars_website_test;User=root;Password=carswebsite;Port=3306;"
+      TEST_REDIS_CONNECTION_STRING: "localhost:6379"
 
     steps:
       - uses: actions/checkout@v4

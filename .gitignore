@@ -57,3 +57,6 @@ __pycache__/
 ## OS
 .DS_Store
 Thumbs.db
+
+## Local Redis (redis-server default RDB snapshot when run for local dev/testing)
+dump.rdb

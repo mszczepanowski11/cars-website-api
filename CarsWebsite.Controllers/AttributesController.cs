@@ -162,7 +162,7 @@ public class AttributesController : ControllerBase
         };
         _db.AttributeDefinitions.Add(def);
         await _db.SaveChangesAsync();
-        _taxonomyCacheVersion.Bump();
+        await _taxonomyCacheVersion.BumpAsync();
         return Ok(new { def.Id });
     }
 
@@ -192,7 +192,7 @@ public class AttributesController : ControllerBase
         def.IsActive = dto.IsActive;
         def.SortOrder = dto.SortOrder;
         await _db.SaveChangesAsync();
-        _taxonomyCacheVersion.Bump();
+        await _taxonomyCacheVersion.BumpAsync();
         return Ok(new { def.Id });
     }
 
@@ -207,7 +207,7 @@ public class AttributesController : ControllerBase
             return BadRequest($"To pole ma już {def.Values.Count} zapisanych wartości - nie można go usunąć. Możesz je dezaktywować (przełącznik 'Aktywne').");
         _db.AttributeDefinitions.Remove(def);
         await _db.SaveChangesAsync();
-        _taxonomyCacheVersion.Bump();
+        await _taxonomyCacheVersion.BumpAsync();
         return NoContent();
     }
 }
