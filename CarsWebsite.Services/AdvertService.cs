@@ -3,10 +3,12 @@ using cars_website_api.CarsWebsite.Domain.Entities;
 using cars_website_api.CarsWebsite.DTOs.Admin;
 using cars_website_api.CarsWebsite.DTOs.Advert;
 using cars_website_api.CarsWebsite.Interfaces;
+using cars_website_api.CarsWebsite.Services;
 using CarsWebsite;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 
 public class AdvertService : IAdvertService
@@ -17,6 +19,14 @@ public class AdvertService : IAdvertService
     private readonly Cloudinary _cloudinary;
     private readonly IHierarchyValidationService _hierarchyValidationService;
     private readonly IAdvertSearchIndexService _searchIndexService;
+    private readonly IDistributedCache _cache;
+
+    // CTO audit Etap 4 - "wyniki wyszukiwania" through Redis: short enough that a newly-created or
+    // just-edited advert appearing stale for a few seconds on the public marketplace search is
+    // unnoticeable, long enough to absorb duplicate/bursty identical queries. No invalidation on
+    // write - deliberately not worth the complexity for a window this short (standard trade-off for
+    // search-result caching).
+    private static readonly TimeSpan SearchCacheDuration = TimeSpan.FromSeconds(30);
 
     // Faza 7 of the category/attribute restructure: thresholds for the calculated era/sport
     // filters on "Auta osobowe" - named constants instead of magic numbers, per the plan.
@@ -26,7 +36,7 @@ public class AdvertService : IAdvertService
     private const int SportPowerThresholdHP = 250;
     private static readonly string[] SportyBodyTypeNames = { "Coupe", "Roadster" };
 
-    public AdvertService(AppDbContext context, IMapper mapper, ILogger<AdvertService> logger, Cloudinary cloudinary, IHierarchyValidationService hierarchyValidationService, IAdvertSearchIndexService searchIndexService)
+    public AdvertService(AppDbContext context, IMapper mapper, ILogger<AdvertService> logger, Cloudinary cloudinary, IHierarchyValidationService hierarchyValidationService, IAdvertSearchIndexService searchIndexService, IDistributedCache cache)
     {
         _context = context;
         _mapper = mapper;
@@ -34,6 +44,7 @@ public class AdvertService : IAdvertService
         _cloudinary = cloudinary;
         _hierarchyValidationService = hierarchyValidationService;
         _searchIndexService = searchIndexService;
+        _cache = cache;
     }
 
     // Extracts the Cloudinary public_id from a secure URL.
@@ -398,6 +409,31 @@ public class AdvertService : IAdvertService
 
     
     public async Task<PagedResult<CarAdvertResponseDto>> SearchCarAdvertsAsync(SearchCarAdvertDto dto)
+    {
+        // Only the public marketplace search (no UserId filter) is cached - a user's own "my
+        // adverts" search should always reflect what they just did (e.g. an advert they just
+        // created or edited), and caching that would show a confusingly stale result for a
+        // low-traffic path that doesn't need it.
+        if (dto.UserId.HasValue)
+            return await SearchCarAdvertsInternalAsync(dto);
+
+        var cacheKey = BuildSearchCacheKey(dto);
+        var cached = await _cache.GetOrCreateAsync(cacheKey, async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = SearchCacheDuration;
+            return await SearchCarAdvertsInternalAsync(dto);
+        });
+        return cached ?? await SearchCarAdvertsInternalAsync(dto);
+    }
+
+    private static string BuildSearchCacheKey(SearchCarAdvertDto dto)
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(dto);
+        var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(json)));
+        return $"search:v1:{hash}";
+    }
+
+    private async Task<PagedResult<CarAdvertResponseDto>> SearchCarAdvertsInternalAsync(SearchCarAdvertDto dto)
     {
         dto.PageSize = Math.Clamp(dto.PageSize, 1, 100);
 

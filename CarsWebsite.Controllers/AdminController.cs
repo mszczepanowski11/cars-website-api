@@ -241,7 +241,7 @@ public class AdminController : CarizoControllerBase
         var feature = new Feature { Name = dto.Name, CategoryId = dto.CategoryId };
         _db.Features.Add(feature);
         await _db.SaveChangesAsync();
-        _taxonomyCacheVersion.Bump();
+        await _taxonomyCacheVersion.BumpAsync();
         return Ok(new { feature.Id, feature.Name });
     }
 
@@ -252,7 +252,7 @@ public class AdminController : CarizoControllerBase
         if (feature == null) return NotFound();
         _db.Features.Remove(feature);
         await _db.SaveChangesAsync();
-        _taxonomyCacheVersion.Bump();
+        await _taxonomyCacheVersion.BumpAsync();
         return NoContent();
     }
 
@@ -291,7 +291,7 @@ public class AdminController : CarizoControllerBase
         };
         _db.FeatureCategories.Add(cat);
         await _db.SaveChangesAsync();
-        _taxonomyCacheVersion.Bump();
+        await _taxonomyCacheVersion.BumpAsync();
         return Ok(new { cat.Id, cat.Name });
     }
 
@@ -302,7 +302,7 @@ public class AdminController : CarizoControllerBase
         if (cat == null) return NotFound();
         _db.FeatureCategories.Remove(cat);
         await _db.SaveChangesAsync();
-        _taxonomyCacheVersion.Bump();
+        await _taxonomyCacheVersion.BumpAsync();
         return NoContent();
     }
 
@@ -363,7 +363,7 @@ public class AdminController : CarizoControllerBase
         request.AdminNotes = dto.Notes;
         request.ReviewedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
-        _taxonomyCacheVersion.Bump();
+        await _taxonomyCacheVersion.BumpAsync();
         _logger.LogInformation("[Admin] ApproveCustomCategory requestId={Id} adminId={AdminId} resultType={ResultType} notes={Notes}", id, GetUserId(), dto.ResultType, dto.Notes);
         return Ok(request);
     }
@@ -608,7 +608,7 @@ public class AdminController : CarizoControllerBase
         var brand = new Brand { Name = dto.Name, Slug = slug, Categories = cats, OriginCountry = dto.OriginCountry, IsLuxury = dto.IsLuxury };
         _db.Brands.Add(brand);
         await _db.SaveChangesAsync();
-        _taxonomyCacheVersion.Bump();
+        await _taxonomyCacheVersion.BumpAsync();
         return Ok(new { brand.Id, brand.Name, brand.Slug, brand.OriginCountry, brand.IsLuxury });
     }
 
@@ -624,7 +624,7 @@ public class AdminController : CarizoControllerBase
         brand.OriginCountry = dto.OriginCountry;
         brand.IsLuxury = dto.IsLuxury;
         await _db.SaveChangesAsync();
-        _taxonomyCacheVersion.Bump();
+        await _taxonomyCacheVersion.BumpAsync();
         return Ok(new { brand.Id, brand.Name, brand.Slug, brand.OriginCountry, brand.IsLuxury });
     }
 
@@ -636,7 +636,7 @@ public class AdminController : CarizoControllerBase
         if (brand.Models.Any()) return BadRequest("Nie można usunąć marki posiadającej modele. Najpierw usuń modele.");
         _db.Brands.Remove(brand);
         await _db.SaveChangesAsync();
-        _taxonomyCacheVersion.Bump();
+        await _taxonomyCacheVersion.BumpAsync();
         return NoContent();
     }
 
@@ -667,7 +667,7 @@ public class AdminController : CarizoControllerBase
         var model = new Model { BrandId = dto.BrandId, Name = dto.Name, Slug = slug };
         _db.Models.Add(model);
         await _db.SaveChangesAsync();
-        _taxonomyCacheVersion.Bump();
+        await _taxonomyCacheVersion.BumpAsync();
         return Ok(new { model.Id, model.Name, model.Slug, model.BrandId });
     }
 
@@ -680,7 +680,7 @@ public class AdminController : CarizoControllerBase
         if (!string.IsNullOrWhiteSpace(dto.Slug)) model.Slug = dto.Slug;
         if (dto.BrandId > 0) model.BrandId = dto.BrandId;
         await _db.SaveChangesAsync();
-        _taxonomyCacheVersion.Bump();
+        await _taxonomyCacheVersion.BumpAsync();
         return Ok(new { model.Id, model.Name, model.Slug });
     }
 
@@ -692,7 +692,7 @@ public class AdminController : CarizoControllerBase
         if (model.Generations.Any()) return BadRequest("Nie można usunąć modelu posiadającego generacje. Najpierw usuń generacje.");
         _db.Models.Remove(model);
         await _db.SaveChangesAsync();
-        _taxonomyCacheVersion.Bump();
+        await _taxonomyCacheVersion.BumpAsync();
         return NoContent();
     }
 
@@ -723,7 +723,7 @@ public class AdminController : CarizoControllerBase
         var gen = new Generation { ModelId = dto.ModelId, Name = dto.Name, Slug = slug, YearFrom = dto.YearFrom, YearTo = dto.YearTo };
         _db.Generations.Add(gen);
         await _db.SaveChangesAsync();
-        _taxonomyCacheVersion.Bump();
+        await _taxonomyCacheVersion.BumpAsync();
         return Ok(new { gen.Id, gen.Name, gen.Slug, gen.ModelId });
     }
 
@@ -738,7 +738,7 @@ public class AdminController : CarizoControllerBase
         if (!string.IsNullOrWhiteSpace(dto.Slug)) gen.Slug = dto.Slug;
         if (dto.ModelId > 0) gen.ModelId = dto.ModelId;
         await _db.SaveChangesAsync();
-        _taxonomyCacheVersion.Bump();
+        await _taxonomyCacheVersion.BumpAsync();
         return Ok(new { gen.Id, gen.Name, gen.Slug });
     }
 
@@ -750,7 +750,7 @@ public class AdminController : CarizoControllerBase
         if (gen.EngineVersions.Any()) return BadRequest("Nie można usunąć generacji posiadającej wersje silników. Najpierw usuń silniki.");
         _db.Generations.Remove(gen);
         await _db.SaveChangesAsync();
-        _taxonomyCacheVersion.Bump();
+        await _taxonomyCacheVersion.BumpAsync();
         return NoContent();
     }
 
@@ -796,7 +796,7 @@ public class AdminController : CarizoControllerBase
         };
         _db.EngineVersions.Add(engine);
         await _db.SaveChangesAsync();
-        _taxonomyCacheVersion.Bump();
+        await _taxonomyCacheVersion.BumpAsync();
         return Ok(new { engine.Id, engine.EngineName, engine.GenerationId });
     }
 
@@ -821,7 +821,7 @@ public class AdminController : CarizoControllerBase
         engine.FuelConsumptionHighway = dto.FuelConsumptionHighway;
         engine.FuelConsumptionCombined = dto.FuelConsumptionCombined;
         await _db.SaveChangesAsync();
-        _taxonomyCacheVersion.Bump();
+        await _taxonomyCacheVersion.BumpAsync();
         return Ok(new { engine.Id, engine.EngineName, engine.GenerationId });
     }
 
@@ -832,7 +832,7 @@ public class AdminController : CarizoControllerBase
         if (engine == null) return NotFound();
         _db.EngineVersions.Remove(engine);
         await _db.SaveChangesAsync();
-        _taxonomyCacheVersion.Bump();
+        await _taxonomyCacheVersion.BumpAsync();
         return NoContent();
     }
 
