@@ -21,6 +21,11 @@ public interface IAdvertService
     Task RecordViewAsync(int advertId, string? ipAddress, int? viewerUserId = null);
     Task<CarAdvert?> GetCarAdvertEntityAsync(int advertId);
     Task SetPdfBrochureUrlAsync(int advertId, string? url);
+
+    // Bulk self-serve tooling (CTO audit Etap 3) - dealers with dozens/hundreds of adverts had no
+    // way to act on more than one at a time before this.
+    Task<BulkActionResultDto> BulkActionAsync(List<int> ids, string action, int userId);
+    Task<string> ExportUserAdvertsCsvAsync(int userId);
 }
 
 public class PagedResult<T>

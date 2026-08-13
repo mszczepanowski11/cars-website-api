@@ -412,4 +412,32 @@ public class AdvertController : CarizoControllerBase
         return NoContent();
     }
 
+    [Authorize]
+    [HttpPost("bulk")]
+    public async Task<IActionResult> BulkAction([FromBody] BulkAdvertActionDto dto)
+    {
+        var userId = GetUserId();
+        if (userId == 0) return Unauthorized();
+        userId = await ResolveActingUserIdAsync(userId);
+        try
+        {
+            var result = await _advertService.BulkActionAsync(dto.Ids, dto.Action, userId);
+            return Ok(result);
+        }
+        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    [Authorize]
+    [HttpGet("export/csv")]
+    public async Task<IActionResult> ExportCsv()
+    {
+        var userId = GetUserId();
+        if (userId == 0) return Unauthorized();
+        userId = await ResolveActingUserIdAsync(userId);
+        var csv = await _advertService.ExportUserAdvertsCsvAsync(userId);
+        // UTF-8 BOM so Excel opens Polish diacritics correctly instead of mangling them.
+        var bytes = System.Text.Encoding.UTF8.GetPreamble().Concat(System.Text.Encoding.UTF8.GetBytes(csv)).ToArray();
+        return File(bytes, "text/csv", $"ogloszenia-{DateTime.UtcNow:yyyy-MM-dd}.csv");
+    }
+
 }

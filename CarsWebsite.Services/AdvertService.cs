@@ -997,4 +997,95 @@ public class AdvertService : IAdvertService
         advert.PdfBrochureUrl = url;
         await _context.SaveChangesAsync();
     }
+
+    private static readonly HashSet<string> AllowedBulkActions =
+        new(StringComparer.Ordinal) { "activate", "deactivate", "delete", "markSold", "renew" };
+
+    // Reuses each single-advert method rather than reimplementing the status transitions, so bulk
+    // and single-item actions can never drift apart in their validation rules. One failing item
+    // (not owned, already sold, hidden by admin, ...) doesn't abort the rest of the batch - the
+    // caller gets back exactly which ids succeeded and why the others didn't.
+    public async Task<BulkActionResultDto> BulkActionAsync(List<int> ids, string action, int userId)
+    {
+        if (!AllowedBulkActions.Contains(action))
+            throw new ArgumentException($"Nieznana akcja: {action}.");
+        if (ids == null || ids.Count == 0)
+            throw new ArgumentException("Nie wybrano żadnych ogłoszeń.");
+
+        const int maxBatchSize = 200;
+        if (ids.Count > maxBatchSize)
+            throw new ArgumentException($"Można przetworzyć maksymalnie {maxBatchSize} ogłoszeń jednocześnie.");
+
+        var result = new BulkActionResultDto();
+        foreach (var id in ids.Distinct())
+        {
+            try
+            {
+                switch (action)
+                {
+                    case "activate": await PublishAsync(id, userId); break;
+                    case "deactivate": await DeactivateAsync(id, userId); break;
+                    case "delete": await DeleteCarAdvertAsync(id, userId); break;
+                    case "markSold": await MarkAsSoldAsync(id, userId); break;
+                    case "renew": await RenewAsync(id, userId); break;
+                }
+                result.Succeeded.Add(id);
+            }
+            catch (Exception ex) when (ex is KeyNotFoundException or UnauthorizedAccessException or InvalidOperationException)
+            {
+                result.Failed.Add(new BulkActionErrorDto { Id = id, Error = ex.Message });
+            }
+        }
+        return result;
+    }
+
+    public async Task<string> ExportUserAdvertsCsvAsync(int userId)
+    {
+        var adverts = await _context.CarAdverts
+            .AsNoTracking()
+            .Include(a => a.Brand)
+            .Include(a => a.Model)
+            .Where(a => a.UserId == userId && !a.IsHidden)
+            .OrderByDescending(a => a.CreatedAt)
+            .ToListAsync();
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine(string.Join(",", new[]
+        {
+            "Id", "Tytul", "Marka", "Model", "Rok", "Cena", "Waluta", "Przebieg", "VIN",
+            "Status", "Wyroznienie", "DataDodania", "WygasaData",
+        }.Select(CsvEscape)));
+
+        foreach (var a in adverts)
+        {
+            var status = a.SoldAt != null ? "Sprzedane" : a.IsActive ? "Aktywne" : "Nieaktywne";
+            sb.AppendLine(string.Join(",", new[]
+            {
+                a.Id.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                a.Title,
+                a.Brand?.Name ?? "",
+                a.Model?.Name ?? "",
+                a.Year > 0 ? a.Year.ToString(System.Globalization.CultureInfo.InvariantCulture) : "",
+                a.Price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture),
+                a.Currency,
+                a.Mileage.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                a.Vin ?? "",
+                status,
+                a.Badge ?? "",
+                a.CreatedAt.ToString("yyyy-MM-dd"),
+                a.ExpiresAt?.ToString("yyyy-MM-dd") ?? "",
+            }.Select(CsvEscape)));
+        }
+        return sb.ToString();
+    }
+
+    // RFC 4180: quote a field only when it contains the delimiter, a quote, or a line break, and
+    // double up any internal quotes.
+    private static string CsvEscape(string? value)
+    {
+        value ??= "";
+        if (value.IndexOfAny(new[] { ',', '"', '\n', '\r' }) < 0)
+            return value;
+        return "\"" + value.Replace("\"", "\"\"") + "\"";
+    }
 }
