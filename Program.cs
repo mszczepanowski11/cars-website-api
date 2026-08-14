@@ -3940,6 +3940,19 @@ internal class Program
             ("caradverts", "RegionId", "IX_caradverts_RegionId"),
             ("caradverts", "CityId", "IX_caradverts_CityId"),
             ("caradverts", "CurrencyId", "IX_caradverts_CurrencyId"),
+            // CTO audit §1.3 "Brakujące indeksy" (Etap 4): `reviews` has zero FKs and zero indexes
+            // at all today - every "reviews for this seller/buyer/advert" lookup is a full table
+            // scan. `attributedefinitions` only indexes VehicleCategoryId/VehicleSubtypeId (from
+            // their FK constraints); a query scoped to just BrandId/ModelId/GenerationId/TrimId
+            // (the "inteligentny formularz" vehicle-specific scoping - see AttributeDefinition.cs)
+            // can't use the VehicleCategoryId-leading composite and falls back to a scan too.
+            ("reviews", "SellerId", "IX_reviews_SellerId"),
+            ("reviews", "BuyerId", "IX_reviews_BuyerId"),
+            ("reviews", "AdvertId", "IX_reviews_AdvertId"),
+            ("attributedefinitions", "BrandId", "IX_attributedefinitions_BrandId"),
+            ("attributedefinitions", "ModelId", "IX_attributedefinitions_ModelId"),
+            ("attributedefinitions", "GenerationId", "IX_attributedefinitions_GenerationId"),
+            ("attributedefinitions", "TrimId", "IX_attributedefinitions_TrimId"),
         })
         {
             try { db.Database.ExecuteSqlRaw($"CREATE INDEX `{indexName}` ON `{table}` (`{column}`)"); }
