@@ -1,4 +1,5 @@
 using System;
+using cars_website_api.CarsWebsite.Domain.Entities;
 
 namespace CarsWebsite
 {
@@ -61,6 +62,6 @@ namespace CarsWebsite
         public bool NewMessageAlerts { get; set; } = true;
         public bool NewsletterSubscribed { get; set; } = false;
 
-        public List<Advert> Adverts { get; set; } = new();
+        public List<CarAdvert> Adverts { get; set; } = new();
     }
 }

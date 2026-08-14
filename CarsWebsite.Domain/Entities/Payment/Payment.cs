@@ -1,3 +1,5 @@
+using cars_website_api.CarsWebsite.Domain.Entities;
+
 namespace CarsWebsite;
 
 public class Payment
@@ -7,7 +9,7 @@ public class Payment
     public User User { get; set; } = null!;
 
     public int? AdvertId { get; set; }
-    public Advert? Advert { get; set; }
+    public CarAdvert? Advert { get; set; }
 
     public int? EventId { get; set; }
     public Event? Event { get; set; }

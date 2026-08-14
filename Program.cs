@@ -18,6 +18,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
+using cars_website_api.Migrations;
 using DriveType = cars_website_api.CarsWebsite.Domain.Entities.DriveType;
 
 
@@ -896,6 +897,19 @@ internal class Program
                   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;" })
             { try { db.Database.ExecuteSqlRaw(sql); } catch (Exception ex) { logger.LogWarning("[Schema] geo core table: {Msg}", ex.Message); } }
 
+            // CTO audit Etap 4 ("Spłaszczyć TPT Advert/CarAdvert do jednej tabeli"): the C# model no
+            // longer has a separate Advert base class - CarAdvert carries every column directly now.
+            // This repo doesn't run `dotnet ef migrations add`-generated migrations for schema changes
+            // like this one (see the "Company branches" comment further below - scaffolding against this
+            // model produces hundreds of unrelated DROP statements because the migration history has
+            // drifted from the real schema for years), so - exactly like every other schema change in
+            // this file - the actual migration is this belt-and-braces block: idempotent, safe to run
+            // on every startup, and the only thing actually keeping production's schema in sync.
+            // Only touches anything if the old `adverts` table still exists; once it's gone (after the
+            // first successful run) every step below is a fast, guarded no-op. Must run before the
+            // FULLTEXT guard below, which needs caradverts.Title/Description to already exist.
+            FlattenAdvertsIntoCarAdverts(db, logger);
+
             // Global-location + currency columns on Adverts (Etap 3). Belt-and-braces on existing DBs.
             foreach (var colDef in new[] {
                 "`CountryId` int NULL", "`RegionId` int NULL", "`CityId` bigint NULL",
@@ -903,7 +917,7 @@ internal class Program
                 "`Latitude` double NULL", "`Longitude` double NULL",
                 "`CurrencyId` int NULL", "`PriceEur` decimal(15,2) NULL", "`PriceEurAsOf` datetime(6) NULL",
                 "`SourceLanguageId` int NULL", "`TimeZoneId` int NULL" })
-            { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `adverts` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] Adverts.{Col}: {Msg}", colDef, ex.Message); } }
+            { try { db.Database.ExecuteSqlRaw($"ALTER TABLE `caradverts` ADD COLUMN {colDef}"); } catch (Exception ex) { logger.LogDebug("[Schema] Adverts.{Col}: {Msg}", colDef, ex.Message); } }
 
             // FULLTEXT index backing AdvertService.SearchCarAdvertsAsync's MATCH...AGAINST text search.
             // Migration 20260622100000_AddPerformanceIndexesAndFullText only creates it via a raw
@@ -915,10 +929,10 @@ internal class Program
             try
             {
                 var ftIndexExists = db.Database.SqlQuery<int>(
-                    $"SELECT COUNT(1) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'adverts' AND INDEX_NAME = 'FT_Adverts_TitleDescription'")
+                    $"SELECT COUNT(1) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'caradverts' AND INDEX_NAME = 'FT_Adverts_TitleDescription'")
                     .ToList().FirstOrDefault();
                 if (ftIndexExists == 0)
-                    db.Database.ExecuteSqlRaw("CREATE FULLTEXT INDEX `FT_Adverts_TitleDescription` ON `adverts` (`Title`, `Description`)");
+                    db.Database.ExecuteSqlRaw("CREATE FULLTEXT INDEX `FT_Adverts_TitleDescription` ON `caradverts` (`Title`, `Description`)");
             }
             catch (Exception ex) { logger.LogWarning("[Schema] Adverts fulltext index: {Msg}", ex.Message); }
 
@@ -1396,10 +1410,10 @@ internal class Program
 
             var addAdvertColumnsSql = new[]
             {
-                "ALTER TABLE `adverts` ADD COLUMN `IsHidden` tinyint(1) NOT NULL DEFAULT 0",
-                "ALTER TABLE `adverts` ADD COLUMN `IsActive` tinyint(1) NOT NULL DEFAULT 1",
-                "ALTER TABLE `adverts` ADD COLUMN `ExpiresAt` datetime(6) NULL",
-                "ALTER TABLE `adverts` ADD COLUMN `SoldAt` datetime(6) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `IsHidden` tinyint(1) NOT NULL DEFAULT 0",
+                "ALTER TABLE `caradverts` ADD COLUMN `IsActive` tinyint(1) NOT NULL DEFAULT 1",
+                "ALTER TABLE `caradverts` ADD COLUMN `ExpiresAt` datetime(6) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `SoldAt` datetime(6) NULL",
             };
             foreach (var sql in addAdvertColumnsSql)
             {
@@ -1643,8 +1657,8 @@ internal class Program
 
             var modifyAdvertNullableSql = new[]
             {
-                "ALTER TABLE `adverts` MODIFY COLUMN `City` longtext NULL",
-                "ALTER TABLE `adverts` MODIFY COLUMN `Region` longtext NULL",
+                "ALTER TABLE `caradverts` MODIFY COLUMN `City` longtext NULL",
+                "ALTER TABLE `caradverts` MODIFY COLUMN `Region` longtext NULL",
             };
             foreach (var sql in modifyAdvertNullableSql)
             {
@@ -3199,6 +3213,171 @@ internal class Program
         return options.ToString();
     }
 
+    // CTO audit Etap 4 - flattens the former Advert/CarAdvert TPT split into one table. Every step
+    // is guarded so this is safe to run on every single app startup, forever, on every environment
+    // (fresh dev DB, mid-migration production, or already-flattened production):
+    //   1. Add every Advert-only column onto caradverts (nullable first - MySQL rejects ADD COLUMN
+    //      NOT NULL without a default on a table that already has rows).
+    //   2. Copy the data across while `adverts` still exists (WHERE Title IS NULL keeps re-runs cheap).
+    //   3. Tighten the copied columns back to NOT NULL where the original was.
+    //   4. Re-point every foreign key that targeted `adverts` at `caradverts` instead - the row's Id
+    //      never changes (TPT already forced caradverts.Id == adverts.Id for every row), so this is
+    //      purely "point at a different table with the same key values", not a data transformation.
+    //   5. Recreate the indexes that used to live on `adverts`.
+    //   6. Drop the old identity FK and the now-empty `adverts` table.
+    // Steps 4-6 only run at all if `adverts` still exists, so once this has succeeded once, every
+    // later startup is a single fast INFORMATION_SCHEMA lookup and nothing else.
+    private static void FlattenAdvertsIntoCarAdverts(AppDbContext db, ILogger logger)
+    {
+        try
+        {
+            var advertsTableExists = db.Database.SqlQuery<int>(
+                $"SELECT COUNT(1) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'adverts'")
+                .ToList().FirstOrDefault();
+            if (advertsTableExists == 0)
+                return; // already flattened (or a brand-new DB that never had the split at all)
+
+            logger.LogWarning("[Flatten] `adverts` table still present - running Advert/CarAdvert flatten");
+
+            // Step 1: add every Advert-only column onto caradverts, nullable, idempotent.
+            foreach (var (col, def) in new[]
+            {
+                ("Title", "longtext NULL"),
+                ("Description", "longtext NULL"),
+                ("Price", "decimal(65,30) NULL"),
+                ("Currency", "longtext NULL"),
+                ("City", "varchar(255) NULL"),
+                ("Region", "varchar(255) NULL"),
+                ("UserId", "int NULL"),
+                ("CreatedAt", "datetime(6) NULL"),
+                ("UpdatedAt", "datetime(6) NULL"),
+                ("IsHidden", "tinyint(1) NULL"),
+                ("IsActive", "tinyint(1) NULL"),
+                ("ExpiresAt", "datetime(6) NULL"),
+                ("SoldAt", "datetime(6) NULL"),
+                ("CountryId", "int NULL"),
+                ("RegionId", "int NULL"),
+                ("CityId", "bigint NULL"),
+                ("PostalCode", "varchar(16) NULL"),
+                ("AddressLine", "varchar(250) NULL"),
+                ("Latitude", "double NULL"),
+                ("Longitude", "double NULL"),
+                ("CurrencyId", "int NULL"),
+                ("PriceEur", "decimal(15,2) NULL"),
+                ("PriceEurAsOf", "datetime(6) NULL"),
+                ("SourceLanguageId", "int NULL"),
+                ("TimeZoneId", "int NULL"),
+            })
+            {
+                try { db.Database.ExecuteSqlRaw(MySqlGuard.AddColumnIfMissing("caradverts", col, def)); }
+                catch (Exception ex) { logger.LogError(ex, "[Flatten] add column caradverts.{Col} failed", col); }
+            }
+
+            // Step 2: copy the data across. Guarded by "Title IS NULL" so a row already flattened
+            // (or created fresh after this deploy, which never has a matching `adverts` row to begin
+            // with - see CreateCarAdvertAsync) is never touched again.
+            try
+            {
+                db.Database.ExecuteSqlRaw(@"
+                    UPDATE `caradverts` ca
+                    JOIN `adverts` a ON a.`Id` = ca.`Id`
+                    SET ca.`Title` = a.`Title`, ca.`Description` = a.`Description`, ca.`Price` = a.`Price`,
+                        ca.`Currency` = a.`Currency`, ca.`City` = a.`City`, ca.`Region` = a.`Region`,
+                        ca.`UserId` = a.`UserId`, ca.`CreatedAt` = a.`CreatedAt`, ca.`UpdatedAt` = a.`UpdatedAt`,
+                        ca.`IsHidden` = a.`IsHidden`, ca.`IsActive` = a.`IsActive`,
+                        ca.`ExpiresAt` = a.`ExpiresAt`, ca.`SoldAt` = a.`SoldAt`,
+                        ca.`CountryId` = a.`CountryId`, ca.`RegionId` = a.`RegionId`, ca.`CityId` = a.`CityId`,
+                        ca.`PostalCode` = a.`PostalCode`, ca.`AddressLine` = a.`AddressLine`,
+                        ca.`Latitude` = a.`Latitude`, ca.`Longitude` = a.`Longitude`,
+                        ca.`CurrencyId` = a.`CurrencyId`, ca.`PriceEur` = a.`PriceEur`, ca.`PriceEurAsOf` = a.`PriceEurAsOf`,
+                        ca.`SourceLanguageId` = a.`SourceLanguageId`, ca.`TimeZoneId` = a.`TimeZoneId`
+                    WHERE ca.`Title` IS NULL");
+                logger.LogWarning("[Flatten] Copied adverts -> caradverts data");
+            }
+            catch (Exception ex) { logger.LogError(ex, "[Flatten] data copy failed"); }
+
+            // Step 3: tighten back to NOT NULL where the original Advert column was. MODIFY COLUMN is
+            // naturally idempotent - reapplying an already-NOT NULL constraint is a no-op, not an error.
+            // Rows freshly created after this deploy (never had an `adverts` row) already satisfy these
+            // - CreateCarAdvertAsync always sets Title/Description/Price/Currency/UserId/CreatedAt.
+            foreach (var sql in new[]
+            {
+                "ALTER TABLE `caradverts` MODIFY COLUMN `Title` longtext NOT NULL",
+                "ALTER TABLE `caradverts` MODIFY COLUMN `Description` longtext NOT NULL",
+                "ALTER TABLE `caradverts` MODIFY COLUMN `Price` decimal(65,30) NOT NULL",
+                "ALTER TABLE `caradverts` MODIFY COLUMN `Currency` longtext NOT NULL",
+                "ALTER TABLE `caradverts` MODIFY COLUMN `UserId` int NOT NULL",
+                "ALTER TABLE `caradverts` MODIFY COLUMN `CreatedAt` datetime(6) NOT NULL",
+                "ALTER TABLE `caradverts` MODIFY COLUMN `IsHidden` tinyint(1) NOT NULL DEFAULT 0",
+                "ALTER TABLE `caradverts` MODIFY COLUMN `IsActive` tinyint(1) NOT NULL DEFAULT 1",
+            })
+            {
+                try { db.Database.ExecuteSqlRaw(sql); }
+                catch (Exception ex) { logger.LogError(ex, "[Flatten] MODIFY COLUMN failed: {Sql}", sql); }
+            }
+
+            // Step 4: re-point every FK that targeted `adverts` at `caradverts` instead - same Id
+            // values, just a different physical table, so no data transformation needed here.
+            foreach (var (table, column, oldConstraint, newConstraint, deleteRule) in new[]
+            {
+                ("advertattributevalues", "AdvertId", "FK_advertattributevalues_adverts_AdvertId", "FK_advertattributevalues_caradverts_AdvertId", "CASCADE"),
+                ("advertdocuments", "AdvertId", "FK_advertdocuments_adverts_AdvertId", "FK_advertdocuments_caradverts_AdvertId", "CASCADE"),
+                ("advertimages", "AdvertId", "FK_advertimages_adverts_AdvertId", "FK_advertimages_caradverts_AdvertId", "CASCADE"),
+                ("conversations", "AdvertId", "FK_conversations_adverts_AdvertId", "FK_conversations_caradverts_AdvertId", "CASCADE"),
+                ("payments", "AdvertId", "FK_payments_adverts_AdvertId", "FK_payments_caradverts_AdvertId", "SET NULL"),
+                ("reports", "TargetAdvertId", "FK_reports_adverts_TargetAdvertId", "FK_reports_caradverts_TargetAdvertId", "SET NULL"),
+            })
+            {
+                try
+                {
+                    db.Database.ExecuteSqlRaw(MySqlGuard.DropForeignKeyIfExists(table, oldConstraint));
+                    db.Database.ExecuteSqlRaw(MySqlGuard.AddForeignKeyIfMissing(table, newConstraint,
+                        $"FOREIGN KEY (`{column}`) REFERENCES `caradverts` (`Id`) ON DELETE {deleteRule}"));
+                }
+                catch (Exception ex) { logger.LogError(ex, "[Flatten] repoint FK failed: {Table}.{Column}", table, column); }
+            }
+
+            // The base Advert.UserId -> users.Id FK never existed on caradverts before this merge.
+            try
+            {
+                db.Database.ExecuteSqlRaw(MySqlGuard.AddForeignKeyIfMissing("caradverts", "FK_caradverts_users_UserId",
+                    "FOREIGN KEY (`UserId`) REFERENCES `users` (`Id`) ON DELETE RESTRICT"));
+            }
+            catch (Exception ex) { logger.LogError(ex, "[Flatten] add caradverts.UserId FK failed"); }
+
+            // Step 5: indexes that used to live on `adverts` (FT_Adverts_TitleDescription and the
+            // Country/Region/City/CurrencyId indexes are handled by their own belt-and-braces guards
+            // elsewhere in this file, which already target `caradverts`).
+            foreach (var (index, columnsSql, kind) in new[]
+            {
+                ("IX_caradverts_City_IsActive", "`City`, `IsActive`", ""),
+                ("IX_caradverts_Region_IsActive", "`Region`, `IsActive`", ""),
+                ("IX_caradverts_CreatedAt", "`CreatedAt`", ""),
+                ("IX_caradverts_IsActive_IsHidden", "`IsActive`, `IsHidden`", ""),
+                ("IX_caradverts_UserId", "`UserId`", ""),
+            })
+            {
+                try { db.Database.ExecuteSqlRaw(MySqlGuard.CreateIndexIfMissing("caradverts", index, columnsSql, kind)); }
+                catch (Exception ex) { logger.LogError(ex, "[Flatten] create index failed: {Index}", index); }
+            }
+            // Price already gets its own index further down in this file (SR-9 block) - no need to
+            // duplicate it here.
+
+            // Step 6: drop the old identity FK, then the now-empty `adverts` table.
+            try
+            {
+                db.Database.ExecuteSqlRaw(MySqlGuard.DropForeignKeyIfExists("caradverts", "FK_caradverts_adverts_Id"));
+                db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS `adverts`");
+                logger.LogWarning("[Flatten] Dropped `adverts` table - flatten complete");
+            }
+            catch (Exception ex) { logger.LogError(ex, "[Flatten] drop `adverts` failed - will retry next startup"); }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "[Flatten] FlattenAdvertsIntoCarAdverts failed (non-fatal, will retry next startup)");
+        }
+    }
+
     // Merges duplicate Brand rows sharing the same Name (e.g. two "Krone" rows) into the
     // oldest one. Duplicates otherwise (a) show the brand twice in the add-listing dropdown
     // and (b) crash every seeder's startup ToDictionary(b => b.Name, ...) call, which blocks
@@ -3756,10 +3935,10 @@ internal class Program
             ("caradverts", "DriveTypeId", "IX_caradverts_DriveTypeId"),
             ("caradverts", "ColorId", "IX_caradverts_ColorId"),
             ("caradverts", "TrimId", "IX_caradverts_TrimId"),
-            ("adverts", "CountryId", "IX_adverts_CountryId"),
-            ("adverts", "RegionId", "IX_adverts_RegionId"),
-            ("adverts", "CityId", "IX_adverts_CityId"),
-            ("adverts", "CurrencyId", "IX_adverts_CurrencyId"),
+            ("caradverts", "CountryId", "IX_caradverts_CountryId"),
+            ("caradverts", "RegionId", "IX_caradverts_RegionId"),
+            ("caradverts", "CityId", "IX_caradverts_CityId"),
+            ("caradverts", "CurrencyId", "IX_caradverts_CurrencyId"),
         })
         {
             try { db.Database.ExecuteSqlRaw($"CREATE INDEX `{indexName}` ON `{table}` (`{column}`)"); }
@@ -4462,13 +4641,13 @@ internal class Program
         // GeoSeeder so currencies/countries/languages/rates exist. All idempotent (only fills NULLs).
         logger.LogWarning("[STARTUP-TRACE] Backfilling Adverts global columns");
         foreach (var sql in new[] {
-            "UPDATE `adverts` SET `CurrencyId` = (SELECT `Id` FROM `currencies` WHERE `Iso` = COALESCE(`Currency`, 'PLN') LIMIT 1) WHERE `CurrencyId` IS NULL",
-            "UPDATE `adverts` SET `CountryId` = (SELECT `Id` FROM `countries` WHERE `Iso2` = 'PL' LIMIT 1) WHERE `CountryId` IS NULL",
-            "UPDATE `adverts` SET `SourceLanguageId` = (SELECT `Id` FROM `languages` WHERE `Iso1` = 'pl' LIMIT 1) WHERE `SourceLanguageId` IS NULL",
+            "UPDATE `caradverts` SET `CurrencyId` = (SELECT `Id` FROM `currencies` WHERE `Iso` = COALESCE(`Currency`, 'PLN') LIMIT 1) WHERE `CurrencyId` IS NULL",
+            "UPDATE `caradverts` SET `CountryId` = (SELECT `Id` FROM `countries` WHERE `Iso2` = 'PL' LIMIT 1) WHERE `CountryId` IS NULL",
+            "UPDATE `caradverts` SET `SourceLanguageId` = (SELECT `Id` FROM `languages` WHERE `Iso1` = 'pl' LIMIT 1) WHERE `SourceLanguageId` IS NULL",
             // Join the LATEST rate per currency (audit M1). A plain JOIN on CurrencyId picks an
             // arbitrary matching row once the daily FX-append job stores >1 rate per currency; the
             // inner MAX(AsOf) subquery pins it to the newest known rate.
-            @"UPDATE `adverts` a
+            @"UPDATE `caradverts` a
               JOIN (SELECT e.`CurrencyId`, e.`RateToEur`, e.`AsOf` FROM `exchangerates` e
                     JOIN (SELECT `CurrencyId`, MAX(`AsOf`) AS `AsOf` FROM `exchangerates` GROUP BY `CurrencyId`) m
                       ON m.`CurrencyId` = e.`CurrencyId` AND m.`AsOf` = e.`AsOf`) e
