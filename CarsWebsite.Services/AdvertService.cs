@@ -594,8 +594,10 @@ public class AdvertService : IAdvertService
                 var booleanQuery = BuildFullTextBooleanQuery(dto.TextSearch);
                 if (!string.IsNullOrEmpty(booleanQuery))
                 {
+                    // CTO audit Etap 4 (TPT flattening): Title/Description live on caradverts now,
+                    // not the former separate adverts table.
                     var matchedIds = await _context.Database
-                        .SqlQuery<int>($"SELECT Id FROM adverts WHERE MATCH(Title, Description) AGAINST ({booleanQuery} IN BOOLEAN MODE)")
+                        .SqlQuery<int>($"SELECT Id FROM caradverts WHERE MATCH(Title, Description) AGAINST ({booleanQuery} IN BOOLEAN MODE)")
                         .ToListAsync();
                     query = query.Where(a => matchedIds.Contains(a.Id));
                 }

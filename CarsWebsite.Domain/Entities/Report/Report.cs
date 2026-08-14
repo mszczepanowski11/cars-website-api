@@ -31,7 +31,7 @@ namespace CarsWebsite
         public int Id { get; set; }
         public ReportTargetType TargetType { get; set; }
         public int? TargetAdvertId { get; set; }
-        public Advert? TargetAdvert { get; set; }
+        public CarAdvert? TargetAdvert { get; set; }
         public int? TargetUserId { get; set; }
         public User? TargetUser { get; set; }
         public ReportReason Reason { get; set; }

@@ -10,7 +10,11 @@ namespace CarsWebsite
     public class AppDbContext : DbContext
     {
         public DbSet<User> Users { get; set; }
-        public DbSet<Advert> Adverts { get; set; }
+        // Both DbSet properties point at the same flattened CarAdvert/table (CTO audit Etap 4 -
+        // former Advert/CarAdvert TPT split). Kept both names rather than hunting down every
+        // _context.Adverts call site across the codebase - a second DbSet<T> accessor for the same
+        // T is a harmless, fully-supported EF Core pattern, not a second table.
+        public DbSet<CarAdvert> Adverts { get; set; }
         public DbSet<CarAdvert> CarAdverts { get; set; }
         public DbSet<AdvertImage> AdvertImages { get; set; }
         public DbSet<AdvertDocument> AdvertDocuments { get; set; }
@@ -122,10 +126,9 @@ namespace CarsWebsite
 
             modelBuilder.Entity<User>().HasKey(u => u.Id);
             modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
-            modelBuilder.Entity<Advert>().ToTable("Adverts").HasKey(a => a.Id);
-            modelBuilder.Entity<CarAdvert>().ToTable("CarAdverts");
+            modelBuilder.Entity<CarAdvert>().ToTable("CarAdverts").HasKey(a => a.Id);
 
-            modelBuilder.Entity<Advert>(entity =>
+            modelBuilder.Entity<CarAdvert>(entity =>
             {
                 // Restrict, not Cascade: a hard delete of a User must not silently wipe out
                 // their adverts (and everything cascading from those - images, conversations,
@@ -256,13 +259,13 @@ namespace CarsWebsite
             modelBuilder.Entity<ExchangeRate>().HasIndex(e => new { e.CurrencyId, e.AsOf }).IsUnique();
 
             modelBuilder.Entity<AdvertImage>().ToTable("AdvertImages").HasKey(i => i.Id);
-            modelBuilder.Entity<Advert>().HasMany(a => a.Images).WithOne(i => i.Advert)
+            modelBuilder.Entity<CarAdvert>().HasMany(a => a.Images).WithOne(i => i.Advert)
                 .HasForeignKey(i => i.AdvertId).OnDelete(DeleteBehavior.Cascade);
 
-            // Faza 8: nav collection on Advert (unlike AdvertAttributeValue) so AutoMapper's
+            // Faza 8: nav collection on CarAdvert (unlike AdvertAttributeValue) so AutoMapper's
             // convention mapping can populate CarAdvertResponseDto.Documents automatically.
             modelBuilder.Entity<AdvertDocument>().ToTable("advertdocuments").HasKey(d => d.Id);
-            modelBuilder.Entity<Advert>().HasMany(a => a.Documents).WithOne(d => d.Advert)
+            modelBuilder.Entity<CarAdvert>().HasMany(a => a.Documents).WithOne(d => d.Advert)
                 .HasForeignKey(d => d.AdvertId).OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<AdvertFeature>().ToTable("AdvertFeatures").HasKey(af => new { af.AdvertId, af.FeatureId });
@@ -666,7 +669,7 @@ namespace CarsWebsite
                 .IsRequired(false);
 
             // Performance indexes for common query patterns
-            modelBuilder.Entity<Advert>()
+            modelBuilder.Entity<CarAdvert>()
                 .HasIndex(a => new { a.IsActive, a.IsHidden });
             modelBuilder.Entity<CarAdvert>()
                 .HasIndex(a => a.UserId);
@@ -717,8 +720,8 @@ namespace CarsWebsite
             // City/Region are near-universal filters for a local marketplace search ("cars near
             // me") but had no index at all; FeaturedUntil mirrors the already-indexed
             // BadgeExpiresAt and is used to sort promoted listings to the top of results.
-            modelBuilder.Entity<Advert>().HasIndex(a => new { a.City, a.IsActive });
-            modelBuilder.Entity<Advert>().HasIndex(a => new { a.Region, a.IsActive });
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => new { a.City, a.IsActive });
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => new { a.Region, a.IsActive });
             modelBuilder.Entity<CarAdvert>().HasIndex(a => a.FeaturedUntil);
             modelBuilder.Entity<Event>().HasIndex(e => e.Status);
             modelBuilder.Entity<Event>().HasIndex(e => e.StartDate);
@@ -732,10 +735,10 @@ namespace CarsWebsite
             modelBuilder.Entity<CarAdvert>().HasIndex(a => a.DriveTypeId);
             modelBuilder.Entity<CarAdvert>().HasIndex(a => a.ColorId);
             modelBuilder.Entity<CarAdvert>().HasIndex(a => a.TrimId);
-            modelBuilder.Entity<Advert>().HasIndex(a => a.CountryId);
-            modelBuilder.Entity<Advert>().HasIndex(a => a.RegionId);
-            modelBuilder.Entity<Advert>().HasIndex(a => a.CityId);
-            modelBuilder.Entity<Advert>().HasIndex(a => a.CurrencyId);
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.CountryId);
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.RegionId);
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.CityId);
+            modelBuilder.Entity<CarAdvert>().HasIndex(a => a.CurrencyId);
 
             // Uniqueness for the vehicle taxonomy chain - without these, nothing at the database
             // level stops the same brand/model/generation/engine from being seeded or imported
