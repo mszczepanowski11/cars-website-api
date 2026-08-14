@@ -82,4 +82,65 @@ public class AdvertSearchTests
         Assert.Contains(expensiveId, ids);
         Assert.DoesNotContain(cheapId, ids);
     }
+
+    // CTO audit Etap 4 (attribute-filter routing): when IAdvertSearchIndexService.IsEnabled and
+    // AttributeFilters are present, SearchCarAdvertsInternalAsync must call SearchIdsAsync with a
+    // Meilisearch filter expression and narrow the SQL query to exactly the IDs it returns, instead
+    // of running the EF `EXISTS` subquery fallback. FakeEnabledAdvertSearchIndexService stands in
+    // for a live Meilisearch instance (see MeilisearchAttributeFilterBuilderTests for the filter
+    // string syntax itself, and this session's manual verification against a real local Meilisearch
+    // for the end-to-end round trip - there's no in-process Meilisearch to run inside a unit test).
+    [Fact]
+    public async Task SearchCarAdvertsAsync_MeilisearchEnabledWithAttributeFilters_UsesMeilisearchResultIdsNotEfFallback()
+    {
+        var context = TestDbContextFactory.CreateContext(nameof(SearchCarAdvertsAsync_MeilisearchEnabledWithAttributeFilters_UsesMeilisearchResultIdsNotEfFallback));
+        await TestDbContextFactory.SeedCategoryAsync(context);
+        var user = await TestDbContextFactory.SeedBusinessUserAsync(context, "meili-attr@search.test");
+        var fakeIndex = new FakeEnabledAdvertSearchIndexService();
+        var advertService = TestDbContextFactory.CreateAdvertService(context, fakeIndex);
+
+        var matchId = await CreateAdvertAsync(advertService, user.Id, "Advert Meilisearch says matches", 50000);
+        var otherIdThatWouldOtherwiseMatch = await CreateAdvertAsync(advertService, user.Id, "Advert Meilisearch says does not match", 50000);
+
+        // No AdvertAttributeValue rows exist for either advert, so the EF `EXISTS` fallback would
+        // find zero matches for this filter - the fake's canned result is what proves AdvertService
+        // actually took the Meilisearch branch instead of silently falling through.
+        fakeIndex.ResultIds = new List<int> { matchId };
+
+        var result = await advertService.SearchCarAdvertsAsync(new SearchCarAdvertDto
+        {
+            PageSize = 50,
+            AttributeFilters = new List<AttributeFilterDto> { new() { AttributeDefinitionId = 819, ValueBool = true } },
+        });
+
+        var ids = result.Items.Select(i => i.Id).ToList();
+        Assert.Contains(matchId, ids);
+        Assert.DoesNotContain(otherIdThatWouldOtherwiseMatch, ids);
+        Assert.Equal("attr_819 = true", fakeIndex.LastFilter);
+    }
+
+    [Fact]
+    public async Task SearchCarAdvertsAsync_MeilisearchDisabled_AttributeFiltersStillUseEfFallback()
+    {
+        var (context, advertService, userId) = await SetupAsync(nameof(SearchCarAdvertsAsync_MeilisearchDisabled_AttributeFiltersStillUseEfFallback));
+        var matchId = await CreateAdvertAsync(advertService, userId, "Ma klimatyzacje", 50000);
+        var otherId = await CreateAdvertAsync(advertService, userId, "Bez klimatyzacji", 50000);
+        context.AdvertAttributeValues.Add(new cars_website_api.CarsWebsite.Domain.Entities.AdvertAttributeValue
+        {
+            AdvertId = matchId,
+            AttributeDefinitionId = 819,
+            ValueBool = true,
+        });
+        await context.SaveChangesAsync();
+
+        var result = await advertService.SearchCarAdvertsAsync(new SearchCarAdvertDto
+        {
+            PageSize = 50,
+            AttributeFilters = new List<AttributeFilterDto> { new() { AttributeDefinitionId = 819, ValueBool = true } },
+        });
+
+        var ids = result.Items.Select(i => i.Id).ToList();
+        Assert.Contains(matchId, ids);
+        Assert.DoesNotContain(otherId, ids);
+    }
 }

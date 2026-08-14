@@ -506,13 +506,33 @@ public class AdvertService : IAdvertService
             }
         }
 
-        // Faza 5 of the category/attribute restructure: same one-EXISTS-subquery-per-criterion
-        // shape as FeatureIds above, against AdvertAttributeValue instead of AdvertFeatures. `a.Id`
-        // is the base Advert.Id (CarAdvert is TPT, shares the same Id), which is what
-        // AdvertAttributeValue.AdvertId FKs to.
-        if (dto.AttributeFilters != null && dto.AttributeFilters.Any())
+        // Faza 6 of the category/attribute restructure: route TextSearch + AttributeFilters through
+        // Meilisearch together in one call when it's enabled (see docs/search-engine-evaluation.md
+        // and MeilisearchAttributeFilterBuilder) instead of the per-filter EF `EXISTS` subqueries
+        // below. `meiliIds` null is the universal fail-open signal (disabled/unreachable/erroring),
+        // in which case both this block and the TextSearch block further down apply their MySQL
+        // equivalents exactly as before. A non-null `meiliIds` (including an empty list - genuine
+        // zero matches) means Meilisearch already applied both filters, so neither MySQL path runs.
+        var hasTextSearch = !string.IsNullOrWhiteSpace(dto.TextSearch);
+        var hasAttributeFilters = dto.AttributeFilters != null && dto.AttributeFilters.Any();
+        List<int>? meiliIds = null;
+        if ((hasTextSearch || hasAttributeFilters) && _searchIndexService.IsEnabled)
         {
-            foreach (var af in dto.AttributeFilters)
+            var attributeFilterExpr = MeilisearchAttributeFilterBuilder.Build(dto.AttributeFilters);
+            meiliIds = await _searchIndexService.SearchIdsAsync(dto.TextSearch, attributeFilterExpr, limit: 1000);
+        }
+
+        if (meiliIds != null)
+        {
+            query = query.Where(a => meiliIds.Contains(a.Id));
+        }
+        else if (hasAttributeFilters)
+        {
+            // Faza 5 of the category/attribute restructure: same one-EXISTS-subquery-per-criterion
+            // shape as FeatureIds above, against AdvertAttributeValue instead of AdvertFeatures.
+            // `a.Id` is the base Advert.Id (CarAdvert is TPT, shares the same Id), which is what
+            // AdvertAttributeValue.AdvertId FKs to.
+            foreach (var af in dto.AttributeFilters!)
             {
                 var defId = af.AttributeDefinitionId;
                 if (af.ValueBool.HasValue)
@@ -570,37 +590,24 @@ public class AdvertService : IAdvertService
         if (dto.IsSporty == true)
             query = query.Where(a => a.BodyType != null && SportyBodyTypeNames.Contains(a.BodyType.Name) && a.PowerHP >= SportPowerThresholdHP);
 
-        if (!string.IsNullOrWhiteSpace(dto.TextSearch))
+        if (hasTextSearch && meiliIds == null)
         {
-            // Meilisearch first when configured (typo tolerance + relevance ranking - see
-            // docs/search-engine-evaluation.md), falling back to MySQL FULLTEXT whenever it's
-            // disabled, unreachable, or erroring (SearchIdsAsync returns null in every one of those
-            // cases - that's the fail-open signal, an empty list is a genuine "no matches").
-            var meiliIds = _searchIndexService.IsEnabled
-                ? await _searchIndexService.SearchIdsAsync(dto.TextSearch, limit: 1000)
-                : null;
-
-            if (meiliIds != null)
+            // Meilisearch was disabled/unreachable/erroring for this request (see the fail-open
+            // block above, which already tried it for both TextSearch and AttributeFilters together)
+            // - fall back to MySQL FULLTEXT. `Title.Contains(...)` compiles to `LIKE '%term%'`, which
+            // can never use the FT_Adverts_TitleDescription FULLTEXT index (leading wildcard) - at
+            // scale this is a full table scan on every search. Use MATCH...AGAINST in boolean mode
+            // instead, with each word turned into a required prefix match (+word*) so behaviour stays
+            // close to the substring search users are used to, while actually hitting the index.
+            var booleanQuery = BuildFullTextBooleanQuery(dto.TextSearch);
+            if (!string.IsNullOrEmpty(booleanQuery))
             {
-                query = query.Where(a => meiliIds.Contains(a.Id));
-            }
-            else
-            {
-                // `Title.Contains(...)` compiles to `LIKE '%term%'`, which can never use the
-                // FT_Adverts_TitleDescription FULLTEXT index (leading wildcard) - at scale this is a
-                // full table scan on every search. Use MATCH...AGAINST in boolean mode instead, with
-                // each word turned into a required prefix match (+word*) so behaviour stays close to
-                // the substring search users are used to, while actually hitting the index.
-                var booleanQuery = BuildFullTextBooleanQuery(dto.TextSearch);
-                if (!string.IsNullOrEmpty(booleanQuery))
-                {
-                    // CTO audit Etap 4 (TPT flattening): Title/Description live on caradverts now,
-                    // not the former separate adverts table.
-                    var matchedIds = await _context.Database
-                        .SqlQuery<int>($"SELECT Id FROM caradverts WHERE MATCH(Title, Description) AGAINST ({booleanQuery} IN BOOLEAN MODE)")
-                        .ToListAsync();
-                    query = query.Where(a => matchedIds.Contains(a.Id));
-                }
+                // CTO audit Etap 4 (TPT flattening): Title/Description live on caradverts now,
+                // not the former separate adverts table.
+                var matchedIds = await _context.Database
+                    .SqlQuery<int>($"SELECT Id FROM caradverts WHERE MATCH(Title, Description) AGAINST ({booleanQuery} IN BOOLEAN MODE)")
+                    .ToListAsync();
+                query = query.Where(a => matchedIds.Contains(a.Id));
             }
         }
 

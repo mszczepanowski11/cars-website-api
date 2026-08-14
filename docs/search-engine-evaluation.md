@@ -1,33 +1,51 @@
 # Dedykowany silnik wyszukiwania (Meilisearch / OpenSearch) — ocena
 
-Status: **pierwsza faza zaimplementowana (kod), instancja Meilisearch NIE jest jeszcze
-provisionowana.** Zaimplementowano dokładnie szkic planu poniżej: `IAdvertSearchIndexService`/
-`MeilisearchAdvertIndexService` (`CarsWebsite.Services`), hook synchronizujący w `AdvertService`
-przy tworzeniu/edycji/usuwaniu/sprzedaniu/publikacji ogłoszenia, zamiana zapytania
-MATCH...AGAINST na Meilisearch w `SearchCarAdvertsAsync` z fail-open fallbackiem do MySQL FULLTEXT,
-oraz endpoint `POST /api/Admin/search-index/reindex` do pełnego reindeksu na żądanie. Konfiguracja:
+Status: **kod zaimplementowany i zweryfikowany end-to-end na żywo (lokalny Meilisearch 1.53.1 +
+realny MySQL, ta sama sesja), instancja produkcyjna NIE jest jeszcze provisionowana.**
+Zaimplementowano `IAdvertSearchIndexService`/`MeilisearchAdvertIndexService` (`CarsWebsite.Services`),
+hook synchronizujący w `AdvertService` przy tworzeniu/edycji/usuwaniu/sprzedaniu/publikacji
+ogłoszenia, zamianę zapytania MATCH...AGAINST na Meilisearch w `SearchCarAdvertsAsync` z fail-open
+fallbackiem do MySQL FULLTEXT, endpoint `POST /api/Admin/search-index/reindex` do pełnego reindeksu
+na żądanie, **oraz (CTO audit Etap 4, druga faza) routing filtrów atrybutów EAV
+(`SearchCarAdvertDto.AttributeFilters`) przez Meilisearch zamiast per-filtra zapytań EF `EXISTS` do
+MySQL** — `MeilisearchAttributeFilterBuilder` tłumaczy `AttributeFilterDto` na wyrażenie filtra
+Meilisearch (`attr_{AttributeDefinitionId} = ...`/`>= .. AND <= ..`/`CONTAINS ...`), a
+`MeilisearchAdvertIndexService` indeksuje każdą wartość atrybutu ogłoszenia jako osobne pole
+dokumentu i rejestruje ją jako filterable dynamicznie (nowy atrybut dodany przez admina staje się
+filtrowalny po najbliższym reindeksie, bez migracji schematu indeksu). Konfiguracja:
 `Meilisearch:Host`/`Meilisearch:ApiKey` w appsettings lub `MEILISEARCH_HOST`/`MEILISEARCH_API_KEY`
 jako zmienne środowiskowe — puste/nieustawione = usługa wyłączona, wyszukiwanie działa dokładnie
 jak przed tą zmianą (zero narzutu, zero zmiany zachowania). Frontend nie wymaga żadnych zmian —
 ten sam request/response kontrakt na `/api/Advert/search`.
 
-**Do zrobienia, żeby to zaczęło faktycznie działać:** (1) provisioning instancji Meilisearch
-(Railway addon lub inny hosting — wymaga akcji właściciela), (2) ustawienie
-`Meilisearch:Host`/`ApiKey`, (3) jednorazowe wywołanie `POST /api/Admin/search-index/reindex` do
-populacji indeksu, (4) weryfikacja end-to-end na żywej instancji — nie było to możliwe z tej sesji
-(brak dostępu do sieci poza wąską listą registries pakietów: npm/NuGet/PyPI/crates.io/Go proxy;
-Docker niedostępny w tym sandboxie), więc kod jest zweryfikowany na poziomie kompilacji, logiki i
-pełnego cyklu CRUD z klientem WYŁĄCZONYM (fail-open ścieżka), ale NIE end-to-end z realnym
-Meilisearch.
+**Weryfikacja end-to-end (ta sesja):** pobrany bezpośrednio binarny release Meilisearch 1.53.1
+(sandbox miał dostęp do `github.com` przez skonfigurowane proxy, mimo że Docker/inne rejestry były
+niedostępne), uruchomiony lokalnie, wskazany przez `MEILISEARCH_HOST`. Utworzone testowe definicje
+atrybutów (bool/number/text z wieloma wartościami) i wartości na dwóch realnych ogłoszeniach w
+lokalnym MySQL, pełny reindeks przez `MeilisearchAdvertIndexService.ReindexAllAsync`, a następnie
+zapytania przez faktyczny `POST /api/Advert/search` potwierdziły: filtr bool (`=`), filtr liczbowy
+(zakres `>=`/`<=`), filtr tekstowy wielowartościowy (`CONTAINS`, odpowiednik `ValueText.Contains`
+z wersji SQL — wymaga eksperymentalnej flagi Meilisearch `containsFilter`, włączanej idempotentnie
+w `ReindexAllAsync`), połączenie TextSearch+AttributeFilters w jednym zapytaniu, oraz identyczne
+wyniki przy Meilisearch wyłączonym (fallback do EF `EXISTS`) — wszystkie dały poprawne, oczekiwane
+rozróżnienie między ogłoszeniami. Testowe dane usunięte po weryfikacji.
 
-## Stan obecny
+**Do zrobienia, żeby to zaczęło faktycznie działać na produkcji:** (1) provisioning instancji
+Meilisearch (Railway addon lub inny hosting — wymaga akcji właściciela), (2) ustawienie
+`Meilisearch:Host`/`ApiKey`, (3) jednorazowe wywołanie `POST /api/Admin/search-index/reindex` do
+populacji indeksu (rejestruje też filterable attributes i włącza `containsFilter`), (4) obserwacja
+pierwszych zapytań na żywo (logi `[Meilisearch]` w razie problemów — kod jest fail-open, więc awaria
+tu nigdy nie blokuje wyszukiwania, tylko cicho wraca do dotychczasowej ścieżki MySQL).
+
+## Stan obecny (opis historyczny — sprzed drugiej fazy powyżej, zostawiony dla kontekstu)
 
 Wyszukiwanie tekstowe działa na MySQL FULLTEXT (`MATCH...AGAINST` w trybie BOOLEAN, indeks
 `FT_Adverts_TitleDescription` na `Title`+`Description`, patrz `AdvertService.cs` — naprawione w
-tej samej sesji audytu, wcześniej było `LIKE '%term%'` bez użycia indeksu). Wyniki tekstowe są
-łączone z ~15 filtrami faset (marka, model, cena, przebieg, rok, paliwo, skrzynia, napęd, kolor,
-moc, kategoria, podtyp, atrybuty EAV...) przez standardowe zapytania EF Core `.Where()` na tej
-samej bazie MySQL.
+tej samej sesji audytu, wcześniej było `LIKE '%term%'` bez użycia indeksu). Filtry atrybutów EAV
+teraz również przechodzą przez Meilisearch, gdy jest włączony (patrz wyżej) — pozostałe ~14 filtrów
+faset (marka, model, cena, przebieg, rok, paliwo, skrzynia, napęd, kolor, moc, kategoria, podtyp...)
+nadal idą przez standardowe zapytania EF Core `.Where()` na tej samej bazie MySQL; przeniesienie
+ich też do Meilisearch pozostaje przyszłą pracą, jeśli/gdy pojawi się do tego konkretny sygnał.
 
 To rozwiązanie jest **wystarczające przy obecnej skali** (start nowego marketplace, zapewne
 niskie tysiące ogłoszeń). Ograniczenia FULLTEXT w MySQL, które staną się realnym problemem
@@ -83,6 +101,10 @@ rozwiązanie warto wdrożyć, gdy pojawi się konkretny sygnał (skargi na jako�
 mierzalne spowolnienie przy realnym wolumenie ogłoszeń), a nie prewencyjnie.
 
 ## Szkic planu wdrożenia (jeśli zapadnie decyzja "tak")
+
+Kroki 2-5 poniżej są zrealizowane (patrz Status na górze tego dokumentu) - krok 3 obecnie tylko dla
+TextSearch + filtrów atrybutów EAV, nie jeszcze dla pozostałych ~14 filtrów faset. Krok 1
+(provisioning) pozostaje jedyną rzeczą, której nie da się zrobić z poziomu tej sesji.
 
 1. Provisioning instancji Meilisearch (Railway addon, analogicznie do Redis z zadania #40 tego
    audytu — wymaga akcji właściciela, nie da się zrobić z tej sesji).
