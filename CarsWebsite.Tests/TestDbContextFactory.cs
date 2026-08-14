@@ -99,9 +99,9 @@ public static class TestDbContextFactory
 
     public static Cloudinary CreateDummyCloudinary() => new(new Account("test-cloud", "test-key", "test-secret"));
 
-    public static IAdvertService CreateAdvertService(AppDbContext context)
+    public static IAdvertService CreateAdvertService(AppDbContext context, IAdvertSearchIndexService? searchIndexService = null)
         => new AdvertService(context, CreateMapper(), NullLogger<AdvertService>.Instance, CreateDummyCloudinary(),
-            CreateHierarchyValidationService(context), new NullAdvertSearchIndexService(),
+            CreateHierarchyValidationService(context), searchIndexService ?? new NullAdvertSearchIndexService(),
             new Microsoft.Extensions.Caching.Distributed.MemoryDistributedCache(
                 Microsoft.Extensions.Options.Options.Create(new Microsoft.Extensions.Caching.Memory.MemoryDistributedCacheOptions())));
 }
@@ -114,6 +114,32 @@ public class NullAdvertSearchIndexService : IAdvertSearchIndexService
     public bool IsEnabled => false;
     public Task IndexAsync(CarAdvert advert, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task DeleteAsync(int advertId, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task<List<int>?> SearchIdsAsync(string text, int limit, CancellationToken cancellationToken = default) => Task.FromResult<List<int>?>(null);
+    public Task<List<int>?> SearchIdsAsync(string? text, string? filter, int limit, CancellationToken cancellationToken = default) => Task.FromResult<List<int>?>(null);
+    public Task<int> ReindexAllAsync(CancellationToken cancellationToken = default) => Task.FromResult(0);
+}
+
+// Reports IsEnabled = true and returns a canned ID list from SearchIdsAsync - the real
+// MeilisearchAdvertIndexService can only be exercised against a live Meilisearch instance, so this
+// is what lets AdvertServiceTests exercise the "Meilisearch enabled, route AttributeFilters/
+// TextSearch through it instead of the EF fallback" branch in SearchCarAdvertsInternalAsync.
+// LastText/LastFilter capture what AdvertService actually asked for, so a test can assert the
+// attribute-filter expression it built without needing a real Meilisearch filter-language parser.
+public class FakeEnabledAdvertSearchIndexService : IAdvertSearchIndexService
+{
+    public bool IsEnabled => true;
+    public List<int>? ResultIds { get; set; } = new();
+    public string? LastText { get; private set; }
+    public string? LastFilter { get; private set; }
+
+    public Task IndexAsync(CarAdvert advert, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task DeleteAsync(int advertId, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+    public Task<List<int>?> SearchIdsAsync(string? text, string? filter, int limit, CancellationToken cancellationToken = default)
+    {
+        LastText = text;
+        LastFilter = filter;
+        return Task.FromResult(ResultIds);
+    }
+
     public Task<int> ReindexAllAsync(CancellationToken cancellationToken = default) => Task.FromResult(0);
 }

@@ -14,9 +14,12 @@ public interface IAdvertSearchIndexService
 
     Task DeleteAsync(int advertId, CancellationToken cancellationToken = default);
 
+    // `text` may be null/empty for a filter-only search (attribute filters with no free-text term -
+    // Meilisearch handles an empty query string plus a filter expression fine). `filter` is a
+    // Meilisearch filter-expression string (see MeilisearchAttributeFilterBuilder) or null for none.
     // Returns null (not an empty list) when Meilisearch is disabled/unreachable/erroring - the null
     // is the fall-back-to-MySQL signal; an empty list is a genuine "no matches" result.
-    Task<List<int>?> SearchIdsAsync(string text, int limit, CancellationToken cancellationToken = default);
+    Task<List<int>?> SearchIdsAsync(string? text, string? filter, int limit, CancellationToken cancellationToken = default);
 
     // Full reindex of every currently-searchable advert (IsActive && !IsHidden && not expired).
     // Admin-triggered on demand (initial population / recovery after an outage), not run

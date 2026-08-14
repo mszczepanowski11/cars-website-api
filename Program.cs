@@ -207,6 +207,7 @@ internal class Program
         var meilisearchApiKey = (Environment.GetEnvironmentVariable("MEILISEARCH_API_KEY") ?? builder.Configuration["Meilisearch:ApiKey"] ?? "").Trim();
         builder.Services.AddSingleton<Meilisearch.MeilisearchClient?>(_ =>
             string.IsNullOrEmpty(meilisearchHost) ? null : new Meilisearch.MeilisearchClient(meilisearchHost, meilisearchApiKey));
+        builder.Services.AddSingleton(new MeilisearchConnectionOptions(meilisearchHost, meilisearchApiKey));
         builder.Services.AddScoped<IAdvertSearchIndexService, MeilisearchAdvertIndexService>();
 
         // Redis (CTO audit Etap 4): distributed cache + rate limiter state, so taxonomy cache
