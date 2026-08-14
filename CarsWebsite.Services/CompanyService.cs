@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using cars_website_api.CarsWebsite.DTOs.Company;
 using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
@@ -13,13 +14,15 @@ public class CompanyService : ICompanyService
     private readonly IConfiguration _configuration;
     private readonly IEmailService _email;
     private readonly ILogger<CompanyService> _logger;
+    private readonly IBackgroundJobClient _backgroundJobClient;
 
-    public CompanyService(AppDbContext context, IConfiguration configuration, IEmailService email, ILogger<CompanyService> logger)
+    public CompanyService(AppDbContext context, IConfiguration configuration, IEmailService email, ILogger<CompanyService> logger, IBackgroundJobClient backgroundJobClient)
     {
         _context = context;
         _configuration = configuration;
         _email = email;
         _logger = logger;
+        _backgroundJobClient = backgroundJobClient;
     }
 
     public async Task<int> GetEffectiveOwnerIdAsync(int callerId)
@@ -152,12 +155,7 @@ public class CompanyService : ICompanyService
             $"{siteUrl}/zespol/zaproszenie?token={token}",
             "Dołącz do zespołu");
 
-        _ = _email.SendAsync(normalizedEmail, subject, html)
-            .ContinueWith(t =>
-            {
-                if (t.IsFaulted)
-                    _logger.LogError(t.Exception, "[Company/Invite] Email wysyłki nie powiódł się dla {Email}", normalizedEmail);
-            }, TaskContinuationOptions.OnlyOnFaulted);
+        _backgroundJobClient.Enqueue<IEmailService>(x => x.SendAsync(normalizedEmail, subject, html));
 
         _logger.LogInformation("[Company/Invite] ownerId={OwnerId} invitedEmail={Email}", ownerId, normalizedEmail);
     }

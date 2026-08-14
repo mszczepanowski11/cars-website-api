@@ -3,6 +3,7 @@ using System.Text;
 using CarsWebsite;
 using cars_website_api.CarsWebsite.DTOs.Payment;
 using cars_website_api.CarsWebsite.Interfaces;
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 
 public class PaymentService : IPaymentService
@@ -33,19 +34,22 @@ public class PaymentService : IPaymentService
     private readonly INotificationService _notifications;
     private readonly ISubscriptionService _subscriptionService;
     private readonly ILogger<PaymentService> _logger;
+    private readonly IBackgroundJobClient _backgroundJobClient;
 
     public PaymentService(
         AppDbContext context,
         IConfiguration config,
         INotificationService notifications,
         ISubscriptionService subscriptionService,
-        ILogger<PaymentService> logger)
+        ILogger<PaymentService> logger,
+        IBackgroundJobClient backgroundJobClient)
     {
         _context = context;
         _config = config;
         _notifications = notifications;
         _subscriptionService = subscriptionService;
         _logger = logger;
+        _backgroundJobClient = backgroundJobClient;
     }
 
     // Launch promo: every paid service (boosts + B2B subscriptions) activates for free while
@@ -265,10 +269,9 @@ public class PaymentService : IPaymentService
                     await ActivateServiceAsync(payment);
                     await tx.CommitAsync();
 
-                    _ = _notifications.NotifyAsync(payment.UserId, EmailNotificationType.PaymentConfirmed,
-                        "Płatność potwierdzona",
-                        $"Twoja płatność za usługę \"{payment.ServiceDescription}\" w kwocie {payment.Amount:0.00} PLN została pomyślnie zrealizowana.",
-                        advertId: payment.AdvertId, paymentId: payment.Id);
+                    var confirmedContent = $"Twoja płatność za usługę \"{payment.ServiceDescription}\" w kwocie {payment.Amount:0.00} PLN została pomyślnie zrealizowana.";
+                    _backgroundJobClient.Enqueue<INotificationService>(x => x.NotifyAsync(
+                        payment.UserId, EmailNotificationType.PaymentConfirmed, "Płatność potwierdzona", confirmedContent, payment.AdvertId, payment.Id, null));
                 }
                 else if (dto.ResolvedStatus == "Refunded")
                 {
@@ -286,10 +289,9 @@ public class PaymentService : IPaymentService
                     if (wasCompleted) await RevokeServiceAsync(payment);
                     await tx.CommitAsync();
 
-                    _ = _notifications.NotifyAsync(payment.UserId, EmailNotificationType.PaymentRefunded,
-                        "Płatność zwrócona",
-                        $"Płatność za usługę \"{payment.ServiceDescription}\" w kwocie {payment.Amount:0.00} PLN została zwrócona. Odpowiadające jej uprawnienia zostały cofnięte.",
-                        advertId: payment.AdvertId, paymentId: payment.Id);
+                    var refundedContent = $"Płatność za usługę \"{payment.ServiceDescription}\" w kwocie {payment.Amount:0.00} PLN została zwrócona. Odpowiadające jej uprawnienia zostały cofnięte.";
+                    _backgroundJobClient.Enqueue<INotificationService>(x => x.NotifyAsync(
+                        payment.UserId, EmailNotificationType.PaymentRefunded, "Płatność zwrócona", refundedContent, payment.AdvertId, payment.Id, null));
                 }
                 else if (dto.ResolvedStatus is "rejected" or "cancelled" or "error" or "Failed" or "Cancelled")
                 {
@@ -299,10 +301,9 @@ public class PaymentService : IPaymentService
                     await _context.SaveChangesAsync();
                     await tx.CommitAsync();
 
-                    _ = _notifications.NotifyAsync(payment.UserId, EmailNotificationType.PaymentFailed,
-                        "Płatność nieudana",
-                        $"Niestety Twoja płatność za usługę \"{payment.ServiceDescription}\" nie została zrealizowana. Możesz spróbować ponownie.",
-                        advertId: payment.AdvertId, paymentId: payment.Id);
+                    var failedContent = $"Niestety Twoja płatność za usługę \"{payment.ServiceDescription}\" nie została zrealizowana. Możesz spróbować ponownie.";
+                    _backgroundJobClient.Enqueue<INotificationService>(x => x.NotifyAsync(
+                        payment.UserId, EmailNotificationType.PaymentFailed, "Płatność nieudana", failedContent, payment.AdvertId, payment.Id, null));
                 }
                 else
                 {
@@ -530,10 +531,10 @@ public class PaymentService : IPaymentService
             _                    => "Promocja"
         };
 
-        _ = _notifications.NotifyAsync(payment.UserId, notifType,
-            $"{typeName} aktywowane",
-            $"Usługa \"{payment.ServiceDescription}\" została aktywowana na {payment.DurationDays} dni.",
-            advertId: payment.AdvertId, paymentId: payment.Id);
+        var activatedTitle = $"{typeName} aktywowane";
+        var activatedContent = $"Usługa \"{payment.ServiceDescription}\" została aktywowana na {payment.DurationDays} dni.";
+        _backgroundJobClient.Enqueue<INotificationService>(x => x.NotifyAsync(
+            payment.UserId, notifType, activatedTitle, activatedContent, payment.AdvertId, payment.Id, null));
     }
 
     // CTO audit Etap 3 (🔴 "Przepływ zwrotów faktycznie cofający przyznane uprawnienia"): a
@@ -603,10 +604,10 @@ public class PaymentService : IPaymentService
 
         await _subscriptionService.ActivateSubscriptionAsync(payment.UserId, tier);
 
-        _ = _notifications.NotifyAsync(payment.UserId, EmailNotificationType.PromotionActivated,
-            $"Pakiet {tier} aktywowany",
-            $"Twoja subskrypcja CARIZO {tier} została aktywowana. Możesz teraz korzystać ze wszystkich funkcji pakietu przez 30 dni.",
-            paymentId: payment.Id);
+        var tierTitle = $"Pakiet {tier} aktywowany";
+        var tierContent = $"Twoja subskrypcja CARIZO {tier} została aktywowana. Możesz teraz korzystać ze wszystkich funkcji pakietu przez 30 dni.";
+        _backgroundJobClient.Enqueue<INotificationService>(x => x.NotifyAsync(
+            payment.UserId, EmailNotificationType.PromotionActivated, tierTitle, tierContent, null, payment.Id, null));
     }
 
     private async Task ActivateEventServiceAsync(Payment payment)
@@ -632,10 +633,9 @@ public class PaymentService : IPaymentService
             _logger.LogWarning("ActivateEventServiceAsync: wydarzenie {EventId} nie znalezione.", payment.EventId);
         }
 
-        _ = _notifications.NotifyAsync(payment.UserId, EmailNotificationType.PromotionActivated,
-            "Wyróżnienie wydarzenia aktywowane",
-            $"Twoje wydarzenie zostało wyróżnione na {payment.DurationDays} dni.",
-            paymentId: payment.Id);
+        var eventContent = $"Twoje wydarzenie zostało wyróżnione na {payment.DurationDays} dni.";
+        _backgroundJobClient.Enqueue<INotificationService>(x => x.NotifyAsync(
+            payment.UserId, EmailNotificationType.PromotionActivated, "Wyróżnienie wydarzenia aktywowane", eventContent, null, payment.Id, null));
     }
 
     private bool VerifySignature(string rawBody, string signature)

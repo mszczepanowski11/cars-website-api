@@ -54,6 +54,9 @@ public class EmailService : IEmailService
         // Resend accepts "Name <addr>" or a bare address. Add a display name if missing.
         var fromHeader = from.Contains('<') ? from : $"CARIZO <{from}>";
         _logger.LogInformation("[Email] Sending '{Subject}' to {To} via Resend HTTP API", subject, to);
+
+        HttpResponseMessage resp;
+        string body;
         try
         {
             var payload = new
@@ -68,16 +71,27 @@ public class EmailService : IEmailService
             req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
             req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
-            using var resp = await _http.SendAsync(req);
-            var body = await resp.Content.ReadAsStringAsync();
-            if (resp.IsSuccessStatusCode)
-                _logger.LogInformation("[Email] Sent successfully to {To} via Resend", to);
-            else
-                _logger.LogError("[Email] Resend odrzucił e-mail do {To}: {Status} {Body}", to, (int)resp.StatusCode, body);
+            resp = await _http.SendAsync(req);
+            body = await resp.Content.ReadAsStringAsync();
+            resp.Dispose();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "[Email] Błąd wysyłki e-mail (Resend) do {To}", to);
+            // Rethrow (not just log) so a Hangfire job wrapping this call is marked Failed and
+            // actually retried/dead-lettered - swallowing this into "success" is exactly the
+            // "zero retry, zero dead-letter" gap the CTO audit flagged (Etap 4).
+            throw;
+        }
+
+        if (resp.IsSuccessStatusCode)
+        {
+            _logger.LogInformation("[Email] Sent successfully to {To} via Resend", to);
+        }
+        else
+        {
+            _logger.LogError("[Email] Resend odrzucił e-mail do {To}: {Status} {Body}", to, (int)resp.StatusCode, body);
+            throw new InvalidOperationException($"Resend rejected email to {to}: {(int)resp.StatusCode} {body}");
         }
     }
 
@@ -146,6 +160,9 @@ public class EmailService : IEmailService
         catch (Exception ex)
         {
             _logger.LogError(ex, "[Email] Błąd wysyłki e-mail do {To} via {Host}:{Port}", to, host, port);
+            // Rethrow (not just log) so a Hangfire job wrapping this call is marked Failed and
+            // actually retried/dead-lettered - see the matching comment in SendViaResendAsync.
+            throw;
         }
     }
 

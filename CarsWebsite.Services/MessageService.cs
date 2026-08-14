@@ -2,6 +2,7 @@ using System.Net;
 using cars_website_api.CarsWebsite.DTOs.Message;
 using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -10,12 +11,14 @@ public class MessageService : IMessageService
     private readonly AppDbContext _context;
     private readonly INotificationService _notifications;
     private readonly ILogger<MessageService> _logger;
+    private readonly IBackgroundJobClient _backgroundJobClient;
 
-    public MessageService(AppDbContext context, INotificationService notifications, ILogger<MessageService> logger)
+    public MessageService(AppDbContext context, INotificationService notifications, ILogger<MessageService> logger, IBackgroundJobClient backgroundJobClient)
     {
         _context = context;
         _notifications = notifications;
         _logger = logger;
+        _backgroundJobClient = backgroundJobClient;
     }
 
     public async Task<int> StartOrGetConversationAsync(int buyerId, int advertId, string initialMessage)
@@ -203,10 +206,9 @@ public class MessageService : IMessageService
         {
             var senderDisplayName = WebUtility.HtmlEncode($"{sender.Name} {sender.Surname}");
             var contentPreview = WebUtility.HtmlEncode(content.Length > 100 ? content[..100] + "..." : content);
-            _ = _notifications.NotifyAsync(recipientId, EmailNotificationType.NewMessage,
-                "Nowa wiadomość",
-                $"{senderDisplayName} wysłał(a) Ci wiadomość: \"{contentPreview}\"",
-                advertId: conv.AdvertId);
+            var notifyContent = $"{senderDisplayName} wysłał(a) Ci wiadomość: \"{contentPreview}\"";
+            _backgroundJobClient.Enqueue<INotificationService>(x => x.NotifyAsync(
+                recipientId, EmailNotificationType.NewMessage, "Nowa wiadomość", notifyContent, conv.AdvertId, null, null));
         }
 
         return new MessageDto

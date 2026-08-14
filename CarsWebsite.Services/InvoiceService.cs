@@ -4,6 +4,7 @@ using CarsWebsite;
 using cars_website_api.CarsWebsite.DTOs.Invoice;
 using cars_website_api.CarsWebsite.DTOs.Payment;
 using cars_website_api.CarsWebsite.Interfaces;
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using QRCoder;
 using QuestPDF.Fluent;
@@ -18,8 +19,9 @@ public class InvoiceService : IInvoiceService
     private readonly IEmailService _email;
     private readonly IKSeFService _ksef;
     private readonly ILogger<InvoiceService> _logger;
+    private readonly IBackgroundJobClient _backgroundJobClient;
 
-    public InvoiceService(AppDbContext context, IConfiguration config, INotificationService notifications, IEmailService email, IKSeFService ksef, ILogger<InvoiceService> logger)
+    public InvoiceService(AppDbContext context, IConfiguration config, INotificationService notifications, IEmailService email, IKSeFService ksef, ILogger<InvoiceService> logger, IBackgroundJobClient backgroundJobClient)
     {
         _context = context;
         _config = config;
@@ -27,6 +29,7 @@ public class InvoiceService : IInvoiceService
         _email = email;
         _ksef = ksef;
         _logger = logger;
+        _backgroundJobClient = backgroundJobClient;
     }
 
     public async Task GenerateMonthlyInvoicesAsync(int month, int year)
@@ -109,7 +112,12 @@ public class InvoiceService : IInvoiceService
                     invoice.User = user;
                     invoice.Payments = groupPayments;
 
-                    await SendInvoiceEmailAsync(invoice, user);
+                    // CTO audit Etap 4: durable Hangfire queue instead of a blocking inline send -
+                    // enqueue the public by-id entrypoint (not the private Invoice/User-taking
+                    // overload) since Hangfire JSON-serializes job arguments and re-fetching by id
+                    // is what survives that round trip cleanly (see FinancingService for the same
+                    // pattern). invoice.Id already exists - it was saved a few lines above.
+                    _backgroundJobClient.Enqueue<IInvoiceService>(x => x.SendInvoiceByEmailAsync(invoice.Id));
 
                     var ksefRef = await _ksef.SendInvoiceAsync(invoice, groupPayments);
                     if (ksefRef != null)
@@ -119,10 +127,9 @@ public class InvoiceService : IInvoiceService
                         await _context.SaveChangesAsync();
                     }
 
-                    _ = _notifications.NotifyAsync(group.Key, EmailNotificationType.InvoiceGenerated,
-                        "Faktura wygenerowana",
-                        $"Twoja faktura zbiorcza {invoice.InvoiceNumber} za {monthName} {year} została wygenerowana. Łączna kwota: {invoice.TotalAmount:0.00} PLN.",
-                        invoiceId: invoice.Id);
+                    var generatedContent = $"Twoja faktura zbiorcza {invoice.InvoiceNumber} za {monthName} {year} została wygenerowana. Łączna kwota: {invoice.TotalAmount:0.00} PLN.";
+                    _backgroundJobClient.Enqueue<INotificationService>(x => x.NotifyAsync(
+                        group.Key, EmailNotificationType.InvoiceGenerated, "Faktura wygenerowana", generatedContent, null, null, invoice.Id));
 
                     seq++;
                 }
@@ -633,10 +640,9 @@ public class InvoiceService : IInvoiceService
             invoice.SentAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
-            _ = _notifications.NotifyAsync(invoice.UserId, EmailNotificationType.InvoiceSent,
-                "Faktura wysłana",
-                $"Faktura {invoice.InvoiceNumber} została wysłana na adres {user.Email}.",
-                invoiceId: invoice.Id);
+            var sentContent = $"Faktura {invoice.InvoiceNumber} została wysłana na adres {user.Email}.";
+            _backgroundJobClient.Enqueue<INotificationService>(x => x.NotifyAsync(
+                invoice.UserId, EmailNotificationType.InvoiceSent, "Faktura wysłana", sentContent, null, null, invoice.Id));
         }
         catch (Exception ex)
         {

@@ -7,6 +7,7 @@ using System.Text.Json.Serialization;
 using cars_website_api.CarsWebsite.DTOs;
 using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -20,14 +21,16 @@ public class AuthService : IAuthService
     private readonly IEmailService _email;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<AuthService> _logger;
+    private readonly IBackgroundJobClient _backgroundJobClient;
 
-    public AuthService(AppDbContext context, IConfiguration configuration, IEmailService email, IHttpClientFactory httpClientFactory, ILogger<AuthService> logger)
+    public AuthService(AppDbContext context, IConfiguration configuration, IEmailService email, IHttpClientFactory httpClientFactory, ILogger<AuthService> logger, IBackgroundJobClient backgroundJobClient)
     {
         _context = context;
         _configuration = configuration;
         _email = email;
         _httpClientFactory = httpClientFactory;
         _logger = logger;
+        _backgroundJobClient = backgroundJobClient;
     }
 
     private static void ValidatePasswordStrength(string password)
@@ -82,13 +85,10 @@ public class AuthService : IAuthService
             $"{siteUrl}/weryfikacja-email?token={token}",
             "Aktywuj konto");
 
-        // Fire-and-forget — don't block HTTP response on SMTP; log failures asynchronously.
-        _ = _email.SendAsync(user.Email, subject, html)
-            .ContinueWith(t =>
-            {
-                if (t.IsFaulted)
-                    _logger.LogError(t.Exception, "[Register] Email wysyłki nie powiódł się dla {Email}", user.Email);
-            }, TaskContinuationOptions.OnlyOnFaulted);
+        // CTO audit Etap 4: routed through Hangfire's durable MySQL-backed queue instead of a bare
+        // fire-and-forget task, so the send survives a process crash/restart between here and
+        // actually connecting to Resend/SMTP, and gets retried automatically if it fails.
+        _backgroundJobClient.Enqueue<IEmailService>(x => x.SendAsync(user.Email, subject, html));
 
         return new { message = "Rejestracja zakończona. Sprawdź skrzynkę email." };
     }
@@ -178,12 +178,7 @@ public class AuthService : IAuthService
             $"{siteUrl}/reset-password?token={token}",
             "Resetuj hasło");
 
-        _ = _email.SendAsync(user.Email, "Resetowanie hasła – CARIZO", html)
-            .ContinueWith(t =>
-            {
-                if (t.IsFaulted)
-                    _logger.LogError(t.Exception, "[ForgotPassword] Email wysyłki nie powiódł się dla {Email}", user.Email);
-            }, TaskContinuationOptions.OnlyOnFaulted);
+        _backgroundJobClient.Enqueue<IEmailService>(x => x.SendAsync(user.Email, "Resetowanie hasła – CARIZO", html));
     }
 
     public async Task<bool> ResetPasswordAsync(string token, string newPassword)
@@ -234,12 +229,7 @@ public class AuthService : IAuthService
             $"{siteUrl}/weryfikacja-email?token={token}",
             "Aktywuj konto");
 
-        _ = _email.SendAsync(user.Email, subject, html)
-            .ContinueWith(t =>
-            {
-                if (t.IsFaulted)
-                    _logger.LogError(t.Exception, "[ResendVerification] Email wysyłki nie powiódł się dla {Email}", user.Email);
-            }, TaskContinuationOptions.OnlyOnFaulted);
+        _backgroundJobClient.Enqueue<IEmailService>(x => x.SendAsync(user.Email, subject, html));
     }
 
     public async Task<object?> GoogleLoginAsync(string credential)

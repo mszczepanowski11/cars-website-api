@@ -40,7 +40,7 @@ public class PaymentRefundTests
             .AddInMemoryCollection(new Dictionary<string, string?> { ["InternalServiceSecret"] = InternalSecret })
             .Build();
         var subscriptionService = new SubscriptionService(context, NullLogger<SubscriptionService>.Instance);
-        var paymentService = new PaymentService(context, config, new NullNotificationService(), subscriptionService, NullLogger<PaymentService>.Instance);
+        var paymentService = new PaymentService(context, config, new NullNotificationService(), subscriptionService, NullLogger<PaymentService>.Instance, new RecordingBackgroundJobClient());
         return (context, paymentService, user);
     }
 

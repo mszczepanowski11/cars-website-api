@@ -1,6 +1,9 @@
 using AutoMapper;
 using CarsWebsite;
 using CloudinaryDotNet;
+using Hangfire;
+using Hangfire.Common;
+using Hangfire.States;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using cars_website_api.CarsWebsite.Interfaces;
@@ -8,6 +11,24 @@ using cars_website_api.CarsWebsite.Services;
 using cars_website_api.CarsWebsite.Domain.Entities;
 
 namespace CarsWebsiteTests;
+
+// CTO audit Etap 4 (durable email/notification queue): every service that used to fire-and-forget
+// an email/notification now enqueues it via IBackgroundJobClient instead. Tests never run an actual
+// Hangfire server (no MySQL-backed storage in a unit test), so this records what got enqueued -
+// Type/Method/Args - without persisting or executing anything, exactly like NullEmailService stands
+// in for a real SMTP/Resend transport below.
+public class RecordingBackgroundJobClient : IBackgroundJobClient
+{
+    public List<Job> EnqueuedJobs { get; } = new();
+
+    public string Create(Job job, IState state)
+    {
+        EnqueuedJobs.Add(job);
+        return Guid.NewGuid().ToString();
+    }
+
+    public bool ChangeState(string jobId, IState state, string expectedState) => true;
+}
 
 // Every test method gets its own isolated in-memory database (unique name per call), so tests
 // never see each other's data and can run in any order/in parallel. Seeds the minimal reference

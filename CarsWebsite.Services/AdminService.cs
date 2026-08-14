@@ -4,6 +4,7 @@ using cars_website_api.CarsWebsite.Interfaces;
 using CarsWebsite;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
@@ -21,8 +22,9 @@ namespace cars_website_api.CarsWebsite.Services
         private readonly IEmailService _email;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AdminService> _logger;
+        private readonly IBackgroundJobClient _backgroundJobClient;
 
-        public AdminService(AppDbContext context, Cloudinary cloudinary, IMemoryCache cache, IAdvertService advertService, IEmailService email, IConfiguration configuration, ILogger<AdminService> logger)
+        public AdminService(AppDbContext context, Cloudinary cloudinary, IMemoryCache cache, IAdvertService advertService, IEmailService email, IConfiguration configuration, ILogger<AdminService> logger, IBackgroundJobClient backgroundJobClient)
         {
             _context = context;
             _cloudinary = cloudinary;
@@ -31,6 +33,7 @@ namespace cars_website_api.CarsWebsite.Services
             _email = email;
             _configuration = configuration;
             _logger = logger;
+            _backgroundJobClient = backgroundJobClient;
         }
 
         public async Task<AdminStatsDto> GetStatsAsync()
@@ -391,12 +394,7 @@ namespace cars_website_api.CarsWebsite.Services
                 $"{siteUrl}/reset-password?token={token}",
                 "Ustaw hasło");
 
-            _ = _email.SendAsync(user.Email, "Twoje konto i ogłoszenie w CARIZO", html)
-                .ContinueWith(t =>
-                {
-                    if (t.IsFaulted)
-                        _logger.LogError(t.Exception, "[AdminService] Wysyłka e-maila do klienta nie powiodła się dla {Email}", user.Email);
-                }, TaskContinuationOptions.OnlyOnFaulted);
+            _backgroundJobClient.Enqueue<IEmailService>(x => x.SendAsync(user.Email, "Twoje konto i ogłoszenie w CARIZO", html));
         }
 
         // Admin creates (or reuses) a client account and publishes an advert for them without

@@ -26,7 +26,7 @@ public class CompanyServiceTests
     {
         var context = TestDbContextFactory.CreateContext(Guid.NewGuid().ToString());
         var config = new ConfigurationBuilder().Build();
-        var service = new CompanyService(context, config, new NullEmailService(), NullLogger<CompanyService>.Instance);
+        var service = new CompanyService(context, config, new NullEmailService(), NullLogger<CompanyService>.Instance, new RecordingBackgroundJobClient());
         return (context, service);
     }
 
