@@ -433,6 +433,13 @@ namespace CarsWebsite
             modelBuilder.Entity<UserFollow>().HasOne(f => f.Follower).WithMany().HasForeignKey(f => f.FollowerId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<UserFollow>().HasOne(f => f.Followed).WithMany().HasForeignKey(f => f.FollowedId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<Review>().ToTable("Reviews").HasKey(r => r.Id);
+            // CTO audit §1.3 "Brakujące indeksy" (Etap 4): Reviews had zero FKs and zero indexes at
+            // all - every "reviews for this seller/buyer/advert" lookup was a full table scan.
+            // Indexes only (not FK constraints) - adding a real FK here would need an orphan-data
+            // cleanup pass first, which is a separate, riskier project from just fixing lookup speed.
+            modelBuilder.Entity<Review>().HasIndex(r => r.SellerId);
+            modelBuilder.Entity<Review>().HasIndex(r => r.BuyerId);
+            modelBuilder.Entity<Review>().HasIndex(r => r.AdvertId);
 
             // Lowercase table names: Program.cs's startup RENAME TABLE guards move these two
             // tables (originally created PascalCase) to lowercase to match how they physically
@@ -525,6 +532,17 @@ namespace CarsWebsite
                 .HasForeignKey(ad => ad.VehicleSubtypeId)
                 .OnDelete(DeleteBehavior.SetNull)
                 .IsRequired(false);
+
+            // CTO audit §1.3 "Brakujące indeksy" (Etap 4): BrandId/ModelId/GenerationId/TrimId (the
+            // "inteligentny formularz" vehicle-specific scoping - see AttributeDefinition.cs) were
+            // only covered by the VehicleCategoryId-leading composite above, so a query scoped to
+            // just one of these (e.g. "every attribute definition scoped to this Brand") couldn't
+            // use it and fell back to a scan. No navigation property/FK on these by design (see the
+            // entity) - plain indexes only.
+            modelBuilder.Entity<AttributeDefinition>().HasIndex(ad => ad.BrandId);
+            modelBuilder.Entity<AttributeDefinition>().HasIndex(ad => ad.ModelId);
+            modelBuilder.Entity<AttributeDefinition>().HasIndex(ad => ad.GenerationId);
+            modelBuilder.Entity<AttributeDefinition>().HasIndex(ad => ad.TrimId);
 
             modelBuilder.Entity<AdvertAttributeValue>()
                 .HasOne(v => v.Advert)
