@@ -172,17 +172,10 @@ public class AdvertService : IAdvertService
         advert.CreatedAt = DateTime.UtcNow;
         advert.UserId = userId;
 
-        // Emission duration: business accounts get tier-based days; personal accounts default 90 days (3 months)
+        // Emission duration: sourced from SubscriptionPlanConfig for both business (tier-based) and
+        // personal accounts, so this can never drift from what /api/Subscription/plans advertises.
         var advertUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
-        int emissionDays = 90;
-        if (advertUser?.AccountType == AccountType.Business)
-        {
-            var tier = advertUser.SubscriptionExpiresAt.HasValue && advertUser.SubscriptionExpiresAt < DateTime.UtcNow
-                ? SubscriptionTier.None
-                : advertUser.SubscriptionTier;
-            emissionDays = SubscriptionPlanConfig.GetEmissionDays(tier);
-        }
-        advert.ExpiresAt = DateTime.UtcNow.AddDays(emissionDays);
+        advert.ExpiresAt = DateTime.UtcNow.AddDays(SubscriptionPlanConfig.ResolveEmissionDays(advertUser));
         await SetCurrencyAndConvertedPriceAsync(advert);
 
         _context.CarAdverts.Add(advert);
@@ -882,10 +875,11 @@ public class AdvertService : IAdvertService
         }
         if (advert.UserId != userId)
             throw new UnauthorizedAccessException("You do not own this advert.");
+        var publishingUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
         advert.IsActive = true;
         advert.IsHidden = false;
         advert.SoldAt = null;
-        advert.ExpiresAt = DateTime.UtcNow.AddDays(90);
+        advert.ExpiresAt = DateTime.UtcNow.AddDays(SubscriptionPlanConfig.ResolveEmissionDays(publishingUser));
         advert.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
@@ -926,9 +920,10 @@ public class AdvertService : IAdvertService
             throw new InvalidOperationException("Nie można odnowić ogłoszenia ukrytego przez administratora.");
         if (advert.SoldAt != null)
             throw new InvalidOperationException("Nie można odnowić sprzedanego ogłoszenia.");
+        var renewingUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
         advert.IsActive = true;
         advert.IsHidden = false;
-        advert.ExpiresAt = DateTime.UtcNow.AddDays(90);
+        advert.ExpiresAt = DateTime.UtcNow.AddDays(SubscriptionPlanConfig.ResolveEmissionDays(renewingUser));
         advert.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
     }

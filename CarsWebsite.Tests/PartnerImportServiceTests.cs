@@ -98,7 +98,7 @@ public class PartnerImportServiceTests
         Assert.Equal(1, totalAdverts); // same row updated, not a second one created
         var updated = await context.CarAdverts.FirstAsync(a => a.Id == advertId);
         Assert.Equal("BMW 320d (zaktualizowany)", updated.Title);
-        Assert.True(updated.ExpiresAt > DateTime.UtcNow.AddDays(80), "ExpiresAt must be renewed on every successful sync, not just on first import");
+        Assert.True(updated.ExpiresAt > DateTime.UtcNow.AddDays(30), "ExpiresAt must be renewed on every successful sync, not just on first import");
     }
 
     [Fact]
@@ -284,5 +284,39 @@ public class PartnerImportServiceTests
         Assert.Equal(0, log.ItemsFailed);
         var advert = await context.CarAdverts.FirstAsync(a => a.ExternalId == "IMG-1");
         Assert.False(await context.AdvertImages.AnyAsync(i => i.AdvertId == advert.Id));
+    }
+
+    [Fact]
+    public async Task ImportAsync_SameBrandDifferentCasingAndDiacritics_DoesNotCreateDuplicateBrand()
+    {
+        // Business requirement (auto-tworzenie marek/modeli): "BMW"/"bmw"/"Bmw" must resolve to the
+        // same brand, and this must extend to accents too ("Škoda" vs "Skoda"). Two items in the
+        // same feed batch spell the brand differently - GetOrCreateBrandAsync must key its in-memory
+        // cache by CarizoId.Normalize (accent-stripped, lowercased), not plain ToLowerInvariant(),
+        // or the second spelling would slip past the cache and create a second Brand row.
+        var (context, service, partner) = await SetupAsync(nameof(ImportAsync_SameBrandDifferentCasingAndDiacritics_DoesNotCreateDuplicateBrand));
+        var xml = """
+            <Adverts>
+              <Advert>
+                <ExternalId>SKD-1</ExternalId><Title>Skoda Octavia</Title><Price>60000</Price>
+                <Category>auta-osobowe</Category><Brand>Škoda</Brand><Model>Octavia</Model>
+                <Year>2019</Year><Mileage>70000</Mileage>
+              </Advert>
+              <Advert>
+                <ExternalId>SKD-2</ExternalId><Title>Skoda Fabia</Title><Price>35000</Price>
+                <Category>auta-osobowe</Category><Brand>skoda</Brand><Model>Fabia</Model>
+                <Year>2018</Year><Mileage>90000</Mileage>
+              </Advert>
+            </Adverts>
+            """;
+
+        var log = await service.ImportAsync(partner, xml, PartnerFeedFormat.Xml);
+
+        Assert.Equal(2, log.ItemsCreated);
+        Assert.Equal(0, log.ItemsFailed);
+        var brands = await context.Brands.Where(b => b.Name == "Škoda" || b.Name == "skoda").ToListAsync();
+        Assert.Single(brands);
+        var models = await context.Models.Where(m => m.BrandId == brands[0].Id).ToListAsync();
+        Assert.Equal(2, models.Count);
     }
 }
