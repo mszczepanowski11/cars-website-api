@@ -88,12 +88,16 @@ public class PartnerImportService : IPartnerImportService
         // must not crash the whole import run - first match wins.
         var categoriesBySlug = (await _context.VehicleCategories.ToListAsync())
             .GroupBy(c => c.Slug.Trim().ToLowerInvariant()).ToDictionary(g => g.Key, g => g.First());
+        // Keyed by CarizoId.Normalize (accent-stripped, lowercased) rather than plain
+        // ToLowerInvariant() so "Škoda"/"Skoda"/"SKODA" all resolve to the same in-memory entry -
+        // matching MySQL's own accent+case-insensitive collation (utf8mb4_0900_ai_ci) on these
+        // columns, so the in-memory cache never disagrees with what the DB considers a duplicate.
         var brandsByName = (await _context.Brands.Include(b => b.Categories).ToListAsync())
-            .GroupBy(b => b.Name.Trim().ToLowerInvariant()).ToDictionary(g => g.Key, g => g.First());
+            .GroupBy(b => CarizoId.Normalize(b.Name)).ToDictionary(g => g.Key, g => g.First());
         var fuelTypesByName = (await _context.FuelTypes.ToListAsync())
-            .GroupBy(f => f.Name.Trim().ToLowerInvariant()).ToDictionary(g => g.Key, g => g.First());
+            .GroupBy(f => CarizoId.Normalize(f.Name)).ToDictionary(g => g.Key, g => g.First());
         var gearboxesByName = (await _context.Gearboxes.ToListAsync())
-            .GroupBy(g => g.Name.Trim().ToLowerInvariant()).ToDictionary(g => g.Key, g => g.First());
+            .GroupBy(g => CarizoId.Normalize(g.Name)).ToDictionary(g => g.Key, g => g.First());
         var partCategoriesByName = (await _context.PartCategories.ToListAsync())
             .GroupBy(p => p.Name.Trim().ToLowerInvariant()).ToDictionary(g => g.Key, g => g.First());
         var partSubcategoriesByName = (await _context.PartSubcategories.ToListAsync())
@@ -195,7 +199,7 @@ public class PartnerImportService : IPartnerImportService
                 if (!modelsByBrandId.TryGetValue(brand.Id, out var brandModels))
                 {
                     brandModels = (await _context.Models.Where(m => m.BrandId == brand.Id).ToListAsync())
-                        .GroupBy(m => m.Name.Trim().ToLowerInvariant()).ToDictionary(g => g.Key, g => g.First());
+                        .GroupBy(m => CarizoId.Normalize(m.Name)).ToDictionary(g => g.Key, g => g.First());
                     modelsByBrandId[brand.Id] = brandModels;
                 }
                 model = await GetOrCreateModelAsync(item.ModelName, brand, brandModels, createdNotes);
@@ -347,11 +351,14 @@ public class PartnerImportService : IPartnerImportService
             // UpdateCarAdvertAsync never touches it - ExpiresAt is set once at CreateCarAdvertAsync
             // and ExpiryReminderJob deactivates any advert past it, regardless of source. Without
             // this, a partner advert present in EVERY sync (i.e. still genuinely for sale) would
-            // still silently deactivate 90 days after its original creation date, since nothing
+            // still silently deactivate 35 days after its original creation date, since nothing
             // else ever pushes ExpiresAt forward. Every successful sync of an existing item is
             // exactly the confirmation that this listing is still live - renew it the same way
-            // AdvertService.PublishAsync renews a manually-republished advert (flat 90 days).
-            existing.ExpiresAt = DateTime.UtcNow.AddDays(90);
+            // AdvertService.PublishAsync renews a manually-republished advert, via the same
+            // SubscriptionPlanConfig source of truth (so a partner on a paid tier still gets that
+            // tier's emission days, not a hardcoded flat number).
+            var partnerLinkedUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == partner.LinkedUserId);
+            existing.ExpiresAt = DateTime.UtcNow.AddDays(SubscriptionPlanConfig.ResolveEmissionDays(partnerLinkedUser));
             await _context.SaveChangesAsync();
 
             log.ItemsUpdated++;
@@ -464,7 +471,7 @@ public class PartnerImportService : IPartnerImportService
     // import log precisely so an admin can spot and merge/fix that after the fact.
     private async Task<Brand> GetOrCreateBrandAsync(string name, VehicleCategory category, Dictionary<string, Brand> brandsByName, List<string> createdNotes)
     {
-        var key = name.Trim().ToLowerInvariant();
+        var key = CarizoId.Normalize(name);
         if (brandsByName.TryGetValue(key, out var existing))
         {
             // The brand exists but may have been onboarded for a different category (e.g. a tire
@@ -481,7 +488,26 @@ public class PartnerImportService : IPartnerImportService
 
         var brand = new Brand { Name = ClampName(name), Slug = Slugify(name), Categories = new List<VehicleCategory> { category } };
         _context.Brands.Add(brand);
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            // brands.Name has a unique constraint under an accent+case-insensitive collation
+            // (utf8mb4_0900_ai_ci) - a concurrent sync (or two spellings of the same brand within
+            // this same feed, e.g. "Škoda" and "Skoda") can lose this race. Reuse the winning row
+            // instead of failing this item.
+            _context.Entry(brand).State = EntityState.Detached;
+            var winner = await _context.Brands.Include(b => b.Categories).FirstAsync(b => b.Name == name);
+            if (winner.Categories != null && winner.Categories.All(c => c.Id != category.Id))
+            {
+                winner.Categories.Add(category);
+                await _context.SaveChangesAsync();
+            }
+            brandsByName[key] = winner;
+            return winner;
+        }
 
         brandsByName[key] = brand;
         createdNotes.Add($"utworzono nową markę '{brand.Name}' w kategorii '{category.Name}'");
@@ -490,12 +516,24 @@ public class PartnerImportService : IPartnerImportService
 
     private async Task<Model> GetOrCreateModelAsync(string name, Brand brand, Dictionary<string, Model> brandModels, List<string> createdNotes)
     {
-        var key = name.Trim().ToLowerInvariant();
+        var key = CarizoId.Normalize(name);
         if (brandModels.TryGetValue(key, out var existing)) return existing;
 
         var model = new Model { Name = ClampName(name), Slug = Slugify(name), BrandId = brand.Id };
         _context.Models.Add(model);
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            // models(BrandId,Name) unique constraint, same accent/case-insensitive collation - see
+            // GetOrCreateBrandAsync above for why this race is expected and handled the same way.
+            _context.Entry(model).State = EntityState.Detached;
+            var winner = await _context.Models.FirstAsync(m => m.BrandId == brand.Id && m.Name == name);
+            brandModels[key] = winner;
+            return winner;
+        }
 
         brandModels[key] = model;
         createdNotes.Add($"utworzono nowy model '{model.Name}' dla marki '{brand.Name}'");
@@ -504,12 +542,22 @@ public class PartnerImportService : IPartnerImportService
 
     private async Task<FuelType> GetOrCreateFuelTypeAsync(string name, Dictionary<string, FuelType> fuelTypesByName, List<string> createdNotes)
     {
-        var key = name.Trim().ToLowerInvariant();
+        var key = CarizoId.Normalize(name);
         if (fuelTypesByName.TryGetValue(key, out var existing)) return existing;
 
         var fuelType = new FuelType { Name = ClampName(name) };
         _context.FuelTypes.Add(fuelType);
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            _context.Entry(fuelType).State = EntityState.Detached;
+            var winner = await _context.FuelTypes.FirstAsync(f => f.Name == name);
+            fuelTypesByName[key] = winner;
+            return winner;
+        }
 
         fuelTypesByName[key] = fuelType;
         createdNotes.Add($"utworzono nowy rodzaj paliwa '{fuelType.Name}'");
@@ -518,12 +566,22 @@ public class PartnerImportService : IPartnerImportService
 
     private async Task<Gearbox> GetOrCreateGearboxAsync(string name, Dictionary<string, Gearbox> gearboxesByName, List<string> createdNotes)
     {
-        var key = name.Trim().ToLowerInvariant();
+        var key = CarizoId.Normalize(name);
         if (gearboxesByName.TryGetValue(key, out var existing)) return existing;
 
         var gearbox = new Gearbox { Name = ClampName(name) };
         _context.Gearboxes.Add(gearbox);
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            _context.Entry(gearbox).State = EntityState.Detached;
+            var winner = await _context.Gearboxes.FirstAsync(g => g.Name == name);
+            gearboxesByName[key] = winner;
+            return winner;
+        }
 
         gearboxesByName[key] = gearbox;
         createdNotes.Add($"utworzono nową skrzynię biegów '{gearbox.Name}'");

@@ -14,84 +14,46 @@ public class SubscriptionService : ISubscriptionService
         _logger = logger;
     }
 
-    public IReadOnlyList<SubscriptionPlanDto> GetPlans() =>
-    [
-        new SubscriptionPlanDto
+    // Every numeric value (price, ad limit, emission days, featured quota) is sourced from
+    // SubscriptionPlanConfig - the single source of truth also used to actually enforce these
+    // limits at advert-creation/publish/renew time. This used to hardcode its own, separately
+    // drifted EmissionDays (30/45/60 vs. the 90 actually enforced everywhere else) - sourcing
+    // everything from SubscriptionPlanConfig here is what stops that from happening again.
+    public IReadOnlyList<SubscriptionPlanDto> GetPlans()
+    {
+        SubscriptionPlanDto BuildPlan(SubscriptionTier tier, string name, IEnumerable<string> extraFeatures, bool isCustom = false)
         {
-            Tier = SubscriptionTier.Start,
-            Name = "Start",
-            NettoPrice = SubscriptionPlanConfig.GetNettoPrice(SubscriptionTier.Start),
-            BruttoPrice = SubscriptionPlanConfig.GetBruttoPrice(SubscriptionTier.Start),
-            MaxActiveAds = 25,
-            EmissionDays = 30,
-            FeaturedQuotaPerMonth = 3,
-            Features =
-            [
-                "25 aktywnych ogłoszeń",
-                "Emisja 30 dni",
-                "3 wyróżnienia/miesiąc",
-                "Profil dealera",
-                "Faktura VAT",
-            ],
-        },
-        new SubscriptionPlanDto
-        {
-            Tier = SubscriptionTier.Biznes,
-            Name = "Biznes",
-            NettoPrice = SubscriptionPlanConfig.GetNettoPrice(SubscriptionTier.Biznes),
-            BruttoPrice = SubscriptionPlanConfig.GetBruttoPrice(SubscriptionTier.Biznes),
-            MaxActiveAds = 75,
-            EmissionDays = 45,
-            FeaturedQuotaPerMonth = 10,
-            Features =
-            [
-                "75 aktywnych ogłoszeń",
-                "Emisja 45 dni",
-                "10 wyróżnień/miesiąc",
-                "Priorytetowe wsparcie",
-                "Faktura VAT",
-            ],
-        },
-        new SubscriptionPlanDto
-        {
-            Tier = SubscriptionTier.Premium,
-            Name = "Premium",
-            NettoPrice = SubscriptionPlanConfig.GetNettoPrice(SubscriptionTier.Premium),
-            BruttoPrice = SubscriptionPlanConfig.GetBruttoPrice(SubscriptionTier.Premium),
-            MaxActiveAds = 200,
-            EmissionDays = 60,
-            FeaturedQuotaPerMonth = 30,
-            Features =
-            [
-                "200 aktywnych ogłoszeń",
-                "Emisja 60 dni",
-                "30 wyróżnień/miesiąc",
-                "Dedykowany opiekun",
-                "Faktura VAT",
-                "API dostęp (roadmap)",
-            ],
-        },
-        new SubscriptionPlanDto
-        {
-            Tier = SubscriptionTier.Enterprise,
-            Name = "Enterprise",
-            NettoPrice = 0,
-            BruttoPrice = 0,
-            MaxActiveAds = int.MaxValue,
-            EmissionDays = 90,
-            FeaturedQuotaPerMonth = int.MaxValue,
-            IsCustom = true,
-            Features =
-            [
-                "Nieograniczone ogłoszenia",
-                "Emisja 90 dni",
-                "Nieograniczone wyróżnienia",
-                "Dedykowany opiekun 24/7",
-                "Indywidualna umowa",
-                "SLA",
-            ],
-        },
-    ];
+            var limits = SubscriptionPlanConfig.GetLimits(tier);
+            var features = new List<string>
+            {
+                limits.MaxActiveAds == int.MaxValue ? "Nieograniczone ogłoszenia" : $"{limits.MaxActiveAds} aktywnych ogłoszeń",
+                $"Emisja {limits.EmissionDays} dni",
+                limits.FeaturedQuotaPerMonth == int.MaxValue ? "Nieograniczone wyróżnienia" : $"{limits.FeaturedQuotaPerMonth} wyróżnień/miesiąc",
+            };
+            features.AddRange(extraFeatures);
+
+            return new SubscriptionPlanDto
+            {
+                Tier = tier,
+                Name = name,
+                NettoPrice = SubscriptionPlanConfig.GetNettoPrice(tier),
+                BruttoPrice = SubscriptionPlanConfig.GetBruttoPrice(tier),
+                MaxActiveAds = limits.MaxActiveAds,
+                EmissionDays = limits.EmissionDays,
+                FeaturedQuotaPerMonth = limits.FeaturedQuotaPerMonth,
+                IsCustom = isCustom,
+                Features = features.ToArray(),
+            };
+        }
+
+        return
+        [
+            BuildPlan(SubscriptionTier.Start, "Start", ["Profil dealera", "Faktura VAT", "Wsparcie e-mail"]),
+            BuildPlan(SubscriptionTier.Biznes, "Biznes", ["Priorytetowe wsparcie", "Faktura VAT"]),
+            BuildPlan(SubscriptionTier.Premium, "Premium", ["Dedykowany opiekun", "Faktura VAT", "API dostęp (roadmap)"]),
+            BuildPlan(SubscriptionTier.Enterprise, "Enterprise", ["Dedykowany opiekun 24/7", "Indywidualna umowa", "SLA"], isCustom: true),
+        ];
+    }
 
     public async Task<SubscriptionStatusDto> GetMySubscriptionAsync(int userId)
     {

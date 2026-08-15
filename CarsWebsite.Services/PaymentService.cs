@@ -8,18 +8,21 @@ using Microsoft.EntityFrameworkCore;
 
 public class PaymentService : IPaymentService
 {
+    // Prices updated August 2026 (business decision) - replaces the previous price list everywhere
+    // promotions are priced: cart/checkout, payments, invoices, order history, user panel, admin panel
+    // all read through GetServicePriceAsync/this table, so there is a single place to change.
     private static readonly Dictionary<(ServiceType, int), (decimal Price, string Description)> PriceTable = new()
     {
-        { (ServiceType.Top, 7),      (19.99m, "Wyróżnienie TOP - 7 dni") },
-        { (ServiceType.Top, 14),     (29.99m, "Wyróżnienie TOP - 14 dni") },
-        { (ServiceType.Top, 30),     (49.99m, "Wyróżnienie TOP - 30 dni") },
-        { (ServiceType.Premium, 7),  (29.99m, "Oferta Premium - 7 dni") },
-        { (ServiceType.Premium, 14), (44.99m, "Oferta Premium - 14 dni") },
-        { (ServiceType.Premium, 30), (79.99m, "Oferta Premium - 30 dni") },
-        { (ServiceType.Featured, 7),  (14.99m, "Wyróżnienie - 7 dni") },
-        { (ServiceType.Featured, 14), (24.99m, "Wyróżnienie - 14 dni") },
-        { (ServiceType.Featured, 30), (39.99m, "Wyróżnienie - 30 dni") },
-        { (ServiceType.Refresh, 1),   (4.99m,  "Odświeżenie ogłoszenia") },
+        { (ServiceType.Top, 7),      (14.99m, "Oferta TOP - 7 dni") },
+        { (ServiceType.Top, 14),     (24.99m, "Oferta TOP - 14 dni") },
+        { (ServiceType.Top, 30),     (39.99m, "Oferta TOP - 30 dni") },
+        { (ServiceType.Premium, 7),  (24.99m, "Oferta Premium - 7 dni") },
+        { (ServiceType.Premium, 14), (39.99m, "Oferta Premium - 14 dni") },
+        { (ServiceType.Premium, 30), (59.99m, "Oferta Premium - 30 dni") },
+        { (ServiceType.Featured, 7),  (9.99m,  "Wyróżnienie - 7 dni") },
+        { (ServiceType.Featured, 14), (14.99m, "Wyróżnienie - 14 dni") },
+        { (ServiceType.Featured, 30), (24.99m, "Wyróżnienie - 30 dni") },
+        { (ServiceType.Refresh, 1),   (2.99m,  "Odświeżenie ogłoszenia - 7 dni") },
         { (ServiceType.EventFeatured, 7),  (9.99m,  "Wyróżnienie wydarzenia - 7 dni") },
         { (ServiceType.EventFeatured, 14), (17.99m, "Wyróżnienie wydarzenia - 14 dni") },
         { (ServiceType.EventFeatured, 30), (29.99m, "Wyróżnienie wydarzenia - 30 dni") },
