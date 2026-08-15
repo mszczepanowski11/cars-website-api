@@ -13,6 +13,7 @@ using Hangfire.Dashboard;
 using Hangfire.MySql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
+using Sentry;
 using System.Threading.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -227,6 +228,33 @@ internal class Program
             builder.Services.AddStackExchangeRedisCache(o => o.Configuration = redisConnectionString);
         else
             builder.Services.AddDistributedMemoryCache();
+
+        // Sentry (CTO audit "obserwowalność"): "Zero Sentry/APM/structured logging - dziś nie ma
+        // sposobu, żeby dowiedzieć się o skoku błędów produkcyjnych, wolnym endpoincie czy
+        // odrzuconym webhooku inaczej niż czytając surowe logi Railway po fakcie." Same
+        // unconfigured-means-no-op contract as Meilisearch/Redis above: unset SENTRY_DSN means
+        // UseSentry is never called, so SentrySdk stays uninitialized and every
+        // SentrySdk.CaptureException call site (see the global exception handler below) becomes a
+        // documented, safe no-op - zero behavior/perf change until a DSN is actually provisioned.
+        var sentryDsn = (Environment.GetEnvironmentVariable("SENTRY_DSN") ?? builder.Configuration["Sentry:Dsn"] ?? "").Trim();
+        if (!string.IsNullOrEmpty(sentryDsn))
+        {
+            builder.WebHost.UseSentry(o =>
+            {
+                o.Dsn = sentryDsn;
+                o.Environment = builder.Environment.EnvironmentName;
+                o.Release = typeof(Program).Assembly.GetName().Version?.ToString();
+                // 10% of requests get full performance tracing (slow-endpoint visibility from the
+                // audit finding) - enough to spot patterns without paying full ingest volume/cost
+                // for every single request on a public marketplace API.
+                o.TracesSampleRate = 0.1;
+                // Public marketplace API, not an internal tool - don't attach request
+                // cookies/auth headers/user IP to events by default.
+                o.SendDefaultPii = false;
+                o.MinimumEventLevel = LogLevel.Error;
+                o.MinimumBreadcrumbLevel = LogLevel.Information;
+            });
+        }
 
         builder.Services.AddMemoryCache(); // B-27: admin stats cache (see AdminService) - taxonomy caching moved to IDistributedCache above
         builder.Services.AddSingleton<ITaxonomyCacheVersion, TaxonomyCacheVersion>();
@@ -3028,6 +3056,13 @@ internal class Program
                     exLogger.LogError(ex, "[GlobalExceptionHandler] Unhandled exception at {Path} -- {ExType}: {ExMessage}{Inner} -- {StackTop}",
                         context.Request.Path, ex.GetType().Name, ex.Message, inner,
                         ex.StackTrace?.Split('\n').FirstOrDefault(l => l.Contains("cars_website_api") || l.Contains("CarsWebsite"))?.Trim() ?? ex.StackTrace?.Split('\n').FirstOrDefault()?.Trim() ?? "");
+
+                    // CTO audit "obserwowalność": explicit capture (not just relying on the
+                    // Sentry.Extensions.Logging ILogger hook above) so every unhandled exception
+                    // reaches Sentry regardless of log-level wiring - a genuine no-op when
+                    // SENTRY_DSN is unset (SentrySdk.CaptureException on an uninitialized SDK is
+                    // documented as a safe no-op, see Program.cs's Sentry init block).
+                    SentrySdk.CaptureException(ex);
                 }
                 context.Response.StatusCode = 500;
                 var problemDetailsService = context.RequestServices.GetService<IProblemDetailsService>();
