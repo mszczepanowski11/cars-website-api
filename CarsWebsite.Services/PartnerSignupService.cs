@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using CarsWebsite;
 using cars_website_api.CarsWebsite.DTOs.Partner;
 using cars_website_api.CarsWebsite.Interfaces;
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 
 namespace cars_website_api.CarsWebsite.Services;
@@ -18,6 +19,7 @@ public class PartnerSignupService : IPartnerSignupService
     private readonly IEmailService _email;
     private readonly IConfiguration _configuration;
     private readonly ILogger<PartnerSignupService> _logger;
+    private readonly IBackgroundJobClient _backgroundJobClient;
 
     public PartnerSignupService(
         AppDbContext context,
@@ -25,7 +27,8 @@ public class PartnerSignupService : IPartnerSignupService
         IPartnerImportService partnerImport,
         IEmailService email,
         IConfiguration configuration,
-        ILogger<PartnerSignupService> logger)
+        ILogger<PartnerSignupService> logger,
+        IBackgroundJobClient backgroundJobClient)
     {
         _context = context;
         _feedFetch = feedFetch;
@@ -33,6 +36,7 @@ public class PartnerSignupService : IPartnerSignupService
         _email = email;
         _configuration = configuration;
         _logger = logger;
+        _backgroundJobClient = backgroundJobClient;
     }
 
     public async Task<PartnerSignupPreviewResultDto> PreviewAsync(PartnerSignupInputDto dto)
@@ -308,12 +312,7 @@ public class PartnerSignupService : IPartnerSignupService
             $"{siteUrl}/reset-password?token={token}",
             "Ustaw hasło");
 
-        _ = _email.SendAsync(user.Email, "Twoje konto i integracja CARIZO są gotowe", html)
-            .ContinueWith(t =>
-            {
-                if (t.IsFaulted)
-                    _logger.LogError(t.Exception, "[PartnerSignupService] Wysyłka e-maila powitalnego nie powiodła się dla {Email}", user.Email);
-            }, TaskContinuationOptions.OnlyOnFaulted);
+        _backgroundJobClient.Enqueue<IEmailService>(x => x.SendAsync(user.Email, "Twoje konto i integracja CARIZO są gotowe", html));
     }
 
     private Task SendPartnerApprovedEmailAsync(User user, Partner partner)
@@ -328,12 +327,7 @@ public class PartnerSignupService : IPartnerSignupService
             $"{siteUrl}/dashboard",
             "Przejdź do panelu");
 
-        _ = _email.SendAsync(user.Email, "Twoja integracja z CARIZO jest aktywna", html)
-            .ContinueWith(t =>
-            {
-                if (t.IsFaulted)
-                    _logger.LogError(t.Exception, "[PartnerSignupService] Wysyłka e-maila potwierdzającego nie powiodła się dla {Email}", user.Email);
-            }, TaskContinuationOptions.OnlyOnFaulted);
+        _backgroundJobClient.Enqueue<IEmailService>(x => x.SendAsync(user.Email, "Twoja integracja z CARIZO jest aktywna", html));
 
         return Task.CompletedTask;
     }

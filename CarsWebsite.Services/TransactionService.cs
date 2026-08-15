@@ -1,6 +1,7 @@
 using CarsWebsite;
 using cars_website_api.CarsWebsite.DTOs.Transaction;
 using cars_website_api.CarsWebsite.Interfaces;
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 
 public class TransactionService : ITransactionService
@@ -8,12 +9,14 @@ public class TransactionService : ITransactionService
     private readonly AppDbContext _context;
     private readonly INotificationService _notifications;
     private readonly ILogger<TransactionService> _logger;
+    private readonly IBackgroundJobClient _backgroundJobClient;
 
-    public TransactionService(AppDbContext context, INotificationService notifications, ILogger<TransactionService> logger)
+    public TransactionService(AppDbContext context, INotificationService notifications, ILogger<TransactionService> logger, IBackgroundJobClient backgroundJobClient)
     {
         _context = context;
         _notifications = notifications;
         _logger = logger;
+        _backgroundJobClient = backgroundJobClient;
     }
 
     public async Task<TransactionResponseDto> CreateTransactionAsync(int buyerId, CreateTransactionDto dto)
@@ -44,10 +47,10 @@ public class TransactionService : ITransactionService
         await _context.SaveChangesAsync();
 
         var typeLabel = TypeLabel(dto.Type);
-        _ = _notifications.NotifyAsync(advert.UserId, EmailNotificationType.PromotionActivated,
-            $"Nowa prośba: {typeLabel}",
-            $"Otrzymałeś nową prośbę ({typeLabel}) dotyczącą ogłoszenia \"{System.Net.WebUtility.HtmlEncode(advert.Title)}\". Sprawdź szczegóły i potwierdź lub odrzuć.",
-            advertId: advert.Id);
+        var notifyTitle = $"Nowa prośba: {typeLabel}";
+        var notifyContent = $"Otrzymałeś nową prośbę ({typeLabel}) dotyczącą ogłoszenia \"{System.Net.WebUtility.HtmlEncode(advert.Title)}\". Sprawdź szczegóły i potwierdź lub odrzuć.";
+        _backgroundJobClient.Enqueue<INotificationService>(x => x.NotifyAsync(
+            advert.UserId, EmailNotificationType.PromotionActivated, notifyTitle, notifyContent, advert.Id, null, null));
 
         return await MapToDtoAsync(transaction);
     }
@@ -110,15 +113,17 @@ public class TransactionService : ITransactionService
         var typeLabel = TypeLabel(transaction.Type);
         if (dto.Status == TransactionStatus.Confirmed)
         {
-            _ = _notifications.NotifyAsync(transaction.BuyerId, EmailNotificationType.PromotionActivated,
-                $"Potwierdzono: {typeLabel}",
-                $"Sprzedawca potwierdził Twoją prośbę ({typeLabel}).", advertId: transaction.AdvertId);
+            var title = $"Potwierdzono: {typeLabel}";
+            var content = $"Sprzedawca potwierdził Twoją prośbę ({typeLabel}).";
+            _backgroundJobClient.Enqueue<INotificationService>(x => x.NotifyAsync(
+                transaction.BuyerId, EmailNotificationType.PromotionActivated, title, content, transaction.AdvertId, null, null));
         }
         else if (dto.Status == TransactionStatus.Completed)
         {
-            _ = _notifications.NotifyAsync(transaction.BuyerId, EmailNotificationType.PromotionActivated,
-                $"Zakończono: {typeLabel}",
-                $"Transakcja ({typeLabel}) została oznaczona jako zakończona.", advertId: transaction.AdvertId);
+            var title = $"Zakończono: {typeLabel}";
+            var content = $"Transakcja ({typeLabel}) została oznaczona jako zakończona.";
+            _backgroundJobClient.Enqueue<INotificationService>(x => x.NotifyAsync(
+                transaction.BuyerId, EmailNotificationType.PromotionActivated, title, content, transaction.AdvertId, null, null));
         }
 
         return await MapToDtoAsync(transaction);
@@ -140,9 +145,10 @@ public class TransactionService : ITransactionService
 
         var typeLabel = TypeLabel(transaction.Type);
         var notifyUserId = userId == transaction.BuyerId ? transaction.SellerId : transaction.BuyerId;
-        _ = _notifications.NotifyAsync(notifyUserId, EmailNotificationType.PromotionExpired,
-            $"Anulowano: {typeLabel}",
-            $"Druga strona anulowała transakcję ({typeLabel}).", advertId: transaction.AdvertId);
+        var cancelTitle = $"Anulowano: {typeLabel}";
+        var cancelContent = $"Druga strona anulowała transakcję ({typeLabel}).";
+        _backgroundJobClient.Enqueue<INotificationService>(x => x.NotifyAsync(
+            notifyUserId, EmailNotificationType.PromotionExpired, cancelTitle, cancelContent, transaction.AdvertId, null, null));
     }
 
     private async Task<TransactionResponseDto> MapToDtoAsync(Transaction t)

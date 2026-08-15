@@ -1,5 +1,6 @@
 using CarsWebsite;
 using cars_website_api.CarsWebsite.Interfaces;
+using Hangfire;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -17,13 +18,15 @@ public class NewsletterController : ControllerBase
     private readonly IEmailService _email;
     private readonly IConfiguration _config;
     private readonly ILogger<NewsletterController> _logger;
+    private readonly IBackgroundJobClient _backgroundJobClient;
 
-    public NewsletterController(AppDbContext context, IEmailService email, IConfiguration config, ILogger<NewsletterController> logger)
+    public NewsletterController(AppDbContext context, IEmailService email, IConfiguration config, ILogger<NewsletterController> logger, IBackgroundJobClient backgroundJobClient)
     {
         _context = context;
         _email = email;
         _config = config;
         _logger = logger;
+        _backgroundJobClient = backgroundJobClient;
     }
 
     [HttpPost("subscribe")]
@@ -76,10 +79,9 @@ public class NewsletterController : ControllerBase
             ctaLabel: "Potwierdź zapis"
         );
 
-        // Fire-and-forget — don't block the HTTP response waiting for SMTP
-        _ = _email.SendAsync(email, "Potwierdź zapis na newsletter — CARIZO", html)
-            .ContinueWith(t => { if (t.IsFaulted) _logger.LogError(t.Exception, "Newsletter email failed for {Email}", email); },
-                TaskContinuationOptions.OnlyOnFaulted);
+        // CTO audit Etap 4: durable Hangfire queue instead of a bare fire-and-forget task - see
+        // AuthService.Register for the full rationale.
+        _backgroundJobClient.Enqueue<IEmailService>(x => x.SendAsync(email, "Potwierdź zapis na newsletter — CARIZO", html));
 
         return Ok(new { message = "Sprawdź swoją skrzynkę email i kliknij link potwierdzający." });
     }
