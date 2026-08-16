@@ -1648,6 +1648,16 @@ internal class Program
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `payments` ADD COLUMN `InvoiceId` int NULL"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN payments.InvoiceId skipped: {Message}", ex.Message); }
 
+            // payments.SubscriptionTier (migration AddSubscriptionTierToPayments, 2026-07-07) - same
+            // bootstrap risk as every other column here: the migration history bootstrap can mark
+            // this migration as already-applied on an existing DB without its DDL ever running, so
+            // MigrateAsync alone skips it and the column never gets created. Without this explicit
+            // guard, EF Core still sends SubscriptionTier in every INSERT INTO payments (the column
+            // is part of the mapped model regardless of ServiceType), so every single payment -
+            // not just Subscription purchases - fails with "Unknown column 'SubscriptionTier'".
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE `payments` ADD COLUMN `SubscriptionTier` int NULL"); }
+            catch (Exception ex) { logger.LogDebug("ADD COLUMN payments.SubscriptionTier skipped: {Message}", ex.Message); }
+
             try { db.Database.ExecuteSqlRaw("ALTER TABLE `features` ADD COLUMN `CategoryId` int NOT NULL DEFAULT 0"); }
             catch (Exception ex) { logger.LogDebug("ADD COLUMN features.CategoryId skipped: {Message}", ex.Message); }
 
