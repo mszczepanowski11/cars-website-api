@@ -75,6 +75,9 @@ public class SubscriptionService : ISubscriptionService
         var quotaMax = limits.FeaturedQuotaPerMonth;
         var quotaRemaining = quotaMax == int.MaxValue ? int.MaxValue : Math.Max(0, quotaMax - quotaUsed);
 
+        var activeAdsCount = await _context.CarAdverts.AsNoTracking()
+            .CountAsync(a => a.UserId == userId && a.IsActive && !a.IsHidden);
+
         return new SubscriptionStatusDto
         {
             Tier = effectiveTier,
@@ -93,6 +96,7 @@ public class SubscriptionService : ISubscriptionService
             IsStartProgram = effectiveTier == SubscriptionTier.StartProgram,
             IsVerifiedDealer = user.IsVerifiedDealer,
             MaxActiveAds = limits.MaxActiveAds == int.MaxValue ? -1 : limits.MaxActiveAds,
+            ActiveAdsCount = activeAdsCount,
             EmissionDays = limits.EmissionDays,
             FeaturedQuotaPerMonth = quotaMax == int.MaxValue ? -1 : quotaMax,
             FeaturedQuotaUsed = quotaUsed,
@@ -209,6 +213,28 @@ public class SubscriptionService : ISubscriptionService
 
         user.FeaturedQuotaUsed++;
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<int> GetRemainingFeaturedQuotaAsync(int userId)
+    {
+        var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId)
+            ?? throw new KeyNotFoundException("Użytkownik nie istnieje.");
+
+        if (user.IsAdmin) return int.MaxValue;
+        if (user.AccountType != AccountType.Business) return 0;
+
+        var tier = user.SubscriptionExpiresAt.HasValue && user.SubscriptionExpiresAt < DateTime.UtcNow
+            ? SubscriptionTier.None
+            : user.SubscriptionTier;
+        var maxQuota = SubscriptionPlanConfig.GetFeaturedQuota(tier);
+        if (maxQuota == int.MaxValue) return int.MaxValue;
+
+        // Same "reset if the monthly window has lapsed" logic as ConsumeFeatureQuotaAsync, read-only:
+        // don't persist the reset here, just report what the count effectively is right now.
+        var used = user.FeaturedQuotaResetAt.HasValue && user.FeaturedQuotaResetAt < DateTime.UtcNow
+            ? 0
+            : user.FeaturedQuotaUsed;
+        return Math.Max(0, maxQuota - used);
     }
 
     public async Task ResetExpiredSubscriptionsAsync()

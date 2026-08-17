@@ -141,6 +141,16 @@ public class PaymentService : IPaymentService
         // unlimited, while the promo window is open - not just a one-time boost.
         var freePromoEligible = IsFreePromoActive();
 
+        // Package quota bypass: Top/Premium/Featured are covered by the subscriber's monthly
+        // "wyróżnienia" allowance (e.g. Biznes = 10/miesiąc). The caller opts in via dto.UseQuota,
+        // but eligibility is always re-verified server-side against the real remaining count -
+        // never trust the flag alone, or a stale client could grant a free boost past the actual
+        // quota. Only applies to boost-type services; Refresh and Subscription purchases are never
+        // quota-eligible (the package quota only ever covered "wyróżnienia").
+        var quotaEligible = dto.UseQuota
+            && dto.ServiceType is ServiceType.Top or ServiceType.Premium or ServiceType.Featured
+            && await _subscriptionService.GetRemainingFeaturedQuotaAsync(userId) > 0;
+
         var guidPart = Guid.NewGuid().ToString("N")[..8];
         var orderId = $"CARIZO-{userId}-{DateTime.UtcNow:yyyyMMddHHmmss}-{guidPart}";
         if (orderId.Length > 40) orderId = orderId[..40];
@@ -154,7 +164,7 @@ public class PaymentService : IPaymentService
             ServiceDescription = priceInfo.Description,
             Amount = priceInfo.Price,
             Currency = "PLN",
-            Status = (user.IsAdmin || freePromoEligible) ? PaymentStatus.Completed : PaymentStatus.Pending,
+            Status = (user.IsAdmin || freePromoEligible || quotaEligible) ? PaymentStatus.Completed : PaymentStatus.Pending,
             ImojeOrderId = orderId,
             DurationDays = dto.DurationDays,
             SubscriptionTier = dto.ServiceType == ServiceType.Subscription ? dto.SubscriptionTier : null,
@@ -179,20 +189,20 @@ public class PaymentService : IPaymentService
         }
         _logger.LogInformation("[Payment/Initiate] Payment #{PaymentId} saved", payment.Id);
 
-        // Admin, or launch-promo window (everything free while it's open): activate immediately
-        // without payment
-        if (user.IsAdmin || freePromoEligible)
+        // Admin, launch-promo window, or package quota: activate immediately without payment
+        if (user.IsAdmin || freePromoEligible || quotaEligible)
         {
             await ActivateServiceAsync(payment);
             _logger.LogInformation(
                 "[Payment/Initiate] {Reason} bypass — service activated instantly for userId={UserId}",
-                user.IsAdmin ? "Admin" : "Free promo", userId);
+                user.IsAdmin ? "Admin" : freePromoEligible ? "Free promo" : "Package quota", userId);
             return new PaymentInitiatedDto
             {
                 PaymentId      = payment.Id,
                 Amount         = priceInfo.Price,
                 OrderId        = orderId,
-                AdminActivated = true
+                AdminActivated = user.IsAdmin || freePromoEligible,
+                QuotaActivated = quotaEligible,
             };
         }
 
@@ -476,6 +486,7 @@ public class PaymentService : IPaymentService
         var advert = await _context.CarAdverts
             .FirstOrDefaultAsync(a => a.Id == payment.AdvertId);
 
+        int? remainingQuotaForEmail = null;
         if (advert != null)
         {
             if (payment.ServiceType == ServiceType.Refresh)
@@ -509,6 +520,8 @@ public class PaymentService : IPaymentService
             {
                 try { await _subscriptionService.ConsumeFeatureQuotaAsync(payment.UserId); }
                 catch (Exception ex) { _logger.LogWarning(ex, "ConsumeFeatureQuota failed userId={UserId} — ignorowane", payment.UserId); }
+                try { remainingQuotaForEmail = await _subscriptionService.GetRemainingFeaturedQuotaAsync(payment.UserId); }
+                catch (Exception ex) { _logger.LogWarning(ex, "GetRemainingFeaturedQuota failed userId={UserId} — pomijam w mailu", payment.UserId); }
             }
         }
         else
@@ -536,6 +549,8 @@ public class PaymentService : IPaymentService
 
         var activatedTitle = $"{typeName} aktywowane";
         var activatedContent = $"Usługa \"{payment.ServiceDescription}\" została aktywowana na {payment.DurationDays} dni.";
+        if (remainingQuotaForEmail is int remaining && remaining != int.MaxValue)
+            activatedContent += $" W tym miesiącu zostało Ci jeszcze {remaining} wyróżnień w ramach pakietu.";
         _backgroundJobClient.Enqueue<INotificationService>(x => x.NotifyAsync(
             payment.UserId, notifType, activatedTitle, activatedContent, payment.AdvertId, payment.Id, null));
     }

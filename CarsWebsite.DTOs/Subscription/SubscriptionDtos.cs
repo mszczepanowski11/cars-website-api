@@ -14,6 +14,7 @@ public class SubscriptionStatusDto
 
     // Limits
     public int MaxActiveAds { get; set; }
+    public int ActiveAdsCount { get; set; }
     public int EmissionDays { get; set; }
     public int FeaturedQuotaPerMonth { get; set; }
     public int FeaturedQuotaUsed { get; set; }

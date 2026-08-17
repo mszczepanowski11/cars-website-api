@@ -11,6 +11,12 @@ public interface ISubscriptionService
     Task ActivateStartProgramAsync(int userId);
     Task<(bool CanCreate, string? Error)> CheckActiveAdLimitAsync(int userId);
     Task ConsumeFeatureQuotaAsync(int userId);
+
+    // Read-only peek at this month's remaining featured-boost quota (Top/Premium/Featured share one
+    // pool), applying the same reset-if-expired logic as ConsumeFeatureQuotaAsync without actually
+    // consuming anything. int.MaxValue means unlimited (Enterprise); 0 for personal accounts or
+    // accounts with no quota-bearing subscription.
+    Task<int> GetRemainingFeaturedQuotaAsync(int userId);
     Task ResetExpiredSubscriptionsAsync();
 
     // Immediate cutoff for a refunded subscription payment (CTO audit Etap 3) - not "subtract the

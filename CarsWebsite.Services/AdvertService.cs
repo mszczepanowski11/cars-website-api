@@ -875,11 +875,22 @@ public class AdvertService : IAdvertService
         }
         if (advert.UserId != userId)
             throw new UnauthorizedAccessException("You do not own this advert.");
-        var publishingUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+
+        // PublishAsync is called both for a genuine first-time/republish transition AND, from the
+        // promote-advert payment flow, defensively on every visit to that page just to make sure a
+        // still-draft advert is active before letting the user pay to promote it (see comment there).
+        // Only reset ExpiresAt on an actual inactive->active transition - otherwise calling this on
+        // an advert that's already active silently gives it a free extra 35 days of emission every
+        // time the seller merely opens the promotion page, without ever completing a payment.
+        var wasInactiveOrExpired = !advert.IsActive || (advert.ExpiresAt.HasValue && advert.ExpiresAt < DateTime.UtcNow);
         advert.IsActive = true;
         advert.IsHidden = false;
         advert.SoldAt = null;
-        advert.ExpiresAt = DateTime.UtcNow.AddDays(SubscriptionPlanConfig.ResolveEmissionDays(publishingUser));
+        if (wasInactiveOrExpired)
+        {
+            var publishingUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+            advert.ExpiresAt = DateTime.UtcNow.AddDays(SubscriptionPlanConfig.ResolveEmissionDays(publishingUser));
+        }
         advert.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
