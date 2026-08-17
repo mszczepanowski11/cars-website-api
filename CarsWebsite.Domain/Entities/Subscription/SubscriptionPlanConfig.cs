@@ -11,7 +11,7 @@ public static class SubscriptionPlanConfig
     // concurrently active adverts, matching the "10 darmowych ogłoszeń" business requirement.
     public static PlanLimits GetLimits(SubscriptionTier tier) => tier switch
     {
-        SubscriptionTier.StartProgram => new(20,         35, 3),
+        SubscriptionTier.StartProgram => new(10,         35, 3),
         SubscriptionTier.Start        => new(25,         35, 3),
         SubscriptionTier.Biznes       => new(75,         35, 10),
         SubscriptionTier.Premium      => new(200,        35, 30),

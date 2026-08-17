@@ -12,6 +12,14 @@ public class InitiatePaymentDto
     // For ServiceType.Subscription: which tier to purchase
     public SubscriptionTier? SubscriptionTier { get; set; }
 
+    // When true, and ServiceType is a boost (Top/Premium/Featured) covered by the caller's
+    // subscription package quota, activate instantly from that quota instead of charging - the
+    // package (e.g. "10 wyróżnień/miesiąc") already paid for this, so routing the seller through
+    // Imoje again would charge them twice. Ignored (no effect, falls through to normal payment) if
+    // the account has no remaining quota - the server always re-checks this itself rather than
+    // trusting the flag, so a stale client can't grant a free boost past the real quota.
+    public bool UseQuota { get; set; }
+
     // Billing data snapshot for invoice (optional — used for business accounts)
     public string? BillingName { get; set; }
     public string? BillingNip { get; set; }
@@ -28,6 +36,7 @@ public class PaymentInitiatedDto
     public decimal Amount { get; set; }
     public string OrderId { get; set; } = string.Empty;
     public bool AdminActivated { get; set; }
+    public bool QuotaActivated { get; set; }
 }
 
 public class PaymentResponseDto
