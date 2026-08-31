@@ -1948,41 +1948,98 @@ internal class Program
 
             // Also guard FKs from migrations 20260623100000 and 20260623105000 which used
             // the unsupported ADD CONSTRAINT IF NOT EXISTS syntax on MySQL 8.0.
-            try { db.Database.ExecuteSqlRaw("ALTER TABLE `engineversions` ADD CONSTRAINT `FK_engineversions_trims_TrimId` FOREIGN KEY (`TrimId`) REFERENCES `trims`(`Id`) ON DELETE SET NULL"); }
-            catch (Exception ex) { logger.LogDebug("FK engineversions.TrimId skipped: {Message}", ex.Message); }
+            //
+            // AUDIT FIX (taksonomia, Etap 0): every statement below used to name its tables in
+            // PascalCase (`PartCompatibilities`, `Brands`, `FeatureCategories`, ...). Those names
+            // stop existing the moment the RENAME TABLE block near the top of this file runs, and
+            // MySQL on Linux is case-sensitive about table names - so all twelve ALTERs threw
+            // "Table doesn't exist" and were swallowed by a LogDebug catch. Result: NONE of these
+            // foreign keys were ever created in production, which is exactly how a dedup could
+            // leave a dangling PartCompatibilities.BrandId and make GET /api/Advert/{id} return
+            // 500. Names are now lowercase (matching ToTable() in AppDbContext) and each failure
+            // is classified instead of being uniformly hidden.
+            //
+            // Delete behaviours mirror AppDbContext.OnModelCreating exactly. Note featurecategories
+            // .VehicleCategoryId is a REQUIRED FK with Restrict there - the old guard declared it
+            // ON DELETE SET NULL, which MySQL would reject on a NOT NULL column anyway.
+            void AddFkGuard(string table, string label, string sql)
+            {
+                try
+                {
+                    db.Database.ExecuteSqlRaw(sql);
+                    logger.LogInformation("[FK] Created foreign key {Label}", label);
+                }
+                catch (Exception ex)
+                {
+                    // Two MySQL providers are referenced by this project (Pomelo and Oracle's),
+                    // so the concrete MySqlException type is ambiguous here. Read the vendor error
+                    // number reflectively instead - it is exposed as `Number` or `ErrorCode` on
+                    // both - and fall back to message matching when neither is present.
+                    var baseEx = ex.GetBaseException();
+                    int code = 0;
+                    foreach (var prop in new[] { "Number", "ErrorCode" })
+                    {
+                        var v = baseEx.GetType().GetProperty(prop)?.GetValue(baseEx);
+                        if (v is not null && int.TryParse(v.ToString(), out var parsed)) { code = parsed; break; }
+                    }
+                    var msg = baseEx.Message ?? string.Empty;
 
-            try { db.Database.ExecuteSqlRaw("ALTER TABLE `FeatureCategories` ADD CONSTRAINT `FK_FeatureCategories_VehicleCategories_VehicleCategoryId` FOREIGN KEY (`VehicleCategoryId`) REFERENCES `VehicleCategories`(`Id`) ON DELETE SET NULL"); }
-            catch (Exception ex) { logger.LogDebug("FK FeatureCategories.VehicleCategoryId skipped: {Message}", ex.Message); }
+                    // 1050 table exists · 1061 duplicate key name · 1826 duplicate FK constraint
+                    // name -> the constraint is already in place, genuinely nothing to do.
+                    var alreadyThere = code is 1050 or 1061 or 1826
+                        || msg.Contains("Duplicate key name", StringComparison.OrdinalIgnoreCase)
+                        || msg.Contains("Duplicate foreign key", StringComparison.OrdinalIgnoreCase)
+                        || msg.Contains("already exists", StringComparison.OrdinalIgnoreCase);
+                    if (alreadyThere)
+                    {
+                        logger.LogDebug("[FK] {Label} already present", label);
+                        return;
+                    }
 
-            try { db.Database.ExecuteSqlRaw("ALTER TABLE `FeatureCategories` ADD CONSTRAINT `FK_FeatureCategories_Brands_BrandId` FOREIGN KEY (`BrandId`) REFERENCES `Brands`(`Id`) ON DELETE SET NULL"); }
-            catch (Exception ex) { logger.LogDebug("FK FeatureCategories.BrandId skipped: {Message}", ex.Message); }
+                    // 1146 no such table · 1452/1215/1005 orphan rows or a missing index blocking
+                    // the FK. These are real defects and must never be invisible again - this is
+                    // precisely the class of failure that hid the missing FKs for months.
+                    logger.LogError(ex,
+                        "[FK] FAILED to create {Label} on table {Table} (MySQL error {Code}) - referential integrity is NOT enforced for this relation",
+                        label, table, code);
+                }
+            }
 
-            try { db.Database.ExecuteSqlRaw("ALTER TABLE `FeatureCategories` ADD CONSTRAINT `FK_FeatureCategories_Models_ModelId` FOREIGN KEY (`ModelId`) REFERENCES `Models`(`Id`) ON DELETE SET NULL"); }
-            catch (Exception ex) { logger.LogDebug("FK FeatureCategories.ModelId skipped: {Message}", ex.Message); }
+            AddFkGuard("engineversions", "engineversions.TrimId",
+                "ALTER TABLE `engineversions` ADD CONSTRAINT `FK_engineversions_trims_TrimId` FOREIGN KEY (`TrimId`) REFERENCES `trims`(`Id`) ON DELETE SET NULL");
 
-            try { db.Database.ExecuteSqlRaw("ALTER TABLE `customcategoryrequests` ADD CONSTRAINT `FK_customcategoryrequests_VehicleCategories_ResultingVehicleCategoryId` FOREIGN KEY (`ResultingVehicleCategoryId`) REFERENCES `VehicleCategories`(`Id`) ON DELETE SET NULL"); }
-            catch (Exception ex) { logger.LogDebug("FK customcategoryrequests.ResultingVehicleCategoryId skipped: {Message}", ex.Message); }
+            AddFkGuard("featurecategories", "featurecategories.VehicleCategoryId",
+                "ALTER TABLE `featurecategories` ADD CONSTRAINT `FK_featurecategories_vehiclecategories_VehicleCategoryId` FOREIGN KEY (`VehicleCategoryId`) REFERENCES `vehiclecategories`(`Id`) ON DELETE RESTRICT");
 
-            try { db.Database.ExecuteSqlRaw("ALTER TABLE `customcategoryrequests` ADD CONSTRAINT `FK_customcategoryrequests_VehicleSubtypes_ResultingVehicleSubtypeId` FOREIGN KEY (`ResultingVehicleSubtypeId`) REFERENCES `VehicleSubtypes`(`Id`) ON DELETE SET NULL"); }
-            catch (Exception ex) { logger.LogDebug("FK customcategoryrequests.ResultingVehicleSubtypeId skipped: {Message}", ex.Message); }
+            AddFkGuard("featurecategories", "featurecategories.BrandId",
+                "ALTER TABLE `featurecategories` ADD CONSTRAINT `FK_featurecategories_brands_BrandId` FOREIGN KEY (`BrandId`) REFERENCES `brands`(`Id`) ON DELETE SET NULL");
 
-            try { db.Database.ExecuteSqlRaw("ALTER TABLE `PartCompatibilities` ADD CONSTRAINT `FK_PartCompatibilities_CarAdverts_CarAdvertId` FOREIGN KEY (`CarAdvertId`) REFERENCES `caradverts`(`Id`) ON DELETE CASCADE"); }
-            catch (Exception ex) { logger.LogDebug("FK PartCompatibilities.CarAdvertId skipped: {Message}", ex.Message); }
+            AddFkGuard("featurecategories", "featurecategories.ModelId",
+                "ALTER TABLE `featurecategories` ADD CONSTRAINT `FK_featurecategories_models_ModelId` FOREIGN KEY (`ModelId`) REFERENCES `models`(`Id`) ON DELETE SET NULL");
 
-            try { db.Database.ExecuteSqlRaw("ALTER TABLE `PartCompatibilities` ADD CONSTRAINT `FK_PartCompatibilities_Brands_BrandId` FOREIGN KEY (`BrandId`) REFERENCES `Brands`(`Id`) ON DELETE RESTRICT"); }
-            catch (Exception ex) { logger.LogDebug("FK PartCompatibilities.BrandId skipped: {Message}", ex.Message); }
+            AddFkGuard("customcategoryrequests", "customcategoryrequests.ResultingVehicleCategoryId",
+                "ALTER TABLE `customcategoryrequests` ADD CONSTRAINT `FK_customcategoryrequests_vehiclecategories_ResultingVehicleCategoryId` FOREIGN KEY (`ResultingVehicleCategoryId`) REFERENCES `vehiclecategories`(`Id`) ON DELETE SET NULL");
 
-            try { db.Database.ExecuteSqlRaw("ALTER TABLE `PartCompatibilities` ADD CONSTRAINT `FK_PartCompatibilities_Models_ModelId` FOREIGN KEY (`ModelId`) REFERENCES `Models`(`Id`) ON DELETE RESTRICT"); }
-            catch (Exception ex) { logger.LogDebug("FK PartCompatibilities.ModelId skipped: {Message}", ex.Message); }
+            AddFkGuard("customcategoryrequests", "customcategoryrequests.ResultingVehicleSubtypeId",
+                "ALTER TABLE `customcategoryrequests` ADD CONSTRAINT `FK_customcategoryrequests_vehiclesubtypes_ResultingVehicleSubtypeId` FOREIGN KEY (`ResultingVehicleSubtypeId`) REFERENCES `vehiclesubtypes`(`Id`) ON DELETE SET NULL");
 
-            try { db.Database.ExecuteSqlRaw("ALTER TABLE `PartCompatibilities` ADD CONSTRAINT `FK_PartCompatibilities_Generations_GenerationId` FOREIGN KEY (`GenerationId`) REFERENCES `Generations`(`Id`) ON DELETE RESTRICT"); }
-            catch (Exception ex) { logger.LogDebug("FK PartCompatibilities.GenerationId skipped: {Message}", ex.Message); }
+            AddFkGuard("partcompatibilities", "partcompatibilities.CarAdvertId",
+                "ALTER TABLE `partcompatibilities` ADD CONSTRAINT `FK_partcompatibilities_caradverts_CarAdvertId` FOREIGN KEY (`CarAdvertId`) REFERENCES `caradverts`(`Id`) ON DELETE CASCADE");
 
-            try { db.Database.ExecuteSqlRaw("ALTER TABLE `BrandAllowedFuelTypes` ADD CONSTRAINT `FK_BrandAllowedFuelTypes_Brands_BrandId` FOREIGN KEY (`BrandId`) REFERENCES `Brands`(`Id`) ON DELETE CASCADE"); }
-            catch (Exception ex) { logger.LogDebug("FK BrandAllowedFuelTypes.BrandId skipped: {Message}", ex.Message); }
+            AddFkGuard("partcompatibilities", "partcompatibilities.BrandId",
+                "ALTER TABLE `partcompatibilities` ADD CONSTRAINT `FK_partcompatibilities_brands_BrandId` FOREIGN KEY (`BrandId`) REFERENCES `brands`(`Id`) ON DELETE RESTRICT");
 
-            try { db.Database.ExecuteSqlRaw("ALTER TABLE `BrandAllowedFuelTypes` ADD CONSTRAINT `FK_BrandAllowedFuelTypes_FuelTypes_FuelTypeId` FOREIGN KEY (`FuelTypeId`) REFERENCES `FuelTypes`(`Id`) ON DELETE RESTRICT"); }
-            catch (Exception ex) { logger.LogDebug("FK BrandAllowedFuelTypes.FuelTypeId skipped: {Message}", ex.Message); }
+            AddFkGuard("partcompatibilities", "partcompatibilities.ModelId",
+                "ALTER TABLE `partcompatibilities` ADD CONSTRAINT `FK_partcompatibilities_models_ModelId` FOREIGN KEY (`ModelId`) REFERENCES `models`(`Id`) ON DELETE RESTRICT");
+
+            AddFkGuard("partcompatibilities", "partcompatibilities.GenerationId",
+                "ALTER TABLE `partcompatibilities` ADD CONSTRAINT `FK_partcompatibilities_generations_GenerationId` FOREIGN KEY (`GenerationId`) REFERENCES `generations`(`Id`) ON DELETE RESTRICT");
+
+            AddFkGuard("brandallowedfueltypes", "brandallowedfueltypes.BrandId",
+                "ALTER TABLE `brandallowedfueltypes` ADD CONSTRAINT `FK_brandallowedfueltypes_brands_BrandId` FOREIGN KEY (`BrandId`) REFERENCES `brands`(`Id`) ON DELETE CASCADE");
+
+            AddFkGuard("brandallowedfueltypes", "brandallowedfueltypes.FuelTypeId",
+                "ALTER TABLE `brandallowedfueltypes` ADD CONSTRAINT `FK_brandallowedfueltypes_fueltypes_FuelTypeId` FOREIGN KEY (`FuelTypeId`) REFERENCES `fueltypes`(`Id`) ON DELETE RESTRICT");
 
             db.Database.SetCommandTimeout(30);
             logger.LogWarning("[STARTUP-TRACE] FK constraint guards complete; calling MergeDuplicateBrands");
@@ -2003,6 +2060,16 @@ internal class Program
                 var bgLogger = bgScope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
                 bgDb.Database.SetCommandTimeout(30);
 
+                // AUDIT FIX (taksonomia, Etap 0): only the EnsureCreated/Migrate block above was
+                // ever protected by an advisory lock - this entire seeding + dedup chain ran
+                // outside it. During a rolling deploy two instances therefore executed the same
+                // non-idempotent seeders concurrently against one database, which is one of the
+                // documented sources of the duplicate rows (54% of `models` at its worst).
+                // waitSeconds: 0 - if a sibling instance already holds the lock it is already
+                // doing this work, so skip rather than queue up and repeat it.
+                var seedLockAcquired = AdvisoryLock.TryRunExclusive(bgDb, "carizo:startup_seed", () =>
+                {
+
                 try
                 {
                     MergeDuplicateBrands(bgDb, bgLogger);
@@ -2011,6 +2078,15 @@ internal class Program
                 catch (Exception ex)
                 {
                     bgLogger.LogError(ex, "[Cleanup] MergeDuplicateBrands failed: {Msg}", ex.Message);
+                }
+
+                try
+                {
+                    MergeAliasedFuelTypes(bgDb, bgLogger);
+                }
+                catch (Exception ex)
+                {
+                    bgLogger.LogError(ex, "[Cleanup] MergeAliasedFuelTypes failed: {Msg}", ex.Message);
                 }
 
                 // One-time self-heal for PartCompatibilities rows orphaned by earlier startups —
@@ -3012,6 +3088,11 @@ internal class Program
                 {
                     bgLogger.LogError(ex, "[STARTUP-TRACE] AUDIT-FEATURES failed: {Msg}", ex.Message);
                 }
+                }, waitSeconds: 0);
+
+                if (!seedLockAcquired)
+                    bgLogger.LogWarning("[STARTUP-TRACE] Seeding skipped: another instance holds the 'carizo:startup_seed' lock");
+
             });
 
             // Startup config diagnostics — read via the same IConfiguration section
@@ -3428,6 +3509,88 @@ internal class Program
     // oldest one. Duplicates otherwise (a) show the brand twice in the add-listing dropdown
     // and (b) crash every seeder's startup ToDictionary(b => b.Name, ...) call, which blocks
     // the entire seeding chain — including unrelated fixes — from running at all.
+    // AUDIT FIX (taksonomia, Etap 0): the dictionary seeder inserts "Hybryda plug-in" /
+    // "Hybryda mild", while VehicleDataSeeder used to create "Hybryda plug-in (PHEV)" /
+    // "Hybryda mild (MHEV)" on the fly - so production carries BOTH spellings as two separate
+    // rows for one concept, splitting engines and adverts across them and showing the fuel twice
+    // in every dropdown. Collapse the alias onto the canonical (short) row, repointing everything
+    // that referenced it. Nothing is overwritten: the alias row is deleted only once no engine or
+    // advert still points at it.
+    private static void MergeAliasedFuelTypes(AppDbContext db, ILogger logger)
+    {
+        // canonical name -> alias spellings that mean exactly the same thing
+        var aliasGroups = new (string Canonical, string[] Aliases)[]
+        {
+            ("Hybryda plug-in", new[] { "Hybryda plug-in (PHEV)", "PHEV" }),
+            ("Hybryda mild",    new[] { "Hybryda mild (MHEV)",    "MHEV" }),
+        };
+
+        var all = db.FuelTypes.ToList();
+        var mergedTotal = 0;
+
+        foreach (var (canonicalName, aliases) in aliasGroups)
+        {
+            var canonical = all.FirstOrDefault(f => string.Equals(f.Name, canonicalName, StringComparison.OrdinalIgnoreCase));
+            var aliasRows = all.Where(f => aliases.Any(a => string.Equals(f.Name, a, StringComparison.OrdinalIgnoreCase))).ToList();
+            if (aliasRows.Count == 0) continue;
+
+            // No canonical row yet: promote the first alias by renaming it rather than creating a
+            // new row and repointing everything - cheaper and keeps the existing Id stable.
+            if (canonical is null)
+            {
+                canonical = aliasRows[0];
+                logger.LogInformation("[FuelMerge] Renaming '{Old}' -> '{New}' (id={Id})", canonical.Name, canonicalName, canonical.Id);
+                canonical.Name = canonicalName;
+                aliasRows.RemoveAt(0);
+                db.SaveChanges();
+                if (aliasRows.Count == 0) continue;
+            }
+
+            foreach (var dup in aliasRows)
+            {
+                if (dup.Id == canonical.Id) continue;
+
+                var engines = db.EngineVersions.Where(e => e.FuelTypeId == dup.Id).ToList();
+                foreach (var e in engines) e.FuelTypeId = canonical.Id;
+
+                var adverts = db.CarAdverts.Where(a => a.FuelTypeId == dup.Id).ToList();
+                foreach (var a in adverts) a.FuelTypeId = canonical.Id;
+
+                // BrandAllowedFuelTypes has a (BrandId, FuelTypeId) meaning - repoint, but drop
+                // the row instead if the brand already allows the canonical fuel.
+                var allowed = db.BrandAllowedFuelTypes.Where(x => x.FuelTypeId == dup.Id).ToList();
+                foreach (var baf in allowed)
+                {
+                    if (db.BrandAllowedFuelTypes.Any(x => x.BrandId == baf.BrandId && x.FuelTypeId == canonical.Id))
+                        db.BrandAllowedFuelTypes.Remove(baf);
+                    else
+                        baf.FuelTypeId = canonical.Id;
+                }
+
+                db.SaveChanges();
+
+                // Only remove the alias once nothing references it any more.
+                var stillReferenced = db.EngineVersions.Any(e => e.FuelTypeId == dup.Id)
+                                   || db.CarAdverts.Any(a => a.FuelTypeId == dup.Id)
+                                   || db.BrandAllowedFuelTypes.Any(x => x.FuelTypeId == dup.Id);
+                if (stillReferenced)
+                {
+                    logger.LogWarning("[FuelMerge] '{Name}' (id={Id}) still referenced after repointing - left in place", dup.Name, dup.Id);
+                    continue;
+                }
+
+                db.FuelTypes.Remove(dup);
+                db.SaveChanges();
+                mergedTotal++;
+                logger.LogInformation(
+                    "[FuelMerge] Merged '{Dup}' (id={DupId}) into '{Canonical}' (id={CanonicalId}): {Engines} engine(s), {Adverts} advert(s) repointed",
+                    dup.Name, dup.Id, canonical.Name, canonical.Id, engines.Count, adverts.Count);
+            }
+        }
+
+        if (mergedTotal == 0) logger.LogDebug("[FuelMerge] No aliased fuel types to merge");
+    }
+
     private static void MergeDuplicateBrands(AppDbContext db, ILogger logger)
     {
         logger.LogWarning("[STARTUP-TRACE] MergeDuplicateBrands entered");

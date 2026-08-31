@@ -1,5 +1,6 @@
 using CarsWebsite;
 using cars_website_api.CarsWebsite.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace cars_website_api.CarsWebsite.Data;
 
@@ -37,12 +38,25 @@ public static class ModelSeeder
             return ft.Id;
         }
 
-        // Names must match the live FuelTypes table exactly — confirmed via [STARTUP-TRACE]
-        // fuels-in-DB dump: Diesel, Benzyna, Gaz, Elektryczny, "Hybryda plug-in (PHEV)", LPG,
-        // "Hybryda mild (MHEV)", Wodór.
+        // AUDIT FIX (taksonomia, Etap 0): the dictionary seeder in Program.cs inserts the SHORT
+        // names ("Hybryda plug-in", "Hybryda mild"), while this seeder used to look up only the
+        // LONG ones ("... (PHEV)" / "... (MHEV)") that VehicleDataSeeder creates on the fly. On a
+        // fresh database the long names don't exist yet when this seeder runs first, so every
+        // PHEV/MHEV engine silently fell back to Benzyna - and production ended up carrying both
+        // spellings as two parallel rows for the same concept. Resolve by alias so either
+        // spelling matches, and prefer the short (canonical) one.
+        int FAny(params string[] candidates)
+        {
+            foreach (var c in candidates)
+                if (fuels.TryGetValue(c, out var id)) return id;
+            return 0;
+        }
+
         int ben  = F("Benzyna"), die = F("Diesel"), ev = F("Elektryczny"), lpg = F("LPG");
-        int phev = F("Hybryda plug-in (PHEV)"), mild = F("Hybryda mild (MHEV)");
-        int hyb  = GetOrCreateFuel("Hybryda");
+        int phev = FAny("Hybryda plug-in", "Hybryda plug-in (PHEV)", "PHEV");
+        int mild = FAny("Hybryda mild", "Hybryda mild (MHEV)", "MHEV");
+        int hyb  = FAny("Hybryda");
+        if (hyb == 0) hyb = GetOrCreateFuel("Hybryda");
 
         logger.LogWarning(
             "[STARTUP-TRACE] fuels in DB: [{DbFuels}] | lookups: Benzyna={Ben} Diesel={Die} Hybryda={Hyb} " +
@@ -54,9 +68,9 @@ public static class ModelSeeder
         // blocking every seeder that runs after this one (including ComprehensiveSeeder).
         if (ben == 0 && fuels.Count > 0) ben = fuels.Values.First();
         if (die == 0) { logger.LogError("[STARTUP-TRACE] FuelType 'Diesel' missing from DB — falling back to Benzyna"); die = ben; }
-        if (phev == 0) { logger.LogError("[STARTUP-TRACE] FuelType 'Hybryda plug-in (PHEV)' missing from DB — falling back to Benzyna"); phev = ben; }
+        if (phev == 0) { logger.LogError("[STARTUP-TRACE] FuelType 'Hybryda plug-in' (any spelling) missing from DB — falling back to Benzyna"); phev = ben; }
         if (ev == 0) { logger.LogError("[STARTUP-TRACE] FuelType 'Elektryczny' missing from DB — falling back to Benzyna"); ev = ben; }
-        if (mild == 0) { logger.LogError("[STARTUP-TRACE] FuelType 'Hybryda mild (MHEV)' missing from DB — falling back to Benzyna"); mild = ben; }
+        if (mild == 0) { logger.LogError("[STARTUP-TRACE] FuelType 'Hybryda mild' (any spelling) missing from DB — falling back to Benzyna"); mild = ben; }
         if (lpg == 0) { logger.LogError("[STARTUP-TRACE] FuelType 'LPG' missing from DB — falling back to Benzyna"); lpg = ben; }
 
         // Helper: create EngineVersion
@@ -2112,8 +2126,78 @@ public static class ModelSeeder
 
         if (models.Count == 0) return;
 
-        db.Models.AddRange(models);
-        db.SaveChanges();
-        logger.LogInformation("Seeded {Count} models with generations and engine versions", models.Count);
+        // Several brands deliberately have more than one seeding block in this file (BMW: cars
+        // near the top, motorcycles further down; Honda, Caterpillar, Liebherr, Massey Ferguson
+        // and Renault Trucks likewise seed genuinely different models per block). Blocks must
+        // therefore NOT be skipped when a brand repeats - doing so would silently drop BMW's
+        // motorcycles. What must not survive is the SAME model name appearing twice for one
+        // brand across those blocks ("Iveco Stralis", "BMW R 1250 GS"), which is how this seeder
+        // inserted duplicates in a single pass. Collapse on the same normalized key the startup
+        // dedup uses (trim + lowercase) so the seeder and the dedup finally agree on identity.
+        static string NKey(string s) => s.Trim().ToLowerInvariant();
+
+        var collapsed = new List<Model>();
+        var byKey = new Dictionary<(int BrandId, string Name), Model>();
+        foreach (var m in models)
+        {
+            var key = (m.BrandId, NKey(m.Name));
+            if (!byKey.TryGetValue(key, out var keep))
+            {
+                byKey[key] = m;
+                collapsed.Add(m);
+                continue;
+            }
+            // Same model seeded twice: merge the later block's generations into the kept model
+            // rather than discarding them, so a genuinely new generation is never lost.
+            foreach (var g in m.Generations)
+            {
+                var keptGen = keep.Generations.FirstOrDefault(x => NKey(x.Name) == NKey(g.Name));
+                if (keptGen is null) { keep.Generations.Add(g); continue; }
+                foreach (var e in g.EngineVersions)
+                    if (!keptGen.EngineVersions.Any(x => NKey(x.EngineName) == NKey(e.EngineName)))
+                        keptGen.EngineVersions.Add(e);
+            }
+        }
+
+        // NeedsSeeding only checks whether the brand has ANY model, so a brand already seeded by
+        // a different seeder would otherwise have its models inserted a second time here.
+        var existingKeys = db.Models.AsEnumerable()
+            .Select(m => (m.BrandId, Name: NKey(m.Name)))
+            .ToHashSet();
+        var toInsert = collapsed
+            .Where(m => !existingKeys.Contains((m.BrandId, NKey(m.Name))))
+            .ToList();
+
+        if (toInsert.Count == 0)
+        {
+            logger.LogInformation("ModelSeeder: nothing new to insert (collapsed {Dropped} in-run duplicates)",
+                models.Count - collapsed.Count);
+            return;
+        }
+
+        // Save per brand instead of one atomic AddRange: a single constraint violation used to
+        // abort the entire batch, which - once UNIQUE indexes exist on (BrandId, Name) - would
+        // leave the database with NO models at all rather than merely with duplicates.
+        int saved = 0, failedBrands = 0;
+        foreach (var group in toInsert.GroupBy(m => m.BrandId))
+        {
+            try
+            {
+                db.Models.AddRange(group);
+                db.SaveChanges();
+                saved += group.Count();
+            }
+            catch (Exception ex)
+            {
+                failedBrands++;
+                foreach (var entry in db.ChangeTracker.Entries().Where(e => e.State == EntityState.Added).ToList())
+                    entry.State = EntityState.Detached;
+                logger.LogError(ex, "ModelSeeder: seeding models for BrandId={BrandId} failed; continuing with other brands", group.Key);
+            }
+        }
+
+        logger.LogInformation(
+            "Seeded {Saved} models with generations and engine versions (collapsed {Dropped} in-run duplicates, {Failed} brand(s) failed)",
+            saved, models.Count - collapsed.Count, failedBrands);
     }
 }

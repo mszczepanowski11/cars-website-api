@@ -45,10 +45,22 @@ public static class VehicleDataSeeder
             return ft.Id;
         }
 
+        // AUDIT FIX (taksonomia, Etap 0): asking GetOrCreateFuel for "Hybryda plug-in (PHEV)"
+        // created a SECOND row for a concept the dictionary seeder in Program.cs already seeds as
+        // "Hybryda plug-in". Resolve known aliases to the canonical (short) name first, and only
+        // create a row when no spelling of it exists at all.
+        int GetOrCreateFuelAliased(string canonical, params string[] aliases)
+        {
+            if (fuelDict.TryGetValue(canonical, out var id)) return id;
+            foreach (var a in aliases)
+                if (fuelDict.TryGetValue(a, out var altId)) return altId;
+            return GetOrCreateFuel(canonical);
+        }
+
         int ben   = GetOrCreateFuel("Benzyna");
         int die   = GetOrCreateFuel("Diesel");
         int hyb   = GetOrCreateFuel("Hybryda");
-        int phev  = GetOrCreateFuel("Hybryda plug-in (PHEV)");
+        int phev  = GetOrCreateFuelAliased("Hybryda plug-in", "Hybryda plug-in (PHEV)", "PHEV");
         int ev    = GetOrCreateFuel("Elektryczny");
         int lpg   = GetOrCreateFuel("LPG");
 
@@ -539,13 +551,24 @@ public static class VehicleDataSeeder
         }
 
         int GetFuel(string name) => fuelDict.TryGetValue(name, out var id) ? id : 0;
+        // AUDIT FIX (taksonomia, Etap 0): accept either spelling of the plug-in hybrid. This
+        // method is effectively dead today (TrimSeeder.SeedTrims runs immediately before it and
+        // the `db.Trims.Any()` guard above then short-circuits), but if it ever does execute -
+        // e.g. after TrimSeeder throws - it must not mislabel every PHEV engine as Benzyna.
+        int GetFuelAny(params string[] candidates)
+        {
+            foreach (var c in candidates)
+                if (fuelDict.TryGetValue(c, out var id)) return id;
+            return 0;
+        }
+
         int ben  = GetFuel("Benzyna");
         int die  = GetFuel("Diesel");
-        int phev = GetFuel("Hybryda plug-in (PHEV)");
+        int phev = GetFuelAny("Hybryda plug-in", "Hybryda plug-in (PHEV)", "PHEV");
         // Missing fuel type must not crash via an FK violation — fall back to Benzyna.
         if (ben == 0 && fuelDict.Count > 0) ben = fuelDict.Values.First();
         if (die == 0) { logger.LogError("[STARTUP-TRACE] SeedTrimData: FuelType 'Diesel' missing — falling back to Benzyna"); die = ben; }
-        if (phev == 0) { logger.LogError("[STARTUP-TRACE] SeedTrimData: FuelType 'Hybryda plug-in (PHEV)' missing — falling back to Benzyna"); phev = ben; }
+        if (phev == 0) { logger.LogError("[STARTUP-TRACE] SeedTrimData: FuelType 'Hybryda plug-in' (any spelling) missing — falling back to Benzyna"); phev = ben; }
 
         int GetOrCreateModel(int brandId, string name, string slug)
         {
@@ -784,11 +807,30 @@ public static class VehicleDataSeeder
         int ben = GetFuel("Benzyna");
         if (ben == 0) ben = fuelDict.Values.First();
 
+        // AUDIT FIX (taksonomia, Etap 0): this used to create the brand with no VehicleCategory
+        // link at all, so every motorcycle brand born here was invisible to
+        // GET /api/Taxonomy/brands/category/{id} (which INNER JOINs brandvehiclecategories) - the
+        // brand existed but could never be picked in the add-listing form. Attach the motorcycle
+        // category on creation, and also back-fill it for a brand that already exists without it.
+        var motoCategory = db.VehicleCategories.FirstOrDefault(c => c.Slug == "motocykle");
+
         int GetOrCreateBrand(string name, string slug)
         {
-            var b = db.Brands.FirstOrDefault(x => x.Name == name);
-            if (b != null) return b.Id;
-            b = new Brand { Name = name, Slug = slug };
+            var b = db.Brands.Include(x => x.Categories).FirstOrDefault(x => x.Name == name);
+            if (b != null)
+            {
+                b.Categories ??= new List<VehicleCategory>();
+                if (motoCategory != null && b.Categories.All(c => c.Id != motoCategory.Id))
+                {
+                    b.Categories.Add(motoCategory);
+                    db.SaveChanges();
+                }
+                return b.Id;
+            }
+            // Brand.Categories has no initializer, so it must be assigned before use - matching
+            // how ComprehensiveSeeder.GetOrCreateBrand builds the category list up front.
+            var cats = motoCategory != null ? new List<VehicleCategory> { motoCategory } : new List<VehicleCategory>();
+            b = new Brand { Name = name, Slug = slug, Categories = cats };
             db.Brands.Add(b);
             db.SaveChanges();
             return b.Id;
