@@ -58,25 +58,33 @@ public static class ComprehensiveSeeder
             return ft.Id;
         }
 
-        // Names must match the live FuelTypes table exactly — confirmed via ModelSeeder's
-        // [STARTUP-TRACE] fuels-in-DB dump: Diesel, Benzyna, Gaz, Elektryczny,
-        // "Hybryda plug-in (PHEV)", LPG, "Hybryda mild (MHEV)", Wodór.
+        // AUDIT FIX (taksonomia, Etap 0): the dictionary seeder in Program.cs writes the SHORT
+        // names ("Hybryda plug-in", "Hybryda mild") while this seeder looked up only the LONG
+        // ones, so on a fresh database every PHEV/MHEV engine fell through to Benzyna. Accept
+        // either spelling, preferring the canonical short one.
+        int GetFuelAny(params string[] candidates)
+        {
+            foreach (var c in candidates)
+                if (fuelDict.TryGetValue(c, out var id)) return id;
+            return 0;
+        }
+
         int ben  = GetFuel("Benzyna");
         int die  = GetFuel("Diesel");
-        int phev = GetFuel("Hybryda plug-in (PHEV)");
+        int phev = GetFuelAny("Hybryda plug-in", "Hybryda plug-in (PHEV)", "PHEV");
         int ev   = GetFuel("Elektryczny");
         int lpg  = GetFuel("LPG");
-        int mild = GetFuel("Hybryda mild (MHEV)");
+        int mild = GetFuelAny("Hybryda mild", "Hybryda mild (MHEV)", "MHEV");
         int hyb  = GetOrCreateFuel("Hybryda");
 
         // Defense in depth: a missing fuel-type name must not crash this seeder via an FK
         // violation on EngineVersion.FuelTypeId — fall back to Benzyna and log loudly instead.
         if (ben == 0 && fuelDict.Count > 0) ben = fuelDict.Values.First();
         if (die == 0) { logger.LogError("[STARTUP-TRACE] ComprehensiveSeeder: FuelType 'Diesel' missing — falling back to Benzyna"); die = ben; }
-        if (phev == 0) { logger.LogError("[STARTUP-TRACE] ComprehensiveSeeder: FuelType 'Hybryda plug-in (PHEV)' missing — falling back to Benzyna"); phev = ben; }
+        if (phev == 0) { logger.LogError("[STARTUP-TRACE] ComprehensiveSeeder: FuelType 'Hybryda plug-in' (any spelling) missing — falling back to Benzyna"); phev = ben; }
         if (ev == 0) { logger.LogError("[STARTUP-TRACE] ComprehensiveSeeder: FuelType 'Elektryczny' missing — falling back to Benzyna"); ev = ben; }
         if (lpg == 0) { logger.LogError("[STARTUP-TRACE] ComprehensiveSeeder: FuelType 'LPG' missing — falling back to Benzyna"); lpg = ben; }
-        if (mild == 0) { logger.LogError("[STARTUP-TRACE] ComprehensiveSeeder: FuelType 'Hybryda mild (MHEV)' missing — falling back to Benzyna"); mild = ben; }
+        if (mild == 0) { logger.LogError("[STARTUP-TRACE] ComprehensiveSeeder: FuelType 'Hybryda mild' (any spelling) missing — falling back to Benzyna"); mild = ben; }
 
         int GetOrCreateBrand(string name, string slug, params string[] categorySlugs)
         {
@@ -3812,7 +3820,7 @@ public static class ComprehensiveSeeder
             ]);
 
             // ── MASSEY FERGUSON ──────────────────────────────────────────────────────
-            int mfId = GetOrCreateBrand("Massey Ferguson", "massey-ferguson", "maszyny-rolnicze");
+            int mfId = GetOrCreateBrand("Massey Ferguson", "massey-ferguson", "rolnicze");
             int mf5700s = GetOrCreateModel(mfId, "MF 5700 S", "mf-5700-s");
             AddEngines(GetOrCreateGeneration(mf5700s, "S (2014–)", "mf-5700s-2014", 2014, null), [
                 new EngineVersion { EngineName = "5710 S 100 KM", PowerHP = 100, PowerKW = 74, Displacement = 4400, FuelTypeId = die,
@@ -3848,7 +3856,7 @@ public static class ComprehensiveSeeder
             ]);
 
             // ── CASE IH ──────────────────────────────────────────────────────────────
-            int caseIhId = GetOrCreateBrand("Case IH", "case-ih", "maszyny-rolnicze");
+            int caseIhId = GetOrCreateBrand("Case IH", "case-ih", "rolnicze");
             int casePuma = GetOrCreateModel(caseIhId, "Puma", "case-ih-puma");
             AddEngines(GetOrCreateGeneration(casePuma, "CVX (2014–)", "case-ih-puma-cvx", 2014, null), [
                 new EngineVersion { EngineName = "Puma 150 CVX 150 KM", PowerHP = 150, PowerKW = 110, Displacement = 6728, FuelTypeId = die,
@@ -3890,7 +3898,7 @@ public static class ComprehensiveSeeder
             ]);
 
             // ── CLAAS ────────────────────────────────────────────────────────────────
-            int claasId = GetOrCreateBrand("Claas", "claas", "maszyny-rolnicze");
+            int claasId = GetOrCreateBrand("Claas", "claas", "rolnicze");
             int axion900 = GetOrCreateModel(claasId, "Axion 900", "claas-axion-900");
             AddEngines(GetOrCreateGeneration(axion900, "CIS+ (2015–)", "claas-axion900-cis", 2015, null), [
                 new EngineVersion { EngineName = "Axion 920 205 KM", PowerHP = 205, PowerKW = 151, Displacement = 6800, FuelTypeId = die,
@@ -3926,7 +3934,7 @@ public static class ComprehensiveSeeder
             ]);
 
             // ── ZETOR ────────────────────────────────────────────────────────────────
-            int zetorId = GetOrCreateBrand("Zetor", "zetor", "maszyny-rolnicze");
+            int zetorId = GetOrCreateBrand("Zetor", "zetor", "rolnicze");
             int zetorMajor = GetOrCreateModel(zetorId, "Major", "zetor-major");
             AddEngines(GetOrCreateGeneration(zetorMajor, "CL (2012–)", "zetor-major-cl", 2012, null), [
                 new EngineVersion { EngineName = "Major CL 80 80 KM", PowerHP = 80, PowerKW = 59, Displacement = 3792, FuelTypeId = die,
@@ -3947,7 +3955,7 @@ public static class ComprehensiveSeeder
             ]);
 
             // ── KUBOTA ───────────────────────────────────────────────────────────────
-            int kubotaId = GetOrCreateBrand("Kubota", "kubota", "maszyny-rolnicze");
+            int kubotaId = GetOrCreateBrand("Kubota", "kubota", "rolnicze");
             int kubotaM7 = GetOrCreateModel(kubotaId, "M7", "kubota-m7");
             AddEngines(GetOrCreateGeneration(kubotaM7, "M7-151 (2014–)", "kubota-m7-2014", 2014, null), [
                 new EngineVersion { EngineName = "V6108 152 KM", PowerHP = 152, PowerKW = 112, Displacement = 6108, FuelTypeId = die,
@@ -3962,7 +3970,7 @@ public static class ComprehensiveSeeder
             ]);
 
             // ── VOLVO TRUCKS FH + FM ──────────────────────────────────────────────────
-            int volvoTrucksId = GetOrCreateBrand("Volvo", "volvo", "ciezarowki");
+            int volvoTrucksId = GetOrCreateBrand("Volvo", "volvo", "ciezarowe");
             int volvoFH = GetOrCreateModel(volvoTrucksId, "FH", "volvo-fh");
             AddEngines(GetOrCreateGeneration(volvoFH, "IV (2012–2020)", "volvo-fh-iv", 2012, 2020), [
                 new EngineVersion { EngineName = "D13 420 KM", PowerHP = 420, PowerKW = 309, Displacement = 12777, FuelTypeId = die,
@@ -4940,7 +4948,7 @@ public static class ComprehensiveSeeder
             ]);
 
             // ── MAN TGX I + NEO + TGS I + II ─────────────────────────────────────
-            int manId = GetOrCreateBrand("MAN", "man", "ciezarowki");
+            int manId = GetOrCreateBrand("MAN", "man", "ciezarowe");
             int tgx = GetOrCreateModel(manId, "TGX", "man-tgx");
             AddEngines(GetOrCreateGeneration(tgx, "I (2007–2020)", "man-tgx-i", 2007, 2020), [
                 new EngineVersion { EngineName = "D2066 400 KM", PowerHP = 400, PowerKW = 294, Displacement = 10518, FuelTypeId = die,
@@ -4998,7 +5006,7 @@ public static class ComprehensiveSeeder
             ]);
 
             // ── SCANIA R-SERIES + S-SERIES ────────────────────────────────────────
-            int scaniaId = GetOrCreateBrand("Scania", "scania", "ciezarowki");
+            int scaniaId = GetOrCreateBrand("Scania", "scania", "ciezarowe");
             int scaniaR = GetOrCreateModel(scaniaId, "R-Series", "scania-r-series");
             AddEngines(GetOrCreateGeneration(scaniaR, "R5 (2009–2016)", "scania-r-r5", 2009, 2016), [
                 new EngineVersion { EngineName = "DC09 320 KM", PowerHP = 320, PowerKW = 235, Displacement = 9290, FuelTypeId = die,
@@ -5685,7 +5693,7 @@ public static class ComprehensiveSeeder
 
         // ── Ferrari ──────────────────────────────────────────────────────────────
         {
-            int ferrId = GetOrCreateBrand("Ferrari", "ferrari", "osobowe");
+            int ferrId = GetOrCreateBrand("Ferrari", "ferrari", "auta-osobowe");
             int f488 = GetOrCreateModel(ferrId, "488", "ferrari-488");
             AddEngines(GetOrCreateGeneration(f488, "488 GTB/Spider (2015–2019)", "ferrari-488-gtb", 2015, 2019), [
                 new EngineVersion { EngineName = "3.9 V8 Twin-Turbo 670 KM", PowerHP = 670, PowerKW = 493, Displacement = 3902, FuelTypeId = ben,
@@ -5829,7 +5837,7 @@ public static class ComprehensiveSeeder
 
         // ── Tesla ─────────────────────────────────────────────────────────────────
         {
-            int teslId = GetOrCreateBrand("Tesla", "tesla", "osobowe");
+            int teslId = GetOrCreateBrand("Tesla", "tesla", "auta-osobowe");
             int m3 = GetOrCreateModel(teslId, "Model 3", "tesla-model3");
             AddEngines(GetOrCreateGeneration(m3, "I (2017–2023)", "tesla-model3-i", 2017, 2023), [
                 new EngineVersion { EngineName = "Standard Range RWD 283 KM", PowerHP = 283, PowerKW = 208, Displacement = 0, FuelTypeId = ev,
@@ -5911,7 +5919,7 @@ public static class ComprehensiveSeeder
 
         // ── Alfa Romeo ────────────────────────────────────────────────────────────
         {
-            int alfaId = GetOrCreateBrand("Alfa Romeo", "alfa-romeo", "osobowe");
+            int alfaId = GetOrCreateBrand("Alfa Romeo", "alfa-romeo", "auta-osobowe");
             int giulia = GetOrCreateModel(alfaId, "Giulia", "alfa-romeo-giulia");
             AddEngines(GetOrCreateGeneration(giulia, "952 (2016–)", "alfa-giulia-952", 2016, null), [
                 new EngineVersion { EngineName = "2.0 Turbo 200 KM", PowerHP = 200, PowerKW = 147, Displacement = 1995, FuelTypeId = ben,
@@ -6011,7 +6019,7 @@ public static class ComprehensiveSeeder
 
         // ── Lexus ─────────────────────────────────────────────────────────────────
         {
-            int lexId = GetOrCreateBrand("Lexus", "lexus", "osobowe");
+            int lexId = GetOrCreateBrand("Lexus", "lexus", "auta-osobowe");
             int isLex = GetOrCreateModel(lexId, "IS", "lexus-is");
             AddEngines(GetOrCreateGeneration(isLex, "III (2013–)", "lexus-is-iii", 2013, null), [
                 new EngineVersion { EngineName = "2.0 Turbo 245 KM", PowerHP = 245, PowerKW = 180, Displacement = 1998, FuelTypeId = ben,
@@ -6121,7 +6129,7 @@ public static class ComprehensiveSeeder
 
         // ── Maserati ──────────────────────────────────────────────────────────────
         {
-            int masId = GetOrCreateBrand("Maserati", "maserati", "osobowe");
+            int masId = GetOrCreateBrand("Maserati", "maserati", "auta-osobowe");
             int ghibli = GetOrCreateModel(masId, "Ghibli", "maserati-ghibli");
             AddEngines(GetOrCreateGeneration(ghibli, "M157 (2013–2023)", "maserati-ghibli-m157", 2013, 2023), [
                 new EngineVersion { EngineName = "2.0 MHEV 330 KM", PowerHP = 330, PowerKW = 243, Displacement = 1998, FuelTypeId = mild,
@@ -6203,7 +6211,7 @@ public static class ComprehensiveSeeder
 
         // ── Citroën ───────────────────────────────────────────────────────────────
         {
-            int citId = GetOrCreateBrand("Citroën", "citroen", "osobowe");
+            int citId = GetOrCreateBrand("Citroën", "citroen", "auta-osobowe");
             int c3 = GetOrCreateModel(citId, "C3", "citroen-c3");
             AddEngines(GetOrCreateGeneration(c3, "III (2016–)", "citroen-c3-iii", 2016, null), [
                 new EngineVersion { EngineName = "1.2 PureTech 83 KM", PowerHP = 83, PowerKW = 61, Displacement = 1199, FuelTypeId = ben,
@@ -6557,7 +6565,7 @@ public static class ComprehensiveSeeder
 
         // ── Mini ──────────────────────────────────────────────────────────────────
         {
-            int miniId = GetOrCreateBrand("Mini", "mini", "osobowe");
+            int miniId = GetOrCreateBrand("Mini", "mini", "auta-osobowe");
             int cooper = GetOrCreateModel(miniId, "Cooper", "mini-cooper");
             AddEngines(GetOrCreateGeneration(cooper, "F55/F56 (2014–2024)", "mini-cooper-f56", 2014, 2024), [
                 new EngineVersion { EngineName = "1.5 TwinPower Turbo One 102 KM", PowerHP = 102, PowerKW = 75, Displacement = 1499, FuelTypeId = ben,
@@ -6652,7 +6660,7 @@ public static class ComprehensiveSeeder
 
         // ── Jeep ──────────────────────────────────────────────────────────────────
         {
-            int jeepId = GetOrCreateBrand("Jeep", "jeep", "osobowe");
+            int jeepId = GetOrCreateBrand("Jeep", "jeep", "auta-osobowe");
             int compass = GetOrCreateModel(jeepId, "Compass", "jeep-compass");
             AddEngines(GetOrCreateGeneration(compass, "MP (2016–)", "jeep-compass-mp", 2016, null), [
                 new EngineVersion { EngineName = "1.3 GSE T4 FWD 130 KM", PowerHP = 130, PowerKW = 96, Displacement = 1332, FuelTypeId = ben,
@@ -6755,7 +6763,7 @@ public static class ComprehensiveSeeder
 
         // ── Mazda ─────────────────────────────────────────────────────────────────
         {
-            int mazId = GetOrCreateBrand("Mazda", "mazda", "osobowe");
+            int mazId = GetOrCreateBrand("Mazda", "mazda", "auta-osobowe");
             int m6 = GetOrCreateModel(mazId, "Mazda6", "mazda6");
             AddEngines(GetOrCreateGeneration(m6, "GL (2012–)", "mazda6-gl", 2012, null), [
                 new EngineVersion { EngineName = "2.0 SKYACTIV-G 145 KM", PowerHP = 145, PowerKW = 107, Displacement = 1997, FuelTypeId = ben,
@@ -6829,7 +6837,7 @@ public static class ComprehensiveSeeder
 
         // ── Peugeot (remaining) ───────────────────────────────────────────────────
         {
-            int peugId = GetOrCreateBrand("Peugeot", "peugeot", "osobowe", "dostawcze");
+            int peugId = GetOrCreateBrand("Peugeot", "peugeot", "auta-osobowe", "dostawcze");
             int p208 = GetOrCreateModel(peugId, "208", "peugeot-208");
             AddEngines(GetOrCreateGeneration(p208, "I (2012–2019)", "peugeot-208-i", 2012, 2019), [
                 new EngineVersion { EngineName = "1.2 PureTech 82 KM", PowerHP = 82, PowerKW = 60, Displacement = 1199, FuelTypeId = ben,
@@ -7289,7 +7297,7 @@ public static class ComprehensiveSeeder
 
         // ── Abarth ────────────────────────────────────────────────────────────────
         {
-            int abaId = GetOrCreateBrand("Abarth", "abarth", "osobowe");
+            int abaId = GetOrCreateBrand("Abarth", "abarth", "auta-osobowe");
 
             int ab500 = GetOrCreateModel(abaId, "500", "abarth-500");
             PrepareGenerations(ab500,
@@ -7406,7 +7414,7 @@ public static class ComprehensiveSeeder
 
         // ── Dodge ─────────────────────────────────────────────────────────────────
         {
-            int dodgeId = GetOrCreateBrand("Dodge", "dodge", "osobowe");
+            int dodgeId = GetOrCreateBrand("Dodge", "dodge", "auta-osobowe");
             int charger = GetOrCreateModel(dodgeId, "Charger", "dodge-charger");
             AddEngines(GetOrCreateGeneration(charger, "LX (2011–)", "dodge-charger-lx", 2011, null), [
                 new EngineVersion { EngineName = "3.6 V6 Pentastar 300 KM", PowerHP = 300, PowerKW = 220, Displacement = 3604, FuelTypeId = ben,
@@ -7610,7 +7618,7 @@ public static class ComprehensiveSeeder
 
         // ── Chrysler ──────────────────────────────────────────────────────────────
         {
-            int chrId = GetOrCreateBrand("Chrysler", "chrysler", "osobowe");
+            int chrId = GetOrCreateBrand("Chrysler", "chrysler", "auta-osobowe");
             int c300 = GetOrCreateModel(chrId, "300C", "chrysler-300c");
             AddEngines(GetOrCreateGeneration(c300, "II (2011–)", "chrysler-300c-ii", 2011, null), [
                 new EngineVersion { EngineName = "3.6 V6 Pentastar 292 KM", PowerHP = 292, PowerKW = 215, Displacement = 3604, FuelTypeId = ben,
@@ -7784,7 +7792,7 @@ public static class ComprehensiveSeeder
 
         // ── Chevrolet ─────────────────────────────────────────────────────────────
         {
-            int chevId = GetOrCreateBrand("Chevrolet", "chevrolet", "osobowe");
+            int chevId = GetOrCreateBrand("Chevrolet", "chevrolet", "auta-osobowe");
             int camaro = GetOrCreateModel(chevId, "Camaro", "chevrolet-camaro");
             PrepareGenerations(camaro,
                 ("IV (1993–2002)", "chevrolet-camaro-iv", 1993, 2002),
@@ -8758,7 +8766,7 @@ public static class ComprehensiveSeeder
 
         // ── VOLVO (passenger cars — brand previously only had truck models FH/FM) ──
         {
-            int volvoId = GetOrCreateBrand("Volvo", "volvo", "ciezarowki", "auta-osobowe");
+            int volvoId = GetOrCreateBrand("Volvo", "volvo", "ciezarowe", "auta-osobowe");
             var volvoBrand = db.Brands.Include(b => b.Categories).First(b => b.Id == volvoId);
             if (!volvoBrand.Categories.Any(c => c.Slug == "auta-osobowe"))
             {
