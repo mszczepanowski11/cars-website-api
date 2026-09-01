@@ -5326,6 +5326,11 @@ internal class Program
         DirectoryBackfillSeeder.Seed(db, logger);
         logger.LogWarning("[STARTUP-TRACE] Calling VehicleEquipmentSeeder.Seed");
         VehicleEquipmentSeeder.Seed(db, logger);
+        logger.LogWarning("[STARTUP-TRACE] Calling TaxonomyGapSeeder.Seed");
+        // Taksonomia Etap 5: additive gap filling (missing brands, subtypes for akcesoria/uslugi,
+        // attributes for categories that had none, extra part groups). Runs after the other
+        // taxonomy seeders so it can see - and therefore not duplicate - everything they created.
+        TaxonomyGapSeeder.Seed(db, logger);
         logger.LogWarning("[STARTUP-TRACE] Calling GeoSeeder.Seed");
         GeoSeeder.Seed(db, logger);
 
