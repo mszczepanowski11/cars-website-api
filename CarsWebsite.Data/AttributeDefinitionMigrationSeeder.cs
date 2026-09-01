@@ -64,7 +64,7 @@ public static class AttributeDefinitionMigrationSeeder
         new("motocykle", null, "motorcycleType", "Typ motocykla", AttributeDataType.Select, null,
             ["Sportowy / Supersport", "Turystyczny (Tourer)", "Adventure / Enduro drogowe", "Enduro / Cross / Off-road",
              "Cruiser / Chopper", "Naked / Streetfighter", "Café Racer / Scrambler", "Skuter",
-             "Skuter 125 cm³ (AM)", "Trial", "Quad / ATV", "Z wózkiem bocznym", "Elektryczny", "Inny"], IsRequired: true),
+             "Skuter 125 cm³ (AM)", "Trial", "Z wózkiem bocznym", "Elektryczny", "Inny"], IsRequired: true),
         new("motocykle", null, "hasABS", "ABS", AttributeDataType.Boolean, null, null),
         new("motocykle", null, "hasTCS", "Kontrola trakcji (TCS)", AttributeDataType.Boolean, null, null),
         new("motocykle", null, "hasQuickshifter", "Quickshifter (bi-directional)", AttributeDataType.Boolean, null, null),

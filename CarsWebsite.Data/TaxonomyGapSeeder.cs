@@ -28,6 +28,7 @@ public static class TaxonomyGapSeeder
             SeedAccessoryAndServiceSubtypes(db, logger);
             SeedMissingCategoryAttributes(db, logger);
             SeedMissingPartCategories(db, logger);
+            RepairKnownLabelTypos(db, logger);
         }
         catch (Exception ex)
         {
@@ -331,6 +332,30 @@ public static class TaxonomyGapSeeder
             db.SaveChanges();
             logger.LogInformation("[TaxonomyGap] Added {Count} part category/-ies", added);
         }
+    }
+
+    // User-facing typos that shipped in the original seed data. Renaming is safe - nothing keys
+    // off a subtype's Name, and the slug is deliberately left untouched so the row is corrected
+    // in place rather than duplicated.
+    private static void RepairKnownLabelTypos(AppDbContext db, ILogger logger)
+    {
+        var fixes = new (string Slug, string Correct)[]
+        {
+            ("minikopiarka", "Minikoparka"),
+        };
+
+        var changed = 0;
+        foreach (var (slug, correct) in fixes)
+        {
+            foreach (var row in db.VehicleSubtypes.Where(v => v.Slug == slug).ToList())
+            {
+                if (row.Name == correct) continue;
+                logger.LogInformation("[TaxonomyGap] Renaming subtype '{Old}' -> '{New}'", row.Name, correct);
+                row.Name = correct;
+                changed++;
+            }
+        }
+        if (changed > 0) db.SaveChanges();
     }
 
     private static string Slugify(string s)

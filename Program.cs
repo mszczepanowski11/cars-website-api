@@ -5124,7 +5124,7 @@ internal class Program
 
                 // budowlane
                 ("budowlane", "Koparka",      "koparka"),
-                ("budowlane", "Minikopiarka", "minikopiarka"),
+                ("budowlane", "Minikoparka",  "minikopiarka"),
                 ("budowlane", "Ładowarka",    "ladowarka"),
                 ("budowlane", "Spycharka",    "spycharka"),
                 ("budowlane", "Walec",        "walec"),
@@ -5146,7 +5146,11 @@ internal class Program
                 ("motocykle", "Enduro/Cross",      "enduro"),
                 ("motocykle", "Skuter",            "skuter"),
                 ("motocykle", "Chopper",           "chopper"),
-                ("motocykle", "Quad",              "quad"),
+                // Taksonomia Etap 6: intentionally NOT seeded any more. A quad belongs to the
+                // standalone `quady-atv` category; keeping it here as a Motocykle subtype gave the
+                // same vehicle three competing representations and CategoryConsolidationSeeder
+                // would just delete it again on the next start.
+                // ("motocykle", "Quad",              "quad"),
             };
 
             var subtypes = new List<VehicleSubtype>();
@@ -5331,6 +5335,11 @@ internal class Program
         // attributes for categories that had none, extra part groups). Runs after the other
         // taxonomy seeders so it can see - and therefore not duplicate - everything they created.
         TaxonomyGapSeeder.Seed(db, logger);
+        logger.LogWarning("[STARTUP-TRACE] Calling CategoryConsolidationSeeder.Seed");
+        // Taksonomia Etap 6: merges the overlapping categories (quads represented in three places,
+        // `maszyny` overlapping budowlane/wozki-widlowe). Runs LAST so it sees the final taxonomy -
+        // including anything TaxonomyGapSeeder just added - before deciding what to move.
+        CategoryConsolidationSeeder.Seed(db, logger);
         logger.LogWarning("[STARTUP-TRACE] Calling GeoSeeder.Seed");
         GeoSeeder.Seed(db, logger);
 
