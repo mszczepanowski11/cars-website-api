@@ -25,6 +25,7 @@ namespace CarsWebsite
         public DbSet<Model> Models { get; set; }
         public DbSet<Generation> Generations { get; set; }
         public DbSet<ModelVehicleCategory> ModelVehicleCategories { get; set; }
+        public DbSet<TaxonomyExternalMapping> TaxonomyExternalMappings { get; set; }
         public DbSet<EngineVersion> EngineVersions { get; set; }
         public DbSet<FuelType> FuelTypes { get; set; }
         public DbSet<Gearbox> Gearboxes { get; set; }
@@ -525,6 +526,19 @@ namespace CarsWebsite
                 .HasKey(x => new { x.ModelsId, x.CategoriesId });
             modelBuilder.Entity<ModelVehicleCategory>()
                 .HasIndex(x => x.CategoriesId);
+
+            // Taksonomia Etap 4: external catalogue id -> our taxonomy row.
+            // The unique key is what makes a re-import idempotent: the same (source, type,
+            // external id) can only ever point at one of our rows.
+            modelBuilder.Entity<TaxonomyExternalMapping>(e =>
+            {
+                e.ToTable("taxonomyexternalmappings");
+                e.Property(x => x.SourceSystem).HasMaxLength(50).IsRequired();
+                e.Property(x => x.EntityType).HasMaxLength(50).IsRequired();
+                e.Property(x => x.ExternalId).HasMaxLength(190).IsRequired();
+                e.HasIndex(x => new { x.SourceSystem, x.EntityType, x.ExternalId }).IsUnique();
+                e.HasIndex(x => new { x.SourceSystem, x.EntityType, x.InternalId });
+            });
 
             modelBuilder.Entity<AttributeDefinition>().ToTable("attributedefinitions");
             modelBuilder.Entity<AdvertAttributeValue>().ToTable("advertattributevalues");
