@@ -259,6 +259,7 @@ internal class Program
         builder.Services.AddMemoryCache(); // B-27: admin stats cache (see AdminService) - taxonomy caching moved to IDistributedCache above
         builder.Services.AddSingleton<ITaxonomyCacheVersion, TaxonomyCacheVersion>();
         builder.Services.AddScoped<ITaxonomyService, TaxonomyService>();
+        builder.Services.AddScoped<ITaxonomyMappingService, TaxonomyMappingService>();
         builder.Services.AddScoped<IHierarchyValidationService, HierarchyValidationService>();
         builder.Services.AddScoped<ICategoryService, CategoryService>();
         builder.Services.AddScoped<IFavoriteService, FavoriteService>();
@@ -1226,6 +1227,19 @@ internal class Program
                 // rather than a single column on `models`, because a model genuinely can belong to
                 // two categories (VW Caddy / Transporter are sold both as osobowe and dostawcze).
                 // Purely additive: a model with no row here keeps behaving exactly as before.
+                // Taksonomia Etap 4: mapowanie identyfikatorow zewnetrznych (Akol i kolejne zrodla).
+                @"CREATE TABLE IF NOT EXISTS `taxonomyexternalmappings` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `SourceSystem` varchar(50) NOT NULL,
+  `EntityType` varchar(50) NOT NULL,
+  `ExternalId` varchar(190) NOT NULL,
+  `InternalId` int NOT NULL,
+  `CreatedAt` datetime(6) NOT NULL,
+  PRIMARY KEY (`Id`),
+  UNIQUE KEY `UQ_taxonomyexternalmappings_Source_Type_External` (`SourceSystem`, `EntityType`, `ExternalId`),
+  KEY `IX_taxonomyexternalmappings_Source_Type_Internal` (`SourceSystem`, `EntityType`, `InternalId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
                 @"CREATE TABLE IF NOT EXISTS `modelvehiclecategories` (
   `ModelsId` int NOT NULL,
   `CategoriesId` int NOT NULL,

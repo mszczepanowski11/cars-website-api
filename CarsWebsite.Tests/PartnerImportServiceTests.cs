@@ -30,7 +30,8 @@ public class PartnerImportServiceTests
         await context.SaveChangesAsync();
 
         var advertService = TestDbContextFactory.CreateAdvertService(context);
-        var importService = new PartnerImportService(context, advertService, TestDbContextFactory.CreateDummyCloudinary());
+        var importService = new PartnerImportService(context, advertService, TestDbContextFactory.CreateDummyCloudinary(),
+            TestDbContextFactory.CreateTaxonomyMappingService(context));
         return (context, importService, partner);
     }
 
@@ -218,7 +219,8 @@ public class PartnerImportServiceTests
         context.Partners.AddRange(partnerA, partnerB);
         await context.SaveChangesAsync();
         var advertService = TestDbContextFactory.CreateAdvertService(context);
-        var service = new PartnerImportService(context, advertService, TestDbContextFactory.CreateDummyCloudinary());
+        var service = new PartnerImportService(context, advertService, TestDbContextFactory.CreateDummyCloudinary(),
+            TestDbContextFactory.CreateTaxonomyMappingService(context));
 
         const string vin = "WAUZZZ8K9BA123456";
         var xmlA = $"""

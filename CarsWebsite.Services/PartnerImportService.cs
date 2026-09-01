@@ -30,14 +30,17 @@ public class PartnerImportService : IPartnerImportService
     private const int MaxImagesRehostedPerItem = 20;
 
     private readonly AppDbContext _context;
+    private readonly ITaxonomyMappingService _taxonomyMapping;
     private readonly IAdvertService _advertService;
     private readonly Cloudinary _cloudinary;
 
-    public PartnerImportService(AppDbContext context, IAdvertService advertService, Cloudinary cloudinary)
+    public PartnerImportService(AppDbContext context, IAdvertService advertService, Cloudinary cloudinary,
+        ITaxonomyMappingService taxonomyMapping)
     {
         _context = context;
         _advertService = advertService;
         _cloudinary = cloudinary;
+        _taxonomyMapping = taxonomyMapping;
     }
 
     public int CountFeedItems(string content, PartnerFeedFormat format)
@@ -192,7 +195,11 @@ public class PartnerImportService : IPartnerImportService
         if (!string.IsNullOrWhiteSpace(item.BrandName))
         {
             var brandKey = MapValue(valueMap, "Brand", item.BrandName);
-            brand = await GetOrCreateBrandAsync(brandKey, category, brandsByName, createdNotes);
+            // The partner id identifies the source catalogue, so two suppliers can map the same
+            // external id to different rows of ours without colliding.
+            var sourceSystem = $"partner:{partner.Id}";
+            brand = await GetOrCreateBrandAsync(brandKey, category, brandsByName, createdNotes,
+                sourceSystem, item.BrandExternalId);
 
             if (!string.IsNullOrWhiteSpace(item.ModelName))
             {
@@ -202,7 +209,8 @@ public class PartnerImportService : IPartnerImportService
                         .GroupBy(m => CarizoId.Normalize(m.Name)).ToDictionary(g => g.Key, g => g.First());
                     modelsByBrandId[brand.Id] = brandModels;
                 }
-                model = await GetOrCreateModelAsync(item.ModelName, brand, brandModels, createdNotes);
+                model = await GetOrCreateModelAsync(item.ModelName, brand, brandModels, createdNotes,
+                    $"partner:{partner.Id}", item.ModelExternalId);
             }
         }
 
@@ -469,8 +477,30 @@ public class PartnerImportService : IPartnerImportService
     // whole item, the taxonomy is grown on the fly. This does mean a typo in a partner's feed
     // (e.g. "Fiatt") creates a bogus brand; createdNotes records every auto-created row into the
     // import log precisely so an admin can spot and merge/fix that after the fact.
-    private async Task<Brand> GetOrCreateBrandAsync(string name, VehicleCategory category, Dictionary<string, Brand> brandsByName, List<string> createdNotes)
+    private async Task<Brand> GetOrCreateBrandAsync(string name, VehicleCategory category, Dictionary<string, Brand> brandsByName, List<string> createdNotes,
+        string? sourceSystem = null, string? externalId = null)
     {
+        // Taksonomia Etap 4: prefer the supplier's own identifier over the name. Matching on names
+        // is what let "Škoda"/"Skoda" and repeated feeds fork the taxonomy; an id cannot drift.
+        if (!string.IsNullOrWhiteSpace(sourceSystem) && !string.IsNullOrWhiteSpace(externalId))
+        {
+            var mappedId = await _taxonomyMapping.ResolveAsync(sourceSystem!, ITaxonomyMappingService.Brand, externalId!);
+            if (mappedId is int id)
+            {
+                var mapped = await _context.Brands.Include(b => b.Categories).FirstOrDefaultAsync(b => b.Id == id);
+                if (mapped is not null)
+                {
+                    if (mapped.Categories != null && mapped.Categories.All(c => c.Id != category.Id))
+                    {
+                        mapped.Categories.Add(category);
+                        await _context.SaveChangesAsync();
+                    }
+                    brandsByName[CarizoId.Normalize(name)] = mapped;
+                    return mapped;
+                }
+            }
+        }
+
         var key = CarizoId.Normalize(name);
         if (brandsByName.TryGetValue(key, out var existing))
         {
@@ -511,11 +541,31 @@ public class PartnerImportService : IPartnerImportService
 
         brandsByName[key] = brand;
         createdNotes.Add($"utworzono nową markę '{brand.Name}' w kategorii '{category.Name}'");
+        // Record the link so the next import of this feed matches on the id, not the name.
+        if (!string.IsNullOrWhiteSpace(sourceSystem) && !string.IsNullOrWhiteSpace(externalId))
+            await _taxonomyMapping.RecordAsync(sourceSystem!, ITaxonomyMappingService.Brand, externalId!, brand.Id);
         return brand;
     }
 
-    private async Task<Model> GetOrCreateModelAsync(string name, Brand brand, Dictionary<string, Model> brandModels, List<string> createdNotes)
+    private async Task<Model> GetOrCreateModelAsync(string name, Brand brand, Dictionary<string, Model> brandModels, List<string> createdNotes,
+        string? sourceSystem = null, string? externalId = null)
     {
+        if (!string.IsNullOrWhiteSpace(sourceSystem) && !string.IsNullOrWhiteSpace(externalId))
+        {
+            var mappedId = await _taxonomyMapping.ResolveAsync(sourceSystem!, ITaxonomyMappingService.Model, externalId!);
+            if (mappedId is int id)
+            {
+                // Guard against a supplier id that points at another brand's model - trust our own
+                // hierarchy over the feed rather than attaching a foreign model to this brand.
+                var mapped = await _context.Models.FirstOrDefaultAsync(m => m.Id == id && m.BrandId == brand.Id);
+                if (mapped is not null)
+                {
+                    brandModels[CarizoId.Normalize(name)] = mapped;
+                    return mapped;
+                }
+            }
+        }
+
         var key = CarizoId.Normalize(name);
         if (brandModels.TryGetValue(key, out var existing)) return existing;
 
@@ -537,6 +587,8 @@ public class PartnerImportService : IPartnerImportService
 
         brandModels[key] = model;
         createdNotes.Add($"utworzono nowy model '{model.Name}' dla marki '{brand.Name}'");
+        if (!string.IsNullOrWhiteSpace(sourceSystem) && !string.IsNullOrWhiteSpace(externalId))
+            await _taxonomyMapping.RecordAsync(sourceSystem!, ITaxonomyMappingService.Model, externalId!, model.Id);
         return model;
     }
 
@@ -647,6 +699,8 @@ public class PartnerImportService : IPartnerImportService
                 VehicleSubtypeName = (string?)node.Element(N("VehicleSubtype")),
                 BrandName = (string?)node.Element(N("Brand")) ?? string.Empty,
                 ModelName = (string?)node.Element(N("Model")) ?? string.Empty,
+                BrandExternalId = (string?)node.Element(N("BrandId")),
+                ModelExternalId = (string?)node.Element(N("ModelId")),
                 Year = (int?)node.Element(N("Year")) ?? 0,
                 Mileage = (int?)node.Element(N("Mileage")) ?? 0,
                 FuelTypeName = (string?)node.Element(N("FuelType")),
@@ -729,6 +783,8 @@ public class PartnerImportService : IPartnerImportService
                 VehicleSubtypeName = GetOrNull("VehicleSubtype"),
                 BrandName = Get("Brand"),
                 ModelName = Get("Model"),
+                BrandExternalId = Get("BrandId"),
+                ModelExternalId = Get("ModelId"),
                 Year = year,
                 Mileage = mileage,
                 FuelTypeName = GetOrNull("FuelType"),
@@ -803,6 +859,12 @@ public class PartnerImportService : IPartnerImportService
         public string? VehicleSubtypeName { get; set; }
         public string BrandName { get; set; } = string.Empty;
         public string ModelName { get; set; } = string.Empty;
+
+        // Taksonomia Etap 4: the supplier's OWN identifiers for the brand/model, when the feed
+        // provides them (Akol and comparable catalogues do). Optional - a feed that only sends
+        // names keeps behaving exactly as before, matching on the normalized name.
+        public string? BrandExternalId { get; set; }
+        public string? ModelExternalId { get; set; }
         public int Year { get; set; }
         public int Mileage { get; set; }
         public string? FuelTypeName { get; set; }

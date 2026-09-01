@@ -120,6 +120,12 @@ public static class TestDbContextFactory
 
     public static Cloudinary CreateDummyCloudinary() => new(new Account("test-cloud", "test-key", "test-secret"));
 
+    // Taksonomia Etap 4: the real mapping service, not a mock - it is part of the import path
+    // under test (external id -> our taxonomy row), so stubbing it would hide exactly the
+    // behaviour these tests exist to cover.
+    public static ITaxonomyMappingService CreateTaxonomyMappingService(AppDbContext context)
+        => new TaxonomyMappingService(context, NullLogger<TaxonomyMappingService>.Instance);
+
     public static IAdvertService CreateAdvertService(AppDbContext context, IAdvertSearchIndexService? searchIndexService = null)
         => new AdvertService(context, CreateMapper(), NullLogger<AdvertService>.Instance, CreateDummyCloudinary(),
             CreateHierarchyValidationService(context), searchIndexService ?? new NullAdvertSearchIndexService(),
