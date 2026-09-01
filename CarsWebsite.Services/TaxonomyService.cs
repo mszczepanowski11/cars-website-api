@@ -74,16 +74,34 @@ public class TaxonomyService : ITaxonomyService
         }) ?? [];
     }
 
-    public async Task<IEnumerable<Model>> GetModelsByBrandAsync(int brandId)
+    public async Task<IEnumerable<Model>> GetModelsByBrandAsync(int brandId, int? vehicleCategoryId = null)
     {
-        return await _cache.GetOrCreateAsync(await KeyAsync($"models:brand:{brandId}"), async entry =>
+        // Taksonomia Etap 3: optionally scope to a vehicle category. For a brand that spans
+        // categories (BMW = auta osobowe + dostawcze + motocykle) this is what stops Seria 3 and
+        // X5 appearing after the user picked "Motocykle".
+        //
+        // A model with NO row in modelvehiclecategories is treated as matching every category.
+        // That is deliberate: the backfill only maps a model when it can tell for certain, so the
+        // wildcard keeps every previously selectable model selectable. Once a model is mapped, it
+        // is filtered properly.
+        var cacheKey = vehicleCategoryId is null
+            ? $"models:brand:{brandId}"
+            : $"models:brand:{brandId}:cat:{vehicleCategoryId}";
+
+        return await _cache.GetOrCreateAsync(await KeyAsync(cacheKey), async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
-            return await _context.Models
-                .AsNoTracking()
-                .Where(m => m.BrandId == brandId)
-                .OrderBy(m => m.Name)
-                .ToListAsync();
+
+            var query = _context.Models.AsNoTracking().Where(m => m.BrandId == brandId);
+
+            if (vehicleCategoryId is int catId)
+            {
+                query = query.Where(m =>
+                    !_context.ModelVehicleCategories.Any(mvc => mvc.ModelsId == m.Id)
+                    || _context.ModelVehicleCategories.Any(mvc => mvc.ModelsId == m.Id && mvc.CategoriesId == catId));
+            }
+
+            return await query.OrderBy(m => m.Name).ToListAsync();
         }) ?? [];
     }
 

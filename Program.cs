@@ -1219,6 +1219,20 @@ internal class Program
   KEY `IX_BrandVehicleCategories_CategoriesId` (`CategoriesId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
 
+                // Taksonomia Etap 3: models scoped to a vehicle category. Brands already had this
+                // (brandvehiclecategories), models never did - so for a brand that spans
+                // categories (BMW: auta osobowe + dostawcze + motocykle) picking "Motocykle" and
+                // then BMW listed Seria 3 and X5 next to R 1250 GS. Deliberately many-to-many
+                // rather than a single column on `models`, because a model genuinely can belong to
+                // two categories (VW Caddy / Transporter are sold both as osobowe and dostawcze).
+                // Purely additive: a model with no row here keeps behaving exactly as before.
+                @"CREATE TABLE IF NOT EXISTS `modelvehiclecategories` (
+  `ModelsId` int NOT NULL,
+  `CategoriesId` int NOT NULL,
+  PRIMARY KEY (`ModelsId`, `CategoriesId`),
+  KEY `IX_ModelVehicleCategories_CategoriesId` (`CategoriesId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
                 @"CREATE TABLE IF NOT EXISTS `fueltypes` (
   `Id` int NOT NULL AUTO_INCREMENT,
   `Name` longtext NOT NULL,
@@ -2048,6 +2062,7 @@ internal class Program
             // first - preferring to NULL an optional scope column over deleting the row, so no
             // configuration is lost.
             RepairTaxonomyOrphans(db, logger);
+            BackfillModelCategories(db, logger);
 
             AddFkGuard("trims", "trims.GenerationId",
                 "ALTER TABLE `trims` ADD CONSTRAINT `FK_trims_generations_GenerationId` FOREIGN KEY (`GenerationId`) REFERENCES `generations`(`Id`) ON DELETE CASCADE");
@@ -2063,6 +2078,12 @@ internal class Program
 
             AddFkGuard("brandvehiclecategories", "brandvehiclecategories.CategoriesId",
                 "ALTER TABLE `brandvehiclecategories` ADD CONSTRAINT `FK_brandvehiclecategories_vehiclecategories_CategoriesId` FOREIGN KEY (`CategoriesId`) REFERENCES `vehiclecategories`(`Id`) ON DELETE CASCADE");
+
+            AddFkGuard("modelvehiclecategories", "modelvehiclecategories.ModelsId",
+                "ALTER TABLE `modelvehiclecategories` ADD CONSTRAINT `FK_modelvehiclecategories_models_ModelsId` FOREIGN KEY (`ModelsId`) REFERENCES `models`(`Id`) ON DELETE CASCADE");
+
+            AddFkGuard("modelvehiclecategories", "modelvehiclecategories.CategoriesId",
+                "ALTER TABLE `modelvehiclecategories` ADD CONSTRAINT `FK_modelvehiclecategories_vehiclecategories_CategoriesId` FOREIGN KEY (`CategoriesId`) REFERENCES `vehiclecategories`(`Id`) ON DELETE CASCADE");
 
             // AttributeDefinition scope columns. AppDbContext deliberately declares no navigation
             // for Brand/Model/Generation/Trim, which is exactly why the dedup blocks have to
@@ -3653,6 +3674,53 @@ internal class Program
     // meaningless without their parent - a trim with no generation, a value with no advert - are
     // removed. Every action is counted and logged so the first run after deploy shows exactly
     // what the missing foreign keys had allowed to accumulate.
+    // Taksonomia Etap 3: fills `modelvehiclecategories`. Naively inheriting every category of the
+    // model's brand would achieve nothing for exactly the brands that have the problem - BMW would
+    // simply get all three categories back and Seria 3 would still show under Motocykle. So the
+    // backfill uses three signals, strongest first, and deliberately leaves a model UNMAPPED when
+    // it cannot tell. An unmapped model keeps its current behaviour (visible in every category of
+    // its brand), so this can never hide a model that used to be selectable.
+    private static void BackfillModelCategories(AppDbContext db, ILogger logger)
+    {
+        try
+        {
+            var inserted = 0;
+
+            // Signal 1 (strongest): real adverts. If listings already place this model in a
+            // category, that is ground truth entered by actual users.
+            inserted += db.Database.ExecuteSqlRaw(@"
+                INSERT IGNORE INTO `modelvehiclecategories` (`ModelsId`, `CategoriesId`)
+                SELECT DISTINCT a.`ModelId`, a.`VehicleCategoryId`
+                FROM `caradverts` a
+                WHERE a.`ModelId` IS NOT NULL AND a.`VehicleCategoryId` IS NOT NULL");
+
+            // Signal 2: brands that belong to exactly one category - then every model of that
+            // brand unambiguously belongs to it too. This covers the vast majority of brands.
+            inserted += db.Database.ExecuteSqlRaw(@"
+                INSERT IGNORE INTO `modelvehiclecategories` (`ModelsId`, `CategoriesId`)
+                SELECT m.`Id`, bvc.`CategoriesId`
+                FROM `models` m
+                JOIN `brandvehiclecategories` bvc ON bvc.`BrandsId` = m.`BrandId`
+                JOIN (SELECT `BrandsId` FROM `brandvehiclecategories` GROUP BY `BrandsId` HAVING COUNT(*) = 1) one
+                     ON one.`BrandsId` = m.`BrandId`");
+
+            // Signal 3: attribute definitions scoped to a specific model already carry a category.
+            inserted += db.Database.ExecuteSqlRaw(@"
+                INSERT IGNORE INTO `modelvehiclecategories` (`ModelsId`, `CategoriesId`)
+                SELECT DISTINCT d.`ModelId`, d.`VehicleCategoryId`
+                FROM `attributedefinitions` d
+                WHERE d.`ModelId` IS NOT NULL");
+
+            logger.LogInformation(
+                "[ModelCategories] Backfill inserted {Inserted} mapping(s) across {Total} model(s); models left unmapped stay category-agnostic until assigned",
+                inserted, db.Models.Count());
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "[ModelCategories] Backfill failed - model lists stay unscoped (previous behaviour)");
+        }
+    }
+
     private static void RepairTaxonomyOrphans(AppDbContext db, ILogger logger)
     {
         var total = 0;
