@@ -46,11 +46,16 @@ namespace cars_website_api.CarsWebsite.Controllers
                 .Select(b => new { id = b.Id, name = b.Name }));
         }
 
+        // Taksonomia Etap 3: `categoryId` is optional and backwards compatible - omitting it
+        // returns every model of the brand exactly as before. Passing it filters out models that
+        // are explicitly scoped to a different category, which is what stops "Motocykle" + BMW
+        // from listing Seria 3 and X5. VaryByQueryKeys is required, otherwise the response cache
+        // would serve the unfiltered list for a filtered request.
         [HttpGet("brands/{brandId}/models")]
-        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
-        public async Task<IActionResult> GetModelsByBrand(int brandId)
+        [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any, VaryByQueryKeys = new[] { "categoryId" })]
+        public async Task<IActionResult> GetModelsByBrand(int brandId, [FromQuery] int? categoryId = null)
         {
-            var models = await _taxonomyService.GetModelsByBrandAsync(brandId);
+            var models = await _taxonomyService.GetModelsByBrandAsync(brandId, categoryId);
             return Ok(models
                 .Where(m => !string.IsNullOrWhiteSpace(m.Name) && !m.Name.All(char.IsDigit))
                 .Select(m => new { id = m.Id, name = m.Name }));

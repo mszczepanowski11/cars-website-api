@@ -8,7 +8,7 @@ public interface ITaxonomyService
     Task<IEnumerable<Brand>> GetFullTaxonomyAsync();
     Task<IEnumerable<Brand>> GetBrandsAsync();
     Task<IEnumerable<Brand>> GetBrandsByCategoryAsync(int categoryId);
-    Task<IEnumerable<Model>> GetModelsByBrandAsync(int brandId);
+    Task<IEnumerable<Model>> GetModelsByBrandAsync(int brandId, int? vehicleCategoryId = null);
     Task<IEnumerable<Generation>> GetGenerationsByModelAsync(int modelId);
     Task<IEnumerable<EngineVersion>> GetEnginesByGenerationAsync(int generationId);
     Task<IEnumerable<FuelType>> GetFuelTypesAsync();

@@ -38,6 +38,23 @@ public class HierarchyValidationService : IHierarchyValidationService
                 return ChainValidationResult.Fail("model", "Wybrany model nie należy do wybranej marki.");
         }
 
+        // Taksonomia Etap 3: the model must also belong to the chosen category. Only enforced
+        // when the model actually has category mappings - an unmapped model is treated as
+        // belonging to every category (see TaxonomyService.GetModelsByBrandAsync), so this can
+        // never reject a listing that the form legitimately allowed the user to build.
+        if (modelId.HasValue && vehicleCategoryId.HasValue)
+        {
+            var modelHasMappings = await _context.ModelVehicleCategories
+                .AnyAsync(mvc => mvc.ModelsId == modelId.Value);
+            if (modelHasMappings)
+            {
+                var modelInCategory = await _context.ModelVehicleCategories
+                    .AnyAsync(mvc => mvc.ModelsId == modelId.Value && mvc.CategoriesId == vehicleCategoryId.Value);
+                if (!modelInCategory)
+                    return ChainValidationResult.Fail("model", "Wybrany model nie należy do tej kategorii pojazdu.");
+            }
+        }
+
         if (generationId.HasValue && modelId.HasValue)
         {
             var generationBelongsToModel = await _context.Generations

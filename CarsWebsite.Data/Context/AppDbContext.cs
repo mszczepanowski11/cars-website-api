@@ -24,6 +24,7 @@ namespace CarsWebsite
         public DbSet<Brand> Brands { get; set; }
         public DbSet<Model> Models { get; set; }
         public DbSet<Generation> Generations { get; set; }
+        public DbSet<ModelVehicleCategory> ModelVehicleCategories { get; set; }
         public DbSet<EngineVersion> EngineVersions { get; set; }
         public DbSet<FuelType> FuelTypes { get; set; }
         public DbSet<Gearbox> Gearboxes { get; set; }
@@ -516,6 +517,15 @@ namespace CarsWebsite
             // Faza 2 of the category/attribute restructure - lowercase table names from the start
             // (see the comment above PartCompatibility/BrandAllowedFuelType for why: avoids ever
             // hitting that PascalCase-vs-lowercase mismatch bug class on brand-new tables).
+            // Taksonomia Etap 3: explicit join entity for model -> vehicle category scoping.
+            // Lowercase from the start, like the other Faza 2 tables, to stay clear of the
+            // PascalCase-vs-lowercase mismatch that hid twelve foreign keys for months.
+            modelBuilder.Entity<ModelVehicleCategory>()
+                .ToTable("modelvehiclecategories")
+                .HasKey(x => new { x.ModelsId, x.CategoriesId });
+            modelBuilder.Entity<ModelVehicleCategory>()
+                .HasIndex(x => x.CategoriesId);
+
             modelBuilder.Entity<AttributeDefinition>().ToTable("attributedefinitions");
             modelBuilder.Entity<AdvertAttributeValue>().ToTable("advertattributevalues");
 
