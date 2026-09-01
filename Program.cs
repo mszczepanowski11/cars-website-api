@@ -2041,6 +2041,58 @@ internal class Program
             AddFkGuard("brandallowedfueltypes", "brandallowedfueltypes.FuelTypeId",
                 "ALTER TABLE `brandallowedfueltypes` ADD CONSTRAINT `FK_brandallowedfueltypes_fueltypes_FuelTypeId` FOREIGN KEY (`FuelTypeId`) REFERENCES `fueltypes`(`Id`) ON DELETE RESTRICT");
 
+            // ── Taksonomia Etap 2: domkniecie integralnosci ──────────────────────────
+            // These tables were all created by raw `CREATE TABLE IF NOT EXISTS` guards with no
+            // FOREIGN KEY at all, so nothing stopped a child row outliving its parent. A foreign
+            // key cannot be added while orphans exist (MySQL 1452), so every orphan is repaired
+            // first - preferring to NULL an optional scope column over deleting the row, so no
+            // configuration is lost.
+            RepairTaxonomyOrphans(db, logger);
+
+            AddFkGuard("trims", "trims.GenerationId",
+                "ALTER TABLE `trims` ADD CONSTRAINT `FK_trims_generations_GenerationId` FOREIGN KEY (`GenerationId`) REFERENCES `generations`(`Id`) ON DELETE CASCADE");
+
+            AddFkGuard("vehiclesubtypes", "vehiclesubtypes.VehicleCategoryId",
+                "ALTER TABLE `vehiclesubtypes` ADD CONSTRAINT `FK_vehiclesubtypes_vehiclecategories_VehicleCategoryId` FOREIGN KEY (`VehicleCategoryId`) REFERENCES `vehiclecategories`(`Id`) ON DELETE CASCADE");
+
+            AddFkGuard("partsubcategories", "partsubcategories.PartCategoryId",
+                "ALTER TABLE `partsubcategories` ADD CONSTRAINT `FK_partsubcategories_partcategories_PartCategoryId` FOREIGN KEY (`PartCategoryId`) REFERENCES `partcategories`(`Id`) ON DELETE CASCADE");
+
+            AddFkGuard("brandvehiclecategories", "brandvehiclecategories.BrandsId",
+                "ALTER TABLE `brandvehiclecategories` ADD CONSTRAINT `FK_brandvehiclecategories_brands_BrandsId` FOREIGN KEY (`BrandsId`) REFERENCES `brands`(`Id`) ON DELETE CASCADE");
+
+            AddFkGuard("brandvehiclecategories", "brandvehiclecategories.CategoriesId",
+                "ALTER TABLE `brandvehiclecategories` ADD CONSTRAINT `FK_brandvehiclecategories_vehiclecategories_CategoriesId` FOREIGN KEY (`CategoriesId`) REFERENCES `vehiclecategories`(`Id`) ON DELETE CASCADE");
+
+            // AttributeDefinition scope columns. AppDbContext deliberately declares no navigation
+            // for Brand/Model/Generation/Trim, which is exactly why the dedup blocks have to
+            // repoint `attributedefinitions` by hand every startup. With ON DELETE CASCADE the
+            // database maintains it instead: removing a merged-away brand takes its brand-scoped
+            // field definitions with it rather than leaving them pointing at a deleted id.
+            AddFkGuard("attributedefinitions", "attributedefinitions.VehicleCategoryId",
+                "ALTER TABLE `attributedefinitions` ADD CONSTRAINT `FK_attributedefinitions_vehiclecategories_VehicleCategoryId` FOREIGN KEY (`VehicleCategoryId`) REFERENCES `vehiclecategories`(`Id`) ON DELETE RESTRICT");
+
+            AddFkGuard("attributedefinitions", "attributedefinitions.VehicleSubtypeId",
+                "ALTER TABLE `attributedefinitions` ADD CONSTRAINT `FK_attributedefinitions_vehiclesubtypes_VehicleSubtypeId` FOREIGN KEY (`VehicleSubtypeId`) REFERENCES `vehiclesubtypes`(`Id`) ON DELETE SET NULL");
+
+            AddFkGuard("attributedefinitions", "attributedefinitions.BrandId",
+                "ALTER TABLE `attributedefinitions` ADD CONSTRAINT `FK_attributedefinitions_brands_BrandId` FOREIGN KEY (`BrandId`) REFERENCES `brands`(`Id`) ON DELETE CASCADE");
+
+            AddFkGuard("attributedefinitions", "attributedefinitions.ModelId",
+                "ALTER TABLE `attributedefinitions` ADD CONSTRAINT `FK_attributedefinitions_models_ModelId` FOREIGN KEY (`ModelId`) REFERENCES `models`(`Id`) ON DELETE CASCADE");
+
+            AddFkGuard("attributedefinitions", "attributedefinitions.GenerationId",
+                "ALTER TABLE `attributedefinitions` ADD CONSTRAINT `FK_attributedefinitions_generations_GenerationId` FOREIGN KEY (`GenerationId`) REFERENCES `generations`(`Id`) ON DELETE CASCADE");
+
+            AddFkGuard("attributedefinitions", "attributedefinitions.TrimId",
+                "ALTER TABLE `attributedefinitions` ADD CONSTRAINT `FK_attributedefinitions_trims_TrimId` FOREIGN KEY (`TrimId`) REFERENCES `trims`(`Id`) ON DELETE CASCADE");
+
+            AddFkGuard("advertattributevalues", "advertattributevalues.AdvertId",
+                "ALTER TABLE `advertattributevalues` ADD CONSTRAINT `FK_advertattributevalues_caradverts_AdvertId` FOREIGN KEY (`AdvertId`) REFERENCES `caradverts`(`Id`) ON DELETE CASCADE");
+
+            AddFkGuard("advertattributevalues", "advertattributevalues.AttributeDefinitionId",
+                "ALTER TABLE `advertattributevalues` ADD CONSTRAINT `FK_advertattributevalues_attributedefinitions_AttributeDefinitionId` FOREIGN KEY (`AttributeDefinitionId`) REFERENCES `attributedefinitions`(`Id`) ON DELETE RESTRICT");
+
             db.Database.SetCommandTimeout(30);
             logger.LogWarning("[STARTUP-TRACE] FK constraint guards complete; calling MergeDuplicateBrands");
 
@@ -3595,6 +3647,77 @@ internal class Program
     // everywhere treated "constraint already exists" and "the data still violates it" as the same
     // non-event, which is how twelve missing foreign keys stayed invisible for months. Anything
     // that is not a genuine already-applied case is logged as an error.
+    // Taksonomia Etap 2: clears the orphaned rows that block FOREIGN KEY creation (MySQL 1452).
+    // Guiding rule: never lose configuration. An optional scope column is set back to NULL (which
+    // simply widens that definition's scope) rather than deleting the row; only rows that are
+    // meaningless without their parent - a trim with no generation, a value with no advert - are
+    // removed. Every action is counted and logged so the first run after deploy shows exactly
+    // what the missing foreign keys had allowed to accumulate.
+    private static void RepairTaxonomyOrphans(AppDbContext db, ILogger logger)
+    {
+        var total = 0;
+
+        void Run(string label, string sql)
+        {
+            try
+            {
+                var affected = db.Database.ExecuteSqlRaw(sql);
+                if (affected > 0)
+                {
+                    total += affected;
+                    logger.LogWarning("[Orphans] {Label}: repaired {Count} row(s)", label, affected);
+                }
+            }
+            catch (Exception ex)
+            {
+                // A missing table here is normal on a database that predates that table.
+                logger.LogDebug("[Orphans] {Label} skipped: {Message}", label, ex.Message);
+            }
+        }
+
+        // Child rows that cannot exist without their parent.
+        Run("trims without generation",
+            "DELETE t FROM `trims` t LEFT JOIN `generations` g ON g.`Id` = t.`GenerationId` WHERE g.`Id` IS NULL");
+        Run("vehiclesubtypes without category",
+            "DELETE v FROM `vehiclesubtypes` v LEFT JOIN `vehiclecategories` c ON c.`Id` = v.`VehicleCategoryId` WHERE c.`Id` IS NULL");
+        Run("partsubcategories without part category",
+            "DELETE p FROM `partsubcategories` p LEFT JOIN `partcategories` pc ON pc.`Id` = p.`PartCategoryId` WHERE pc.`Id` IS NULL");
+        Run("brandvehiclecategories with missing brand",
+            "DELETE bvc FROM `brandvehiclecategories` bvc LEFT JOIN `brands` b ON b.`Id` = bvc.`BrandsId` WHERE b.`Id` IS NULL");
+        Run("brandvehiclecategories with missing category",
+            "DELETE bvc FROM `brandvehiclecategories` bvc LEFT JOIN `vehiclecategories` c ON c.`Id` = bvc.`CategoriesId` WHERE c.`Id` IS NULL");
+        Run("advertattributevalues without advert",
+            "DELETE v FROM `advertattributevalues` v LEFT JOIN `caradverts` a ON a.`Id` = v.`AdvertId` WHERE a.`Id` IS NULL");
+        Run("advertattributevalues without definition",
+            "DELETE v FROM `advertattributevalues` v LEFT JOIN `attributedefinitions` d ON d.`Id` = v.`AttributeDefinitionId` WHERE d.`Id` IS NULL");
+
+        // Optional scope columns: widen the scope instead of deleting the definition. A field
+        // scoped to a brand that no longer exists becomes a category-wide field - visible and
+        // fixable in the admin panel, rather than silently vanishing.
+        Run("attributedefinitions.VehicleSubtypeId dangling",
+            "UPDATE `attributedefinitions` d LEFT JOIN `vehiclesubtypes` v ON v.`Id` = d.`VehicleSubtypeId` SET d.`VehicleSubtypeId` = NULL WHERE d.`VehicleSubtypeId` IS NOT NULL AND v.`Id` IS NULL");
+        Run("attributedefinitions.BrandId dangling",
+            "UPDATE `attributedefinitions` d LEFT JOIN `brands` b ON b.`Id` = d.`BrandId` SET d.`BrandId` = NULL WHERE d.`BrandId` IS NOT NULL AND b.`Id` IS NULL");
+        Run("attributedefinitions.ModelId dangling",
+            "UPDATE `attributedefinitions` d LEFT JOIN `models` m ON m.`Id` = d.`ModelId` SET d.`ModelId` = NULL WHERE d.`ModelId` IS NOT NULL AND m.`Id` IS NULL");
+        Run("attributedefinitions.GenerationId dangling",
+            "UPDATE `attributedefinitions` d LEFT JOIN `generations` g ON g.`Id` = d.`GenerationId` SET d.`GenerationId` = NULL WHERE d.`GenerationId` IS NOT NULL AND g.`Id` IS NULL");
+        Run("attributedefinitions.TrimId dangling",
+            "UPDATE `attributedefinitions` d LEFT JOIN `trims` t ON t.`Id` = d.`TrimId` SET d.`TrimId` = NULL WHERE d.`TrimId` IS NOT NULL AND t.`Id` IS NULL");
+
+        // VehicleCategoryId is required, so it cannot be nulled. Such a definition is unreachable
+        // (every lookup filters by category) - remove it, but only once nothing references it, so
+        // no advert loses a stored value.
+        Run("attributedefinitions with missing category (unreferenced only)",
+            @"DELETE d FROM `attributedefinitions` d
+              LEFT JOIN `vehiclecategories` c ON c.`Id` = d.`VehicleCategoryId`
+              LEFT JOIN `advertattributevalues` v ON v.`AttributeDefinitionId` = d.`Id`
+              WHERE c.`Id` IS NULL AND v.`Id` IS NULL");
+
+        if (total == 0) logger.LogInformation("[Orphans] Taxonomy is clean - no orphaned rows found");
+        else logger.LogWarning("[Orphans] Repaired {Total} orphaned taxonomy row(s) in total", total);
+    }
+
     private static void RunDdlGuarded(AppDbContext db, ILogger logger, string label, string sql)
     {
         try
@@ -4224,6 +4347,101 @@ internal class Program
             logger.LogError(ex, "[Schema] brandallowedfueltypes dedup failed");
         }
 
+        // Taksonomia Etap 2 (odlozone z 1b): dedup + UNIQUE for the parts and equipment
+        // dictionaries. These have never had a uniqueness constraint, so a re-run of any seeder
+        // could add "Klimatyzacja" to the same group twice - which shows as two identical
+        // checkboxes in the add-listing form and splits adverts across two ids for one feature.
+        // Features need their join rows repointed before the duplicate can go, so no advert
+        // loses an equipment tick.
+        try
+        {
+            // Feature groups first: merging a duplicate group moves its features onto the kept one.
+            var dupFeatureCats = db.FeatureCategories.AsEnumerable()
+                .GroupBy(fc => (fc.VehicleCategoryId, Name: (fc.Name ?? string.Empty).Trim().ToLowerInvariant()))
+                .Where(g => g.Count() > 1).ToList();
+            foreach (var g in dupFeatureCats)
+            {
+                var ordered = g.OrderBy(x => x.Id).ToList();
+                var keep = ordered[0];
+                foreach (var dup in ordered.Skip(1))
+                {
+                    foreach (var f in db.Features.Where(f => f.CategoryId == dup.Id)) f.CategoryId = keep.Id;
+                    db.FeatureCategories.Remove(dup);
+                }
+            }
+            if (dupFeatureCats.Count > 0)
+            {
+                db.SaveChanges();
+                logger.LogWarning("[Schema] Merged {Count} duplicate feature group(s)", dupFeatureCats.Count);
+            }
+
+            // Then the features themselves, repointing advertfeatures onto the kept feature and
+            // dropping the join row only when the advert already has the kept one.
+            var dupFeatures = db.Features.AsEnumerable()
+                .GroupBy(f => (f.CategoryId, Name: (f.Name ?? string.Empty).Trim().ToLowerInvariant()))
+                .Where(g => g.Count() > 1).ToList();
+            foreach (var g in dupFeatures)
+            {
+                var ordered = g.OrderBy(x => x.Id).ToList();
+                var keep = ordered[0];
+                foreach (var dup in ordered.Skip(1))
+                {
+                    db.Database.ExecuteSqlRaw(
+                        "DELETE FROM `advertfeatures` WHERE `FeatureId` = {0} AND `AdvertId` IN (SELECT `AdvertId` FROM (SELECT `AdvertId` FROM `advertfeatures` WHERE `FeatureId` = {1}) x)",
+                        dup.Id, keep.Id);
+                    db.Database.ExecuteSqlRaw(
+                        "UPDATE `advertfeatures` SET `FeatureId` = {0} WHERE `FeatureId` = {1}", keep.Id, dup.Id);
+                    db.Features.Remove(dup);
+                }
+            }
+            if (dupFeatures.Count > 0)
+            {
+                db.SaveChanges();
+                logger.LogWarning("[Schema] Merged {Count} duplicate feature(s)", dupFeatures.Count);
+            }
+
+            // Part categories: no adverts reference a PartCategory by anything but its id, and
+            // caradverts.PartCategoryId already has an ON DELETE SET NULL foreign key, so a
+            // duplicate group can be collapsed by repointing its subcategories.
+            var dupPartCats = db.PartCategories.AsEnumerable()
+                .GroupBy(pc => (pc.Name ?? string.Empty).Trim().ToLowerInvariant())
+                .Where(g => g.Count() > 1).ToList();
+            foreach (var g in dupPartCats)
+            {
+                var ordered = g.OrderBy(x => x.Id).ToList();
+                var keep = ordered[0];
+                foreach (var dup in ordered.Skip(1))
+                {
+                    foreach (var ps in db.PartSubcategories.Where(ps => ps.PartCategoryId == dup.Id)) ps.PartCategoryId = keep.Id;
+                    db.Database.ExecuteSqlRaw("UPDATE `caradverts` SET `PartCategoryId` = {0} WHERE `PartCategoryId` = {1}", keep.Id, dup.Id);
+                    db.PartCategories.Remove(dup);
+                }
+            }
+            var dupPartSubs = db.PartSubcategories.AsEnumerable()
+                .GroupBy(ps => (ps.PartCategoryId, Name: (ps.Name ?? string.Empty).Trim().ToLowerInvariant()))
+                .Where(g => g.Count() > 1).ToList();
+            foreach (var g in dupPartSubs)
+            {
+                var ordered = g.OrderBy(x => x.Id).ToList();
+                var keep = ordered[0];
+                foreach (var dup in ordered.Skip(1))
+                {
+                    db.Database.ExecuteSqlRaw("UPDATE `caradverts` SET `PartSubcategoryId` = {0} WHERE `PartSubcategoryId` = {1}", keep.Id, dup.Id);
+                    db.PartSubcategories.Remove(dup);
+                }
+            }
+            if (dupPartCats.Count > 0 || dupPartSubs.Count > 0)
+            {
+                db.SaveChanges();
+                logger.LogWarning("[Schema] Merged {Cats} duplicate part category/-ies and {Subs} subcategory/-ies",
+                    dupPartCats.Count, dupPartSubs.Count);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "[Schema] Parts/equipment dedup failed - the UNIQUE constraints below will not apply");
+        }
+
         // AttributeDefinition scope uniqueness. A plain UNIQUE over the scope columns cannot work
         // because MySQL treats every NULL as distinct, and "null = applies to any brand/model" is
         // exactly how the wildcard scoping is modelled - so two identical category-wide fields
@@ -4286,6 +4504,13 @@ internal class Program
             ("vehiclecategories", "(`Slug`)", "UQ_vehiclecategories_Slug"),
 
             ("brandallowedfueltypes", "(`BrandId`, `FuelTypeId`)", "UQ_brandallowedfueltypes_BrandId_FuelTypeId"),
+
+            // Etap 2 - parts and equipment dictionaries. Name has no [MaxLength] on these
+            // entities so it maps to longtext, hence the explicit (100) key-length prefix.
+            ("partcategories", "(`Name`(100))", "UQ_partcategories_Name"),
+            ("partsubcategories", "(`PartCategoryId`, `Name`(100))", "UQ_partsubcategories_CatId_Name"),
+            ("featurecategories", "(`VehicleCategoryId`, `Name`(100))", "UQ_featurecategories_CatId_Name"),
+            ("features", "(`CategoryId`, `Name`(100))", "UQ_features_CatId_Name"),
 
             // Replaces the periodic DELETE-based cleanup of duplicate attribute definitions.
             ("attributedefinitions",
