@@ -3591,16 +3591,77 @@ internal class Program
         if (mergedTotal == 0) logger.LogDebug("[FuelMerge] No aliased fuel types to merge");
     }
 
+    // Guarded DDL with error CLASSIFICATION. The blanket `catch { LogDebug(...) }` this file used
+    // everywhere treated "constraint already exists" and "the data still violates it" as the same
+    // non-event, which is how twelve missing foreign keys stayed invisible for months. Anything
+    // that is not a genuine already-applied case is logged as an error.
+    private static void RunDdlGuarded(AppDbContext db, ILogger logger, string label, string sql)
+    {
+        try
+        {
+            db.Database.ExecuteSqlRaw(sql);
+            logger.LogInformation("[Schema] Applied: {Label}", label);
+        }
+        catch (Exception ex)
+        {
+            // Two MySQL providers are referenced here, so the concrete exception type is
+            // ambiguous - read the vendor error number reflectively and fall back to the message.
+            var baseEx = ex.GetBaseException();
+            int code = 0;
+            foreach (var prop in new[] { "Number", "ErrorCode" })
+            {
+                var v = baseEx.GetType().GetProperty(prop)?.GetValue(baseEx);
+                if (v is not null && int.TryParse(v.ToString(), out var parsed)) { code = parsed; break; }
+            }
+            var msg = baseEx.Message ?? string.Empty;
+
+            // 1050 table exists · 1060 duplicate column · 1061 duplicate key name · 1826 dup FK name
+            var alreadyApplied = code is 1050 or 1060 or 1061 or 1826
+                || msg.Contains("Duplicate key name", StringComparison.OrdinalIgnoreCase)
+                || msg.Contains("Duplicate column name", StringComparison.OrdinalIgnoreCase)
+                || msg.Contains("already exists", StringComparison.OrdinalIgnoreCase);
+            if (alreadyApplied)
+            {
+                logger.LogDebug("[Schema] {Label} already present", label);
+                return;
+            }
+
+            // 1062 = the table still contains rows that violate the constraint; anything else is
+            // a genuine schema defect. Either way this must be visible.
+            logger.LogError(ex,
+                "[Schema] FAILED: {Label} (MySQL error {Code}) - this constraint is NOT enforced",
+                label, code);
+        }
+    }
+
     private static void MergeDuplicateBrands(AppDbContext db, ILogger logger)
     {
         logger.LogWarning("[STARTUP-TRACE] MergeDuplicateBrands entered");
+
+        // AUDIT FIX (taksonomia, Etap 1): there used to be TWO divergent brand dedups - this one
+        // (grouping on the exact Name, via EF, repointing everything) and a raw-SQL one further
+        // down grouping on Slug that only repointed brandvehiclecategories + caradverts. The
+        // second one left models/featurecategories/partcompatibilities/brandallowedfueltypes
+        // dangling, and now that Etap 0 actually creates those foreign keys its DELETE would fail
+        // outright. Both key strategies are folded into this single, complete implementation:
+        // first by normalized name (so " BMW", "bmw" and "BMW" collapse - the exact-match version
+        // missed those, and they are precisely what the new UQ on NameKey would reject), then by
+        // slug. Nothing is overwritten; the duplicate row is removed only after every reference
+        // to it has been repointed onto the canonical row.
+        MergeBrandsBy(db, logger, b => (b.Name ?? string.Empty).Trim().ToLowerInvariant(), "normalized name");
+        MergeBrandsBy(db, logger, b => (b.Slug ?? string.Empty).Trim().ToLowerInvariant(), "slug");
+    }
+
+    private static void MergeBrandsBy(AppDbContext db, ILogger logger, Func<Brand, string> keySelector, string keyLabel)
+    {
         var duplicateGroups = db.Brands.Include(b => b.Categories).AsEnumerable()
-            .GroupBy(b => b.Name)
+            .Where(b => !string.IsNullOrWhiteSpace(keySelector(b)))
+            .GroupBy(keySelector)
             .Where(g => g.Count() > 1)
             .ToList();
         if (duplicateGroups.Count == 0)
         {
-            logger.LogWarning("[STARTUP-TRACE] MergeDuplicateBrands: no duplicate brand names found, nothing to merge");
+            logger.LogWarning("[STARTUP-TRACE] MergeDuplicateBrands: no duplicate brand {KeyLabel} found, nothing to merge", keyLabel);
             return;
         }
 
@@ -3624,6 +3685,10 @@ internal class Program
                 // deleting `dup` below wouldn't fail even if these were left dangling — repoint them
                 // explicitly instead of relying on referential integrity that isn't actually enforced.
                 foreach (var pc in db.PartCompatibilities.Where(pc => pc.BrandId == dup.Id)) pc.BrandId = canonical.Id;
+                // AttributeDefinition.BrandId is a bare int with no FK (deliberately, see
+                // AppDbContext) - so nothing would stop it dangling once `dup` is gone, silently
+                // breaking the brand-scoped fields of the "inteligentny formularz".
+                foreach (var ad in db.AttributeDefinitions.Where(ad => ad.BrandId == dup.Id)) ad.BrandId = canonical.Id;
                 foreach (var baf in db.BrandAllowedFuelTypes.Where(baf => baf.BrandId == dup.Id))
                 {
                     if (db.BrandAllowedFuelTypes.Any(x => x.BrandId == canonical.Id && x.FuelTypeId == baf.FuelTypeId))
@@ -3638,8 +3703,8 @@ internal class Program
 
                 db.Brands.Remove(dup);
                 logger.LogInformation(
-                    "[Cleanup] Merged duplicate Brand '{Name}' (id={DupId}) into canonical id={CanonicalId}",
-                    dup.Name, dup.Id, canonical.Id);
+                    "[Cleanup] Merged duplicate Brand '{Name}' (id={DupId}) into canonical id={CanonicalId} (matched by {KeyLabel})",
+                    dup.Name, dup.Id, canonical.Id, keyLabel);
             }
         }
 
@@ -3957,34 +4022,12 @@ internal class Program
         }
 
 
-        // Deduplicate brands if same slug was inserted multiple times
-        try
-        {
-            var duplicateSlugs = db.Brands
-                .GroupBy(b => b.Slug)
-                .Where(g => g.Count() > 1)
-                .Select(g => g.Key)
-                .ToList();
-
-            if (duplicateSlugs.Any())
-            {
-                logger.LogWarning("Found {Count} duplicate brand slugs — deduplicating", duplicateSlugs.Count);
-                foreach (var slug in duplicateSlugs)
-                {
-                    var dupes = db.Brands.Where(b => b.Slug == slug).OrderBy(b => b.Id).ToList();
-                    var keepId = dupes.First().Id;
-                    var deleteIds = string.Join(",", dupes.Skip(1).Select(b => b.Id));
-                    db.Database.ExecuteSqlRaw($"DELETE FROM `brandvehiclecategories` WHERE `BrandsId` IN ({deleteIds})");
-                    db.Database.ExecuteSqlRaw($"UPDATE `caradverts` SET `BrandId` = {keepId} WHERE `BrandId` IN ({deleteIds})");
-                    db.Database.ExecuteSqlRaw($"DELETE FROM `brands` WHERE `Id` IN ({deleteIds})");
-                }
-                logger.LogInformation("Brand deduplication complete");
-            }
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning("Brand deduplication skipped: {Message}", ex.Message);
-        }
+        // AUDIT FIX (taksonomia, Etap 1): the raw-SQL brand-slug dedup that used to live here
+        // repointed only `brandvehiclecategories` and `caradverts` before deleting the brand,
+        // leaving models / featurecategories / partcompatibilities / brandallowedfueltypes /
+        // attributedefinitions dangling. Now that Etap 0 actually creates those foreign keys its
+        // DELETE would fail outright anyway. Slug-keyed merging is handled by MergeDuplicateBrands
+        // (which repoints every reference through EF) and runs before this method.
 
         // Deduplicate models (same Brand + same Name) - the audit found 863 excess rows here
         // (54% of the table), caused by the heavy-equipment seeders re-inserting the same
@@ -4108,6 +4151,98 @@ internal class Program
             logger.LogWarning("EngineVersion deduplication skipped: {Message}", ex.Message);
         }
 
+        // ── Taksonomia Etap 1: naturalne klucze ─────────────────────────────────────
+        // The seeders compared names exactly (`Name == name`) while the dedup blocks above
+        // compare them normalized (`trim(lower(name))`). A row like " Golf" therefore looked NEW
+        // to the seeder and DUPLICATE to the dedup - recreated and deleted on every single
+        // restart. Adding a stored generated column that materializes exactly the dedup's key,
+        // and a UNIQUE on it, makes the database itself the single definition of identity so the
+        // two can no longer disagree.
+        //
+        // Generated columns are invisible to EF (no property on the entity), so inserts are
+        // unaffected. They are added before the UNIQUE constraints below, which depend on them.
+        foreach (var (table, ddl) in new[]
+        {
+            ("brands",      "ALTER TABLE `brands` ADD COLUMN `NameKey` varchar(100) GENERATED ALWAYS AS (LOWER(TRIM(`Name`))) STORED"),
+            ("models",      "ALTER TABLE `models` ADD COLUMN `NameKey` varchar(100) GENERATED ALWAYS AS (LOWER(TRIM(`Name`))) STORED"),
+            ("generations", "ALTER TABLE `generations` ADD COLUMN `NameKey` varchar(100) GENERATED ALWAYS AS (LOWER(TRIM(`Name`))) STORED"),
+        })
+        {
+            RunDdlGuarded(db, logger, $"{table}.NameKey generated column", ddl);
+        }
+
+        // Slug repair. Brand/model/generation slugs are NOT part of any public URL (adverts route
+        // by id - see app/pages/advert/[id].vue), so suffixing a colliding slug is safe here.
+        // Category slugs are deliberately NOT repaired: `motocykle`, `czesci`, `przyczepy` etc.
+        // are load-bearing in the add-listing form's logic, and a duplicate category is a
+        // taxonomy decision to be merged by hand, not renamed automatically.
+        //
+        // generations.Slug in particular MUST become unique: TrimSeeder maps generations by slug,
+        // so a collision silently attaches every trim to one arbitrary generation.
+        try
+        {
+            var repaired = 0;
+            foreach (var gr in db.Brands.Where(b => b.Slug != null && b.Slug != "").AsEnumerable()
+                        .GroupBy(b => b.Slug!.Trim().ToLowerInvariant()).Where(g => g.Count() > 1))
+                foreach (var row in gr.OrderBy(x => x.Id).Skip(1)) { row.Slug = $"{row.Slug}-{row.Id}"; repaired++; }
+
+            foreach (var gr in db.Models.Where(m => m.Slug != null && m.Slug != "").AsEnumerable()
+                        .GroupBy(m => m.Slug!.Trim().ToLowerInvariant()).Where(g => g.Count() > 1))
+                foreach (var row in gr.OrderBy(x => x.Id).Skip(1)) { row.Slug = $"{row.Slug}-{row.Id}"; repaired++; }
+
+            foreach (var gr in db.Generations.Where(g => g.Slug != null && g.Slug != "").AsEnumerable()
+                        .GroupBy(g => g.Slug!.Trim().ToLowerInvariant()).Where(g => g.Count() > 1))
+                foreach (var row in gr.OrderBy(x => x.Id).Skip(1)) { row.Slug = $"{row.Slug}-{row.Id}"; repaired++; }
+
+            if (repaired > 0)
+            {
+                db.SaveChanges();
+                logger.LogWarning("[Schema] Repaired {Count} duplicate taxonomy slug(s) by appending the row id", repaired);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "[Schema] Slug repair failed - slug UNIQUE constraints below will not apply");
+        }
+
+        // Deduplicate (BrandId, FuelTypeId) pairs so the UNIQUE below can be added. No repointing
+        // needed: the row carries no data beyond the pair itself.
+        try
+        {
+            var dupPairs = db.BrandAllowedFuelTypes.AsEnumerable()
+                .GroupBy(x => (x.BrandId, x.FuelTypeId)).Where(g => g.Count() > 1).ToList();
+            if (dupPairs.Count > 0)
+            {
+                foreach (var g in dupPairs)
+                    db.BrandAllowedFuelTypes.RemoveRange(g.OrderBy(x => x.Id).Skip(1));
+                db.SaveChanges();
+                logger.LogWarning("[Schema] Removed {Count} duplicate brandallowedfueltypes pair(s)", dupPairs.Count);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "[Schema] brandallowedfueltypes dedup failed");
+        }
+
+        // AttributeDefinition scope uniqueness. A plain UNIQUE over the scope columns cannot work
+        // because MySQL treats every NULL as distinct, and "null = applies to any brand/model" is
+        // exactly how the wildcard scoping is modelled - so two identical category-wide fields
+        // would both be allowed. Materializing each nullable scope column as COALESCE(x, 0) in a
+        // stored generated column turns those NULLs into a comparable value and makes the
+        // constraint enforceable, replacing the periodic DELETE-based cleanup.
+        foreach (var (col, expr) in new[]
+        {
+            ("SubtypeKey", "COALESCE(`VehicleSubtypeId`,0)"),
+            ("BrandKey",   "COALESCE(`BrandId`,0)"),
+            ("ModelKey",   "COALESCE(`ModelId`,0)"),
+            ("GenKey",     "COALESCE(`GenerationId`,0)"),
+            ("TrimKey",    "COALESCE(`TrimId`,0)"),
+        })
+        {
+            RunDdlGuarded(db, logger, $"attributedefinitions.{col} generated column",
+                $"ALTER TABLE `attributedefinitions` ADD COLUMN `{col}` int GENERATED ALWAYS AS ({expr}) STORED");
+        }
+
         // Uniqueness constraints for the vehicle taxonomy chain (audit §2) - must run after the
         // dedup blocks above, since a duplicate-free table is a precondition for the constraint
         // to even be addable. Guarded/idempotent like every other schema change in this file,
@@ -4128,10 +4263,38 @@ internal class Program
             ("bodytypes", "(`Name`(100))", "UQ_bodytypes_Name"),
             ("carcolors", "(`Name`(100))", "UQ_carcolors_Name"),
             ("vehiclesubtypes", "(`VehicleCategoryId`, `Name`)", "UQ_vehiclesubtypes_CategoryId_Name"),
+
+            // Taksonomia Etap 1 - the normalized keys the dedup blocks actually compare on, so a
+            // seeder can no longer insert " Golf" alongside "Golf".
+            ("brands", "(`NameKey`)", "UQ_brands_NameKey"),
+            ("models", "(`BrandId`, `NameKey`)", "UQ_models_BrandId_NameKey"),
+            ("generations", "(`ModelId`, `NameKey`)", "UQ_generations_ModelId_NameKey"),
+
+            // Slugs. generations.Slug is the critical one - TrimSeeder maps generations by slug.
+            ("brands", "(`Slug`)", "UQ_brands_Slug"),
+            // Scoped to the brand rather than global: model slugs are built brand-prefixed
+            // ("vw-golf"), so per-brand uniqueness is equivalent in practice while removing any
+            // chance of a cross-brand collision breaking a seeder insert.
+            ("models", "(`BrandId`, `Slug`)", "UQ_models_BrandId_Slug"),
+            // Generations stay GLOBALLY unique on purpose - TrimSeeder resolves generations by
+            // slug alone, so per-model uniqueness would not make that lookup safe.
+            ("generations", "(`Slug`)", "UQ_generations_Slug"),
+
+            // Category slugs are looked up by name all over the codebase; a duplicate silently
+            // forks the taxonomy. Not auto-repaired (see the slug-repair block) - if this one
+            // fails, the error log is the signal that two categories must be merged by hand.
+            ("vehiclecategories", "(`Slug`)", "UQ_vehiclecategories_Slug"),
+
+            ("brandallowedfueltypes", "(`BrandId`, `FuelTypeId`)", "UQ_brandallowedfueltypes_BrandId_FuelTypeId"),
+
+            // Replaces the periodic DELETE-based cleanup of duplicate attribute definitions.
+            ("attributedefinitions",
+             "(`VehicleCategoryId`, `SubtypeKey`, `BrandKey`, `ModelKey`, `GenKey`, `TrimKey`, `Key`)",
+             "UQ_attributedefinitions_scope_key"),
         })
         {
-            try { db.Database.ExecuteSqlRaw($"ALTER TABLE `{table}` ADD CONSTRAINT `{constraintName}` UNIQUE {columns}"); }
-            catch (Exception ex) { logger.LogDebug("[Schema] {Table} unique constraint skipped: {Message}", table, ex.Message); }
+            RunDdlGuarded(db, logger, $"{table} UNIQUE {constraintName}",
+                $"ALTER TABLE `{table}` ADD CONSTRAINT `{constraintName}` UNIQUE {columns}");
         }
 
         // Missing FK indexes from the architecture audit. Declared in AppDbContext's Fluent API
