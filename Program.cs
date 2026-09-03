@@ -1015,9 +1015,9 @@ internal class Program
             foreach (var sql in new[] {
                 "DELETE FROM `partsubcategories` WHERE `PartCategoryId` IN (SELECT `Id` FROM `partcategories` WHERE `Name` = 'Koła i opony')",
                 "DELETE FROM `partcategories` WHERE `Name` = 'Koła i opony'",
-                // Felgi shipped with mdi-alloy-wheel, which does not exist in @mdi/font 7.4.47 -> empty
+                // Felgi shipped with mdi-circle-double, which does not exist in @mdi/font 7.4.47 -> empty
                 // icon box. Repoint existing rows to an icon that renders (a rim-like double ring).
-                "UPDATE `vehiclecategories` SET `IconName` = 'mdi-circle-double' WHERE `Slug` = 'felgi' AND `IconName` = 'mdi-alloy-wheel'" })
+                "UPDATE `vehiclecategories` SET `IconName` = 'mdi-circle-double' WHERE `Slug` = 'felgi' AND `IconName` = 'mdi-circle-double'" })
             { try { db.Database.ExecuteSqlRaw(sql); } catch (Exception ex) { logger.LogDebug("[Schema] parts/icon cleanup: {Msg}", ex.Message); } }
 
             // These 3 tables were first created (via the CREATE TABLE IF NOT EXISTS guards right
@@ -2346,7 +2346,7 @@ internal class Program
 
                 // newCategorySpecs above only inserts a row once (guarded by existingSlugs), so a
                 // corrected IconName in the spec never reaches rows already seeded by an earlier
-                // deploy. mdi-quadbike / mdi-jet-ski never existed in @mdi/font and rendered as
+                // deploy. mdi-atv / mdi-ski-water never existed in @mdi/font and rendered as
                 // blank tiles; force-sync the corrected names on every startup instead.
                 try
                 {
