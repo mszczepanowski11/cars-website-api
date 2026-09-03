@@ -101,7 +101,27 @@ internal class Program
 
 
         // JWT_SECRET_KEY env var takes precedence over appsettings (required in production)
-        var jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? builder.Configuration["Jwt:Key"];
+        var jwtKeyFromEnv = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+        var jwtKey = jwtKeyFromEnv ?? builder.Configuration["Jwt:Key"];
+
+        // W PRODUKCJI klucz MUSI pochodzic ze zmiennej srodowiskowej - nigdy z pliku konfiguracyjnego.
+        //
+        // Dotychczasowe zabezpieczenie (nizej) odrzucalo znany placeholder, ale plik
+        // appsettings.Development.json zawieral PRAWDZIWY, 64-znakowy klucz, ktory trafil do
+        // historii repozytorium. Placeholder sie wiec nie zgadzal, dlugosc byla poprawna
+        // i sprawdzenie przepuszczalo go bez slowa.
+        //
+        // Skutek: jedna brakujaca zmienna srodowiskowa dzielila serwis od podpisywania
+        // WSZYSTKICH tokenow kluczem, ktory zna kazdy, kto ma dostep do repozytorium -
+        // czyli od mozliwosci podrobienia tokenu dowolnego konta, wlacznie z administratorem.
+        // Aplikacja startowalaby normalnie, nic by nie zglosila.
+        //
+        // Ten warunek zamyka to na stale, niezaleznie od tego, co lezy w plikach i w historii:
+        // poza srodowiskiem deweloperskim klucz z konfiguracji nie jest w ogole brany pod uwage.
+        if (!builder.Environment.IsDevelopment() && string.IsNullOrWhiteSpace(jwtKeyFromEnv))
+            throw new InvalidOperationException(
+                "JWT_SECRET_KEY environment variable is required outside Development. " +
+                "Key material from appsettings files is intentionally ignored here - it lives in git history.");
         var jwtIssuer = builder.Configuration["Jwt:Issuer"];
         var jwtAudience = builder.Configuration["Jwt:Audience"];
         var jwtExpiresInMinutes = builder.Configuration["Jwt:ExpiresInMinutes"];
