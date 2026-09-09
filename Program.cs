@@ -1531,6 +1531,8 @@ internal class Program
                 "ALTER TABLE `caradverts` ADD COLUMN `EuroNorm` varchar(50) NULL",
                 "ALTER TABLE `caradverts` ADD COLUMN `CurbWeight` int NULL",
                 "ALTER TABLE `caradverts` ADD COLUMN `GrossWeight` int NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `PreviousPrice` decimal(18,2) NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `PriceChangedAt` datetime(6) NULL",
                 "ALTER TABLE `caradverts` ADD COLUMN `Badge` varchar(50) NULL",
                 "ALTER TABLE `caradverts` ADD COLUMN `BadgeExpiresAt` datetime(6) NULL",
                 "ALTER TABLE `caradverts` ADD COLUMN `AxleCount` int NULL",

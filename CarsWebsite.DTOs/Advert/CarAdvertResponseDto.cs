@@ -16,6 +16,10 @@ public class CarAdvertResponseDto
     public string? Slug { get; set; }
 
     public decimal Price { get; set; }
+
+    // Poprzednia cena i moment zmiany - do komunikatu "obnizka z X" na karcie i na ogloszeniu.
+    public decimal? PreviousPrice { get; set; }
+    public DateTime? PriceChangedAt { get; set; }
     public string Currency { get; set; } = "PLN";
     public bool IsNegotiable { get; set; }
     public string? SellerType { get; set; }
