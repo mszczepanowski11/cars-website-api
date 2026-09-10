@@ -74,6 +74,15 @@ public class AdvertMappingProfile : Profile
             .ForMember(dest => dest.BadgeExpiresAt, opt => opt.Ignore())
             .ForMember(dest => dest.CarColor, opt => opt.Ignore())
             .ForMember(dest => dest.DriveType, opt => opt.Ignore())
-            .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow));
+            // UpdatedAt = „tresc sie zmienila". Zostaje - sluzy do daty aktualizacji
+            // i do lastmod w mapie strony.
+            .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
+            // BumpedAt, PreviousPrice i PriceChangedAt ustawia WYLACZNIE serwis, nigdy
+            // formularz. BumpedAt decyduje o pozycji w sortowaniu „Najnowsze", wiec
+            // przepuszczenie go przez mapowanie znaczyloby, ze kazdy zapis ogloszenia
+            // wypycha je na gore listy za darmo - czyli oddaje platna usluge „Odswiezenie".
+            .ForMember(dest => dest.BumpedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.PreviousPrice, opt => opt.Ignore())
+            .ForMember(dest => dest.PriceChangedAt, opt => opt.Ignore());
     }
 }

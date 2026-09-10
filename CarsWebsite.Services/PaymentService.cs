@@ -492,6 +492,11 @@ public class PaymentService : IPaymentService
             if (payment.ServiceType == ServiceType.Refresh)
             {
                 advert.UpdatedAt = DateTime.UtcNow;
+                // To JEST platne odswiezenie - jedyna droga, ktora wypycha ogloszenie na gore
+                // sortowania „Najnowsze" bez publikacji i bez odnowienia. Wczesniej dokladnie
+                // ten sam skutek dawalo zwykle zapisanie zmian w ogloszeniu, bo kolejnosc szla
+                // po UpdatedAt - czyli usluga byla do wziecia za darmo, w kolko.
+                advert.BumpedAt = advert.UpdatedAt;
             }
             else
             {
