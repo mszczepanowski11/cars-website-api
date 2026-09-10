@@ -1531,6 +1531,7 @@ internal class Program
                 "ALTER TABLE `caradverts` ADD COLUMN `EuroNorm` varchar(50) NULL",
                 "ALTER TABLE `caradverts` ADD COLUMN `CurbWeight` int NULL",
                 "ALTER TABLE `caradverts` ADD COLUMN `GrossWeight` int NULL",
+                "ALTER TABLE `caradverts` ADD COLUMN `BumpedAt` datetime(6) NULL",
                 "ALTER TABLE `caradverts` ADD COLUMN `PreviousPrice` decimal(18,2) NULL",
                 "ALTER TABLE `caradverts` ADD COLUMN `PriceChangedAt` datetime(6) NULL",
                 "ALTER TABLE `caradverts` ADD COLUMN `Badge` varchar(50) NULL",
@@ -1551,6 +1552,23 @@ internal class Program
                 try { db.Database.ExecuteSqlRaw(sql); }
                 catch (Exception ex) { logger.LogDebug("ADD COLUMN caradverts skipped: {Message}", ex.Message); }
             }
+
+            // BumpedAt dla wierszy sprzed tej kolumny. Bez tego wszystkie stare ogloszenia maja
+            // NULL i sortowanie „Najnowsze" spada dla nich na CreatedAt - czyli ogloszenia realnie
+            // odswiezone, takze te OPLACONE, wracaja na pozycje sprzed odswiezenia.
+            // COALESCE(UpdatedAt, CreatedAt) odtwarza dokladnie te kolejnosc, ktora jest teraz.
+            // WHERE BumpedAt IS NULL sprawia, ze przy kazdym kolejnym starcie to nic nie robi.
+            try
+            {
+                var uzupelnione = db.Database.ExecuteSqlRaw(
+                    "UPDATE `caradverts` SET `BumpedAt` = COALESCE(`UpdatedAt`, `CreatedAt`) WHERE `BumpedAt` IS NULL");
+                if (uzupelnione > 0) logger.LogInformation("[Schema] BumpedAt uzupelnione dla {Count} ogloszen", uzupelnione);
+            }
+            catch (Exception ex) { logger.LogWarning("BACKFILL caradverts.BumpedAt skipped: {Message}", ex.Message); }
+
+            // Sortowanie domyslne idzie po tej kolumnie na kazdej liscie wynikow.
+            try { db.Database.ExecuteSqlRaw("CREATE INDEX `IX_caradverts_BumpedAt` ON `caradverts` (`BumpedAt`)"); }
+            catch (Exception ex) { logger.LogDebug("CREATE INDEX caradverts.BumpedAt skipped: {Message}", ex.Message); }
 
             // Ensure advertimages table exists
             try

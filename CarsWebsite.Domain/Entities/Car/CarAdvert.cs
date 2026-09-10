@@ -25,6 +25,16 @@ public class CarAdvert
     public decimal? PreviousPrice { get; set; }
     public DateTime? PriceChangedAt { get; set; }
 
+    // ── Wypchniecie na gore listy ────────────────────────────────────────────────────────────
+    // Moment, w ktorym ogloszenie ZASLUZENIE trafilo na gore sortowania „Najnowsze":
+    // publikacja, odnowienie albo OPLACONE odswiezenie. To NIE jest to samo, co UpdatedAt.
+    //
+    // UpdatedAt znaczy „tresc sie zmienila" i ustawia sie przy kazdym zapisie ogloszenia.
+    // Dopoki sortowanie szlo po UpdatedAt, poprawienie przecinka w opisie dawalo dokladnie
+    // ten sam skutek co platna usluga „Odswiezenie" - ogloszenie skakalo na gore listy za
+    // darmo, wielokrotnie, ile razy sprzedajacy chcial.
+    public DateTime? BumpedAt { get; set; }
+
     public string Currency { get; set; } = "PLN";       // ISO cache (denormalized from CurrencyId)
     public string? City { get; set; }                   // display cache (denormalized from CityId)
     public string? Region { get; set; }                 // display cache (denormalized from RegionId)

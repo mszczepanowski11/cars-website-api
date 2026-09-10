@@ -170,6 +170,8 @@ public class AdvertService : IAdvertService
 
         var advert = _mapper.Map<CarAdvert>(dto);
         advert.CreatedAt = DateTime.UtcNow;
+        // Nowe ogloszenie jest najnowsze - to jego pierwsze, zasluzone miejsce na gorze listy.
+        advert.BumpedAt = advert.CreatedAt;
         advert.UserId = userId;
 
         // Emission duration: sourced from SubscriptionPlanConfig for both business (tier-based) and
@@ -760,13 +762,19 @@ public class AdvertService : IAdvertService
             "year_asc"    => prioritized.ThenBy(a => a.Year),
             "mileage_asc" => prioritized.ThenBy(a => a.Mileage),
             "power_desc"  => prioritized.ThenByDescending(a => a.PowerHP),
-            "featured"    => prioritized.ThenByDescending(a => a.UpdatedAt ?? a.CreatedAt),
+            "featured"    => prioritized.ThenByDescending(a => a.BumpedAt ?? a.CreatedAt),
             // "Najnowsze" (default/empty sortBy, also used by the homepage's "recently added"
             // section) - deliberately NOT using `prioritized`, so a promoted TOP/PREMIUM/FEATURED
             // ad no longer bumps ahead of genuinely newer plain ads just for having a badge. That
             // badge-first ordering is still what "Polecane" (sortBy=featured) and the price/year/
             // mileage/power sorts above intentionally use.
-            _             => query.OrderByDescending(a => a.UpdatedAt ?? a.CreatedAt)
+            //
+            // Sortujemy po BumpedAt, NIE po UpdatedAt. UpdatedAt ustawia sie przy kazdym zapisie
+            // ogloszenia, wiec dopoki decydowal o kolejnosci, poprawienie przecinka w opisie
+            // dawalo dokladnie ten sam skutek co platna usluga „Odswiezenie" - i mozna to bylo
+            // powtarzac bez konca. BumpedAt zmienia sie tylko przy publikacji, odnowieniu
+            // i oplaconym odswiezeniu.
+            _             => query.OrderByDescending(a => a.BumpedAt ?? a.CreatedAt)
         };
 
         var totalCount = await query.CountAsync();
@@ -904,6 +912,11 @@ public class AdvertService : IAdvertService
         {
             var publishingUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
             advert.ExpiresAt = DateTime.UtcNow.AddDays(SubscriptionPlanConfig.ResolveEmissionDays(publishingUser));
+            // BumpedAt TYLKO przy prawdziwym przejsciu nieaktywne -> aktywne, pod tym samym
+            // warunkiem co ExpiresAt i dokladnie z tego samego powodu opisanego wyzej: ta metoda
+            // jest wolana zapobiegawczo przy kazdym wejsciu na strone promowania, wiec bez tego
+            // warunku samo otwarcie tamtej strony wypychaloby ogloszenie na gore listy za darmo.
+            advert.BumpedAt = DateTime.UtcNow;
         }
         advert.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
@@ -950,6 +963,8 @@ public class AdvertService : IAdvertService
         advert.IsHidden = false;
         advert.ExpiresAt = DateTime.UtcNow.AddDays(SubscriptionPlanConfig.ResolveEmissionDays(renewingUser));
         advert.UpdatedAt = DateTime.UtcNow;
+        // Odnowienie to powrot ogloszenia do obiegu, wiec wraca tez na gore „Najnowszych".
+        advert.BumpedAt = advert.UpdatedAt;
         await _context.SaveChangesAsync();
     }
 
