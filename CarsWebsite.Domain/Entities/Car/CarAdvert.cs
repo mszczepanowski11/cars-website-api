@@ -15,6 +15,16 @@ public class CarAdvert
     public string Title { get; set; }
     public string Description { get; set; }
     public decimal Price { get; set; }
+
+    // ── Zmiana ceny ──────────────────────────────────────────────────────────────────────────
+    // Poprzednia cena i moment jej zmiany. Sluza WYLACZNIE do pokazania kupujacemu, ze cena
+    // sie ruszyla ("obnizka z 89 000 zl"). Nie jest to pelna historia cen - trzymamy jeden
+    // krok wstecz, bo tyle wystarcza do tego komunikatu, a osobna tabela historii bylaby
+    // kosztem bez odbiorcy. Gdyby kiedys byl potrzebny wykres cen, to jest miejsce, w ktorym
+    // trzeba to zamienic na tabele, a nie dokladac kolejne kolumny.
+    public decimal? PreviousPrice { get; set; }
+    public DateTime? PriceChangedAt { get; set; }
+
     public string Currency { get; set; } = "PLN";       // ISO cache (denormalized from CurrencyId)
     public string? City { get; set; }                   // display cache (denormalized from CityId)
     public string? Region { get; set; }                 // display cache (denormalized from RegionId)

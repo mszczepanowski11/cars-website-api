@@ -283,7 +283,21 @@ public class AdvertService : IAdvertService
 
         var newCompatibilities = await BuildPartCompatibilitiesAsync(dto.Compatibilities);
 
+        // Cena SPRZED mapowania - `_mapper.Map` nadpisuje advert.Price wartoscia z formularza,
+        // wiec po tej linii stara cena juz nie istnieje.
+        var cenaPrzedZmiana = advert.Price;
+
         _mapper.Map(dto, advert);
+
+        // Zapamietujemy poprzednia cene tylko wtedy, gdy naprawde sie zmienila. Zapis ogloszenia
+        // bez ruszania ceny (poprawka opisu, dodanie zdjecia) NIE moze ustawiac PriceChangedAt -
+        // inaczej kazda edycja pokazywalaby kupujacemu "cena zmieniona", co jest nieprawda.
+        if (advert.Price != cenaPrzedZmiana)
+        {
+            advert.PreviousPrice = cenaPrzedZmiana;
+            advert.PriceChangedAt = DateTime.UtcNow;
+        }
+
         await SetCurrencyAndConvertedPriceAsync(advert);
 
         _context.AdvertFeatures.RemoveRange(advert.AdvertFeatures);
